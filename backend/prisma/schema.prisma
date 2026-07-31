@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  role       String   @default("USER")
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  profile   Profile?
+  photos    Photo[]
+  interests UserInterest[]
+
+  sentMessages     Message[] @relation("sentMessages")
+  receivedMessages Message[] @relation("receivedMessages")
+
+  matches1 Match[] @relation("userOne")
+  matches2 Match[] @relation("userTwo")
+
+  notifications Notification[]
+
+  subscription Subscription?
+  payments     Payment[]
+
+  reports Report[] @relation("reportedBy")
+}
+
+model Profile {
+  id     Int @id @default(autoincrement())
+  userId Int @unique
+
+  firstName String
+  lastName  String?
+  age       Int?
+  gender    String?
+  bio       String?
+  city      String?
+  country   String?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Photo {
+  id     Int    @id @default(autoincrement())
+  url    String
+  userId Int
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Interest {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  users UserInterest[]
+}
+
+model UserInterest {
+  userId     Int
+  interestId Int
+
+  user     User     @relation(fields: [userId], references: [id])
+  interest Interest @relation(fields: [interestId], references: [id])
+
+  @@id([userId, interestId])
+}
+
+model Match {
+  id Int @id @default(autoincrement())
+
+  userOneId Int
+  userTwoId Int
+
+  status String @default("PENDING")
+
+  createdAt DateTime @default(now())
+
+  userOne User @relation("userOne", fields: [userOneId], references: [id])
+  userTwo User @relation("userTwo", fields: [userTwoId], references: [id])
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+
+  content String
+
+  senderId   Int
+  receiverId Int
+
+  createdAt DateTime @default(now())
+
+  sender   User @relation("sentMessages", fields: [senderId], references: [id])
+  receiver User @relation("receivedMessages", fields: [receiverId], references: [id])
+}
+
+model Notification {
+  id Int @id @default(autoincrement())
+
+  message String
+  read    Boolean @default(false)
+
+  userId Int
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Subscription {
+  id Int @id @default(autoincrement())
+
+  plan   String
+  status String
+
+  userId Int @unique
+
+  startDate DateTime
+  endDate   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  amount Float
+  method String
+  status String
+
+  userId Int
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Report {
+  id Int @id @default(autoincrement())
+
+  reason String
+
+  reporterId Int
+
+  createdAt DateTime @default(now())
+
+  reporter User @relation("reportedBy", fields: [reporterId], references: [id])
+}

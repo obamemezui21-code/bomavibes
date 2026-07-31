@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+dist/
+build/
+
+backend/node_modules/
+frontend-web/node_modules/
+
+backend/.env
+
+.vscode/
