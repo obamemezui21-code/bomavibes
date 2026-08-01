@@ -111,7 +111,7 @@ function AuthAction() {
         <div className="space-y-5 text-center">
           <span className="text-4xl">⚠️</span>
 
-          {mode === 'resetPassword' && (
+          {mode !== 'verifyEmail' && (
             <div className="rounded-2xl bg-ink/[0.03] p-4 text-left">
               {retrySent ? (
                 <p className="text-sm text-ink-soft">
