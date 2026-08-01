@@ -52,10 +52,11 @@ function Landing() {
         <AnimatePresence>
           {menuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              style={{ transformOrigin: 'top' }}
               className="absolute inset-x-4 top-[4.25rem] z-20 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
             >
               <Link
@@ -70,20 +71,6 @@ function Landing() {
               >
                 S'inscrire
               </Link>
-              <div className="flex items-center gap-2 border-t border-black/5 px-5 py-3">
-                {SOCIALS.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAF6EF] text-base"
-                    aria-label={s.label}
-                  >
-                    {s.icon}
-                  </a>
-                ))}
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
