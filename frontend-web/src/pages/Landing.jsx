@@ -19,6 +19,12 @@ const SOCIALS = [
 function Landing() {
   return (
     <div className="relative min-h-svh overflow-hidden bg-[#FAF6EF]">
+      {/* Mobile/tablet hero banner */}
+      <div className="relative h-72 w-full overflow-hidden sm:h-96 lg:hidden">
+        <img src={heroPhoto} alt="Couple BomaVibes" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/10 to-[#FAF6EF]" />
+      </div>
+
       {/* Social rail */}
       <div className="fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 md:flex">
         {SOCIALS.map((s, i) => (
@@ -48,7 +54,7 @@ function Landing() {
             animate={{ opacity: 1, y: 0 }}
             src={logo}
             alt="BomaVibes"
-            className="mb-6 w-40"
+            className="mb-6 h-24 w-24 rounded-full border-4 border-[#C9962B] object-cover object-top shadow-lg"
           />
 
           <motion.h1
@@ -68,8 +74,8 @@ function Landing() {
             transition={{ delay: 0.2 }}
             className="mt-5 max-w-md text-base leading-relaxed text-[#6b5d4f]"
           >
-            BomaVibes est le site de rencontre gabonais qui connecte des célibataires
-            authentiques pour des relations vraies et durables.
+            BomaVibes est le site de rencontre africain, de la communauté noire, qui
+            connecte des célibataires authentiques pour des relations vraies et durables.
           </motion.p>
 
           <motion.div
