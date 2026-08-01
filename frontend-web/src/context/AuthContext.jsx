@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   getAdditionalUserInfo,
   getRedirectResult,
   onAuthStateChanged,
@@ -12,7 +13,7 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth'
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase/config.js'
 import { useToast } from './ToastContext.jsx'
 
@@ -29,6 +30,9 @@ const ERROR_MESSAGES = {
   'auth/popup-closed-by-user': null,
   'auth/operation-not-allowed': "Ce mode de connexion n'est pas encore activé, réessaie plus tard",
   'auth/unauthorized-domain': "La connexion Google n'est pas encore autorisée sur ce domaine",
+  'auth/account-exists-with-different-credential':
+    'Un compte existe déjà avec cet email. Connecte-toi avec ton mot de passe.',
+  'auth/requires-recent-login': 'Pour des raisons de sécurité, reconnecte-toi puis réessaie.',
 }
 
 function mapAuthError(error) {
@@ -176,6 +180,18 @@ export function AuthProvider({ children }) {
     signOut(auth)
   }
 
+  async function deleteAccount() {
+    const currentUser = auth.currentUser
+    if (!currentUser) return
+    try {
+      await deleteDoc(doc(db, 'users', currentUser.uid))
+      await deleteUser(currentUser)
+    } catch (error) {
+      const message = mapAuthError(error)
+      throw new Error(message)
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -188,6 +204,7 @@ export function AuthProvider({ children }) {
         register,
         loginWithGoogle,
         logout,
+        deleteAccount,
         resendVerificationEmail,
         refreshEmailVerified,
         resetPassword,

@@ -44,7 +44,7 @@ function Section({ title, children }) {
 
 function Settings() {
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { user, logout, deleteAccount } = useAuth()
   const { showToast } = useToast()
 
   const [newMatches, setNewMatches] = useState(true)
@@ -54,12 +54,20 @@ function Settings() {
   const [showAge, setShowAge] = useState(true)
   const [incognito, setIncognito] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  function handleDeleteAccount() {
-    setConfirmDelete(false)
-    showToast('Compte supprimé. À bientôt sur BomaVibes 💔', 'info')
-    logout()
-    navigate('/')
+  async function handleDeleteAccount() {
+    setIsDeleting(true)
+    try {
+      await deleteAccount()
+      setConfirmDelete(false)
+      showToast('Compte supprimé. À bientôt sur BomaVibes 💔', 'info')
+      navigate('/')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -103,7 +111,7 @@ function Settings() {
           </Section>
 
           <Section title="Compte">
-            <Row title="Email" subtitle="johnkoumbamihindou@yahoo.fr">
+            <Row title="Email" subtitle={user?.email}>
               <button type="button" className="text-xs font-semibold text-violet-600 hover:underline">
                 Modifier
               </button>
@@ -165,9 +173,10 @@ function Settings() {
               <button
                 type="button"
                 onClick={handleDeleteAccount}
-                className="flex-1 rounded-xl bg-coral-500 py-2.5 text-sm font-semibold text-white hover:bg-coral-600"
+                disabled={isDeleting}
+                className="flex-1 rounded-xl bg-coral-500 py-2.5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Supprimer
+                {isDeleting ? 'Suppression…' : 'Supprimer'}
               </button>
             </div>
           </div>

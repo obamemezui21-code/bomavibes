@@ -82,12 +82,13 @@ function Onboarding() {
         { merge: true },
       )
     } catch {
-      // Non-blocking: onboarding still completes even if the profile sync fails.
-    } finally {
       setIsSaving(false)
-      showToast(`Bienvenue sur BomaVibes, ${user?.firstName || ''} 🎉`, 'success')
-      navigate('/discover', { replace: true })
+      showToast("Impossible d'enregistrer ton profil, réessaie.", 'error')
+      return
     }
+    setIsSaving(false)
+    showToast(`Bienvenue sur BomaVibes, ${user?.firstName || ''} 🎉`, 'success')
+    navigate('/discover', { replace: true })
   }
 
   const canContinue =

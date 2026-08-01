@@ -3,7 +3,34 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isOptionalString(field, maxLen) {
+        return !(field in request.resource.data)
+          || request.resource.data[field] == null
+          || (request.resource.data[field] is string && request.resource.data[field].size() <= maxLen);
+      }
+
+      function validProfileShape() {
+        let data = request.resource.data;
+        return data.email is string
+          && data.onboarded is bool
+          && isOptionalString('firstName', 50)
+          && isOptionalString('lastName', 50)
+          && isOptionalString('bio', 500)
+          && isOptionalString('city', 100)
+          && isOptionalString('country', 100)
+          && isOptionalString('gender', 20)
+          && isOptionalString('prefGender', 20)
+          && (!('age' in data) || data.age == null || (data.age is number && data.age >= 18 && data.age <= 120))
+          && (!('prefMaxDistance' in data) || data.prefMaxDistance == null || (data.prefMaxDistance is number && data.prefMaxDistance >= 1 && data.prefMaxDistance <= 500))
+          && (!('interests' in data) || (data.interests is list && data.interests.size() <= 20));
+      }
+
+      allow read, delete: if isOwner();
+      allow create, update: if isOwner() && validProfileShape();
     }
   }
 }
