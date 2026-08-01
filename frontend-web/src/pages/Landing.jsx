@@ -11,6 +11,7 @@ const FEATURES = [
 ]
 
 const NAV_LINKS = [
+  { label: 'Accueil', href: '#top' },
   { label: 'À propos', href: '#about' },
   { label: 'Contact', href: '#contact' },
 ]
@@ -86,27 +87,17 @@ function Header({ menuOpen, onToggleMenu }) {
             style={{ transformOrigin: 'top' }}
             className="absolute right-4 top-[4.25rem] w-48 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 sm:hidden"
           >
-            {NAV_LINKS.map((l) => (
+            {NAV_LINKS.map((l, i) => (
               <a
                 key={l.label}
                 href={l.href}
-                className="block px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+                className={`block px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5 ${
+                  i > 0 ? 'border-t border-black/5' : ''
+                }`}
               >
                 {l.label}
               </a>
             ))}
-            <Link
-              to="/login"
-              className="block border-t border-black/5 px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
-            >
-              Se connecter
-            </Link>
-            <Link
-              to="/signup"
-              className="block border-t border-black/5 px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
-            >
-              S'inscrire
-            </Link>
           </motion.div>
         )}
       </AnimatePresence>
@@ -122,7 +113,7 @@ function Landing() {
       <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen((v) => !v)} />
 
       {/* Hero */}
-      <div className="relative flex min-h-svh items-end overflow-hidden sm:items-center">
+      <div id="top" className="relative flex min-h-svh items-end overflow-hidden sm:items-center">
         <motion.img
           initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
