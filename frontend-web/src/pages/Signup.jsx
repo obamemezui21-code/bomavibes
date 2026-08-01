@@ -45,17 +45,10 @@ function Signup() {
     }
   }
 
-  async function handleGoogle() {
+  function handleGoogle() {
     setError('')
     setIsGoogleLoading(true)
-    try {
-      await loginWithGoogle()
-      navigate('/onboarding', { replace: true })
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsGoogleLoading(false)
-    }
+    loginWithGoogle()
   }
 
   return (

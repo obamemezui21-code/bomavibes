@@ -1,13 +1,17 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   createUserWithEmailAndPassword,
+  getAdditionalUserInfo,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
 } from 'firebase/auth'
 import { auth, googleProvider } from '../firebase/config.js'
+import { useToast } from './ToastContext.jsx'
 
 const AuthContext = createContext(null)
 
@@ -42,6 +46,8 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { showToast } = useToast()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -55,6 +61,20 @@ export function AuthProvider({ children }) {
       setIsLoading(false)
     })
     return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (!result) return
+        const isNewUser = getAdditionalUserInfo(result)?.isNewUser
+        navigate(isNewUser ? '/onboarding' : '/discover', { replace: true })
+      })
+      .catch((error) => {
+        const message = mapAuthError(error)
+        if (message) showToast(message, 'error')
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function login(email, password) {
@@ -77,13 +97,8 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function loginWithGoogle() {
-    try {
-      await signInWithPopup(auth, googleProvider)
-    } catch (error) {
-      const message = mapAuthError(error)
-      if (message) throw new Error(message)
-    }
+  function loginWithGoogle() {
+    return signInWithRedirect(auth, googleProvider)
   }
 
   function logout() {

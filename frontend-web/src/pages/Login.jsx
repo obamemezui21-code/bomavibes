@@ -35,17 +35,10 @@ function Login() {
     }
   }
 
-  async function handleGoogle() {
+  function handleGoogle() {
     setError('')
     setIsGoogleLoading(true)
-    try {
-      await loginWithGoogle()
-      navigate(location.state?.from?.pathname || '/discover', { replace: true })
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setIsGoogleLoading(false)
-    }
+    loginWithGoogle()
   }
 
   return (
