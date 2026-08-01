@@ -51,7 +51,7 @@ function Header({ menuOpen, onToggleMenu }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
         <div className="flex items-center gap-2.5">
           <Logo className="h-10 w-10" />
-          <span className="hidden font-display text-lg font-bold text-white drop-shadow-sm sm:inline">
+          <span className="font-display text-lg font-bold text-white drop-shadow-sm">
             Boma<span className="text-[#E8C468]">Vibes</span>
           </span>
         </div>
