@@ -10,12 +10,29 @@ const FEATURES = [
   { icon: '👥', title: 'Afrocentré', text: 'Une communauté qui te ressemble' },
 ]
 
-const SOCIALS = [
-  { label: 'Instagram', href: 'https://instagram.com/bomavibes', icon: '📷' },
-  { label: 'Facebook', href: 'https://facebook.com/bomavibes', icon: '📘' },
-  { label: 'TikTok', href: 'https://tiktok.com/@bomavibes', icon: '🎵' },
-  { label: 'WhatsApp', href: 'https://wa.me/24100000000', icon: '💬' },
+const NAV_LINKS = [
+  { label: 'À propos', href: '#about' },
+  { label: 'Contact', href: '#contact' },
 ]
+
+const SOCIALS = [
+  { label: 'Instagram', href: 'https://instagram.com/bomavibes' },
+  { label: 'Facebook', href: 'https://facebook.com/bomavibes' },
+  { label: 'TikTok', href: 'https://tiktok.com/@bomavibes' },
+  { label: 'WhatsApp', href: 'https://wa.me/24100000000' },
+]
+
+function MenuIcon({ open }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
+      {open ? (
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+      ) : (
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+      )}
+    </svg>
+  )
+}
 
 function Logo({ className }) {
   return (
@@ -33,13 +50,18 @@ function Header({ menuOpen, onToggleMenu }) {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
         <div className="flex items-center gap-2.5">
           <Logo className="h-10 w-10" />
-          <span className="font-display text-lg font-bold text-white drop-shadow-sm">
+          <span className="hidden font-display text-lg font-bold text-white drop-shadow-sm sm:inline">
             Boma<span className="text-[#E8C468]">Vibes</span>
           </span>
         </div>
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 sm:flex">
+          {NAV_LINKS.map((l) => (
+            <a key={l.label} href={l.href} className="text-sm font-semibold text-white/90 transition hover:text-white">
+              {l.label}
+            </a>
+          ))}
           <Link to="/login" className="text-sm font-semibold text-white/90 transition hover:text-white">
             Se connecter
           </Link>
@@ -55,11 +77,11 @@ function Header({ menuOpen, onToggleMenu }) {
         <button
           type="button"
           onClick={onToggleMenu}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-xl text-[#1F3D2B] shadow-lg backdrop-blur-sm sm:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[#1F3D2B] shadow-lg backdrop-blur-sm sm:hidden"
           aria-label="Menu"
           aria-expanded={menuOpen}
         >
-          {menuOpen ? '✕' : '☰'}
+          <MenuIcon open={menuOpen} />
         </button>
       </div>
 
@@ -71,14 +93,26 @@ function Header({ menuOpen, onToggleMenu }) {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             style={{ transformOrigin: 'top' }}
-            className="absolute right-4 top-[4.25rem] w-40 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 sm:hidden"
+            className="absolute right-4 top-[4.25rem] w-48 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 sm:hidden"
           >
-            <Link to="/login" className="block px-5 py-5 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5">
+            {NAV_LINKS.map((l) => (
+              <a
+                key={l.label}
+                href={l.href}
+                className="block px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+              >
+                {l.label}
+              </a>
+            ))}
+            <Link
+              to="/login"
+              className="block border-t border-black/5 px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+            >
               Se connecter
             </Link>
             <Link
               to="/signup"
-              className="block border-t border-black/5 px-5 py-5 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+              className="block border-t border-black/5 px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
             >
               S'inscrire
             </Link>
@@ -95,27 +129,6 @@ function Landing() {
   return (
     <div className="relative min-h-svh bg-[#FAF6EF]">
       <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen((v) => !v)} />
-
-      {/* Social rail (desktop only) */}
-      <div className="fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 lg:flex">
-        {SOCIALS.map((s, i) => (
-          <motion.a
-            key={s.label}
-            href={s.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 + i * 0.08 }}
-            whileHover={{ scale: 1.1, x: -4 }}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg shadow-lg ring-1 ring-black/5 transition"
-            aria-label={s.label}
-            title={s.label}
-          >
-            {s.icon}
-          </motion.a>
-        ))}
-      </div>
 
       {/* Hero */}
       <div className="relative flex min-h-svh items-end overflow-hidden sm:items-center">
@@ -192,6 +205,45 @@ function Landing() {
           </div>
         </div>
       </div>
+
+      {/* About */}
+      <section id="about" className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-8">
+        <h2 className="font-display text-3xl font-bold text-[#2B1D14]">À propos de BomaVibes</h2>
+        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#6b5d4f]">
+          BomaVibes est né d'une conviction simple : les célibataires africains et de la
+          communauté noire méritent un espace de rencontre pensé pour eux, qui célèbre leur
+          culture et leurs valeurs. Notre mission est de créer des connexions authentiques,
+          sûres et durables, portées par une communauté vérifiée et bienveillante.
+        </p>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" className="bg-[#1F3D2B] px-4 py-20 text-center sm:px-8">
+        <h2 className="font-display text-3xl font-bold text-white">Contactez-nous</h2>
+        <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-white/75">
+          Une question, une suggestion ? Écris-nous, on te répond avec plaisir.
+        </p>
+        <a
+          href="mailto:contact@bomavibes.tech"
+          className="mt-6 inline-block rounded-xl bg-[#C9962B] px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
+        >
+          contact@bomavibes.tech
+        </a>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          {SOCIALS.map((s) => (
+            <a
+              key={s.label}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-white/70 underline-offset-4 transition hover:text-white hover:underline"
+            >
+              {s.label}
+            </a>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
