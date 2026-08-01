@@ -57,17 +57,17 @@ function Landing() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'top' }}
-              className="absolute inset-x-4 top-[4.25rem] z-20 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+              className="absolute right-4 top-[4.25rem] z-20 w-40 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
             >
               <Link
                 to="/login"
-                className="block px-5 py-3 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+                className="block px-5 py-5 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
               >
                 Se connecter
               </Link>
               <Link
                 to="/signup"
-                className="block px-5 py-3 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+                className="block border-t border-black/5 px-5 py-5 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
               >
                 S'inscrire
               </Link>
