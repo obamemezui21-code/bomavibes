@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AuthLayout from '../components/AuthLayout.jsx'
@@ -11,7 +11,7 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Signup() {
-  const { register, loginWithGoogle } = useAuth()
+  const { register, loginWithGoogle, token } = useAuth()
   const navigate = useNavigate()
   const [firstName, setFirstName] = useState('')
   const [email, setEmail] = useState('')
@@ -20,6 +20,11 @@ function Signup() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+
+  useEffect(() => {
+    if (token) navigate('/discover', { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
 
   async function handleSubmit(e) {
     e.preventDefault()
