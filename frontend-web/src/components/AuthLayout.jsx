@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import logo from '../assets/bomavibes-logo.jpeg'
 import brandPhoto from '../assets/loginpic.png'
@@ -46,6 +47,16 @@ function AuthLayout({ title, subtitle, children, footer }) {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
           className="glass-panel-solid relative z-10 w-full max-w-sm rounded-3xl p-6 sm:p-8"
         >
+          <Link
+            to="/"
+            className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-ink-soft transition hover:text-ink"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+            Retour à l'accueil
+          </Link>
+
           <div className="mb-6 text-center">
             <h2 className="font-display text-2xl font-bold text-ink">{title}</h2>
             {subtitle && <p className="mt-1.5 text-sm text-ink-soft">{subtitle}</p>}
