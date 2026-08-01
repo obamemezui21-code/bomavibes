@@ -47,7 +47,7 @@ function Logo({ className }) {
 
 function Header({ menuOpen, onToggleMenu }) {
   return (
-    <header className="absolute inset-x-0 top-0 z-30">
+    <header className="fixed inset-x-0 top-0 z-30 bg-[#1F3D2B]/85 shadow-md backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
         <div className="flex items-center gap-2.5">
           <Logo className="h-10 w-10" />
@@ -189,7 +189,7 @@ function Landing() {
       </div>
 
       {/* About */}
-      <section id="about" className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-8">
+      <section id="about" className="mx-auto max-w-4xl scroll-mt-20 px-4 py-20 text-center sm:px-8">
         <h2 className="font-display text-3xl font-bold text-[#2B1D14]">À propos de BomaVibes</h2>
         <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#6b5d4f]">
           BomaVibes est né d'une conviction simple : les célibataires africains et de la
@@ -200,7 +200,7 @@ function Landing() {
       </section>
 
       {/* Contact */}
-      <section id="contact" className="bg-[#1F3D2B] px-4 py-20 text-center sm:px-8">
+      <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-20 text-center sm:px-8">
         <h2 className="font-display text-3xl font-bold text-white">Contactez-nous</h2>
         <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-white/75">
           Une question, une suggestion ? Écris-nous, on te répond avec plaisir.
