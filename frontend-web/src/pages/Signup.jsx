@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
+import GoogleIcon from '../components/GoogleIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 const inputClass =
@@ -10,7 +11,7 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Signup() {
-  const { register } = useAuth()
+  const { register, loginWithGoogle } = useAuth()
   const navigate = useNavigate()
   const [firstName, setFirstName] = useState('')
   const [email, setEmail] = useState('')
@@ -18,6 +19,7 @@ function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -40,6 +42,19 @@ function Signup() {
       setError(err.message)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleGoogle() {
+    setError('')
+    setIsGoogleLoading(true)
+    try {
+      await loginWithGoogle()
+      navigate('/onboarding', { replace: true })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsGoogleLoading(false)
     }
   }
 
@@ -138,6 +153,23 @@ function Signup() {
           className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? 'Création du compte…' : 'Créer mon compte'}
+        </motion.button>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-ink/10" />
+          <span className="text-xs font-medium text-ink-soft">ou</span>
+          <div className="h-px flex-1 bg-ink/10" />
+        </div>
+
+        <motion.button
+          type="button"
+          onClick={handleGoogle}
+          disabled={isGoogleLoading}
+          whileTap={{ scale: 0.97 }}
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-ink/12 bg-white py-2.5 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <GoogleIcon />
+          {isGoogleLoading ? 'Connexion…' : 'Continuer avec Google'}
         </motion.button>
       </form>
     </AuthLayout>

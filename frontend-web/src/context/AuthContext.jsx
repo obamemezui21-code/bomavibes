@@ -1,65 +1,97 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  updateProfile,
+} from 'firebase/auth'
+import { auth, googleProvider } from '../firebase/config.js'
 
 const AuthContext = createContext(null)
 
+const ERROR_MESSAGES = {
+  'auth/invalid-credential': 'Email ou mot de passe invalide',
+  'auth/wrong-password': 'Email ou mot de passe invalide',
+  'auth/user-not-found': 'Email ou mot de passe invalide',
+  'auth/email-already-in-use': 'Un compte existe déjà avec cet email',
+  'auth/weak-password': 'Le mot de passe doit contenir au moins 6 caractères',
+  'auth/invalid-email': 'Adresse email invalide',
+  'auth/too-many-requests': 'Trop de tentatives, réessaie dans un instant',
+  'auth/popup-closed-by-user': null,
+  'auth/operation-not-allowed': "Ce mode de connexion n'est pas encore activé, réessaie plus tard",
+}
+
+function mapAuthError(error) {
+  const code = error?.code
+  if (code && code in ERROR_MESSAGES) return ERROR_MESSAGES[code]
+  return "Une erreur est survenue, réessaie."
+}
+
+function toAppUser(firebaseUser) {
+  if (!firebaseUser) return null
+  return {
+    id: firebaseUser.uid,
+    email: firebaseUser.email,
+    firstName: firebaseUser.displayName || '',
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('bomavibes_token'))
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('bomavibes_user')
-    return stored ? JSON.parse(stored) : null
-  })
+  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (token) localStorage.setItem('bomavibes_token', token)
-    else localStorage.removeItem('bomavibes_token')
-  }, [token])
-
-  useEffect(() => {
-    if (user) localStorage.setItem('bomavibes_user', JSON.stringify(user))
-    else localStorage.removeItem('bomavibes_user')
-  }, [user])
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(toAppUser(firebaseUser))
+        setToken(await firebaseUser.getIdToken())
+      } else {
+        setUser(null)
+        setToken(null)
+      }
+      setIsLoading(false)
+    })
+    return unsubscribe
+  }, [])
 
   async function login(email, password) {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(data.message || 'Email ou mot de passe invalide')
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+    } catch (error) {
+      const message = mapAuthError(error)
+      if (message) throw new Error(message)
     }
-
-    const data = await res.json()
-    setToken(data.token)
-    setUser(data.user)
   }
 
   async function register(firstName, email, password) {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, email, password }),
-    })
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(data.message || "Impossible de créer ton compte")
+    try {
+      const credential = await createUserWithEmailAndPassword(auth, email, password)
+      await updateProfile(credential.user, { displayName: firstName })
+      setUser(toAppUser({ ...credential.user, displayName: firstName }))
+    } catch (error) {
+      const message = mapAuthError(error)
+      if (message) throw new Error(message)
     }
+  }
 
-    const data = await res.json()
-    setToken(data.token)
-    setUser(data.user)
+  async function loginWithGoogle() {
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch (error) {
+      const message = mapAuthError(error)
+      if (message) throw new Error(message)
+    }
   }
 
   function logout() {
-    setToken(null)
-    setUser(null)
+    signOut(auth)
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, login, register, logout }}>
+    <AuthContext.Provider value={{ token, user, isLoading, login, register, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   )
