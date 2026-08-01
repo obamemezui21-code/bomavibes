@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import logo from '../assets/bomavibes-logo.jpeg'
-import heroPhoto from '../assets/hero-couple.png'
+import heroPhoto from '../assets/hero.png'
 
 const FEATURES = [
   { icon: '🛡️', title: 'Sécurisé', text: 'Vos données sont protégées' },
