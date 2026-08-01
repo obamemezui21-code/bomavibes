@@ -62,15 +62,6 @@ function Header({ menuOpen, onToggleMenu }) {
               {l.label}
             </a>
           ))}
-          <Link to="/login" className="text-sm font-semibold text-white/90 transition hover:text-white">
-            Se connecter
-          </Link>
-          <Link
-            to="/signup"
-            className="rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-[#1F3D2B] shadow-lg transition hover:bg-white/90"
-          >
-            S'inscrire
-          </Link>
         </div>
 
         {/* Mobile burger */}
