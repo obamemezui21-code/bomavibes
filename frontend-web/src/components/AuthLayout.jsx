@@ -1,34 +1,37 @@
 import { motion } from 'framer-motion'
 import logo from '../assets/bomavibes-logo.jpeg'
+import brandPhoto from '../assets/loginpic.png'
 
 function AuthLayout({ title, subtitle, children, footer }) {
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-surface md:flex-row">
       {/* Brand panel */}
-      <div className="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0e2a1e] via-[#163d29] to-[#1f3d2b] px-6 py-12 md:w-1/2 md:py-0">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/20 blur-[90px] animate-float-slow" />
-        <div className="pointer-events-none absolute -right-16 bottom-0 h-72 w-72 rounded-full bg-pink-300/40 blur-[90px] animate-float-slower" />
+      <div className="relative flex items-center justify-center overflow-hidden px-6 py-12 md:w-1/2 md:py-0">
+        <img
+          src={brandPhoto}
+          alt="Membres de la communauté BomaVibes"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0e2a1e]/95 via-[#0e2a1e]/60 to-[#0e2a1e]/30" />
+
+        <img
+          src={logo}
+          alt="BomaVibes"
+          className="absolute left-6 top-6 h-12 w-12 rounded-full border-2 border-[#C9962B] object-cover object-top shadow-md md:left-8 md:top-8"
+        />
 
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 flex flex-col items-center gap-6 text-center"
+          className="relative z-10 flex flex-col items-center gap-3 text-center"
         >
-          <motion.img
-            src={logo}
-            alt="BomaVibes — la rencontre gabonaise"
-            className="w-32 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.35)] ring-4 ring-white/40 md:w-64"
-            initial={{ scale: 0.9, rotate: -3 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-          />
-          <div className="hidden max-w-xs flex-col gap-3 md:flex">
-            <h1 className="font-display text-3xl font-bold text-white">Trouve ta vibe</h1>
-            <p className="text-sm leading-relaxed text-white/85">
-              La communauté gabonaise pour des rencontres authentiques, vibrantes et sincères.
-            </p>
-          </div>
+          <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
+            Trouve ta <span className="text-[#E8C468]">vibe</span>
+          </h1>
+          <p className="max-w-xs text-sm leading-relaxed text-white/85">
+            La communauté gabonaise pour des rencontres authentiques, vibrantes et sincères.
+          </p>
         </motion.div>
       </div>
 
