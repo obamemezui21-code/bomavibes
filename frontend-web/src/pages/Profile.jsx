@@ -15,8 +15,8 @@ const emptyForm = {
 }
 
 const inputClass =
-  'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-cream-100 placeholder-cream-300/30 outline-none transition focus:border-gold-400/60 focus:bg-white/[0.07] focus:ring-4 focus:ring-gold-400/10'
-const labelClass = 'mb-1.5 block text-sm font-medium text-cream-200'
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
+const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Profile() {
   const { user, token, logout } = useAuth()
@@ -104,9 +104,9 @@ function Profile() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-ink p-6 md:min-h-full">
+      <div className="flex min-h-svh items-center justify-center bg-surface-soft p-6 md:min-h-full">
         <motion.div
-          className="h-8 w-8 rounded-full border-2 border-gold-400/30 border-t-gold-400"
+          className="h-8 w-8 rounded-full border-2 border-violet-300 border-t-violet-600"
           animate={{ rotate: 360 }}
           transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
         />
@@ -115,35 +115,35 @@ function Profile() {
   }
 
   return (
-    <div className="relative min-h-svh overflow-hidden bg-ink p-6 pb-24 md:min-h-full md:pb-6">
-      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold-500/10 blur-[100px]" />
-      <div className="pointer-events-none absolute bottom-0 -left-24 h-72 w-72 rounded-full bg-forest-500/20 blur-[100px]" />
+    <div className="relative min-h-svh overflow-hidden bg-surface-soft p-6 pb-24 md:min-h-full md:pb-6">
+      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-violet-500/10 blur-[100px]" />
+      <div className="pointer-events-none absolute bottom-0 -left-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
 
       <div className="relative z-10 mx-auto max-w-lg">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="relative">
             <img
-              src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(form.firstName || 'Toi')}&backgroundColor=c9962b`}
+              src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(form.firstName || 'Toi')}&backgroundColor=8b5cf6`}
               alt="Avatar"
-              className="h-24 w-24 rounded-full border-4 border-forest-950 object-cover shadow-xl"
+              className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
             />
-            <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-gold-400 text-sm text-forest-950 shadow">
+            <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-sm text-white shadow">
               ✎
             </span>
           </div>
-          <h1 className="mt-3 font-display text-2xl font-semibold text-cream-100">
+          <h1 className="mt-3 font-display text-2xl font-semibold text-ink">
             {form.firstName || 'Ton profil'}
           </h1>
-          {user?.email && <p className="text-sm text-cream-300/60">{user.email}</p>}
+          {user?.email && <p className="text-sm text-ink-soft/60">{user.email}</p>}
 
           <div className="mt-3 w-full max-w-xs">
-            <div className="mb-1 flex justify-between text-xs text-cream-300/60">
+            <div className="mb-1 flex justify-between text-xs text-ink-soft/60">
               <span>Profil complété</span>
               <span>{completion}%</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-gold-500 to-gold-400"
+                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500"
                 initial={{ width: 0 }}
                 animate={{ width: `${completion}%` }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -169,7 +169,7 @@ function Profile() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden rounded-xl border border-forest-500/30 bg-forest-500/10 px-3 py-2 text-sm text-forest-500"
+                className="overflow-hidden rounded-xl border border-mint-500/30 bg-mint-500/10 px-3 py-2 text-sm text-mint-500"
               >
                 Profil mis à jour avec succès.
               </motion.div>
@@ -218,10 +218,10 @@ function Profile() {
                 Genre
               </label>
               <select id="gender" value={form.gender} onChange={handleChange('gender')} className={inputClass}>
-                <option value="" className="bg-forest-950">Non précisé</option>
-                <option value="FEMME" className="bg-forest-950">Femme</option>
-                <option value="HOMME" className="bg-forest-950">Homme</option>
-                <option value="AUTRE" className="bg-forest-950">Autre</option>
+                <option value="" className="bg-white">Non précisé</option>
+                <option value="FEMME" className="bg-white">Femme</option>
+                <option value="HOMME" className="bg-white">Homme</option>
+                <option value="AUTRE" className="bg-white">Autre</option>
               </select>
             </div>
           </div>
@@ -274,7 +274,7 @@ function Profile() {
             type="submit"
             disabled={isSaving}
             whileTap={{ scale: 0.97 }}
-            className="w-full rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 py-2.5 text-sm font-semibold text-forest-950 shadow-lg shadow-gold-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? 'Enregistrement…' : 'Enregistrer'}
           </motion.button>
@@ -282,7 +282,7 @@ function Profile() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-full rounded-xl border border-white/10 py-2.5 text-sm font-medium text-cream-200 transition hover:bg-white/5"
+            className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
           >
             ⚙ Paramètres
           </button>
@@ -290,7 +290,7 @@ function Profile() {
           <button
             type="button"
             onClick={logout}
-            className="w-full rounded-xl border border-white/10 py-2.5 text-sm font-medium text-cream-300/70 transition hover:bg-white/5"
+            className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink-soft/70 transition hover:bg-ink/5"
           >
             Déconnexion
           </button>

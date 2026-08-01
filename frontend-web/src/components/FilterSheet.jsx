@@ -24,11 +24,11 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
         className="glass-panel w-full max-w-sm rounded-t-[28px] p-6 md:rounded-[28px]"
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-xl font-semibold text-cream-100">Filtres</h2>
+          <h2 className="font-display text-xl font-semibold text-ink">Filtres</h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-cream-300 hover:bg-white/5"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft hover:bg-ink/5"
             aria-label="Fermer"
           >
             ✕
@@ -37,7 +37,7 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
 
         <div className="space-y-6">
           <div>
-            <p className="mb-2 text-sm font-medium text-cream-200">
+            <p className="mb-2 text-sm font-medium text-ink/80">
               Âge : {filters.minAge} – {filters.maxAge} ans
             </p>
             <div className="flex items-center gap-3">
@@ -49,7 +49,7 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
                 onChange={(e) =>
                   onChange({ ...filters, minAge: Math.min(Number(e.target.value), filters.maxAge) })
                 }
-                className="flex-1 accent-gold-400"
+                className="flex-1 accent-violet-500"
               />
               <input
                 type="range"
@@ -59,13 +59,13 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
                 onChange={(e) =>
                   onChange({ ...filters, maxAge: Math.max(Number(e.target.value), filters.minAge) })
                 }
-                className="flex-1 accent-gold-400"
+                className="flex-1 accent-violet-500"
               />
             </div>
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-cream-200">
+            <p className="mb-2 text-sm font-medium text-ink/80">
               Distance maximale : {filters.maxDistance} km
             </p>
             <input
@@ -74,12 +74,12 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
               max="50"
               value={filters.maxDistance}
               onChange={(e) => onChange({ ...filters, maxDistance: Number(e.target.value) })}
-              className="w-full accent-gold-400"
+              className="w-full accent-violet-500"
             />
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-cream-200">Genre</p>
+            <p className="mb-2 text-sm font-medium text-ink/80">Genre</p>
             <div className="flex gap-2">
               {GENDER_OPTIONS.map((opt) => (
                 <button
@@ -88,8 +88,8 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
                   onClick={() => onChange({ ...filters, gender: opt.value })}
                   className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition ${
                     filters.gender === opt.value
-                      ? 'border-gold-400/60 bg-gold-400/10 text-gold-400'
-                      : 'border-white/10 text-cream-300/70 hover:bg-white/5'
+                      ? 'border-violet-400 bg-violet-500/10 text-violet-600'
+                      : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
                   }`}
                 >
                   {opt.label}
@@ -103,14 +103,14 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
           <button
             type="button"
             onClick={onReset}
-            className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-cream-200 transition hover:bg-white/5"
+            className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
           >
             Réinitialiser
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 py-2.5 text-sm font-semibold text-forest-950 shadow-lg shadow-gold-500/20"
+            className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25"
           >
             Appliquer
           </button>

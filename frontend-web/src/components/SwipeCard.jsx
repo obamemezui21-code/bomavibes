@@ -61,7 +61,7 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
       onDragEnd={active ? handleDragEnd : undefined}
       animate={controls}
       whileDrag={{ cursor: 'grabbing' }}
-      className={`absolute inset-0 touch-none select-none overflow-hidden rounded-[28px] bg-forest-900 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10 ${
+      className={`absolute inset-0 touch-none select-none overflow-hidden rounded-[28px] bg-surface-soft shadow-[0_30px_60px_-20px_rgba(139,92,246,0.35)] ring-1 ring-black/5 ${
         active ? 'cursor-grab' : ''
       }`}
     >
@@ -118,7 +118,7 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
             ⋯
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-10 w-40 overflow-hidden rounded-xl bg-forest-950 shadow-2xl ring-1 ring-white/10">
+            <div className="absolute right-0 top-10 w-40 overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5">
               <button
                 type="button"
                 onClick={(e) => {
@@ -126,7 +126,7 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
                   setMenuOpen(false)
                   onReport?.(profile)
                 }}
-                className="block w-full px-4 py-2.5 text-left text-sm text-cream-200 hover:bg-white/5"
+                className="block w-full px-4 py-2.5 text-left text-sm text-ink/80 hover:bg-ink/5"
               >
                 Signaler
               </button>
@@ -137,7 +137,7 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
                   setMenuOpen(false)
                   onBlock?.(profile)
                 }}
-                className="block w-full px-4 py-2.5 text-left text-sm text-coral-400 hover:bg-white/5"
+                className="block w-full px-4 py-2.5 text-left text-sm text-coral-500 hover:bg-ink/5"
               >
                 Bloquer
               </button>
@@ -150,19 +150,19 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
         <>
           <motion.div
             style={{ opacity: likeOpacity }}
-            className="absolute left-6 top-16 rotate-[-14deg] rounded-xl border-4 border-forest-500 bg-forest-950/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-forest-500 backdrop-blur-sm"
+            className="absolute left-6 top-16 rotate-[-14deg] rounded-xl border-4 border-mint-500 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-mint-500 backdrop-blur-sm"
           >
             Like
           </motion.div>
           <motion.div
             style={{ opacity: passOpacity }}
-            className="absolute right-6 top-16 rotate-[14deg] rounded-xl border-4 border-coral-500 bg-forest-950/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-coral-500 backdrop-blur-sm"
+            className="absolute right-6 top-16 rotate-[14deg] rounded-xl border-4 border-coral-500 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-coral-500 backdrop-blur-sm"
           >
             Nope
           </motion.div>
           <motion.div
             style={{ opacity: superOpacity }}
-            className="absolute left-1/2 top-16 -translate-x-1/2 rounded-xl border-4 border-gold-400 bg-forest-950/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-gold-400 backdrop-blur-sm"
+            className="absolute left-1/2 top-16 -translate-x-1/2 rounded-xl border-4 border-violet-400 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-violet-600 backdrop-blur-sm"
           >
             Super
           </motion.div>
@@ -179,7 +179,7 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
               {profile.verified && (
                 <span
                   title="Profil vérifié"
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold-400 text-[11px] text-forest-950"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500 text-[11px] text-white"
                 >
                   ✓
                 </span>

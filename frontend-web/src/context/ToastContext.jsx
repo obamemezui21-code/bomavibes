@@ -34,15 +34,15 @@ export function ToastProvider({ children }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.9 }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="glass-panel pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm text-cream-100 shadow-2xl"
+              className="glass-panel pointer-events-auto flex items-center gap-2 rounded-full px-4 py-2.5 text-sm text-ink shadow-2xl"
             >
               <span
                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] ${
                   t.type === 'success'
-                    ? 'bg-forest-500 text-white'
+                    ? 'bg-mint-500 text-white'
                     : t.type === 'error'
                       ? 'bg-coral-500 text-white'
-                      : 'bg-gold-400 text-forest-950'
+                      : 'bg-violet-500 text-white'
                 }`}
               >
                 {ICONS[t.type]}

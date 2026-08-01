@@ -10,8 +10,8 @@ const INTEREST_OPTIONS = [
 ]
 
 const inputClass =
-  'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-cream-100 placeholder-cream-300/30 outline-none transition focus:border-gold-400/60 focus:bg-white/[0.07] focus:ring-4 focus:ring-gold-400/10'
-const labelClass = 'mb-1.5 block text-sm font-medium text-cream-200'
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
+const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 const STEPS = ['Photos', 'À propos de toi', 'Tes centres d\'intérêt', 'Tes préférences']
 
@@ -88,19 +88,19 @@ function Onboarding() {
     step === 0 ? true : step === 1 ? form.age && form.gender : step === 2 ? form.interests.length >= 3 : true
 
   return (
-    <div className="relative flex min-h-svh flex-col overflow-hidden bg-ink px-4 py-8 md:items-center md:justify-center">
-      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-forest-500/20 blur-[100px]" />
-      <div className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-gold-500/10 blur-[100px]" />
+    <div className="relative flex min-h-svh flex-col overflow-hidden bg-surface-soft px-4 py-8 md:items-center md:justify-center">
+      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-mint-500/15 blur-[100px]" />
+      <div className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-violet-500/10 blur-[100px]" />
 
       <div className="relative z-10 mx-auto w-full max-w-md">
         <div className="mb-6">
-          <div className="mb-2 flex justify-between text-xs text-cream-300/60">
+          <div className="mb-2 flex justify-between text-xs text-ink-soft/60">
             <span>{STEPS[step]}</span>
             <span>{step + 1} / {STEPS.length}</span>
           </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-gold-500 to-gold-400"
+              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500"
               animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             />
@@ -118,8 +118,8 @@ function Onboarding() {
             >
               {step === 0 && (
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-cream-100">Ajoute tes photos</h2>
-                  <p className="mt-1 text-sm text-cream-300/60">
+                  <h2 className="font-display text-xl font-semibold text-ink">Ajoute tes photos</h2>
+                  <p className="mt-1 text-sm text-ink-soft/60">
                     Un profil avec au moins une photo reçoit bien plus de matchs.
                   </p>
 
@@ -129,7 +129,7 @@ function Onboarding() {
                       return (
                         <div
                           key={i}
-                          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/5"
+                          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-dashed border-ink/15 bg-ink/[0.03]"
                         >
                           {src ? (
                             <>
@@ -147,7 +147,7 @@ function Onboarding() {
                             <button
                               type="button"
                               onClick={() => fileInputRef.current?.click()}
-                              className="flex h-full w-full items-center justify-center text-2xl text-cream-300/40 transition hover:text-gold-400"
+                              className="flex h-full w-full items-center justify-center text-2xl text-ink-soft/40 transition hover:text-violet-600"
                               aria-label="Ajouter une photo"
                             >
                               +
@@ -170,7 +170,7 @@ function Onboarding() {
 
               {step === 1 && (
                 <div className="space-y-4">
-                  <h2 className="font-display text-xl font-semibold text-cream-100">Parle-nous de toi</h2>
+                  <h2 className="font-display text-xl font-semibold text-ink">Parle-nous de toi</h2>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className={labelClass}>Âge</label>
@@ -190,10 +190,10 @@ function Onboarding() {
                         onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}
                         className={inputClass}
                       >
-                        <option value="" className="bg-forest-950">Choisir</option>
-                        <option value="FEMME" className="bg-forest-950">Femme</option>
-                        <option value="HOMME" className="bg-forest-950">Homme</option>
-                        <option value="AUTRE" className="bg-forest-950">Autre</option>
+                        <option value="" className="bg-white">Choisir</option>
+                        <option value="FEMME" className="bg-white">Femme</option>
+                        <option value="HOMME" className="bg-white">Homme</option>
+                        <option value="AUTRE" className="bg-white">Autre</option>
                       </select>
                     </div>
                   </div>
@@ -213,8 +213,8 @@ function Onboarding() {
 
               {step === 2 && (
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-cream-100">Tes centres d'intérêt</h2>
-                  <p className="mt-1 text-sm text-cream-300/60">Choisis-en au moins 3.</p>
+                  <h2 className="font-display text-xl font-semibold text-ink">Tes centres d'intérêt</h2>
+                  <p className="mt-1 text-sm text-ink-soft/60">Choisis-en au moins 3.</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {INTEREST_OPTIONS.map((interest) => {
                       const selected = form.interests.includes(interest)
@@ -225,8 +225,8 @@ function Onboarding() {
                           onClick={() => toggleInterest(interest)}
                           className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
                             selected
-                              ? 'border-gold-400/60 bg-gold-400/15 text-gold-400'
-                              : 'border-white/10 text-cream-300/70 hover:bg-white/5'
+                              ? 'border-violet-400 bg-violet-500/15 text-violet-600'
+                              : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
                           }`}
                         >
                           {interest}
@@ -239,7 +239,7 @@ function Onboarding() {
 
               {step === 3 && (
                 <div className="space-y-6">
-                  <h2 className="font-display text-xl font-semibold text-cream-100">Tes préférences</h2>
+                  <h2 className="font-display text-xl font-semibold text-ink">Tes préférences</h2>
                   <div>
                     <p className={labelClass}>Tu recherches</p>
                     <div className="flex gap-2">
@@ -254,8 +254,8 @@ function Onboarding() {
                           onClick={() => setForm((f) => ({ ...f, prefGender: opt.value }))}
                           className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition ${
                             form.prefGender === opt.value
-                              ? 'border-gold-400/60 bg-gold-400/10 text-gold-400'
-                              : 'border-white/10 text-cream-300/70 hover:bg-white/5'
+                              ? 'border-violet-400 bg-violet-500/10 text-violet-600'
+                              : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
                           }`}
                         >
                           {opt.label}
@@ -264,7 +264,7 @@ function Onboarding() {
                     </div>
                   </div>
                   <div>
-                    <p className="mb-2 text-sm font-medium text-cream-200">
+                    <p className="mb-2 text-sm font-medium text-ink/80">
                       Distance maximale : {form.prefMaxDistance} km
                     </p>
                     <input
@@ -273,7 +273,7 @@ function Onboarding() {
                       max="50"
                       value={form.prefMaxDistance}
                       onChange={(e) => setForm((f) => ({ ...f, prefMaxDistance: Number(e.target.value) }))}
-                      className="w-full accent-gold-400"
+                      className="w-full accent-violet-500"
                     />
                   </div>
                 </div>
@@ -286,7 +286,7 @@ function Onboarding() {
               <button
                 type="button"
                 onClick={goBack}
-                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-cream-200 transition hover:bg-white/5"
+                className="rounded-xl border border-ink/12 px-4 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
               >
                 Retour
               </button>
@@ -296,7 +296,7 @@ function Onboarding() {
               whileTap={{ scale: 0.97 }}
               onClick={goNext}
               disabled={!canContinue || isSaving}
-              className="flex-1 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 py-2.5 text-sm font-semibold text-forest-950 shadow-lg shadow-gold-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? 'Finalisation…' : step === STEPS.length - 1 ? 'Terminer' : 'Continuer'}
             </motion.button>

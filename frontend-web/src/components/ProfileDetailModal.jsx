@@ -53,7 +53,7 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
                 {profile.firstName}, {profile.age}
               </h2>
               {profile.verified && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold-400 text-[11px] text-forest-950">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[11px] text-white">
                   ✓
                 </span>
               )}
@@ -65,14 +65,14 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-          <p className="text-sm leading-relaxed text-cream-100">{profile.bio}</p>
+          <p className="text-sm leading-relaxed text-ink">{profile.bio}</p>
 
           {profile.interests?.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
               {profile.interests.map((interest) => (
                 <span
                   key={interest}
-                  className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-cream-200"
+                  className="rounded-full bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-600"
                 >
                   {interest}
                 </span>
@@ -83,16 +83,16 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
           {profile.prompts?.length > 0 && (
             <div className="mt-5 space-y-3">
               {profile.prompts.map((p) => (
-                <div key={p.question} className="rounded-2xl bg-white/5 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gold-400">{p.question}</p>
-                  <p className="mt-1.5 text-sm text-cream-100">{p.answer}</p>
+                <div key={p.question} className="rounded-2xl bg-surface-soft p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">{p.question}</p>
+                  <p className="mt-1.5 text-sm text-ink">{p.answer}</p>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-6 border-t border-white/8 p-4">
+        <div className="flex items-center justify-center gap-6 border-t border-ink/8 p-4">
           <motion.button
             whileTap={{ scale: 0.85 }}
             onClick={() => {
@@ -110,7 +110,7 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
               onLike()
               onClose()
             }}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl text-forest-500 shadow-lg"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl text-mint-500 shadow-lg"
             aria-label="Aimer"
           >
             ♥

@@ -28,11 +28,11 @@ function AppLayout() {
   const navItems = useNavItems()
 
   return (
-    <div className="min-h-svh bg-ink md:flex">
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-svh md:w-60 md:flex-col md:border-r md:border-white/8 md:bg-forest-950/60 md:p-4 md:backdrop-blur-xl">
+    <div className="min-h-svh bg-surface-soft md:flex">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-svh md:w-60 md:flex-col md:border-r md:border-ink/8 md:bg-white/70 md:p-4 md:backdrop-blur-xl">
         <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
-          <span className="text-cream-100">Boma</span>
-          <span className="text-gradient-gold italic">Vibes</span>
+          <span className="text-ink">Boma</span>
+          <span className="text-gradient-brand italic">Vibes</span>
         </div>
 
         <nav className="flex flex-col gap-1">
@@ -47,20 +47,20 @@ function AppLayout() {
                 {isActive && (
                   <motion.div
                     layoutId="nav-active-pill"
-                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 shadow-lg shadow-gold-500/20"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 shadow-lg shadow-violet-500/25"
                     transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                   />
                 )}
-                <span className={`relative z-10 ${isActive ? 'text-forest-950' : 'text-cream-100'}`}>
+                <span className={`relative z-10 ${isActive ? 'text-white' : 'text-ink'}`}>
                   {item.icon}
                 </span>
-                <span className={`relative z-10 flex-1 ${isActive ? 'text-forest-950' : 'text-cream-200'}`}>
+                <span className={`relative z-10 flex-1 ${isActive ? 'text-white' : 'text-ink/80'}`}>
                   {item.label}
                 </span>
                 {!!item.badge && (
                   <span
                     className={`relative z-10 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
-                      isActive ? 'bg-forest-950 text-cream-100' : 'bg-coral-500 text-white'
+                      isActive ? 'bg-white text-violet-600' : 'bg-coral-500 text-white'
                     }`}
                   >
                     {item.badge > 9 ? '9+' : item.badge}
@@ -74,7 +74,7 @@ function AppLayout() {
         <button
           type="button"
           onClick={logout}
-          className="mt-auto rounded-xl px-3 py-2.5 text-left text-sm font-medium text-cream-300/60 transition hover:bg-white/5 hover:text-cream-100"
+          className="mt-auto rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
         >
           Déconnexion
         </button>
@@ -84,7 +84,7 @@ function AppLayout() {
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-white/8 bg-forest-950/80 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 backdrop-blur-xl md:hidden">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to
           return (
@@ -96,7 +96,7 @@ function AppLayout() {
               {isActive && (
                 <motion.div
                   layoutId="nav-active-dot"
-                  className="absolute top-0 h-0.5 w-8 rounded-full bg-gold-400"
+                  className="absolute top-0 h-0.5 w-8 rounded-full bg-violet-500"
                   transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                 />
               )}
@@ -104,7 +104,7 @@ function AppLayout() {
                 <span className={`text-lg transition ${isActive ? 'scale-110' : ''}`}>{item.icon}</span>
                 <NavBadge count={item.badge} />
               </span>
-              <span className={isActive ? 'text-gold-400' : 'text-cream-300/60'}>{item.label}</span>
+              <span className={isActive ? 'text-violet-600' : 'text-ink-soft/60'}>{item.label}</span>
             </NavLink>
           )
         })}

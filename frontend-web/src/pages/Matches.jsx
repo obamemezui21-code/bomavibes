@@ -23,10 +23,10 @@ function Matches() {
 
   if (conversations.length === 0) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-ink p-6 text-center md:min-h-full">
+      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
         <span className="text-4xl">❤️</span>
-        <h1 className="font-display text-2xl font-semibold text-cream-100">Tes matchs</h1>
-        <p className="max-w-xs text-sm text-cream-300/70">
+        <h1 className="font-display text-2xl font-semibold text-ink">Tes matchs</h1>
+        <p className="max-w-xs text-sm text-ink-soft/70">
           Quand tu matches avec quelqu'un, tu le retrouveras ici.
         </p>
       </div>
@@ -34,10 +34,10 @@ function Matches() {
   }
 
   return (
-    <div className="min-h-svh bg-ink p-6 pb-24 md:min-h-full md:pb-6">
+    <div className="min-h-svh bg-surface-soft p-6 pb-24 md:min-h-full md:pb-6">
       <div className="mx-auto max-w-3xl">
-        <h1 className="font-display text-2xl font-semibold text-cream-100">Tes matchs</h1>
-        <p className="mt-1 text-sm text-cream-300/60">
+        <h1 className="font-display text-2xl font-semibold text-ink">Tes matchs</h1>
+        <p className="mt-1 text-sm text-ink-soft/60">
           {conversations.length} personne{conversations.length > 1 ? 's' : ''} qui te plaisent aussi
         </p>
 
@@ -69,13 +69,13 @@ function Matches() {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-gold-500 to-gold-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-forest-950 shadow"
+                      className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow"
                     >
                       Nouveau
                     </motion.span>
                   )}
                   {conversation.online && (
-                    <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-forest-950 bg-forest-500" />
+                    <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-mint-500" />
                   )}
                   <div className="absolute inset-x-0 bottom-0 p-3">
                     <p className="font-display text-base font-semibold text-white">

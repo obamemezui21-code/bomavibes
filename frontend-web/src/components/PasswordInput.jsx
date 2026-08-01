@@ -38,12 +38,12 @@ function PasswordInput({ id, value, onChange, placeholder, autoComplete, require
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 pr-11 text-sm text-cream-100 placeholder-cream-300/30 outline-none transition focus:border-gold-400/60 focus:bg-white/[0.07] focus:ring-4 focus:ring-gold-400/10"
+        className="w-full rounded-xl border border-ink/10 bg-surface-soft px-3.5 py-2.5 pr-11 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15"
       />
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        className="absolute inset-y-0 right-0 flex items-center px-3.5 text-cream-300/50 transition hover:text-gold-400"
+        className="absolute inset-y-0 right-0 flex items-center px-3.5 text-ink-soft transition hover:text-violet-500"
         aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
         tabIndex={-1}
       >

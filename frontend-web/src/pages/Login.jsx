@@ -6,8 +6,8 @@ import PasswordInput from '../components/PasswordInput.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 const inputClass =
-  'w-full rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-cream-100 placeholder-cream-300/30 outline-none transition focus:border-gold-400/60 focus:bg-white/[0.07] focus:ring-4 focus:ring-gold-400/10'
-const labelClass = 'mb-1.5 block text-sm font-medium text-cream-200'
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
+const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Login() {
   const { login } = useAuth()
@@ -40,7 +40,7 @@ function Login() {
       footer={
         <>
           Pas encore de compte ?{' '}
-          <Link to="/signup" className="font-semibold text-gold-400 underline-offset-2 hover:underline">
+          <Link to="/signup" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
             Inscris-toi
           </Link>
         </>
@@ -79,10 +79,10 @@ function Login() {
 
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <label htmlFor="password" className="block text-sm font-medium text-cream-200">
+            <label htmlFor="password" className="block text-sm font-medium text-ink/80">
               Mot de passe
             </label>
-            <a href="#" className="text-xs font-medium text-gold-400/80 hover:text-gold-400">
+            <a href="#" className="text-xs font-medium text-violet-600/80 hover:text-violet-600">
               Mot de passe oublié ?
             </a>
           </div>
@@ -100,7 +100,7 @@ function Login() {
           type="submit"
           disabled={isSubmitting}
           whileTap={{ scale: 0.97 }}
-          className="w-full rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 py-2.5 text-sm font-semibold text-forest-950 shadow-lg shadow-gold-500/20 transition hover:shadow-gold-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? 'Connexion…' : 'Se connecter'}
         </motion.button>

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-const COLORS = ['#C9962B', '#E8C468', '#FF5470', '#3A7551', '#F5EFE3']
+const COLORS = ['#8B5CF6', '#EC4899', '#F472B6', '#A78BFA', '#10B981']
 const PIECES = Array.from({ length: 26 }, (_, i) => i)
 
 function Confetti() {
