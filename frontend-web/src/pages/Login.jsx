@@ -35,10 +35,15 @@ function Login() {
     }
   }
 
-  function handleGoogle() {
+  async function handleGoogle() {
     setError('')
     setIsGoogleLoading(true)
-    loginWithGoogle()
+    try {
+      await loginWithGoogle()
+    } catch (err) {
+      setError(err.message)
+      setIsGoogleLoading(false)
+    }
   }
 
   return (

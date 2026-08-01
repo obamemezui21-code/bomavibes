@@ -25,6 +25,7 @@ const ERROR_MESSAGES = {
   'auth/too-many-requests': 'Trop de tentatives, réessaie dans un instant',
   'auth/popup-closed-by-user': null,
   'auth/operation-not-allowed': "Ce mode de connexion n'est pas encore activé, réessaie plus tard",
+  'auth/unauthorized-domain': "La connexion Google n'est pas encore autorisée sur ce domaine",
 }
 
 function mapAuthError(error) {
@@ -97,8 +98,13 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function loginWithGoogle() {
-    return signInWithRedirect(auth, googleProvider)
+  async function loginWithGoogle() {
+    try {
+      await signInWithRedirect(auth, googleProvider)
+    } catch (error) {
+      const message = mapAuthError(error)
+      if (message) throw new Error(message)
+    }
   }
 
   function logout() {
