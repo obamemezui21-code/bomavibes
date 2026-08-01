@@ -289,7 +289,10 @@ function Profile() {
 
           <button
             type="button"
-            onClick={logout}
+            onClick={() => {
+              logout()
+              navigate('/')
+            }}
             className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink-soft/70 transition hover:bg-ink/5"
           >
             Déconnexion

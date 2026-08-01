@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -25,7 +25,13 @@ function NavBadge({ count }) {
 function AppLayout() {
   const { logout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const navItems = useNavItems()
+
+  function handleLogout() {
+    logout()
+    navigate('/')
+  }
 
   return (
     <div className="min-h-svh bg-surface-soft md:flex">
@@ -73,7 +79,7 @@ function AppLayout() {
 
         <button
           type="button"
-          onClick={logout}
+          onClick={handleLogout}
           className="mt-auto rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
         >
           Déconnexion
