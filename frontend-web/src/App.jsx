@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
+import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import Discover from './pages/Discover.jsx'
@@ -13,7 +14,7 @@ import RequireAuth from './components/RequireAuth.jsx'
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/discover" replace />} />
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route
