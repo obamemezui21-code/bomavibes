@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import logo from '../assets/bomavibes-logo.jpeg'
 import heroPhoto from '../assets/hero.png'
 
@@ -17,16 +18,79 @@ const SOCIALS = [
 ]
 
 function Landing() {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <div className="relative min-h-svh overflow-hidden bg-[#FAF6EF]">
       {/* Mobile/tablet hero banner */}
       <div className="relative h-72 w-full overflow-hidden sm:h-96 lg:hidden">
-        <img src={heroPhoto} alt="Couple BomaVibes" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/10 to-[#FAF6EF]" />
+        <img
+          src={heroPhoto}
+          alt="Couple BomaVibes"
+          className="h-full w-full object-cover object-[92%_38%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-[#FAF6EF]" />
+
+        {/* Mobile top nav */}
+        <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-4 pt-4">
+          <img
+            src={logo}
+            alt="BomaVibes"
+            className="h-12 w-12 rounded-full border-2 border-[#C9962B] object-cover object-top shadow-lg"
+          />
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-xl shadow-lg backdrop-blur-sm"
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
+        </div>
+
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-x-4 top-[4.25rem] z-20 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5"
+            >
+              <Link
+                to="/login"
+                className="block px-5 py-3 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+              >
+                Se connecter
+              </Link>
+              <Link
+                to="/signup"
+                className="block px-5 py-3 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5"
+              >
+                S'inscrire
+              </Link>
+              <div className="flex items-center gap-2 border-t border-black/5 px-5 py-3">
+                {SOCIALS.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FAF6EF] text-base"
+                    aria-label={s.label}
+                  >
+                    {s.icon}
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Social rail */}
-      <div className="fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 md:flex">
+      <div className="fixed right-4 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 lg:flex">
         {SOCIALS.map((s, i) => (
           <motion.a
             key={s.label}
@@ -54,7 +118,7 @@ function Landing() {
             animate={{ opacity: 1, y: 0 }}
             src={logo}
             alt="BomaVibes"
-            className="mb-6 h-24 w-24 rounded-full border-4 border-[#C9962B] object-cover object-top shadow-lg"
+            className="mb-6 hidden h-24 w-24 rounded-full border-4 border-[#C9962B] object-cover object-top shadow-lg lg:block"
           />
 
           <motion.h1
@@ -116,22 +180,6 @@ function Landing() {
               </div>
             ))}
           </motion.div>
-
-          {/* Mobile social row */}
-          <div className="mt-10 flex gap-3 md:hidden">
-            {SOCIALS.map((s) => (
-              <a
-                key={s.label}
-                href={s.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-base shadow ring-1 ring-black/5"
-                aria-label={s.label}
-              >
-                {s.icon}
-              </a>
-            ))}
-          </div>
         </div>
 
         {/* Right: hero photo */}
