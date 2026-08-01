@@ -4,7 +4,10 @@ import { applyActionCode, checkActionCode, confirmPasswordReset } from 'firebase
 import { auth } from '../firebase/config.js'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
+const inputClass =
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 const buttonClass =
   'block w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-center text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60'
@@ -12,6 +15,7 @@ const buttonClass =
 function AuthAction() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { resetPassword } = useAuth()
   const mode = searchParams.get('mode')
   const oobCode = searchParams.get('oobCode')
 
@@ -21,6 +25,9 @@ function AuthAction() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [retryEmail, setRetryEmail] = useState('')
+  const [retrySent, setRetrySent] = useState(false)
+  const [isRetrying, setIsRetrying] = useState(false)
 
   useEffect(() => {
     if (!mode || !oobCode) {
@@ -88,11 +95,49 @@ function AuthAction() {
   }
 
   if (status === 'error') {
+    async function handleRetry(e) {
+      e.preventDefault()
+      setIsRetrying(true)
+      try {
+        await resetPassword(retryEmail)
+        setRetrySent(true)
+      } finally {
+        setIsRetrying(false)
+      }
+    }
+
     return (
       <AuthLayout title="Lien invalide" subtitle={errorMessage}>
-        <div className="space-y-4 text-center">
+        <div className="space-y-5 text-center">
           <span className="text-4xl">⚠️</span>
-          <Link to="/login" className={buttonClass}>
+
+          {mode === 'resetPassword' && (
+            <div className="rounded-2xl bg-ink/[0.03] p-4 text-left">
+              {retrySent ? (
+                <p className="text-sm text-ink-soft">
+                  Si un compte existe pour <span className="font-semibold text-ink">{retryEmail}</span>,
+                  un nouveau lien vient d'être envoyé.
+                </p>
+              ) : (
+                <form onSubmit={handleRetry} className="space-y-3">
+                  <label className={labelClass}>Redemander un lien de réinitialisation</label>
+                  <input
+                    type="email"
+                    required
+                    value={retryEmail}
+                    onChange={(e) => setRetryEmail(e.target.value)}
+                    placeholder="toi@exemple.com"
+                    className={inputClass}
+                  />
+                  <button type="submit" disabled={isRetrying} className={buttonClass}>
+                    {isRetrying ? 'Envoi…' : 'Renvoyer le lien'}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          <Link to="/login" className="block text-sm font-semibold text-violet-600 hover:underline">
             Retour à la connexion
           </Link>
         </div>
