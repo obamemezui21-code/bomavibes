@@ -274,7 +274,7 @@ function Profile() {
             type="submit"
             disabled={isSaving}
             whileTap={{ scale: 0.97 }}
-            className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSaving ? 'Enregistrement…' : 'Enregistrer'}
           </motion.button>

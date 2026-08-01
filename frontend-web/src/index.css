@@ -2,22 +2,22 @@
 
 @theme {
   --color-surface: #ffffff;
-  --color-surface-soft: #f7f4ff;
-  --color-surface-tint: #fdf2f8;
+  --color-surface-soft: #faf6ef;
+  --color-surface-tint: #f3ecd9;
 
-  --color-ink: #1e1b2e;
-  --color-ink-soft: #6e6785;
+  --color-ink: #2b1d14;
+  --color-ink-soft: #6b5d4f;
 
-  --color-violet-300: #c4b5fd;
-  --color-violet-400: #a78bfa;
-  --color-violet-500: #8b5cf6;
-  --color-violet-600: #7c3aed;
-  --color-violet-950: #2e1065;
+  --color-violet-300: #f3dda0;
+  --color-violet-400: #e8c468;
+  --color-violet-500: #c9962b;
+  --color-violet-600: #9c7220;
+  --color-violet-950: #1f3d2b;
 
-  --color-pink-300: #fbcfe8;
-  --color-pink-400: #f472b6;
-  --color-pink-500: #ec4899;
-  --color-pink-600: #db2777;
+  --color-pink-300: #fdefc9;
+  --color-pink-400: #e8c468;
+  --color-pink-500: #c9962b;
+  --color-pink-600: #9c7220;
 
   --color-mint-400: #34d399;
   --color-mint-500: #10b981;
@@ -53,18 +53,18 @@ body {
 /* Scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(139, 92, 246, 0.25) transparent;
+  scrollbar-color: rgba(31, 61, 43, 0.25) transparent;
 }
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(31, 61, 43, 0.2);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.35);
+  background: rgba(31, 61, 43, 0.35);
 }
 
 /* Shared surfaces */
@@ -72,18 +72,18 @@ body {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(139, 92, 246, 0.12);
-  box-shadow: 0 24px 48px -16px rgba(124, 58, 237, 0.22);
+  border: 1px solid rgba(31, 61, 43, 0.1);
+  box-shadow: 0 24px 48px -16px rgba(31, 61, 43, 0.2);
 }
 
 .glass-panel-solid {
   background: #ffffff;
-  border: 1px solid rgba(30, 27, 46, 0.06);
-  box-shadow: 0 24px 48px -16px rgba(124, 58, 237, 0.18);
+  border: 1px solid rgba(43, 29, 20, 0.06);
+  box-shadow: 0 24px 48px -16px rgba(31, 61, 43, 0.18);
 }
 
 .text-gradient-brand {
-  background: linear-gradient(90deg, var(--color-violet-500), var(--color-pink-500));
+  background: linear-gradient(90deg, var(--color-violet-950), var(--color-violet-500));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

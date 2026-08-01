@@ -131,7 +131,7 @@ function Chat() {
                     <div
                       className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
                         m.fromMe
-                          ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-white'
+                          ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
                           : 'rounded-bl-sm bg-ink/6 text-ink'
                       }`}
                     >
@@ -172,7 +172,7 @@ function Chat() {
                 type="submit"
                 whileTap={{ scale: 0.9 }}
                 disabled={!draft.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Envoyer"
               >
                 ➤

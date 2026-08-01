@@ -138,7 +138,7 @@ function Discover() {
             <motion.button
               whileTap={{ scale: 0.96 }}
               onClick={handleReload}
-              className="mt-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-violet-500/25"
+              className="mt-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 px-5 py-2 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
             >
               Recharger la liste
             </motion.button>
@@ -271,7 +271,7 @@ function Discover() {
                   type="button"
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigate(`/chat/${matchConversationId}`)}
-                  className="rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25"
+                  className="rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
                 >
                   Envoyer un message
                 </motion.button>

@@ -69,7 +69,7 @@ function Matches() {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow"
+                      className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#2B1D14] shadow"
                     >
                       Nouveau
                     </motion.span>

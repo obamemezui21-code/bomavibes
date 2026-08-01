@@ -5,7 +5,7 @@ function AuthLayout({ title, subtitle, children, footer }) {
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-surface md:flex-row">
       {/* Brand panel */}
-      <div className="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-violet-600 via-violet-500 to-pink-500 px-6 py-12 md:w-1/2 md:py-0">
+      <div className="relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0e2a1e] via-[#163d29] to-[#1f3d2b] px-6 py-12 md:w-1/2 md:py-0">
         <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/20 blur-[90px] animate-float-slow" />
         <div className="pointer-events-none absolute -right-16 bottom-0 h-72 w-72 rounded-full bg-pink-300/40 blur-[90px] animate-float-slower" />
 

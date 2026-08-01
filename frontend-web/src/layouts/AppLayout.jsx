@@ -51,10 +51,10 @@ function AppLayout() {
                     transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                   />
                 )}
-                <span className={`relative z-10 ${isActive ? 'text-white' : 'text-ink'}`}>
+                <span className={`relative z-10 ${isActive ? 'text-[#2B1D14]' : 'text-ink'}`}>
                   {item.icon}
                 </span>
-                <span className={`relative z-10 flex-1 ${isActive ? 'text-white' : 'text-ink/80'}`}>
+                <span className={`relative z-10 flex-1 ${isActive ? 'text-[#2B1D14]' : 'text-ink/80'}`}>
                   {item.label}
                 </span>
                 {!!item.badge && (
