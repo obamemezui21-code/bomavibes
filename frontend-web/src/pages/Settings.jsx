@@ -2,6 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
+
+const inputClass =
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
+const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Toggle({ checked, onChange }) {
   return (
@@ -42,6 +47,189 @@ function Section({ title, children }) {
   )
 }
 
+function Modal({ onClose, children }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="glass-panel w-full max-w-sm rounded-2xl p-6"
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function ChangeEmailModal({ onClose }) {
+  const { changeEmail } = useAuth()
+  const { showToast } = useToast()
+  const [newEmail, setNewEmail] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setIsSaving(true)
+    try {
+      await changeEmail(newEmail, currentPassword)
+      showToast('Vérifie ta nouvelle adresse pour confirmer le changement.', 'success')
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <h2 className="font-display text-lg font-semibold text-ink">Modifier ton email</h2>
+      <p className="mt-1 text-sm text-ink-soft/70">
+        Un lien de confirmation sera envoyé à ta nouvelle adresse.
+      </p>
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        {error && (
+          <div className="rounded-xl border border-coral-500/30 bg-coral-500/10 px-3 py-2 text-sm text-coral-400">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className={labelClass}>Nouvel email</label>
+          <input
+            type="email"
+            required
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="toi@exemple.com"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Mot de passe actuel</label>
+          <PasswordInput
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="Confirme ton mot de passe"
+          />
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? 'Envoi…' : 'Confirmer'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+function ChangePasswordModal({ onClose }) {
+  const { changePassword } = useAuth()
+  const { showToast } = useToast()
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+
+    if (newPassword.length < 8) {
+      setError('Le nouveau mot de passe doit contenir au moins 8 caractères')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await changePassword(currentPassword, newPassword)
+      showToast('Mot de passe mis à jour avec succès.', 'success')
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <h2 className="font-display text-lg font-semibold text-ink">Modifier ton mot de passe</h2>
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        {error && (
+          <div className="rounded-xl border border-coral-500/30 bg-coral-500/10 px-3 py-2 text-sm text-coral-400">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className={labelClass}>Mot de passe actuel</label>
+          <PasswordInput
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Nouveau mot de passe</label>
+          <PasswordInput
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="8 caractères minimum"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Confirme le nouveau mot de passe</label>
+          <PasswordInput
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? 'Mise à jour…' : 'Confirmer'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
 function Settings() {
   const navigate = useNavigate()
   const { user, logout, deleteAccount } = useAuth()
@@ -55,6 +243,8 @@ function Settings() {
   const [incognito, setIncognito] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   async function handleDeleteAccount() {
     setIsDeleting(true)
@@ -112,14 +302,30 @@ function Settings() {
 
           <Section title="Compte">
             <Row title="Email" subtitle={user?.email}>
-              <button type="button" className="text-xs font-semibold text-violet-600 hover:underline">
-                Modifier
-              </button>
+              {user?.hasPassword ? (
+                <button
+                  type="button"
+                  onClick={() => setShowEmailModal(true)}
+                  className="text-xs font-semibold text-violet-600 hover:underline"
+                >
+                  Modifier
+                </button>
+              ) : (
+                <span className="text-xs text-ink-soft/50">Géré par Google</span>
+              )}
             </Row>
-            <Row title="Mot de passe" subtitle="Dernière modification il y a longtemps">
-              <button type="button" className="text-xs font-semibold text-violet-600 hover:underline">
-                Modifier
-              </button>
+            <Row title="Mot de passe" subtitle={user?.hasPassword ? '••••••••' : 'Aucun (compte Google)'}>
+              {user?.hasPassword ? (
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(true)}
+                  className="text-xs font-semibold text-violet-600 hover:underline"
+                >
+                  Modifier
+                </button>
+              ) : (
+                <span className="text-xs text-ink-soft/50">Géré par Google</span>
+              )}
             </Row>
           </Section>
 
@@ -148,15 +354,12 @@ function Settings() {
         </div>
       </div>
 
+      {showEmailModal && <ChangeEmailModal onClose={() => setShowEmailModal(false)} />}
+      {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
+
       {confirmDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
-          onClick={() => setConfirmDelete(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="glass-panel w-full max-w-sm rounded-2xl p-6 text-center"
-          >
+        <Modal onClose={() => setConfirmDelete(false)}>
+          <div className="text-center">
             <span className="text-3xl">⚠️</span>
             <h2 className="mt-2 font-display text-lg font-semibold text-ink">Supprimer ton compte ?</h2>
             <p className="mt-1 text-sm text-ink-soft/70">
@@ -180,7 +383,7 @@ function Settings() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   )

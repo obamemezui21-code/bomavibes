@@ -1,17 +1,21 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  EmailAuthProvider,
   createUserWithEmailAndPassword,
   deleteUser,
   getAdditionalUserInfo,
   getRedirectResult,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithRedirect,
   signOut,
   updateProfile,
+  updatePassword,
+  verifyBeforeUpdateEmail,
 } from 'firebase/auth'
 import { deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase/config.js'
@@ -48,6 +52,7 @@ function toAppUser(firebaseUser) {
     email: firebaseUser.email,
     firstName: firebaseUser.displayName || '',
     emailVerified: firebaseUser.emailVerified,
+    hasPassword: firebaseUser.providerData?.some((p) => p.providerId === 'password') ?? false,
   }
 }
 
@@ -192,6 +197,43 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function reauthenticate(currentPassword) {
+    const currentUser = auth.currentUser
+    if (!currentUser?.email) throw new Error('Session invalide, reconnecte-toi.')
+    if (!currentUser.providerData.some((p) => p.providerId === 'password')) {
+      throw new Error(
+        'Cette action est réservée aux comptes email/mot de passe. Les comptes Google se gèrent depuis ton compte Google.',
+      )
+    }
+    try {
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword)
+      await reauthenticateWithCredential(currentUser, credential)
+    } catch (error) {
+      const message = mapAuthError(error)
+      throw new Error(message)
+    }
+  }
+
+  async function changeEmail(newEmail, currentPassword) {
+    await reauthenticate(currentPassword)
+    try {
+      await verifyBeforeUpdateEmail(auth.currentUser, newEmail)
+    } catch (error) {
+      const message = mapAuthError(error)
+      throw new Error(message)
+    }
+  }
+
+  async function changePassword(currentPassword, newPassword) {
+    await reauthenticate(currentPassword)
+    try {
+      await updatePassword(auth.currentUser, newPassword)
+    } catch (error) {
+      const message = mapAuthError(error)
+      throw new Error(message)
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -205,6 +247,8 @@ export function AuthProvider({ children }) {
         loginWithGoogle,
         logout,
         deleteAccount,
+        changeEmail,
+        changePassword,
         resendVerificationEmail,
         refreshEmailVerified,
         resetPassword,
