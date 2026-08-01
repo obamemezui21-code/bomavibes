@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase/config.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
@@ -19,48 +21,27 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Profile() {
-  const { user, token, logout } = useAuth()
+  const { user, profile, isProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
-  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
-
-    async function loadProfile() {
-      try {
-        const res = await fetch('/api/profile/me', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (!res.ok) throw new Error('Impossible de charger ton profil')
-        const data = await res.json()
-        if (cancelled) return
-
-        setForm({
-          firstName: data.profile?.firstName || '',
-          lastName: data.profile?.lastName || '',
-          age: data.profile?.age ?? '',
-          gender: data.profile?.gender || '',
-          city: data.profile?.city || '',
-          country: data.profile?.country || '',
-          bio: data.profile?.bio || '',
-        })
-      } catch (err) {
-        if (!cancelled) setError(err.message)
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    }
-
-    loadProfile()
-    return () => {
-      cancelled = true
-    }
-  }, [token])
+    if (isProfileLoading) return
+    setForm({
+      firstName: profile?.firstName || '',
+      lastName: profile?.lastName || '',
+      age: profile?.age ?? '',
+      gender: profile?.gender || '',
+      city: profile?.city || '',
+      country: profile?.country || '',
+      bio: profile?.bio || '',
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isProfileLoading])
 
   function handleChange(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
@@ -70,29 +51,38 @@ function Profile() {
     e.preventDefault()
     setError('')
     setSuccess(false)
+
+    if (!form.firstName.trim()) {
+      setError('Le prénom est requis')
+      return
+    }
+    const parsedAge = form.age === '' ? null : Number(form.age)
+    if (parsedAge !== null && (!Number.isInteger(parsedAge) || parsedAge < 18 || parsedAge > 120)) {
+      setError("L'âge doit être un nombre valide (18 ou plus)")
+      return
+    }
+
     setIsSaving(true)
-
     try {
-      const res = await fetch('/api/profile/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      await setDoc(
+        doc(db, 'users', user.id),
+        {
+          firstName: form.firstName,
+          lastName: form.lastName || null,
+          age: parsedAge,
+          gender: form.gender || null,
+          city: form.city || null,
+          country: form.country || null,
+          bio: form.bio || null,
         },
-        body: JSON.stringify(form),
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.message || 'Impossible de mettre à jour ton profil')
-      }
-
+        { merge: true },
+      )
       setSuccess(true)
       showToast('Profil mis à jour avec succès.', 'success')
       setTimeout(() => setSuccess(false), 2500)
-    } catch (err) {
-      setError(err.message)
-      showToast(err.message, 'error')
+    } catch {
+      setError('Impossible de mettre à jour ton profil')
+      showToast('Impossible de mettre à jour ton profil', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -102,7 +92,7 @@ function Profile() {
     (Object.entries(form).filter(([key, v]) => key !== 'age' && String(v).trim()).length / 6) * 100,
   )
 
-  if (isLoading) {
+  if (isProfileLoading) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-surface-soft p-6 md:min-h-full">
         <motion.div

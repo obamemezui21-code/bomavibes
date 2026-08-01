@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom'
 import Landing from './pages/Landing.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
+import VerifyEmail from './pages/VerifyEmail.jsx'
+import ForgotPassword from './pages/ForgotPassword.jsx'
 import Discover from './pages/Discover.jsx'
 import Matches from './pages/Matches.jsx'
 import Chat from './pages/Chat.jsx'
@@ -17,6 +19,15 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route
+        path="/verify-email"
+        element={
+          <RequireAuth requireVerified={false}>
+            <VerifyEmail />
+          </RequireAuth>
+        }
+      />
       <Route
         path="/onboarding"
         element={
@@ -28,7 +39,7 @@ function App() {
 
       <Route
         element={
-          <RequireAuth>
+          <RequireAuth requireOnboarded>
             <AppLayout />
           </RequireAuth>
         }

@@ -5,12 +5,15 @@ import {
   getAdditionalUserInfo,
   getRedirectResult,
   onAuthStateChanged,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithRedirect,
   signOut,
   updateProfile,
 } from 'firebase/auth'
-import { auth, googleProvider } from '../firebase/config.js'
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { auth, db, googleProvider } from '../firebase/config.js'
 import { useToast } from './ToastContext.jsx'
 
 const AuthContext = createContext(null)
@@ -40,13 +43,29 @@ function toAppUser(firebaseUser) {
     id: firebaseUser.uid,
     email: firebaseUser.email,
     firstName: firebaseUser.displayName || '',
+    emailVerified: firebaseUser.emailVerified,
+  }
+}
+
+async function ensureUserDocument(firebaseUser) {
+  const ref = doc(db, 'users', firebaseUser.uid)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      email: firebaseUser.email,
+      firstName: firebaseUser.displayName || '',
+      onboarded: false,
+      createdAt: serverTimestamp(),
+    })
   }
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
+  const [profile, setProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isProfileLoading, setIsProfileLoading] = useState(true)
   const { showToast } = useToast()
   const navigate = useNavigate()
 
@@ -55,14 +74,30 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         setUser(toAppUser(firebaseUser))
         setToken(await firebaseUser.getIdToken())
+        ensureUserDocument(firebaseUser)
       } else {
         setUser(null)
         setToken(null)
+        setProfile(null)
       }
       setIsLoading(false)
     })
     return unsubscribe
   }, [])
+
+  useEffect(() => {
+    if (!user) {
+      setProfile(null)
+      return
+    }
+    setIsProfileLoading(true)
+    const ref = doc(db, 'users', user.id)
+    const unsubscribe = onSnapshot(ref, (snap) => {
+      setProfile(snap.exists() ? snap.data() : null)
+      setIsProfileLoading(false)
+    })
+    return unsubscribe
+  }, [user?.id])
 
   useEffect(() => {
     getRedirectResult(auth)
@@ -91,8 +126,38 @@ export function AuthProvider({ children }) {
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(credential.user, { displayName: firstName })
-      setUser(toAppUser({ ...credential.user, displayName: firstName }))
+      await sendEmailVerification(credential.user)
+      setUser(toAppUser(credential.user))
     } catch (error) {
+      const message = mapAuthError(error)
+      if (message) throw new Error(message)
+    }
+  }
+
+  async function resendVerificationEmail() {
+    if (!auth.currentUser) return
+    try {
+      await sendEmailVerification(auth.currentUser)
+      showToast('Email de vérification envoyé', 'success')
+    } catch (error) {
+      const message = mapAuthError(error)
+      if (message) showToast(message, 'error')
+    }
+  }
+
+  async function refreshEmailVerified() {
+    if (!auth.currentUser) return false
+    await auth.currentUser.reload()
+    setUser(toAppUser(auth.currentUser))
+    return auth.currentUser.emailVerified
+  }
+
+  async function resetPassword(email) {
+    try {
+      await sendPasswordResetEmail(auth, email)
+    } catch (error) {
+      // Don't reveal whether an account exists for this email.
+      if (error?.code === 'auth/user-not-found') return
       const message = mapAuthError(error)
       if (message) throw new Error(message)
     }
@@ -112,7 +177,22 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ token, user, isLoading, login, register, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        profile,
+        isLoading,
+        isProfileLoading,
+        login,
+        register,
+        loginWithGoogle,
+        logout,
+        resendVerificationEmail,
+        refreshEmailVerified,
+        resetPassword,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

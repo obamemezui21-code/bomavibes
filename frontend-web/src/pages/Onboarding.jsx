@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase/config.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
@@ -16,7 +18,7 @@ const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 const STEPS = ['Photos', 'À propos de toi', 'Tes centres d\'intérêt', 'Tes préférences']
 
 function Onboarding() {
-  const { user, token } = useAuth()
+  const { user } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
@@ -65,16 +67,20 @@ function Onboarding() {
   async function finish() {
     setIsSaving(true)
     try {
-      await fetch('/api/profile/me', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
+      await setDoc(
+        doc(db, 'users', user.id),
+        {
           firstName: user?.firstName || '',
-          age: form.age || null,
+          age: form.age ? Number(form.age) : null,
           gender: form.gender || null,
           bio: form.bio || null,
-        }),
-      })
+          interests: form.interests,
+          prefGender: form.prefGender,
+          prefMaxDistance: form.prefMaxDistance,
+          onboarded: true,
+        },
+        { merge: true },
+      )
     } catch {
       // Non-blocking: onboarding still completes even if the profile sync fails.
     } finally {
