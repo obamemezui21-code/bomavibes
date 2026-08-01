@@ -45,6 +45,13 @@ function mapAuthError(error) {
   return "Une erreur est survenue, réessaie."
 }
 
+function getActionCodeSettings() {
+  return {
+    url: `${window.location.origin}/auth/action`,
+    handleCodeInApp: true,
+  }
+}
+
 function toAppUser(firebaseUser) {
   if (!firebaseUser) return null
   return {
@@ -135,7 +142,7 @@ export function AuthProvider({ children }) {
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(credential.user, { displayName: firstName })
-      await sendEmailVerification(credential.user)
+      await sendEmailVerification(credential.user, getActionCodeSettings())
       setUser(toAppUser(credential.user))
     } catch (error) {
       const message = mapAuthError(error)
@@ -146,7 +153,7 @@ export function AuthProvider({ children }) {
   async function resendVerificationEmail() {
     if (!auth.currentUser) return
     try {
-      await sendEmailVerification(auth.currentUser)
+      await sendEmailVerification(auth.currentUser, getActionCodeSettings())
       showToast('Email de vérification envoyé', 'success')
     } catch (error) {
       const message = mapAuthError(error)
@@ -163,7 +170,7 @@ export function AuthProvider({ children }) {
 
   async function resetPassword(email) {
     try {
-      await sendPasswordResetEmail(auth, email)
+      await sendPasswordResetEmail(auth, email, getActionCodeSettings())
     } catch (error) {
       // Don't reveal whether an account exists for this email.
       if (error?.code === 'auth/user-not-found') return

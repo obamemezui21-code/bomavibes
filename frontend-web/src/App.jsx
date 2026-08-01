@@ -4,6 +4,7 @@ import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import VerifyEmail from './pages/VerifyEmail.jsx'
 import ForgotPassword from './pages/ForgotPassword.jsx'
+import AuthAction from './pages/AuthAction.jsx'
 import Discover from './pages/Discover.jsx'
 import Matches from './pages/Matches.jsx'
 import Chat from './pages/Chat.jsx'
@@ -20,6 +21,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/auth/action" element={<AuthAction />} />
       <Route
         path="/verify-email"
         element={
