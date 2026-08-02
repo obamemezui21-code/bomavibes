@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
+import { uploadProfilePhotos } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
@@ -37,8 +38,8 @@ function Onboarding() {
 
   function handleAddPhotos(e) {
     const files = Array.from(e.target.files || []).slice(0, 3 - form.photos.length)
-    const urls = files.map((f) => URL.createObjectURL(f))
-    setForm((f) => ({ ...f, photos: [...f.photos, ...urls].slice(0, 3) }))
+    const entries = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
+    setForm((f) => ({ ...f, photos: [...f.photos, ...entries].slice(0, 3) }))
     e.target.value = ''
   }
 
@@ -67,17 +68,31 @@ function Onboarding() {
   async function finish() {
     setIsSaving(true)
     try {
+      const photoUrls = (await uploadProfilePhotos(user.id, form.photos.map((p) => p.file))).filter(Boolean)
+
       await setDoc(
         doc(db, 'users', user.id),
+        {
+          firstName: user?.firstName || '',
+          prefGender: form.prefGender,
+          prefMaxDistance: form.prefMaxDistance,
+          onboarded: true,
+        },
+        { merge: true },
+      )
+
+      await setDoc(
+        doc(db, 'profiles', user.id),
         {
           firstName: user?.firstName || '',
           age: form.age ? Number(form.age) : null,
           gender: form.gender || null,
           bio: form.bio || null,
           interests: form.interests,
-          prefGender: form.prefGender,
-          prefMaxDistance: form.prefMaxDistance,
-          onboarded: true,
+          photos: photoUrls,
+          verified: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         },
         { merge: true },
       )
@@ -132,7 +147,7 @@ function Onboarding() {
 
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     {[0, 1, 2].map((i) => {
-                      const src = form.photos[i]
+                      const src = form.photos[i]?.previewUrl
                       return (
                         <div
                           key={i}

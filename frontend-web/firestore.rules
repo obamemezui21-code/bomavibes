@@ -2,35 +2,86 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isOptionalString(field, maxLen) {
+      return !(field in request.resource.data)
+        || request.resource.data[field] == null
+        || (request.resource.data[field] is string && request.resource.data[field].size() <= maxLen);
+    }
+
     match /users/{userId} {
-      function isOwner() {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isOptionalString(field, maxLen) {
-        return !(field in request.resource.data)
-          || request.resource.data[field] == null
-          || (request.resource.data[field] is string && request.resource.data[field].size() <= maxLen);
-      }
-
-      function validProfileShape() {
+      function validAccountShape() {
         let data = request.resource.data;
         return data.email is string
           && data.onboarded is bool
           && isOptionalString('firstName', 50)
+          && (!('prefGender' in data) || data.prefGender == null || (data.prefGender is string && data.prefGender.size() <= 20))
+          && (!('prefMaxDistance' in data) || data.prefMaxDistance == null || (data.prefMaxDistance is number && data.prefMaxDistance >= 1 && data.prefMaxDistance <= 500));
+      }
+
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && validAccountShape();
+    }
+
+    match /profiles/{userId} {
+      function validPublicProfile() {
+        let data = request.resource.data;
+        return isOptionalString('firstName', 50)
           && isOptionalString('lastName', 50)
           && isOptionalString('bio', 500)
           && isOptionalString('city', 100)
           && isOptionalString('country', 100)
           && isOptionalString('gender', 20)
-          && isOptionalString('prefGender', 20)
           && (!('age' in data) || data.age == null || (data.age is number && data.age >= 18 && data.age <= 120))
-          && (!('prefMaxDistance' in data) || data.prefMaxDistance == null || (data.prefMaxDistance is number && data.prefMaxDistance >= 1 && data.prefMaxDistance <= 500))
-          && (!('interests' in data) || (data.interests is list && data.interests.size() <= 20));
+          && (!('interests' in data) || (data.interests is list && data.interests.size() <= 20))
+          && (!('photos' in data) || (data.photos is list && data.photos.size() <= 3));
       }
 
-      allow read, delete: if isOwner();
-      allow create, update: if isOwner() && validProfileShape();
+      function verifiedUnchanged() {
+        return request.resource.data.verified == resource.data.get('verified', false);
+      }
+
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && validPublicProfile()
+        && (!('verified' in request.resource.data) || request.resource.data.verified == false);
+      allow update: if isOwner(userId) && validPublicProfile() && verifiedUnchanged();
+      allow delete: if isOwner(userId);
+    }
+
+    match /swipes/{swipeId} {
+      allow read: if isSignedIn()
+        && (resource == null || resource.data.swiperId == request.auth.uid || resource.data.targetId == request.auth.uid);
+      allow create, update: if isSignedIn()
+        && swipeId == request.auth.uid + '_' + request.resource.data.targetId
+        && request.resource.data.swiperId == request.auth.uid
+        && request.resource.data.targetId != request.auth.uid
+        && request.resource.data.direction in ['like', 'pass', 'superlike'];
+      allow delete: if false;
+    }
+
+    match /matches/{matchId} {
+      allow read: if isSignedIn() && (resource == null || request.auth.uid in resource.data.users);
+      allow create: if isSignedIn()
+        && request.auth.uid in request.resource.data.users
+        && request.resource.data.users.size() == 2;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.users;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users;
+        allow create: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users
+          && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if false;
+      }
     }
   }
 }

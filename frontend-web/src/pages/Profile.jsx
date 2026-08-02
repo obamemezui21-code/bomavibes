@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
+import { uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
@@ -21,30 +22,44 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Profile() {
-  const { user, profile, isProfileLoading, logout } = useAuth()
+  const { user, publicProfile, isPublicProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
+  const [photoSlots, setPhotoSlots] = useState([null, null, null])
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const fileInputRefs = [useRef(null), useRef(null), useRef(null)]
 
   useEffect(() => {
-    if (isProfileLoading) return
+    if (isPublicProfileLoading) return
     setForm({
-      firstName: profile?.firstName || '',
-      lastName: profile?.lastName || '',
-      age: profile?.age ?? '',
-      gender: profile?.gender || '',
-      city: profile?.city || '',
-      country: profile?.country || '',
-      bio: profile?.bio || '',
+      firstName: publicProfile?.firstName || '',
+      lastName: publicProfile?.lastName || '',
+      age: publicProfile?.age ?? '',
+      gender: publicProfile?.gender || '',
+      city: publicProfile?.city || '',
+      country: publicProfile?.country || '',
+      bio: publicProfile?.bio || '',
     })
+    setPhotoSlots([0, 1, 2].map((i) => (publicProfile?.photos?.[i] ? { url: publicProfile.photos[i] } : null)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isProfileLoading])
+  }, [isPublicProfileLoading])
 
   function handleChange(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
+  }
+
+  function handlePhotoSelect(index, e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoSlots((slots) => slots.map((s, i) => (i === index ? { file, previewUrl: URL.createObjectURL(file) } : s)))
+    e.target.value = ''
+  }
+
+  function removePhotoSlot(index) {
+    setPhotoSlots((slots) => slots.map((s, i) => (i === index ? null : s)))
   }
 
   async function handleSubmit(e) {
@@ -64,8 +79,18 @@ function Profile() {
 
     setIsSaving(true)
     try {
+      const photoUrls = (
+        await Promise.all(
+          photoSlots.map((slot, i) => {
+            if (slot?.file) return uploadProfilePhoto(user.id, i, slot.file)
+            if (slot?.url) return slot.url
+            return null
+          }),
+        )
+      ).filter(Boolean)
+
       await setDoc(
-        doc(db, 'users', user.id),
+        doc(db, 'profiles', user.id),
         {
           firstName: form.firstName,
           lastName: form.lastName || null,
@@ -74,6 +99,8 @@ function Profile() {
           city: form.city || null,
           country: form.country || null,
           bio: form.bio || null,
+          photos: photoUrls,
+          updatedAt: serverTimestamp(),
         },
         { merge: true },
       )
@@ -92,7 +119,7 @@ function Profile() {
     (Object.entries(form).filter(([key, v]) => key !== 'age' && String(v).trim()).length / 6) * 100,
   )
 
-  if (isProfileLoading) {
+  if (isPublicProfileLoading) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-surface-soft p-6 md:min-h-full">
         <motion.div
@@ -113,7 +140,11 @@ function Profile() {
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="relative">
             <img
-              src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(form.firstName || 'Toi')}&backgroundColor=8b5cf6`}
+              src={
+                photoSlots[0]?.previewUrl ||
+                photoSlots[0]?.url ||
+                `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(form.firstName || 'Toi')}&backgroundColor=8b5cf6`
+              }
               alt="Avatar"
               className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
             />
@@ -165,6 +196,51 @@ function Profile() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <div>
+            <label className={labelClass}>Photos</label>
+            <div className="grid grid-cols-3 gap-3">
+              {[0, 1, 2].map((i) => {
+                const src = photoSlots[i]?.previewUrl || photoSlots[i]?.url
+                return (
+                  <div
+                    key={i}
+                    className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-dashed border-ink/15 bg-ink/[0.03]"
+                  >
+                    {src ? (
+                      <>
+                        <img src={src} alt="" className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removePhotoSlot(i)}
+                          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white"
+                          aria-label="Retirer la photo"
+                        >
+                          ✕
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRefs[i].current?.click()}
+                        className="flex h-full w-full items-center justify-center text-2xl text-ink-soft/40 transition hover:text-violet-600"
+                        aria-label="Ajouter une photo"
+                      >
+                        +
+                      </button>
+                    )}
+                    <input
+                      ref={fileInputRefs[i]}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handlePhotoSelect(i, e)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>

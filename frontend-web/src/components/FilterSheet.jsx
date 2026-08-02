@@ -66,20 +66,6 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-ink/80">
-              Distance maximale : {filters.maxDistance} km
-            </p>
-            <input
-              type="range"
-              min="1"
-              max="50"
-              value={filters.maxDistance}
-              onChange={(e) => onChange({ ...filters, maxDistance: Number(e.target.value) })}
-              className="w-full accent-violet-500"
-            />
-          </div>
-
-          <div>
             <p className="mb-2 text-sm font-medium text-ink/80">Genre</p>
             <div className="flex gap-2">
               {GENDER_OPTIONS.map((opt) => (

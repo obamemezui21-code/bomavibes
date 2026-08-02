@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, RotateCcw, SlidersHorizontal, Star, X } from 'lucide-react'
@@ -6,8 +6,9 @@ import SwipeCard from '../components/SwipeCard.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
-import { mockProfiles } from '../data/mockProfiles.js'
-import { useConversations } from '../context/ConversationsContext.jsx'
+import { fetchDiscoverCandidates } from '../firebase/discovery.js'
+import { recordSwipeAndMatch } from '../firebase/swipes.js'
+import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
 const ACTIONS = [
@@ -16,18 +17,13 @@ const ACTIONS = [
   { direction: 'like', Icon: Heart, iconSize: 26, label: 'Aimer', className: 'h-14 w-14 text-mint-500' },
 ]
 
-const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, maxDistance: 50, gender: 'TOUS' }
-
-function matchesFilters(profile, filters) {
-  if (profile.age < filters.minAge || profile.age > filters.maxAge) return false
-  if (profile.distanceKm > filters.maxDistance) return false
-  if (filters.gender !== 'TOUS' && profile.gender !== filters.gender) return false
-  return true
-}
+const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
 
 function Discover() {
+  const { user } = useAuth()
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  const [profiles, setProfiles] = useState(() => mockProfiles.filter((p) => matchesFilters(p, DEFAULT_FILTERS)))
+  const [profiles, setProfiles] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
   const [history, setHistory] = useState([])
   const [matchedProfile, setMatchedProfile] = useState(null)
   const [matchConversationId, setMatchConversationId] = useState(null)
@@ -35,18 +31,41 @@ function Discover() {
   const [showFilters, setShowFilters] = useState(false)
   const topCardRef = useRef(null)
   const navigate = useNavigate()
-  const { addMatch } = useConversations()
   const { showToast } = useToast()
 
   const visible = profiles.slice(0, 3)
 
-  function handleExit(profile, direction) {
+  async function loadCandidates(currentFilters) {
+    if (!user?.id) return
+    setIsLoading(true)
+    try {
+      const candidates = await fetchDiscoverCandidates(user.id, currentFilters)
+      setProfiles(candidates)
+      setHistory([])
+    } catch {
+      showToast('Impossible de charger les profils, réessaie.', 'error')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadCandidates(filters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
+  async function handleExit(profile, direction) {
     setHistory((h) => [...h, { profile, direction }])
     setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
-    if ((direction === 'like' || direction === 'superlike') && profile.likesBack) {
-      const id = addMatch(profile)
-      setMatchConversationId(id)
-      setMatchedProfile(profile)
+
+    try {
+      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction)
+      if (matchId) {
+        setMatchConversationId(matchId)
+        setMatchedProfile(profile)
+      }
+    } catch {
+      showToast('Impossible d\'enregistrer ton choix, réessaie.', 'error')
     }
   }
 
@@ -62,14 +81,12 @@ function Discover() {
   }
 
   function handleReload() {
-    setProfiles(mockProfiles.filter((p) => matchesFilters(p, filters)))
-    setHistory([])
+    loadCandidates(filters)
   }
 
   function handleCloseFilters() {
     setShowFilters(false)
-    setProfiles(mockProfiles.filter((p) => matchesFilters(p, filters)))
-    setHistory([])
+    loadCandidates(filters)
   }
 
   function handleResetFilters() {
@@ -94,9 +111,11 @@ function Discover() {
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">Découvrir</h1>
           <p className="text-xs text-ink-soft/60">
-            {profiles.length > 0
-              ? `${profiles.length} profil${profiles.length > 1 ? 's' : ''} près de toi`
-              : 'Aucun profil restant'}
+            {isLoading
+              ? 'Recherche de profils…'
+              : profiles.length > 0
+                ? `${profiles.length} profil${profiles.length > 1 ? 's' : ''} près de toi`
+                : 'Aucun profil restant'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -123,7 +142,11 @@ function Discover() {
       </div>
 
       <div className="relative z-10 h-[64svh] max-h-[640px] min-h-[440px] w-full max-w-[420px]">
-        {visible.length === 0 ? (
+        {isLoading ? (
+          <div className="glass-panel flex h-full flex-col items-center justify-center gap-3 rounded-[28px] text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+          </div>
+        ) : visible.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -251,7 +274,7 @@ function Discover() {
                   initial={{ x: -30, rotate: -8, opacity: 0 }}
                   animate={{ x: -14, rotate: -6, opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  src={matchedProfile.photo}
+                  src={matchedProfile.photos?.[0] || `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(matchedProfile.firstName)}&backgroundColor=e8c468`}
                   alt={matchedProfile.firstName}
                   className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
                 />

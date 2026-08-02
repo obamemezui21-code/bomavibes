@@ -70,8 +70,10 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [publicProfile, setPublicProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isProfileLoading, setIsProfileLoading] = useState(true)
+  const [isPublicProfileLoading, setIsPublicProfileLoading] = useState(true)
   const { showToast } = useToast()
   const navigate = useNavigate()
 
@@ -101,6 +103,20 @@ export function AuthProvider({ children }) {
     const unsubscribe = onSnapshot(ref, (snap) => {
       setProfile(snap.exists() ? snap.data() : null)
       setIsProfileLoading(false)
+    })
+    return unsubscribe
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!user) {
+      setPublicProfile(null)
+      return
+    }
+    setIsPublicProfileLoading(true)
+    const ref = doc(db, 'profiles', user.id)
+    const unsubscribe = onSnapshot(ref, (snap) => {
+      setPublicProfile(snap.exists() ? snap.data() : null)
+      setIsPublicProfileLoading(false)
     })
     return unsubscribe
   }, [user?.id])
@@ -237,6 +253,8 @@ export function AuthProvider({ children }) {
         profile,
         isLoading,
         isProfileLoading,
+        publicProfile,
+        isPublicProfileLoading,
         login,
         register,
         loginWithGoogle,

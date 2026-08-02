@@ -59,9 +59,12 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
                 </span>
               )}
             </div>
-            <p className="text-sm text-white/70">
-              {profile.city} · {profile.distanceKm} km
-            </p>
+            {profile.city && (
+              <p className="text-sm text-white/70">
+                {profile.city}
+                {profile.country ? `, ${profile.country}` : ''}
+              </p>
+            )}
           </div>
         </div>
 

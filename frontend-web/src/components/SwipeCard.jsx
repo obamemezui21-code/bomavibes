@@ -189,9 +189,12 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-xs font-medium text-white/60">
-              {profile.city} · {profile.distanceKm} km
-            </p>
+            {profile.city && (
+              <p className="mt-0.5 text-xs font-medium text-white/60">
+                {profile.city}
+                {profile.country ? `, ${profile.country}` : ''}
+              </p>
+            )}
             <p className="mt-2.5 line-clamp-2 text-sm leading-relaxed text-white/90">{profile.bio}</p>
             {profile.interests?.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">

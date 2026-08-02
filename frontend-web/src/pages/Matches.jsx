@@ -43,8 +43,7 @@ function Matches() {
 
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
           {conversations.map((conversation, i) => {
-            const isNew = conversation.messages.length === 0
-            const lastMessage = conversation.messages[conversation.messages.length - 1]
+            const isNew = !conversation.lastMessage
 
             return (
               <motion.button
@@ -82,7 +81,7 @@ function Matches() {
                       {conversation.profile.firstName}
                     </p>
                     <p className="truncate text-xs text-white/70">
-                      {isNew ? `Matché ${timeAgo(conversation.matchedAt)}` : lastMessage.text}
+                      {isNew ? `Matché ${timeAgo(conversation.matchedAt)}` : conversation.lastMessage}
                     </p>
                   </div>
                 </div>
