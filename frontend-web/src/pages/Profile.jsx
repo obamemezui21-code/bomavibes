@@ -113,7 +113,7 @@ function Profile() {
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="relative">
             <img
-              src={`https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(form.firstName || 'Toi')}&backgroundColor=8b5cf6`}
+              src={`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(form.firstName || 'Toi')}&backgroundColor=8b5cf6`}
               alt="Avatar"
               className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
             />

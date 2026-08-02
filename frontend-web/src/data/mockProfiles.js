@@ -1,5 +1,5 @@
 function avatar(seed, backgroundColor) {
-  return `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${backgroundColor}`
+  return `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${backgroundColor}`
 }
 
 function photoSet(seed, backgroundColor) {
