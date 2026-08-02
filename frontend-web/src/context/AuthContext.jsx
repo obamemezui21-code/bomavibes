@@ -5,11 +5,10 @@ import {
   createUserWithEmailAndPassword,
   deleteUser,
   getAdditionalUserInfo,
-  getRedirectResult,
   onAuthStateChanged,
   reauthenticateWithCredential,
   signInWithEmailAndPassword,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   updateProfile,
   updatePassword,
@@ -106,20 +105,6 @@ export function AuthProvider({ children }) {
     return unsubscribe
   }, [user?.id])
 
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (!result) return
-        const isNewUser = getAdditionalUserInfo(result)?.isNewUser
-        navigate(isNewUser ? '/onboarding' : '/discover', { replace: true })
-      })
-      .catch((error) => {
-        const message = mapAuthError(error)
-        if (message) showToast(message, 'error')
-      })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   async function login(email, password) {
     try {
       await signInWithEmailAndPassword(auth, email, password)
@@ -182,7 +167,9 @@ export function AuthProvider({ children }) {
 
   async function loginWithGoogle() {
     try {
-      await signInWithRedirect(auth, googleProvider)
+      const result = await signInWithPopup(auth, googleProvider)
+      const isNewUser = getAdditionalUserInfo(result)?.isNewUser
+      navigate(isNewUser ? '/onboarding' : '/discover', { replace: true })
     } catch (error) {
       const message = mapAuthError(error)
       if (message) throw new Error(message)
