@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import logo from '../assets/bomavibes-logo.jpeg'
+import { motion } from 'framer-motion'
 import heroPhoto from '../assets/hero.png'
+import SiteHeader from '../components/SiteHeader.jsx'
 
 const HERO_LINE_1 = "L'amour a sa vibe."
 const HERO_LINE_2 = 'Et la tienne ?'
@@ -49,11 +49,22 @@ const FEATURES = [
   { icon: '👥', title: 'Afrocentré', text: 'Une communauté qui te ressemble' },
 ]
 
-const NAV_LINKS = [
-  { label: 'Accueil', href: '#top' },
-  { label: 'À propos', href: '#about' },
-  { label: 'Événements', href: '#evenements' },
-  { label: 'Contact', href: '#contact' },
+const STEPS = [
+  {
+    icon: '📸',
+    title: 'Crée ton profil',
+    text: 'Ajoute tes photos et parle un peu de toi, ça prend deux minutes.',
+  },
+  {
+    icon: '💛',
+    title: 'Découvre & matche',
+    text: 'Swipe parmi des profils authentiques de la communauté, près de chez toi.',
+  },
+  {
+    icon: '💬',
+    title: 'Discute en vrai',
+    text: 'Ça matche ? Lancez la conversation et voyez où ça vous mène.',
+  },
 ]
 
 const SOCIALS = [
@@ -63,95 +74,12 @@ const SOCIALS = [
   { label: 'WhatsApp', href: 'https://wa.me/24100000000' },
 ]
 
-function MenuIcon({ open }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5">
-      {open ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      ) : (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-      )}
-    </svg>
-  )
-}
-
-function Logo({ className }) {
-  return (
-    <img
-      src={logo}
-      alt="BomaVibes"
-      className={`rounded-full border-2 border-[#C9962B] object-cover object-top shadow-md ${className}`}
-    />
-  )
-}
-
-function Header({ menuOpen, onToggleMenu }) {
-  return (
-    <header className="fixed inset-x-0 top-0 z-30 bg-[#1F3D2B]/85 shadow-md backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <Logo className="h-10 w-10" />
-          <span className="font-display text-lg font-bold text-white drop-shadow-sm">
-            Boma<span className="text-[#E8C468]">Vibes</span>
-          </span>
-        </div>
-
-        {/* Desktop nav */}
-        <div className="hidden items-center gap-6 sm:flex">
-          {NAV_LINKS.map((l) => (
-            <a key={l.label} href={l.href} className="text-sm font-semibold text-white/90 transition hover:text-white">
-              {l.label}
-            </a>
-          ))}
-        </div>
-
-        {/* Mobile burger */}
-        <button
-          type="button"
-          onClick={onToggleMenu}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[#1F3D2B] shadow-lg backdrop-blur-sm sm:hidden"
-          aria-label="Menu"
-          aria-expanded={menuOpen}
-        >
-          <MenuIcon open={menuOpen} />
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {menuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            style={{ transformOrigin: 'top' }}
-            className="absolute right-4 top-[4.25rem] w-48 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 sm:hidden"
-          >
-            {NAV_LINKS.map((l, i) => (
-              <a
-                key={l.label}
-                href={l.href}
-                className={`block px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5 ${
-                  i > 0 ? 'border-t border-black/5' : ''
-                }`}
-              >
-                {l.label}
-              </a>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </header>
-  )
-}
-
 function Landing() {
-  const [menuOpen, setMenuOpen] = useState(false)
   const { line1, line2, phase } = useTypewriter()
 
   return (
     <div className="relative min-h-svh bg-[#FAF6EF]">
-      <Header menuOpen={menuOpen} onToggleMenu={() => setMenuOpen((v) => !v)} />
+      <SiteHeader />
 
       {/* Hero */}
       <div id="top" className="relative flex min-h-svh items-end overflow-hidden sm:items-center">
@@ -232,6 +160,24 @@ function Landing() {
           </div>
         </div>
       </div>
+
+      {/* How it works */}
+      <section className="mx-auto max-w-5xl px-4 py-20 sm:px-8">
+        <h2 className="text-center font-display text-3xl font-bold text-[#2B1D14]">Comment ça marche</h2>
+        <div className="mt-12 grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-8">
+          {STEPS.map((s, i) => (
+            <div key={s.title} className="relative text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#1F3D2B] text-2xl shadow-md">
+                {s.icon}
+              </div>
+              <p className="mt-5 font-display text-lg font-bold text-[#2B1D14]">
+                <span className="text-[#C9962B]">{i + 1}.</span> {s.title}
+              </p>
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-[#6b5d4f]">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* About */}
       <section id="about" className="mx-auto max-w-4xl scroll-mt-20 px-4 py-20 text-center sm:px-8">
