@@ -51,6 +51,21 @@ body {
   color: var(--color-ink);
 }
 
+.typewriter-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.9em;
+  margin-left: 3px;
+  background: currentColor;
+  vertical-align: text-bottom;
+  animation: typewriter-blink 1s steps(1) infinite;
+}
+
+@keyframes typewriter-blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
 /* Scrollbars */
 * {
   scrollbar-width: thin;

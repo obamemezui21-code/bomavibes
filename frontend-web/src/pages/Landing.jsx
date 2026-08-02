@@ -1,8 +1,47 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import logo from '../assets/bomavibes-logo.jpeg'
 import heroPhoto from '../assets/hero.png'
+
+const HERO_LINE_1 = "L'amour a sa vibe."
+const HERO_LINE_2 = 'Et la tienne ?'
+const TYPE_SPEED = 42
+
+function useTypewriter() {
+  const [line1, setLine1] = useState('')
+  const [line2, setLine2] = useState('')
+  const [phase, setPhase] = useState('line1')
+
+  useEffect(() => {
+    let i = 0
+    const timer = setInterval(() => {
+      i += 1
+      setLine1(HERO_LINE_1.slice(0, i))
+      if (i >= HERO_LINE_1.length) {
+        clearInterval(timer)
+        setPhase('line2')
+      }
+    }, TYPE_SPEED)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    if (phase !== 'line2') return
+    let i = 0
+    const timer = setInterval(() => {
+      i += 1
+      setLine2(HERO_LINE_2.slice(0, i))
+      if (i >= HERO_LINE_2.length) {
+        clearInterval(timer)
+        setPhase('done')
+      }
+    }, TYPE_SPEED)
+    return () => clearInterval(timer)
+  }, [phase])
+
+  return { line1, line2, phase }
+}
 
 const FEATURES = [
   { icon: '🛡️', title: 'Sécurisé', text: 'Vos données sont protégées' },
@@ -108,6 +147,7 @@ function Header({ menuOpen, onToggleMenu }) {
 
 function Landing() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { line1, line2, phase } = useTypewriter()
 
   return (
     <div className="relative min-h-svh bg-[#FAF6EF]">
@@ -127,27 +167,18 @@ function Landing() {
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-12 pt-32 sm:px-8 sm:py-24">
           <div className="max-w-lg">
-            <h1 className="font-hero text-4xl font-medium italic leading-tight text-white sm:text-5xl">
-              <motion.span
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="block"
-              >
-                L'amour a sa vibe.
-              </motion.span>
-              <motion.span
-                initial={{ opacity: 0, y: 20, scale: 1 }}
-                animate={{ opacity: 1, y: 0, scale: [1, 1.045, 1] }}
-                transition={{
-                  opacity: { duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] },
-                  y: { duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] },
-                  scale: { duration: 1.6, delay: 1.1, repeat: Infinity, ease: 'easeInOut' },
-                }}
-                className="block origin-left text-[#E8C468]"
-              >
-                Et la tienne ?
-              </motion.span>
+            <h1
+              className="font-hero text-4xl font-medium italic leading-tight text-white sm:text-5xl"
+              aria-label={`${HERO_LINE_1} ${HERO_LINE_2}`}
+            >
+              <span aria-hidden="true" className="block">
+                {line1}
+                {phase === 'line1' && <span className="typewriter-cursor" />}
+              </span>
+              <span aria-hidden="true" className="block text-[#E8C468]">
+                {line2}
+                {phase !== 'line1' && <span className="typewriter-cursor" />}
+              </span>
             </h1>
 
             <motion.p
