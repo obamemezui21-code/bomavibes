@@ -13,6 +13,7 @@ const FEATURES = [
 const NAV_LINKS = [
   { label: 'Accueil', href: '#top' },
   { label: 'À propos', href: '#about' },
+  { label: 'Événements', href: '#evenements' },
   { label: 'Contact', href: '#contact' },
 ]
 
