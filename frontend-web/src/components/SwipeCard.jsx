@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useState } from 'react'
 import { motion, useAnimation, useMotionValue, useTransform } from 'framer-motion'
+import { Check, ChevronUp, Heart, MoreHorizontal, Star, X } from 'lucide-react'
 
 const EXIT_DISTANCE = 900
 
@@ -112,10 +113,10 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
               e.stopPropagation()
               setMenuOpen((v) => !v)
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-lg text-white backdrop-blur-sm"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
             aria-label="Options"
           >
-            ⋯
+            <MoreHorizontal size={18} />
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-10 w-40 overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5">
@@ -150,20 +151,23 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
         <>
           <motion.div
             style={{ opacity: likeOpacity }}
-            className="absolute left-6 top-16 rotate-[-14deg] rounded-xl border-4 border-mint-500 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-mint-500 backdrop-blur-sm"
+            className="absolute left-6 top-16 flex items-center gap-1.5 rotate-[-14deg] rounded-xl border-4 border-mint-500 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-mint-500 backdrop-blur-sm"
           >
+            <Heart size={22} strokeWidth={3} fill="currentColor" />
             Like
           </motion.div>
           <motion.div
             style={{ opacity: passOpacity }}
-            className="absolute right-6 top-16 rotate-[14deg] rounded-xl border-4 border-coral-500 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-coral-500 backdrop-blur-sm"
+            className="absolute right-6 top-16 flex items-center gap-1.5 rotate-[14deg] rounded-xl border-4 border-coral-500 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-coral-500 backdrop-blur-sm"
           >
+            <X size={24} strokeWidth={3.5} />
             Nope
           </motion.div>
           <motion.div
             style={{ opacity: superOpacity }}
-            className="absolute left-1/2 top-16 -translate-x-1/2 rounded-xl border-4 border-violet-400 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-violet-600 backdrop-blur-sm"
+            className="absolute left-1/2 top-16 flex -translate-x-1/2 items-center gap-1.5 rounded-xl border-4 border-violet-400 bg-black/40 px-4 py-1.5 text-2xl font-extrabold uppercase tracking-wide text-violet-600 backdrop-blur-sm"
           >
+            <Star size={22} strokeWidth={3} fill="currentColor" />
             Super
           </motion.div>
         </>
@@ -179,9 +183,9 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
               {profile.verified && (
                 <span
                   title="Profil vérifié"
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500 text-[11px] text-white"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500 text-white"
                 >
-                  ✓
+                  <Check size={13} strokeWidth={3} />
                 </span>
               )}
             </div>
@@ -210,10 +214,10 @@ const SwipeCard = forwardRef(function SwipeCard({ profile, active, onExit, onExp
                 e.stopPropagation()
                 onExpand(profile)
               }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg text-white backdrop-blur-sm transition hover:bg-white/25"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition hover:bg-white/25"
               aria-label="Voir le profil complet"
             >
-              ⌃
+              <ChevronUp size={18} />
             </button>
           )}
         </div>

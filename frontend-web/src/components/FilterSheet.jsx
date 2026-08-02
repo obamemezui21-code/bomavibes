@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { X } from 'lucide-react'
 
 const GENDER_OPTIONS = [
   { value: 'TOUS', label: 'Tous' },
@@ -31,7 +32,7 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
             className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft hover:bg-ink/5"
             aria-label="Fermer"
           >
-            ✕
+            <X size={18} />
           </button>
         </div>
 

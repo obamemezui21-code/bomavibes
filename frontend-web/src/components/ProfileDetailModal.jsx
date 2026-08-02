@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Check, Heart, X } from 'lucide-react'
 
 function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
   const photos = profile.photos?.length ? profile.photos : [profile.photo]
@@ -41,10 +42,10 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-7 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-lg text-white backdrop-blur-sm"
+            className="absolute right-3 top-7 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
             aria-label="Fermer"
           >
-            ✕
+            <X size={18} />
           </button>
 
           <div className="absolute inset-x-0 bottom-0 p-5">
@@ -53,8 +54,8 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
                 {profile.firstName}, {profile.age}
               </h2>
               {profile.verified && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[11px] text-white">
-                  ✓
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-white">
+                  <Check size={13} strokeWidth={3} />
                 </span>
               )}
             </div>
@@ -99,10 +100,10 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
               onPass()
               onClose()
             }}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl text-coral-500 shadow-lg"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg"
             aria-label="Passer"
           >
-            ✕
+            <X size={26} strokeWidth={2.5} />
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.85 }}
@@ -110,10 +111,10 @@ function ProfileDetailModal({ profile, onClose, onLike, onPass }) {
               onLike()
               onClose()
             }}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl text-mint-500 shadow-lg"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-mint-500 shadow-lg"
             aria-label="Aimer"
           >
-            ♥
+            <Heart size={26} strokeWidth={2.5} fill="currentColor" />
           </motion.button>
         </div>
       </motion.div>

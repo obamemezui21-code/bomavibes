@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Heart, RotateCcw, SlidersHorizontal, Star, X } from 'lucide-react'
 import SwipeCard from '../components/SwipeCard.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
@@ -10,9 +11,9 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
 const ACTIONS = [
-  { direction: 'pass', icon: '✕', label: 'Passer', className: 'h-14 w-14 text-2xl text-coral-500' },
-  { direction: 'superlike', icon: '★', label: 'Super like', className: 'h-11 w-11 text-lg text-violet-600' },
-  { direction: 'like', icon: '♥', label: 'Aimer', className: 'h-14 w-14 text-2xl text-mint-500' },
+  { direction: 'pass', Icon: X, iconSize: 26, label: 'Passer', className: 'h-14 w-14 text-coral-500' },
+  { direction: 'superlike', Icon: Star, iconSize: 20, label: 'Super like', className: 'h-11 w-11 text-violet-600' },
+  { direction: 'like', Icon: Heart, iconSize: 26, label: 'Aimer', className: 'h-14 w-14 text-mint-500' },
 ]
 
 const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, maxDistance: 50, gender: 'TOUS' }
@@ -102,21 +103,21 @@ function Discover() {
           <button
             type="button"
             onClick={() => setShowFilters(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-base text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
             aria-label="Filtres"
             title="Filtres"
           >
-            ⚙
+            <SlidersHorizontal size={17} />
           </button>
           <button
             type="button"
             onClick={handleRewind}
             disabled={history.length === 0}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-lg text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-30"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Revenir en arrière"
             title="Revenir en arrière"
           >
-            ↺
+            <RotateCcw size={17} />
           </button>
         </div>
       </div>
@@ -180,7 +181,11 @@ function Discover() {
               aria-label={action.label}
               className={`flex items-center justify-center rounded-full bg-white shadow-lg transition ${action.className}`}
             >
-              {action.icon}
+              <action.Icon
+                size={action.iconSize}
+                strokeWidth={2.5}
+                fill={action.direction === 'pass' ? 'none' : 'currentColor'}
+              />
             </motion.button>
           ))}
         </div>
@@ -252,9 +257,9 @@ function Discover() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.35, type: 'spring', stiffness: 400 }}
-                  className="z-10 -mx-3 flex h-9 w-9 items-center justify-center rounded-full bg-coral-500 text-lg text-white shadow-lg"
+                  className="z-10 -mx-3 flex h-9 w-9 items-center justify-center rounded-full bg-coral-500 text-white shadow-lg"
                 >
-                  ♥
+                  <Heart size={18} strokeWidth={2.5} fill="currentColor" />
                 </motion.div>
                 <motion.img
                   initial={{ x: 30, rotate: 8, opacity: 0 }}
