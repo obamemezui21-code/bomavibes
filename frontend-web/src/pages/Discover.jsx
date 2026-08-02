@@ -86,11 +86,11 @@ function Discover() {
   }
 
   return (
-    <div className="relative flex min-h-svh flex-col items-center gap-6 overflow-hidden bg-surface-soft p-6 md:min-h-full">
+    <div className="relative flex min-h-svh flex-col items-center gap-6 overflow-hidden bg-surface-soft px-4 py-6 sm:px-6 md:min-h-full">
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
       <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 
-      <div className="relative z-10 flex w-full max-w-sm items-center justify-between">
+      <div className="relative z-10 flex w-full max-w-[420px] items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold text-ink">Découvrir</h1>
           <p className="text-xs text-ink-soft/60">
@@ -122,7 +122,7 @@ function Discover() {
         </div>
       </div>
 
-      <div className="relative z-10 h-[540px] w-full max-w-sm">
+      <div className="relative z-10 h-[64svh] max-h-[640px] min-h-[440px] w-full max-w-[420px]">
         {visible.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
