@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Mars, Minus, NonBinary, Plus, Venus } from 'lucide-react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { uploadProfilePhotos } from '../firebase/photos.js'
@@ -11,6 +12,15 @@ const INTEREST_OPTIONS = [
   'Danse', 'Cuisine', 'Voyages', 'Musique', 'Sport', 'Cinéma',
   'Lecture', 'Photo', 'Nature', 'Art', 'Café', 'Randonnée', 'Mode', 'Business',
 ]
+
+const GENDER_OPTIONS = [
+  { value: 'FEMME', label: 'Femme', Icon: Venus },
+  { value: 'HOMME', label: 'Homme', Icon: Mars },
+  { value: 'AUTRE', label: 'Autre', Icon: NonBinary },
+]
+
+const MIN_AGE = 18
+const MAX_AGE = 80
 
 const inputClass =
   'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
@@ -28,7 +38,7 @@ function Onboarding() {
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({
     photos: [],
-    age: '',
+    age: 25,
     gender: '',
     bio: '',
     interests: [],
@@ -191,34 +201,67 @@ function Onboarding() {
               )}
 
               {step === 1 && (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <h2 className="font-display text-xl font-semibold text-ink">Parle-nous de toi</h2>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className={labelClass}>Âge</label>
-                      <input
-                        type="number"
-                        min="18"
-                        max="120"
-                        value={form.age}
-                        onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Genre</label>
-                      <select
-                        value={form.gender}
-                        onChange={(e) => setForm((f) => ({ ...f, gender: e.target.value }))}
-                        className={inputClass}
+
+                  <div>
+                    <label className={labelClass}>Âge</label>
+                    <div className="flex items-center gap-3 rounded-2xl bg-ink/[0.03] p-4">
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, age: Math.max(MIN_AGE, f.age - 1) }))}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink/70 shadow-sm transition hover:text-violet-600"
+                        aria-label="Diminuer l'âge"
                       >
-                        <option value="" className="bg-white">Choisir</option>
-                        <option value="FEMME" className="bg-white">Femme</option>
-                        <option value="HOMME" className="bg-white">Homme</option>
-                        <option value="AUTRE" className="bg-white">Autre</option>
-                      </select>
+                        <Minus size={16} />
+                      </button>
+
+                      <div className="flex-1">
+                        <p className="mb-1 text-center font-display text-3xl font-semibold text-ink">
+                          {form.age} <span className="text-base font-medium text-ink-soft/60">ans</span>
+                        </p>
+                        <input
+                          type="range"
+                          min={MIN_AGE}
+                          max={MAX_AGE}
+                          value={form.age}
+                          onChange={(e) => setForm((f) => ({ ...f, age: Number(e.target.value) }))}
+                          className="w-full accent-violet-500"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, age: Math.min(MAX_AGE, f.age + 1) }))}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink/70 shadow-sm transition hover:text-violet-600"
+                        aria-label="Augmenter l'âge"
+                      >
+                        <Plus size={16} />
+                      </button>
                     </div>
                   </div>
+
+                  <div>
+                    <label className={labelClass}>Genre</label>
+                    <div className="grid grid-cols-3 gap-2.5">
+                      {GENDER_OPTIONS.map(({ value, label, Icon }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, gender: value }))}
+                          className={`flex flex-col items-center gap-1.5 rounded-2xl border px-3 py-3.5 text-sm font-medium transition ${
+                            form.gender === value
+                              ? 'border-violet-400 bg-violet-500/10 text-violet-600'
+                              : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+                          }`}
+                        >
+                          <Icon size={22} strokeWidth={2} />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label className={labelClass}>Bio</label>
                     <textarea
