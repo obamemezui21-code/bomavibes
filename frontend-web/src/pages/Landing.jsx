@@ -163,12 +163,12 @@ function Landing() {
           alt="Couple BomaVibes"
           className="absolute inset-0 h-full w-full object-cover object-[68%_35%] sm:object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10 sm:bg-gradient-to-r sm:from-black/80 sm:via-black/40 sm:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/25 sm:bg-gradient-to-r sm:from-black/80 sm:via-black/40 sm:to-transparent" />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-12 pt-32 sm:px-8 sm:py-24">
           <div className="max-w-lg">
             <h1
-              className="font-hero text-4xl font-medium italic leading-tight text-white sm:text-5xl"
+              className="font-hero text-4xl font-medium italic leading-tight text-white [text-shadow:0_2px_16px_rgba(0,0,0,0.65),0_1px_4px_rgba(0,0,0,0.85)] sm:text-5xl"
               aria-label={`${HERO_LINE_1} ${HERO_LINE_2}`}
             >
               <span aria-hidden="true" className="block">
