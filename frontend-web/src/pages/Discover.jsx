@@ -151,8 +151,10 @@ function Discover() {
               className="absolute inset-0"
               style={{
                 zIndex: visible.length - i,
-                transform: `scale(${1 - i * 0.045}) translateY(${i * 14}px)`,
-                transition: 'transform 300ms ease',
+                opacity: 1 - i * 0.15,
+                filter: i > 0 ? `brightness(${1 - i * 0.12})` : undefined,
+                transform: `scale(${1 - i * 0.05}) translateY(${i * 22}px)`,
+                transition: 'transform 300ms ease, opacity 300ms ease, filter 300ms ease',
               }}
             >
               <SwipeCard
