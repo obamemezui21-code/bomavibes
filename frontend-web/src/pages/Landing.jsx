@@ -120,7 +120,7 @@ function Landing() {
           transition={{ duration: 0.9 }}
           src={heroPhoto}
           alt="Couple BomaVibes"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover object-[68%_35%] sm:object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10 sm:bg-gradient-to-r sm:from-black/80 sm:via-black/40 sm:to-transparent" />
 
