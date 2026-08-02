@@ -8,8 +8,6 @@ import {
   getRedirectResult,
   onAuthStateChanged,
   reauthenticateWithCredential,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithRedirect,
   signOut,
@@ -43,13 +41,6 @@ function mapAuthError(error) {
   const code = error?.code
   if (code && code in ERROR_MESSAGES) return ERROR_MESSAGES[code]
   return "Une erreur est survenue, réessaie."
-}
-
-function getActionCodeSettings() {
-  return {
-    url: `${window.location.origin}/auth/action`,
-    handleCodeInApp: true,
-  }
 }
 
 function toAppUser(firebaseUser) {
@@ -138,11 +129,20 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function sendVerificationEmailFor(firebaseUser) {
+    const idToken = await firebaseUser.getIdToken()
+    const res = await fetch('/api/auth/send-verification', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}` },
+    })
+    if (!res.ok) throw new Error()
+  }
+
   async function register(firstName, email, password) {
     try {
       const credential = await createUserWithEmailAndPassword(auth, email, password)
       await updateProfile(credential.user, { displayName: firstName })
-      await sendEmailVerification(credential.user, getActionCodeSettings())
+      await sendVerificationEmailFor(credential.user).catch(() => {})
       setUser(toAppUser(credential.user))
     } catch (error) {
       const message = mapAuthError(error)
@@ -153,11 +153,10 @@ export function AuthProvider({ children }) {
   async function resendVerificationEmail() {
     if (!auth.currentUser) return
     try {
-      await sendEmailVerification(auth.currentUser, getActionCodeSettings())
+      await sendVerificationEmailFor(auth.currentUser)
       showToast('Email de vérification envoyé', 'success')
-    } catch (error) {
-      const message = mapAuthError(error)
-      if (message) showToast(message, 'error')
+    } catch {
+      showToast("Impossible d'envoyer l'email, réessaie.", 'error')
     }
   }
 
@@ -170,12 +169,14 @@ export function AuthProvider({ children }) {
 
   async function resetPassword(email) {
     try {
-      await sendPasswordResetEmail(auth, email, getActionCodeSettings())
-    } catch (error) {
-      // Don't reveal whether an account exists for this email.
-      if (error?.code === 'auth/user-not-found') return
-      const message = mapAuthError(error)
-      if (message) throw new Error(message)
+      const res = await fetch('/api/auth/send-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (!res.ok) throw new Error()
+    } catch {
+      throw new Error('Une erreur est survenue, réessaie.')
     }
   }
 
