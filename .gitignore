@@ -13,6 +13,9 @@ backend/serviceAccountKey.json
 # Build files
 dist/
 
+# User-uploaded files
+backend/uploads/
+
 # Logs
 *.log
 

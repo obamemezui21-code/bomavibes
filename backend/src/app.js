@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const emailActionRoutes = require("./routes/emailActionRoutes");
+const photoRoutes = require("./routes/photoRoutes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", emailActionRoutes);
+app.use("/api/photos", photoRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {

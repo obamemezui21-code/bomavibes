@@ -1,11 +1,19 @@
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
-import { storage } from './config.js'
+import { auth } from './config.js'
 
 export async function uploadProfilePhoto(uid, slotIndex, file) {
-  const path = `profile-photos/${uid}/photo-${slotIndex}.jpg`
-  const storageRef = ref(storage, path)
-  await uploadBytes(storageRef, file, { contentType: file.type })
-  return getDownloadURL(storageRef)
+  const idToken = await auth.currentUser?.getIdToken()
+  const formData = new FormData()
+  formData.append('photo', file)
+  formData.append('slot', String(slotIndex))
+
+  const res = await fetch('/api/photos', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: formData,
+  })
+  if (!res.ok) throw new Error('upload failed')
+  const data = await res.json()
+  return data.url
 }
 
 export async function uploadProfilePhotos(uid, files) {
