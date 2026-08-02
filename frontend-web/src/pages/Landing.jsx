@@ -127,15 +127,28 @@ function Landing() {
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-12 pt-32 sm:px-8 sm:py-24">
           <div className="max-w-lg">
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl"
-            >
-              L'amour a sa vibe.
-              <br />
-              <span className="text-[#E8C468]">Et la tienne ?</span>
-            </motion.h1>
+            <h1 className="font-hero text-4xl font-medium italic leading-tight text-white sm:text-5xl">
+              <motion.span
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="block"
+              >
+                L'amour a sa vibe.
+              </motion.span>
+              <motion.span
+                initial={{ opacity: 0, y: 20, scale: 1 }}
+                animate={{ opacity: 1, y: 0, scale: [1, 1.045, 1] }}
+                transition={{
+                  opacity: { duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] },
+                  y: { duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] },
+                  scale: { duration: 1.6, delay: 1.1, repeat: Infinity, ease: 'easeInOut' },
+                }}
+                className="block origin-left text-[#E8C468]"
+              >
+                Et la tienne ?
+              </motion.span>
+            </h1>
 
             <motion.p
               initial={{ opacity: 0, y: 16 }}
