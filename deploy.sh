@@ -10,7 +10,6 @@ git pull origin main
 echo "🔧 Backend..."
 cd backend
 npm install
-npx prisma generate
 pm2 restart kani-api
 
 echo "🎨 Frontend..."
