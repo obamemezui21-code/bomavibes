@@ -1,23 +1,27 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { doc, updateDoc } from 'firebase/firestore'
 import { ArrowLeft, Moon, Sun, TriangleAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
+import { db } from '../firebase/config.js'
+import { enablePushForUser } from '../firebase/push.js'
 import PasswordInput from '../components/PasswordInput.jsx'
 
 const inputClass =
   'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
-function Toggle({ checked, onChange }) {
+function Toggle({ checked, onChange, disabled }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition ${checked ? 'bg-violet-500' : 'bg-ink/15'}`}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-50 ${checked ? 'bg-violet-500' : 'bg-ink/15'}`}
     >
       <span
         className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
@@ -234,12 +238,14 @@ function ChangePasswordModal({ onClose }) {
 
 function Settings() {
   const navigate = useNavigate()
-  const { user, logout, deleteAccount } = useAuth()
+  const { user, profile, logout, deleteAccount } = useAuth()
   const { showToast } = useToast()
   const { theme, toggleTheme } = useTheme()
 
-  const [newMatches, setNewMatches] = useState(true)
-  const [newMessages, setNewMessages] = useState(true)
+  const [isTogglingPush, setIsTogglingPush] = useState(false)
+  const hasPushToken = (profile?.fcmTokens?.length ?? 0) > 0
+  const newMatches = hasPushToken && (profile?.notifyMatches ?? true)
+  const newMessages = hasPushToken && (profile?.notifyMessages ?? true)
   const [emailUpdates, setEmailUpdates] = useState(false)
   const [showDistance, setShowDistance] = useState(true)
   const [showAge, setShowAge] = useState(true)
@@ -248,6 +254,20 @@ function Settings() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+
+  async function handleNotifyToggle(field, value) {
+    setIsTogglingPush(true)
+    try {
+      if (value && !profile?.fcmTokens?.length) {
+        await enablePushForUser(user.id)
+      }
+      await updateDoc(doc(db, 'users', user.id), { [field]: value })
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setIsTogglingPush(false)
+    }
+  }
 
   async function handleDeleteAccount() {
     setIsDeleting(true)
@@ -294,10 +314,18 @@ function Settings() {
 
           <Section title="Notifications">
             <Row title="Nouveaux matchs" subtitle="Reçois une alerte à chaque match">
-              <Toggle checked={newMatches} onChange={setNewMatches} />
+              <Toggle
+                checked={newMatches}
+                onChange={(v) => handleNotifyToggle('notifyMatches', v)}
+                disabled={isTogglingPush}
+              />
             </Row>
             <Row title="Nouveaux messages" subtitle="Reçois une alerte pour chaque message">
-              <Toggle checked={newMessages} onChange={setNewMessages} />
+              <Toggle
+                checked={newMessages}
+                onChange={(v) => handleNotifyToggle('notifyMessages', v)}
+                disabled={isTogglingPush}
+              />
             </Row>
             <Row title="Résumé par email" subtitle="Un récapitulatif hebdomadaire">
               <Toggle checked={emailUpdates} onChange={setEmailUpdates} />

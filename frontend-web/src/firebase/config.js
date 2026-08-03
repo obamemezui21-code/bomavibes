@@ -17,4 +17,6 @@ const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const googleProvider = new GoogleAuthProvider()
+export const VAPID_KEY =
+  'BHuBFx2zRXcbcwSBcTs3Pm4xq4lZkcd_dGAw0Ty-8sOPbXUCSyXND3tPSj3BarIG5HolOklAlN9b5DtLaVR_Cis'
 export default app

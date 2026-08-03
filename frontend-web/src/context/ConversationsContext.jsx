@@ -11,6 +11,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
+import { sendPushNotification } from '../firebase/notify.js'
 import { useAuth } from './AuthContext.jsx'
 
 const ConversationsContext = createContext(null)
@@ -134,6 +135,10 @@ export function ConversationsProvider({ children }) {
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
+
+    if (otherUid) {
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text })
+    }
   }
 
   return (

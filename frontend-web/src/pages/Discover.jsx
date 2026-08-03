@@ -81,7 +81,7 @@ function Discover() {
 async function handleSwipe(profile, direction) {
     setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
     try {
-      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction)
+      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName)
       if (matchId) {
         setMatchConversationId(matchId)
         setMatchedProfile(profile)

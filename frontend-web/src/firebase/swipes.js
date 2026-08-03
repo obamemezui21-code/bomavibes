@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { db } from './config.js'
+import { sendPushNotification } from './notify.js'
 
 export async function countIncomingLikes(uid) {
   const snap = await getDocs(
@@ -8,7 +9,7 @@ export async function countIncomingLikes(uid) {
   return snap.size
 }
 
-export async function recordSwipeAndMatch(uid, targetId, direction) {
+export async function recordSwipeAndMatch(uid, targetId, direction, firstName) {
   await setDoc(doc(db, 'swipes', `${uid}_${targetId}`), {
     swiperId: uid,
     targetId,
@@ -36,6 +37,8 @@ export async function recordSwipeAndMatch(uid, targetId, direction) {
       seen: { [uid]: true, [targetId]: false },
     })
   })
+
+  sendPushNotification(targetId, 'match', { firstName })
 
   return matchId
 }
