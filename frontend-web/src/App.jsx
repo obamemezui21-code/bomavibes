@@ -7,6 +7,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
 import Terms from './pages/Terms.jsx'
 import LegalNotice from './pages/LegalNotice.jsx'
 import Safety from './pages/Safety.jsx'
+import Pricing from './pages/Pricing.jsx'
 import Welcome from './pages/Welcome.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
@@ -35,6 +36,7 @@ function App() {
         <Route path="/conditions" element={<Terms />} />
         <Route path="/mentions-legales" element={<LegalNotice />} />
         <Route path="/securite" element={<Safety />} />
+        <Route path="/premium" element={<Pricing />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
