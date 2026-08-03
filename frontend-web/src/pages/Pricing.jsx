@@ -1,15 +1,33 @@
 import { Link } from 'react-router-dom'
-import { Check } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import SiteHeader from '../components/SiteHeader.jsx'
 import badgeVip from '../assets/hbdo.jpeg'
 import badgeDiamant from '../assets/mensuel.jpeg'
 import badgeJade from '../assets/annuel.jpeg'
 
-const PREMIUM_FEATURES = [
-  'Voir qui t\'a déjà liké',
-  'Likes illimités, sans attendre le lendemain',
-  'Boost de profil pour plus de visibilité',
-  'Filtres de recherche avancés',
+const COLUMNS = [
+  { key: 'free', label: 'Gratuit', emoji: null, headerClass: 'bg-[#1F3D2B]/5 text-[#2B1D14]' },
+  { key: 'vip', label: 'VIP', emoji: '👑', headerClass: 'bg-[#C9962B]/15 text-[#9c7220]' },
+  { key: 'diamant', label: 'Diamant Rouge', emoji: '💎', headerClass: 'bg-[#7A0F1E]/10 text-[#7A0F1E]' },
+  { key: 'jade', label: 'Jadéite Impériale', emoji: '💚', headerClass: 'bg-[#1F3D2B]/10 text-[#1F3D2B]' },
+]
+
+const FEATURE_ROWS = [
+  { label: 'Likes', values: ['20/jour', 'Illimités', 'Illimités', 'Illimités'] },
+  { label: 'Voir qui vous aime', values: [false, true, true, true] },
+  { label: 'Messages', values: ['Limités', 'Illimités', 'Illimités', 'Illimités'] },
+  { label: 'Appels audio', values: [false, true, true, true] },
+  { label: 'Appels vidéo', values: [false, true, true, true] },
+  { label: 'Boost', values: [false, '1/semaine', '3/semaine', '1/jour'] },
+  { label: 'Super Likes', values: ['1/semaine', '5/semaine', '3/jour', '10/jour'] },
+  { label: 'Mode invisible', values: [false, false, false, true] },
+  { label: 'Traduction', values: [false, false, false, true] },
+  { label: 'Concierge IA', values: [false, false, false, true] },
+  { label: 'Rooms', values: [false, false, false, 'Exclusif'] },
+  { label: 'Événements', values: [false, false, false, 'Exclusif'] },
+  { label: 'Badge', values: ['Standard', 'VIP', 'Diamant Rouge', 'Jadéite Impériale'] },
+  { label: 'Support', values: ['Standard', 'Standard', 'Prioritaire', 'Premium 24/7'] },
+  { label: 'Priorité de visibilité', values: ['Normale', 'Élevée', 'Très élevée', 'Maximale'] },
 ]
 
 const TIERS = [
@@ -113,18 +131,45 @@ function Pricing() {
           ))}
         </div>
 
-        <div className="mx-auto mt-20 max-w-2xl">
-          <h2 className="text-center font-display text-2xl font-bold text-[#2B1D14]">Inclus dans tous les plans Premium</h2>
-          <ul className="mt-8 space-y-4">
-            {PREMIUM_FEATURES.map((f) => (
-              <li key={f} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1F3D2B]">
-                  <Check size={14} strokeWidth={3} className="text-[#E8C468]" />
-                </span>
-                <span className="text-base leading-relaxed text-[#6b5d4f]">{f}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="mt-24">
+          <h2 className="text-center font-display text-2xl font-bold text-[#2B1D14] sm:text-3xl">
+            Comparer tous les plans
+          </h2>
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-[#1F3D2B]/8 bg-white shadow-sm">
+            <table className="w-full min-w-[720px] border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 bg-white p-4 text-left font-display text-sm font-bold text-[#2B1D14]">
+                    Fonctionnalités
+                  </th>
+                  {COLUMNS.map((c) => (
+                    <th key={c.key} className={`p-4 text-center font-display text-sm font-bold ${c.headerClass}`}>
+                      {c.emoji && <span className="mr-1">{c.emoji}</span>}
+                      {c.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {FEATURE_ROWS.map((row, i) => (
+                  <tr key={row.label} className={i % 2 === 1 ? 'bg-[#1F3D2B]/[0.025]' : undefined}>
+                    <td className="sticky left-0 bg-inherit p-4 font-medium text-[#2B1D14]">{row.label}</td>
+                    {row.values.map((v, ci) => (
+                      <td key={COLUMNS[ci].key} className="p-4 text-center text-[#6b5d4f]">
+                        {v === true ? (
+                          <Check size={18} strokeWidth={2.5} className="mx-auto text-[#1F3D2B]" />
+                        ) : v === false ? (
+                          <X size={18} strokeWidth={2.5} className="mx-auto text-[#6b5d4f]/30" />
+                        ) : (
+                          v
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="mt-20 text-center">
