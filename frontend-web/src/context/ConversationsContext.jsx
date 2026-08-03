@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { sendPushNotification } from '../firebase/notify.js'
+import { enablePushForUser } from '../firebase/push.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
 import { useAuth } from './AuthContext.jsx'
 
@@ -31,7 +32,7 @@ function isRecent(timestamp, thresholdMs, now) {
 }
 
 export function ConversationsProvider({ children }) {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const uid = user?.id
   const [matches, setMatches] = useState([])
   const [profilesById, setProfilesById] = useState({})
@@ -40,11 +41,19 @@ export function ConversationsProvider({ children }) {
   const [now, setNow] = useState(Date.now())
   const prevSeenRef = useRef({})
   const isFirstMatchesSnapshot = useRef(true)
+  const hasTriedPushRef = useRef(false)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 15 * 1000)
     return () => clearInterval(timer)
   }, [])
+
+  useEffect(() => {
+    if (!uid || !profile || hasTriedPushRef.current) return
+    if (profile.fcmTokens?.length) return
+    hasTriedPushRef.current = true
+    enablePushForUser(uid).catch(() => {})
+  }, [uid, profile])
 
   useEffect(() => {
     if (!uid) return undefined
