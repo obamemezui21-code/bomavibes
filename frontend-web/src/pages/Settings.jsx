@@ -243,9 +243,8 @@ function Settings() {
   const { theme, toggleTheme } = useTheme()
 
   const [isTogglingPush, setIsTogglingPush] = useState(false)
-  const hasPushToken = (profile?.fcmTokens?.length ?? 0) > 0
-  const newMatches = hasPushToken && (profile?.notifyMatches ?? true)
-  const newMessages = hasPushToken && (profile?.notifyMessages ?? true)
+  const newMatches = profile?.notifyMatches ?? true
+  const newMessages = profile?.notifyMessages ?? true
   const [emailUpdates, setEmailUpdates] = useState(false)
   const [showDistance, setShowDistance] = useState(true)
   const [showAge, setShowAge] = useState(true)
