@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { BadgeCheck, Camera, Heart, MessageCircle, ShieldCheck, Users } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { BadgeCheck, Camera, ChevronDown, Heart, MessageCircle, ShieldCheck, Users } from 'lucide-react'
 import heroPhoto from '../assets/hero.jpg'
 import heroLogoIcon from '../assets/bomavibes-icon.png'
+import amaraPhoto from '../assets/faces/amara.jpg'
+import malikPhoto from '../assets/faces/malik.jpg'
+import ndeyePhoto from '../assets/faces/ndeye.jpg'
 import SiteHeader from '../components/SiteHeader.jsx'
 
 const WORD_CONTAINER = {
@@ -45,6 +48,30 @@ const STEPS = [
   },
 ]
 
+const PROMOS = [
+  {
+    photo: amaraPhoto,
+    eyebrow: 'Des liens vrais',
+    title: 'Des connexions qui durent',
+    text: "Ici, on ne swipe pas juste pour swiper. BomaVibes met en avant les profils qui cherchent vraiment à connaître quelqu'un — pas juste à collectionner des matchs.",
+    reverse: false,
+  },
+  {
+    photo: malikPhoto,
+    eyebrow: 'Une communauté',
+    title: 'Une communauté qui te ressemble',
+    text: 'Des célibataires africains et afrodescendants, avec les mêmes codes, la même culture, et surtout la même envie de rire vrai.',
+    reverse: true,
+  },
+  {
+    photo: ndeyePhoto,
+    eyebrow: 'En confiance',
+    title: 'Du match au premier rendez-vous',
+    text: "Discute, apprends à connaître l'autre, et passe à l'étape d'après quand tu es prêt·e — en toute sécurité, avec nos conseils pour des rencontres réussies.",
+    reverse: false,
+  },
+]
+
 const SOCIALS = [
   { label: 'Instagram', href: 'https://instagram.com/bomavibes' },
   { label: 'Facebook', href: 'https://facebook.com/bomavibes' },
@@ -52,8 +79,50 @@ const SOCIALS = [
   { label: 'WhatsApp', href: 'https://wa.me/24100000000' },
 ]
 
+const FAQS = [
+  {
+    question: 'Est-ce que BomaVibes est gratuit ?',
+    answer: "Oui. L'inscription et les fonctionnalités essentielles — créer un profil, matcher, discuter — sont gratuites.",
+  },
+  {
+    question: 'Comment mes données sont-elles protégées ?',
+    answer: (
+      <>
+        Elles ne sont jamais vendues et restent sous ton contrôle : tu peux les consulter,
+        les modifier ou tout supprimer à tout moment. Détails dans notre{' '}
+        <Link to="/confidentialite" className="font-semibold text-[#9c7220] underline-offset-2 hover:underline">
+          politique de confidentialité
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
+    question: 'Comment supprimer mon compte ?',
+    answer: 'Directement depuis Paramètres → Supprimer mon compte. Toutes tes données sont effacées définitivement, sans délai.',
+  },
+  {
+    question: 'Que faire si un profil me met mal à l\'aise ?',
+    answer: (
+      <>
+        Tu peux le signaler ou le bloquer en un clic depuis la conversation ou le profil.
+        Retrouve nos conseils sur la{' '}
+        <Link to="/securite" className="font-semibold text-[#9c7220] underline-offset-2 hover:underline">
+          page Sécurité
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
+    question: 'BomaVibes est fait pour qui ?',
+    answer: 'Pour les célibataires africains et afrodescendants de 18 ans et plus, qui cherchent des connexions authentiques et durables.',
+  },
+]
+
 function Landing() {
   const [logoSettled, setLogoSettled] = useState(false)
+  const [openFaq, setOpenFaq] = useState(null)
 
   return (
     <div className="relative min-h-svh bg-[#FAF6EF]">
@@ -150,27 +219,27 @@ function Landing() {
       </div>
 
       {/* How it works */}
-      <section className="mx-auto max-w-5xl px-4 py-20 sm:px-8">
-        <h2 className="text-center font-display text-3xl font-bold text-[#2B1D14]">Comment ça marche</h2>
-        <div className="mt-12 grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-8">
+      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-10">
+        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Comment ça marche</h2>
+        <div className="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-10">
           {STEPS.map((s, i) => (
             <div key={s.title} className="relative text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
-                <s.icon size={28} strokeWidth={1.75} className="text-[#E8C468]" />
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
+                <s.icon size={34} strokeWidth={1.75} className="text-[#E8C468]" />
               </div>
-              <p className="mt-5 font-display text-lg font-bold text-[#2B1D14]">
+              <p className="mt-6 font-display text-xl font-bold text-[#2B1D14] sm:text-2xl">
                 <span className="text-[#C9962B]">{i + 1}.</span> {s.title}
               </p>
-              <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-[#6b5d4f]">{s.text}</p>
+              <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-[#6b5d4f]">{s.text}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* About */}
-      <section id="about" className="mx-auto max-w-4xl scroll-mt-20 px-4 py-20 text-center sm:px-8">
-        <h2 className="font-display text-3xl font-bold text-[#2B1D14]">À propos de BomaVibes</h2>
-        <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[#6b5d4f]">
+      <section id="about" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 text-center sm:px-10">
+        <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">À propos de BomaVibes</h2>
+        <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-[#6b5d4f]">
           BomaVibes est né d'une conviction simple : les célibataires africains et de la
           communauté noire méritent un espace de rencontre pensé pour eux, qui célèbre leur
           culture et leurs valeurs. Notre mission est de créer des connexions authentiques,
@@ -178,15 +247,75 @@ function Landing() {
         </p>
       </section>
 
+      {/* Promo sections */}
+      <div className="mx-auto max-w-6xl space-y-24 px-4 py-8 sm:px-10">
+        {PROMOS.map((p) => (
+          <section
+            key={p.title}
+            className={`grid grid-cols-1 items-center gap-10 sm:grid-cols-2 sm:gap-16 ${
+              p.reverse ? 'sm:[&>*:first-child]:order-2' : ''
+            }`}
+          >
+            <div className="aspect-[4/3] overflow-hidden rounded-3xl shadow-xl">
+              <img src={p.photo} alt="" className="h-full w-full object-cover" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-[#9c7220]">{p.eyebrow}</p>
+              <h3 className="mt-3 font-display text-3xl font-bold text-[#2B1D14] sm:text-4xl">{p.title}</h3>
+              <p className="mt-5 max-w-md text-lg leading-relaxed text-[#6b5d4f]">{p.text}</p>
+            </div>
+          </section>
+        ))}
+      </div>
+
+      {/* FAQ */}
+      <section className="mx-auto max-w-3xl px-4 py-24 sm:px-8">
+        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Questions fréquentes</h2>
+        <div className="mt-14">
+          {FAQS.map((f, i) => {
+            const isOpen = openFaq === i
+            return (
+              <div key={f.question} className="border-b border-[#1F3D2B]/10 py-5">
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(isOpen ? null : i)}
+                  className="flex w-full items-center justify-between gap-4 text-left"
+                  aria-expanded={isOpen}
+                >
+                  <span className="font-display text-lg font-bold text-[#2B1D14]">{f.question}</span>
+                  <ChevronDown
+                    size={20}
+                    className={`shrink-0 text-[#9c7220] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <p className="pt-3 text-base leading-relaxed text-[#6b5d4f]">{f.answer}</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
       {/* Contact */}
-      <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-20 text-center sm:px-8">
-        <h2 className="font-display text-3xl font-bold text-white">Contactez-nous</h2>
-        <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-white/75">
+      <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-24 text-center sm:px-8">
+        <h2 className="font-display text-4xl font-bold text-white sm:text-5xl">Contactez-nous</h2>
+        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75">
           Une question, une suggestion ? Écris-nous, on te répond avec plaisir.
         </p>
         <a
           href="mailto:contact@bomavibes.tech"
-          className="mt-6 inline-block rounded-xl bg-[#C9962B] px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
+          className="mt-8 inline-block rounded-xl bg-[#C9962B] px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
         >
           contact@bomavibes.tech
         </a>
@@ -203,6 +332,33 @@ function Landing() {
               {s.label}
             </a>
           ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/10 pt-6">
+          <Link
+            to="/confidentialite"
+            className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
+          >
+            Politique de confidentialité
+          </Link>
+          <Link
+            to="/conditions"
+            className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
+          >
+            Conditions d'utilisation
+          </Link>
+          <Link
+            to="/securite"
+            className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
+          >
+            Sécurité
+          </Link>
+          <Link
+            to="/mentions-legales"
+            className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
+          >
+            Mentions légales
+          </Link>
         </div>
       </section>
     </div>

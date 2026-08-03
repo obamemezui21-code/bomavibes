@@ -18,6 +18,7 @@ function Signup() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
@@ -38,6 +39,10 @@ function Signup() {
       setError('Les mots de passe ne correspondent pas')
       return
     }
+    if (!acceptedTerms) {
+      setError("Merci d'accepter les conditions d'utilisation pour continuer")
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -52,6 +57,10 @@ function Signup() {
 
   async function handleGoogle() {
     setError('')
+    if (!acceptedTerms) {
+      setError("Merci d'accepter les conditions d'utilisation pour continuer")
+      return
+    }
     setIsGoogleLoading(true)
     try {
       await loginWithGoogle()
@@ -148,6 +157,26 @@ function Signup() {
             placeholder="••••••••"
           />
         </div>
+
+        <label className="flex items-start gap-2.5 text-xs leading-relaxed text-ink-soft">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-violet-500"
+          />
+          <span>
+            J'accepte les{' '}
+            <Link to="/conditions" target="_blank" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
+              conditions d'utilisation
+            </Link>{' '}
+            et la{' '}
+            <Link to="/confidentialite" target="_blank" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
+              politique de confidentialité
+            </Link>
+            .
+          </span>
+        </label>
 
         <motion.button
           type="submit"
