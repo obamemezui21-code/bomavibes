@@ -4,13 +4,15 @@ import { motion } from 'framer-motion'
 import { Mail, MapPin, MessageCircle } from 'lucide-react'
 import GoogleIcon from '../components/GoogleIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import centerPhoto from '../assets/faces/center.jpg'
+import amaraPhoto from '../assets/faces/amara.jpg'
+import kwamePhoto from '../assets/faces/kwame.jpg'
+import zolaPhoto from '../assets/faces/zola.jpg'
+import malikPhoto from '../assets/faces/malik.jpg'
+import ndeyePhoto from '../assets/faces/ndeye.jpg'
+import juniorPhoto from '../assets/faces/junior.jpg'
 
-const AVATAR_SEEDS = ['Amara', 'Kwame', 'Zola', 'Malik', 'Ndeye', 'Junior']
-const CENTER_SEED = 'BomaVibes'
-
-function avatarUrl(seed) {
-  return `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(seed)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
-}
+const SATELLITE_PHOTOS = [amaraPhoto, kwamePhoto, zolaPhoto, malikPhoto, ndeyePhoto, juniorPhoto]
 
 const SATELLITE_POSITIONS = [
   'top-1 left-1/2 -translate-x-1/2',
@@ -54,17 +56,17 @@ function Welcome() {
         <div className="absolute inset-7 rounded-full bg-violet-500/15" />
         <div className="absolute inset-[3.75rem] rounded-full bg-violet-500/25" />
 
-        {AVATAR_SEEDS.map((seed, i) => (
+        {SATELLITE_PHOTOS.map((photo, i) => (
           <img
-            key={seed}
-            src={avatarUrl(seed)}
+            key={photo}
+            src={photo}
             alt=""
             className={`absolute h-12 w-12 rounded-full border-2 border-white object-cover shadow-md ${SATELLITE_POSITIONS[i]}`}
           />
         ))}
 
         <img
-          src={avatarUrl(CENTER_SEED)}
+          src={centerPhoto}
           alt=""
           className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white object-cover shadow-xl"
         />
