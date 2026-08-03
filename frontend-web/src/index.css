@@ -141,6 +141,20 @@ body {
   color: transparent;
 }
 
+/* Hero overlay: layered vignette + directional gradient for premium contrast */
+.hero-overlay {
+  background-image:
+    radial-gradient(130% 100% at 18% 78%, rgba(0, 0, 0, 0.68) 0%, rgba(0, 0, 0, 0.38) 42%, transparent 72%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.58) 42%, rgba(0, 0, 0, 0.22) 100%);
+}
+@media (min-width: 640px) {
+  .hero-overlay {
+    background-image:
+      radial-gradient(120% 110% at 8% 58%, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.32) 45%, transparent 72%),
+      linear-gradient(to right, rgba(0, 0, 0, 0.86) 0%, rgba(0, 0, 0, 0.42) 48%, transparent 100%);
+  }
+}
+
 @keyframes float-slow {
   0%, 100% { transform: translate(0, 0) scale(1); }
   50% { transform: translate(-10px, 15px) scale(1.05); }

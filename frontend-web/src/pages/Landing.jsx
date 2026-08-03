@@ -1,48 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { BadgeCheck, Camera, Heart, MessageCircle, ShieldCheck, Users } from 'lucide-react'
 import heroPhoto from '../assets/hero.jpg'
+import heroLogoIcon from '../assets/bomavibes-icon.png'
 import SiteHeader from '../components/SiteHeader.jsx'
 
-const HERO_LINE_1 = "L'amour a sa vibe."
-const HERO_LINE_2 = 'Et la tienne ?'
-const TYPE_SPEED = 42
-
-function useTypewriter() {
-  const [line1, setLine1] = useState('')
-  const [line2, setLine2] = useState('')
-  const [phase, setPhase] = useState('line1')
-
-  useEffect(() => {
-    let i = 0
-    const timer = setInterval(() => {
-      i += 1
-      setLine1(HERO_LINE_1.slice(0, i))
-      if (i >= HERO_LINE_1.length) {
-        clearInterval(timer)
-        setPhase('line2')
-      }
-    }, TYPE_SPEED)
-    return () => clearInterval(timer)
-  }, [])
-
-  useEffect(() => {
-    if (phase !== 'line2') return
-    let i = 0
-    const timer = setInterval(() => {
-      i += 1
-      setLine2(HERO_LINE_2.slice(0, i))
-      if (i >= HERO_LINE_2.length) {
-        clearInterval(timer)
-        setPhase('done')
-      }
-    }, TYPE_SPEED)
-    return () => clearInterval(timer)
-  }, [phase])
-
-  return { line1, line2, phase }
+const WORD_CONTAINER = {
+  hidden: {},
+  visible: { transition: { delayChildren: 0.1, staggerChildren: 0.06 } },
 }
+
+const LETTER = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+}
+
+const LOGO_SETTLE = { opacity: 1, scale: 1, rotate: 0 }
+const LOGO_SETTLE_TRANSITION = { delay: 0.95, type: 'spring', stiffness: 260, damping: 15, mass: 0.7 }
+const LOGO_PULSE = { opacity: 1, scale: [1, 1.045, 1], rotate: 0 }
+const LOGO_PULSE_TRANSITION = { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }
 
 const FEATURES = [
   { icon: ShieldCheck, title: 'Sécurisé', text: 'Vos données sont protégées' },
@@ -76,7 +53,7 @@ const SOCIALS = [
 ]
 
 function Landing() {
-  const { line1, line2, phase } = useTypewriter()
+  const [logoSettled, setLogoSettled] = useState(false)
 
   return (
     <div className="relative min-h-svh bg-[#FAF6EF]">
@@ -94,57 +71,67 @@ function Landing() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/25 sm:bg-gradient-to-r sm:from-black/80 sm:via-black/40 sm:to-transparent" />
 
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-12 pt-32 sm:px-8 sm:py-24">
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-14 pt-32 sm:px-8 sm:py-24">
           <div className="max-w-lg">
-            <h1
-              className="font-hero text-4xl font-medium italic leading-tight text-white [text-shadow:0_2px_16px_rgba(0,0,0,0.65),0_1px_4px_rgba(0,0,0,0.85)] sm:text-5xl"
-              aria-label={`${HERO_LINE_1} ${HERO_LINE_2}`}
+            <motion.h1
+              initial={{ opacity: 1 }}
+              className="font-display text-5xl font-extrabold uppercase leading-none tracking-tight text-white [text-shadow:0_4px_24px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.9)] sm:text-7xl"
+              aria-label="BomaVibes"
             >
-              <span aria-hidden="true" className="block">
-                {line1}
-                {phase === 'line1' && <span className="typewriter-cursor" />}
-              </span>
-              <span aria-hidden="true" className="block text-[#E8C468]">
-                {line2}
-                {phase !== 'line1' && <span className="typewriter-cursor" />}
-              </span>
-            </h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mt-5 max-w-md text-base leading-relaxed text-white/85"
-            >
-              BomaVibes est le site de rencontre africain, de la communauté noire, qui
-              connecte des célibataires authentiques pour des relations vraies et durables.
-            </motion.p>
+              <motion.span
+                aria-hidden="true"
+                className="inline-flex items-center"
+                variants={WORD_CONTAINER}
+                initial="hidden"
+                animate="visible"
+              >
+                <motion.span variants={LETTER}>B</motion.span>
+                <motion.img
+                  src={heroLogoIcon}
+                  alt=""
+                  initial={{ opacity: 0, scale: 0.3, rotate: -140 }}
+                  animate={logoSettled ? LOGO_PULSE : LOGO_SETTLE}
+                  transition={logoSettled ? LOGO_PULSE_TRANSITION : LOGO_SETTLE_TRANSITION}
+                  onAnimationComplete={() => setLogoSettled(true)}
+                  className="mx-[0.02em] inline-block h-[0.95em] w-[0.95em] rounded-full object-cover align-middle shadow-md ring-2 ring-[#E8C468]/80"
+                />
+                <motion.span variants={LETTER}>M</motion.span>
+                <motion.span variants={LETTER}>A</motion.span>
+                <span className="inline-flex text-[#E8C468]">
+                  <motion.span variants={LETTER}>V</motion.span>
+                  <motion.span variants={LETTER}>I</motion.span>
+                  <motion.span variants={LETTER}>B</motion.span>
+                  <motion.span variants={LETTER}>E</motion.span>
+                  <motion.span variants={LETTER}>S</motion.span>
+                </span>
+              </motion.span>
+            </motion.h1>
 
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mt-8 flex flex-wrap gap-3"
+              transition={{ duration: 0.7, delay: 0.55, ease: 'easeOut' }}
+              className="mt-9 flex flex-wrap gap-4"
             >
               <Link
                 to="/signup"
-                className="rounded-xl bg-[#C9962B] px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-black/20 transition hover:bg-[#dba838]"
+                className="rounded-xl bg-[#C9962B] px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#dba838] hover:shadow-xl hover:shadow-black/30 active:translate-y-0"
               >
                 S'inscrire gratuitement
               </Link>
               <Link
                 to="/welcome"
-                className="rounded-xl border border-white/40 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+                className="rounded-xl border border-white/40 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/60 hover:bg-white/20 active:translate-y-0"
               >
                 Se connecter
               </Link>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3"
+              transition={{ duration: 0.7, delay: 0.75, ease: 'easeOut' }}
+              className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-3"
             >
               {FEATURES.map((f) => (
                 <div key={f.title} className="flex items-start gap-3">
@@ -152,7 +139,7 @@ function Landing() {
                     <f.icon size={18} strokeWidth={2} className="text-[#E8C468]" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-white">{f.title}</p>
+                    <p className="text-sm font-semibold tracking-wide text-white">{f.title}</p>
                     <p className="text-xs text-white/70">{f.text}</p>
                   </div>
                 </div>

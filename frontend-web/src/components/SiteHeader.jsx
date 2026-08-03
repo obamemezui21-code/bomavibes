@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import logo from '../assets/bomavibes-logo.jpeg'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const NAV_LINKS = [
   { label: 'Accueil', href: '/#top' },
@@ -23,21 +24,18 @@ function MenuIcon({ open }) {
 
 function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { token, logout } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    setMenuOpen(false)
+    await logout()
+    navigate('/')
+  }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 bg-[#1F3D2B]/85 shadow-md backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
-        <a href="/" className="flex items-center gap-2.5">
-          <img
-            src={logo}
-            alt="BomaVibes"
-            className="h-10 w-10 rounded-full border-2 border-[#C9962B] object-cover object-top shadow-md"
-          />
-          <span className="font-display text-lg font-bold text-white drop-shadow-sm">
-            Boma<span className="text-[#E8C468]">Vibes</span>
-          </span>
-        </a>
-
+    <header className="fixed inset-x-0 top-0 z-30">
+      <div className="mx-auto flex max-w-6xl items-center justify-end px-4 py-4 sm:px-8">
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 sm:flex">
           {NAV_LINKS.map((l) => (
@@ -45,6 +43,15 @@ function SiteHeader() {
               {l.label}
             </a>
           ))}
+          {token && (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-sm font-semibold text-white/90 transition hover:text-white"
+            >
+              Déconnexion
+            </button>
+          )}
         </div>
 
         {/* Mobile burger */}
@@ -80,6 +87,15 @@ function SiteHeader() {
                 {l.label}
               </a>
             ))}
+            {token && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="block w-full border-t border-black/5 px-5 py-4 text-left text-sm font-semibold text-coral-500 hover:bg-[#1F3D2B]/5"
+              >
+                Déconnexion
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
