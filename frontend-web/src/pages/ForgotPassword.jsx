@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { MailCheck } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
@@ -41,7 +42,7 @@ function ForgotPassword() {
     >
       {isSent ? (
         <div className="space-y-3 text-center">
-          <span className="text-4xl">✉️</span>
+          <MailCheck size={40} strokeWidth={1.5} className="mx-auto text-mint-500" />
           <p className="text-sm leading-relaxed text-ink-soft">
             Si un compte existe pour <span className="font-semibold text-ink">{email}</span>, un
             email avec les instructions vient d'être envoyé.

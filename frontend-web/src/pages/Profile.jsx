@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Pencil, Settings, X } from 'lucide-react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { uploadProfilePhoto } from '../firebase/photos.js'
@@ -148,8 +149,8 @@ function Profile() {
               alt="Avatar"
               className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
             />
-            <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-sm text-white shadow">
-              ✎
+            <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-white shadow">
+              <Pencil size={14} strokeWidth={2.25} />
             </span>
           </div>
           <h1 className="mt-3 font-display text-2xl font-semibold text-ink">
@@ -213,10 +214,10 @@ function Profile() {
                         <button
                           type="button"
                           onClick={() => removePhotoSlot(i)}
-                          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white"
+                          className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"
                           aria-label="Retirer la photo"
                         >
-                          ✕
+                          <X size={13} strokeWidth={2.5} />
                         </button>
                       </>
                     ) : (
@@ -348,9 +349,10 @@ function Profile() {
           <button
             type="button"
             onClick={() => navigate('/settings')}
-            className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
           >
-            ⚙ Paramètres
+            <Settings size={16} strokeWidth={2} />
+            Paramètres
           </button>
 
           <button

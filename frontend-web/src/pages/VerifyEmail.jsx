@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Mail } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -46,7 +47,7 @@ function VerifyEmail() {
   return (
     <AuthLayout title="Vérifie ton email" subtitle="Une dernière étape avant de continuer">
       <div className="space-y-4 text-center">
-        <span className="text-4xl">📬</span>
+        <Mail size={40} strokeWidth={1.5} className="mx-auto text-violet-500" />
         <p className="text-sm leading-relaxed text-ink-soft">
           On a envoyé un lien de vérification à{' '}
           <span className="font-semibold text-ink">{user?.email}</span>. Clique sur ce lien, puis

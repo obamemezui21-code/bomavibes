@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, RotateCcw, SlidersHorizontal, Star, X } from 'lucide-react'
+import { Heart, PartyPopper, RotateCcw, SlidersHorizontal, Star, X } from 'lucide-react'
 import SwipeCard from '../components/SwipeCard.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
@@ -152,7 +152,7 @@ function Discover() {
             animate={{ opacity: 1, scale: 1 }}
             className="glass-panel flex h-full flex-col items-center justify-center gap-3 rounded-[28px] text-center"
           >
-            <span className="text-5xl">🎉</span>
+            <PartyPopper size={48} strokeWidth={1.5} className="text-violet-500" />
             <p className="font-display text-lg font-semibold text-ink">
               Plus de profils pour le moment
             </p>

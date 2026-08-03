@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Heart } from 'lucide-react'
 import { useConversations } from '../context/ConversationsContext.jsx'
 
 function timeAgo(iso) {
@@ -24,7 +25,7 @@ function Matches() {
   if (conversations.length === 0) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
-        <span className="text-4xl">❤️</span>
+        <Heart size={40} strokeWidth={1.5} className="text-coral-500" />
         <h1 className="font-display text-2xl font-semibold text-ink">Tes matchs</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
           Quand tu matches avec quelqu'un, tu le retrouveras ici.

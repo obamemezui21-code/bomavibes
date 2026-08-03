@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowLeft, Hand, MessageCircle, Send } from 'lucide-react'
 import { useConversations } from '../context/ConversationsContext.jsx'
 
 function Chat() {
@@ -32,7 +33,7 @@ function Chat() {
   if (conversations.length === 0) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
-        <span className="text-4xl">💬</span>
+        <MessageCircle size={40} strokeWidth={1.5} className="text-ink-soft/40" />
         <h1 className="font-display text-2xl font-semibold text-ink">Messages</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
           Tes conversations avec tes matchs apparaîtront ici.
@@ -100,7 +101,7 @@ function Chat() {
                 className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5 md:hidden"
                 aria-label="Retour"
               >
-                ←
+                <ArrowLeft size={18} strokeWidth={2} />
               </button>
               <img src={active.profile.photo} alt={active.profile.firstName} className="h-9 w-9 rounded-full object-cover" />
               <div>
@@ -112,7 +113,7 @@ function Chat() {
             <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
               {active.messages.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-                  <span className="text-3xl">👋</span>
+                  <Hand size={32} strokeWidth={1.5} className="text-ink-soft/40" />
                   <p className="text-sm text-ink-soft/60">
                     C'est un match avec {active.profile.firstName} ! Envoie le premier message.
                   </p>
@@ -175,7 +176,7 @@ function Chat() {
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Envoyer"
               >
-                ➤
+                <Send size={16} strokeWidth={2.25} />
               </motion.button>
             </form>
           </>

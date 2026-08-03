@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { applyActionCode, checkActionCode, confirmPasswordReset } from 'firebase/auth'
+import { CircleCheck, PartyPopper, TriangleAlert } from 'lucide-react'
 import { auth } from '../firebase/config.js'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
@@ -109,7 +110,7 @@ function AuthAction() {
     return (
       <AuthLayout title="Lien invalide" subtitle={errorMessage}>
         <div className="space-y-5 text-center">
-          <span className="text-4xl">⚠️</span>
+          <TriangleAlert size={40} strokeWidth={1.5} className="mx-auto text-coral-500" />
 
           {mode !== 'verifyEmail' && (
             <div className="rounded-2xl bg-ink/[0.03] p-4 text-left">
@@ -149,7 +150,7 @@ function AuthAction() {
     return (
       <AuthLayout title="Email vérifié !" subtitle="Ton adresse email est bien confirmée">
         <div className="space-y-4 text-center">
-          <span className="text-4xl">🎉</span>
+          <PartyPopper size={40} strokeWidth={1.5} className="mx-auto text-violet-500" />
           <button type="button" onClick={() => navigate('/login')} className={buttonClass}>
             Continuer
           </button>
@@ -197,7 +198,7 @@ function AuthAction() {
     return (
       <AuthLayout title="Mot de passe mis à jour" subtitle="Tu peux te connecter avec ton nouveau mot de passe">
         <div className="space-y-4 text-center">
-          <span className="text-4xl">✅</span>
+          <CircleCheck size={40} strokeWidth={1.5} className="mx-auto text-mint-500" />
           <Link to="/login" className={buttonClass}>
             Se connecter
           </Link>

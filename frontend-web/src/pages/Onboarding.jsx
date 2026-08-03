@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Mars, Minus, NonBinary, Plus, Venus } from 'lucide-react'
+import { Mars, Minus, NonBinary, Plus, Venus, X } from 'lucide-react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { uploadProfilePhotos } from '../firebase/photos.js'
@@ -169,10 +169,10 @@ function Onboarding() {
                               <button
                                 type="button"
                                 onClick={() => removePhoto(i)}
-                                className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white"
+                                className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white"
                                 aria-label="Retirer la photo"
                               >
-                                ✕
+                                <X size={13} strokeWidth={2.5} />
                               </button>
                             </>
                           ) : (

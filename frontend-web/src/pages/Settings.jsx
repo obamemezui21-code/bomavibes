@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { TriangleAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
@@ -360,7 +361,7 @@ function Settings() {
       {confirmDelete && (
         <Modal onClose={() => setConfirmDelete(false)}>
           <div className="text-center">
-            <span className="text-3xl">⚠️</span>
+            <TriangleAlert size={32} strokeWidth={1.5} className="mx-auto text-coral-500" />
             <h2 className="mt-2 font-display text-lg font-semibold text-ink">Supprimer ton compte ?</h2>
             <p className="mt-1 text-sm text-ink-soft/70">
               Toutes tes données, matchs et conversations seront définitivement perdus.

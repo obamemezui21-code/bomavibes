@@ -1,15 +1,16 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { Compass, Heart, MessageCircle, CircleUserRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 
 function useNavItems() {
   const { unreadMessagesCount, newMatchesCount } = useConversations()
   return [
-    { to: '/discover', label: 'Découvrir', icon: '🔥' },
-    { to: '/matches', label: 'Matchs', icon: '❤️', badge: newMatchesCount },
-    { to: '/chat', label: 'Messages', icon: '💬', badge: unreadMessagesCount },
-    { to: '/profile', label: 'Profil', icon: '👤' },
+    { to: '/discover', label: 'Découvrir', icon: Compass },
+    { to: '/matches', label: 'Matchs', icon: Heart, badge: newMatchesCount },
+    { to: '/chat', label: 'Messages', icon: MessageCircle, badge: unreadMessagesCount },
+    { to: '/profile', label: 'Profil', icon: CircleUserRound },
   ]
 }
 
@@ -57,9 +58,11 @@ function AppLayout() {
                     transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                   />
                 )}
-                <span className={`relative z-10 ${isActive ? 'text-[#2B1D14]' : 'text-ink'}`}>
-                  {item.icon}
-                </span>
+                <item.icon
+                  size={18}
+                  strokeWidth={2}
+                  className={`relative z-10 ${isActive ? 'text-[#2B1D14]' : 'text-ink'}`}
+                />
                 <span className={`relative z-10 flex-1 ${isActive ? 'text-[#2B1D14]' : 'text-ink/80'}`}>
                   {item.label}
                 </span>
@@ -107,7 +110,11 @@ function AppLayout() {
                 />
               )}
               <span className="relative">
-                <span className={`text-lg transition ${isActive ? 'scale-110' : ''}`}>{item.icon}</span>
+                <item.icon
+                  size={22}
+                  strokeWidth={2}
+                  className={`transition ${isActive ? 'scale-110 text-violet-600' : 'text-ink-soft/60'}`}
+                />
                 <NavBadge count={item.badge} />
               </span>
               <span className={isActive ? 'text-violet-600' : 'text-ink-soft/60'}>{item.label}</span>

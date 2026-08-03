@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { BadgeCheck, Camera, Heart, MessageCircle, ShieldCheck, Users } from 'lucide-react'
 import heroPhoto from '../assets/hero.png'
 import SiteHeader from '../components/SiteHeader.jsx'
 
@@ -44,24 +45,24 @@ function useTypewriter() {
 }
 
 const FEATURES = [
-  { icon: '🛡️', title: 'Sécurisé', text: 'Vos données sont protégées' },
-  { icon: '💚', title: 'Authentique', text: 'Des profils vérifiés et réels' },
-  { icon: '👥', title: 'Afrocentré', text: 'Une communauté qui te ressemble' },
+  { icon: ShieldCheck, title: 'Sécurisé', text: 'Vos données sont protégées' },
+  { icon: BadgeCheck, title: 'Authentique', text: 'Des profils vérifiés et réels' },
+  { icon: Users, title: 'Afrocentré', text: 'Une communauté qui te ressemble' },
 ]
 
 const STEPS = [
   {
-    icon: '📸',
+    icon: Camera,
     title: 'Crée ton profil',
     text: 'Ajoute tes photos et parle un peu de toi, ça prend deux minutes.',
   },
   {
-    icon: '💛',
+    icon: Heart,
     title: 'Découvre & matche',
     text: 'Swipe parmi des profils authentiques de la communauté, près de chez toi.',
   },
   {
-    icon: '💬',
+    icon: MessageCircle,
     title: 'Discute en vrai',
     text: 'Ça matche ? Lancez la conversation et voyez où ça vous mène.',
   },
@@ -132,7 +133,7 @@ function Landing() {
                 S'inscrire gratuitement
               </Link>
               <Link
-                to="/login"
+                to="/welcome"
                 className="rounded-xl border border-white/40 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
               >
                 Se connecter
@@ -147,8 +148,8 @@ function Landing() {
             >
               {FEATURES.map((f) => (
                 <div key={f.title} className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg backdrop-blur-sm">
-                    {f.icon}
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
+                    <f.icon size={18} strokeWidth={2} className="text-[#E8C468]" />
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-white">{f.title}</p>
@@ -167,8 +168,8 @@ function Landing() {
         <div className="mt-12 grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-8">
           {STEPS.map((s, i) => (
             <div key={s.title} className="relative text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#1F3D2B] text-2xl shadow-md">
-                {s.icon}
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
+                <s.icon size={28} strokeWidth={1.75} className="text-[#E8C468]" />
               </div>
               <p className="mt-5 font-display text-lg font-bold text-[#2B1D14]">
                 <span className="text-[#C9962B]">{i + 1}.</span> {s.title}
