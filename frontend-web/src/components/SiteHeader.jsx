@@ -32,6 +32,7 @@ function SiteHeader() {
     setMenuOpen(false)
     await logout()
     navigate('/')
+    window.scrollTo(0, 0)
   }
 
   return (
