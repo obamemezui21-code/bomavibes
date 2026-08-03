@@ -48,12 +48,24 @@ export function ConversationsProvider({ children }) {
     return () => clearInterval(timer)
   }, [])
 
+  const [showPushPrompt, setShowPushPrompt] = useState(false)
+
   useEffect(() => {
     if (!uid || !profile || hasTriedPushRef.current) return
     if (profile.fcmTokens?.length) return
+    if (typeof Notification !== 'undefined' && Notification.permission === 'denied') return
     hasTriedPushRef.current = true
-    enablePushForUser(uid).catch(() => {})
+    setShowPushPrompt(true)
   }, [uid, profile])
+
+  async function acceptPushPrompt() {
+    setShowPushPrompt(false)
+    await enablePushForUser(uid).catch(() => {})
+  }
+
+  function dismissPushPrompt() {
+    setShowPushPrompt(false)
+  }
 
   useEffect(() => {
     if (!uid) return undefined
@@ -211,6 +223,9 @@ export function ConversationsProvider({ children }) {
         openConversation,
         markMatchesSeen,
         sendMessage,
+        showPushPrompt,
+        acceptPushPrompt,
+        dismissPushPrompt,
       }}
     >
       {children}

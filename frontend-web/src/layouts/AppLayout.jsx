@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Compass, Heart, MessageCircle, CircleUserRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
+import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 
 function useNavItems() {
   const { unreadMessagesCount, newMatchesCount } = useConversations()
@@ -122,6 +123,8 @@ function AppLayout() {
           )
         })}
       </nav>
+
+      <PushPermissionPrompt />
     </div>
   )
 }
