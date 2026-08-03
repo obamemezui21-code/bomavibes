@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   EmailAuthProvider,
   createUserWithEmailAndPassword,
-  deleteUser,
   getAdditionalUserInfo,
   onAuthStateChanged,
   reauthenticateWithCredential,
@@ -14,7 +13,7 @@ import {
   updatePassword,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth'
-import { deleteDoc, doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase/config.js'
 import { useToast } from './ToastContext.jsx'
 
@@ -200,11 +199,15 @@ export function AuthProvider({ children }) {
     const currentUser = auth.currentUser
     if (!currentUser) return
     try {
-      await deleteDoc(doc(db, 'users', currentUser.uid))
-      await deleteUser(currentUser)
-    } catch (error) {
-      const message = mapAuthError(error)
-      throw new Error(message)
+      const idToken = await currentUser.getIdToken()
+      const res = await fetch('/api/account', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${idToken}` },
+      })
+      if (!res.ok) throw new Error()
+      await signOut(auth)
+    } catch {
+      throw new Error('Impossible de supprimer ton compte, réessaie.')
     }
   }
 

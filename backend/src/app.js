@@ -3,6 +3,7 @@ const cors = require("cors");
 const emailActionRoutes = require("./routes/emailActionRoutes");
 const photoRoutes = require("./routes/photoRoutes");
 const notifyRoutes = require("./routes/notifyRoutes");
+const accountRoutes = require("./routes/accountRoutes");
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", emailActionRoutes);
 app.use("/api/photos", photoRoutes);
 app.use("/api/notify", notifyRoutes);
+app.use("/api/account", accountRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {
