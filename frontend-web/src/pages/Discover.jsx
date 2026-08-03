@@ -1,8 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, PartyPopper, RotateCcw, SlidersHorizontal, Star, X } from 'lucide-react'
-import SwipeCard from '../components/SwipeCard.jsx'
+import {
+  BookOpen,
+  Briefcase,
+  Camera,
+  ChefHat,
+  Clapperboard,
+  Coffee,
+  Dumbbell,
+  Heart,
+  Leaf,
+  MapPin,
+  Mountain,
+  Music,
+  Palette,
+  PersonStanding,
+  Plane,
+  Search,
+  Shirt,
+  SlidersHorizontal,
+  Sparkles,
+} from 'lucide-react'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
@@ -11,29 +30,54 @@ import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
-const ACTIONS = [
-  { direction: 'pass', Icon: X, iconSize: 26, label: 'Passer', className: 'h-14 w-14 text-coral-500' },
-  { direction: 'superlike', Icon: Star, iconSize: 20, label: 'Super like', className: 'h-11 w-11 text-violet-600' },
-  { direction: 'like', Icon: Heart, iconSize: 26, label: 'Aimer', className: 'h-14 w-14 text-mint-500' },
-]
+const INTEREST_ICONS = {
+  Danse: PersonStanding,
+  Cuisine: ChefHat,
+  Voyages: Plane,
+  Musique: Music,
+  Sport: Dumbbell,
+  Cinéma: Clapperboard,
+  Lecture: BookOpen,
+  Photo: Camera,
+  Nature: Leaf,
+  Art: Palette,
+  Café: Coffee,
+  Randonnée: Mountain,
+  Mode: Shirt,
+  Business: Briefcase,
+}
+const INTERESTS = Object.keys(INTEREST_ICONS)
 
+const NEW_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000
 const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
 
+function isNew(profile) {
+  const createdAt = profile.createdAt?.toDate?.()
+  return !!createdAt && Date.now() - createdAt.getTime() < NEW_THRESHOLD_MS
+}
+
+function avatarFor(profile) {
+  return (
+    profile.photos?.[0] ||
+    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+  )
+}
+
 function Discover() {
-  const { user } = useAuth()
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
-  const [profiles, setProfiles] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [history, setHistory] = useState([])
-  const [matchedProfile, setMatchedProfile] = useState(null)
-  const [matchConversationId, setMatchConversationId] = useState(null)
-  const [expandedProfile, setExpandedProfile] = useState(null)
-  const [showFilters, setShowFilters] = useState(false)
-  const topCardRef = useRef(null)
+  const { user, publicProfile } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
 
-  const visible = profiles.slice(0, 3)
+  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const [profiles, setProfiles] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showFilters, setShowFilters] = useState(false)
+  const [expandedProfile, setExpandedProfile] = useState(null)
+  const [selectedInterest, setSelectedInterest] = useState(null)
+  const [showSearch, setShowSearch] = useState(false)
+  const [search, setSearch] = useState('')
+  const [matchedProfile, setMatchedProfile] = useState(null)
+  const [matchConversationId, setMatchConversationId] = useState(null)
 
   async function loadCandidates(currentFilters) {
     if (!user?.id) return
@@ -41,7 +85,6 @@ function Discover() {
     try {
       const candidates = await fetchDiscoverCandidates(user.id, currentFilters)
       setProfiles(candidates)
-      setHistory([])
     } catch {
       showToast('Impossible de charger les profils, réessaie.', 'error')
     } finally {
@@ -54,34 +97,44 @@ function Discover() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
-  async function handleExit(profile, direction) {
-    setHistory((h) => [...h, { profile, direction }])
-    setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
+  const searched = useMemo(() => {
+    if (!search.trim()) return profiles
+    const q = search.trim().toLowerCase()
+    return profiles.filter((p) => p.firstName?.toLowerCase().includes(q))
+  }, [profiles, search])
 
+  const newPeople = useMemo(
+    () => [...searched].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).slice(0, 10),
+    [searched],
+  )
+
+  const aroundMe = useMemo(
+    () => (selectedInterest ? searched.filter((p) => p.interests?.includes(selectedInterest)) : searched),
+    [searched, selectedInterest],
+  )
+
+  async function handleLike(profile) {
+    setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
     try {
-      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction)
+      const matchId = await recordSwipeAndMatch(user.id, profile.id, 'like')
       if (matchId) {
         setMatchConversationId(matchId)
         setMatchedProfile(profile)
+      } else {
+        showToast(`Tu as aimé le profil de ${profile.firstName}.`, 'success')
       }
     } catch {
-      showToast('Impossible d\'enregistrer ton choix, réessaie.', 'error')
+      showToast("Impossible d'enregistrer ton choix, réessaie.", 'error')
     }
   }
 
-  function handleAction(direction) {
-    topCardRef.current?.fly(direction)
-  }
-
-  function handleRewind() {
-    if (history.length === 0) return
-    const last = history[history.length - 1]
-    setHistory((h) => h.slice(0, -1))
-    setProfiles((prev) => [last.profile, ...prev])
-  }
-
-  function handleReload() {
-    loadCandidates(filters)
+  async function handlePass(profile) {
+    setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
+    try {
+      await recordSwipeAndMatch(user.id, profile.id, 'pass')
+    } catch {
+      showToast("Impossible d'enregistrer ton choix, réessaie.", 'error')
+    }
   }
 
   function handleCloseFilters() {
@@ -93,136 +146,184 @@ function Discover() {
     setFilters(DEFAULT_FILTERS)
   }
 
-  function handleReport(profile) {
-    showToast(`${profile.firstName} a été signalé(e). Merci de nous aider à garder BomaVibes sûr.`, 'success')
-  }
-
-  function handleBlock(profile) {
-    setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
-    showToast(`${profile.firstName} a été bloqué(e).`, 'info')
-  }
-
   return (
-    <div className="relative flex min-h-svh flex-col items-center gap-6 overflow-hidden bg-surface-soft px-4 py-6 sm:px-6 md:min-h-full">
+    <div className="relative min-h-svh overflow-hidden bg-surface-soft px-4 pb-10 pt-6 sm:px-6 md:min-h-full">
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
-      <div className="pointer-events-none absolute -right-20 bottom-0 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
+      <div className="pointer-events-none absolute -right-20 top-40 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 
-      <div className="relative z-10 flex w-full max-w-[420px] items-center justify-between">
+      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-ink">Découvrir</h1>
-          <p className="text-xs text-ink-soft/60">
-            {isLoading
-              ? 'Recherche de profils…'
-              : profiles.length > 0
-                ? `${profiles.length} profil${profiles.length > 1 ? 's' : ''} près de toi`
-                : 'Aucun profil restant'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowFilters(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
-            aria-label="Filtres"
-            title="Filtres"
-          >
-            <SlidersHorizontal size={17} />
-          </button>
-          <button
-            type="button"
-            onClick={handleRewind}
-            disabled={history.length === 0}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600 disabled:cursor-not-allowed disabled:opacity-30"
-            aria-label="Revenir en arrière"
-            title="Revenir en arrière"
-          >
-            <RotateCcw size={17} />
-          </button>
-        </div>
-      </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
+                <MapPin size={13} strokeWidth={2.25} />
+                {publicProfile?.country || 'Autour de toi'}
+              </div>
+              <h1 className="font-display text-2xl font-semibold text-ink">Découvrir</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSearch((v) => !v)}
+                className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${
+                  showSearch
+                    ? 'border-violet-400/60 bg-violet-500/10 text-violet-600'
+                    : 'border-ink/12 bg-ink/[0.03] text-ink/80 hover:border-violet-400/60 hover:text-violet-600'
+                }`}
+                aria-label="Rechercher"
+              >
+                <Search size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFilters(true)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
+                aria-label="Filtres"
+              >
+                <SlidersHorizontal size={17} />
+              </button>
+            </div>
+          </div>
 
-      <div className="relative z-10 h-[64svh] max-h-[640px] min-h-[440px] w-full max-w-[420px]">
+          <AnimatePresence>
+            {showSearch && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <input
+                  type="text"
+                  autoFocus
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Chercher un prénom…"
+                  className="mt-3 w-full rounded-xl border border-ink/12 bg-white px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {isLoading ? (
-          <div className="glass-panel flex h-full flex-col items-center justify-center gap-3 rounded-[28px] text-center">
+          <div className="flex h-64 items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
           </div>
-        ) : visible.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-panel flex h-full flex-col items-center justify-center gap-3 rounded-[28px] text-center"
-          >
-            <PartyPopper size={48} strokeWidth={1.5} className="text-violet-500" />
-            <p className="font-display text-lg font-semibold text-ink">
-              Plus de profils pour le moment
-            </p>
+        ) : searched.length === 0 ? (
+          <div className="glass-panel flex flex-col items-center gap-2 rounded-[28px] p-10 text-center">
+            <Sparkles size={40} strokeWidth={1.5} className="text-violet-500" />
+            <p className="font-display text-lg font-semibold text-ink">Aucun profil pour le moment</p>
             <p className="max-w-xs text-sm text-ink-soft/70">
-              Reviens plus tard, ou élargis tes filtres pour voir plus de monde.
+              Élargis tes filtres ou reviens plus tard pour voir plus de monde.
             </p>
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={handleReload}
-              className="mt-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 px-5 py-2 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
-            >
-              Recharger la liste
-            </motion.button>
-          </motion.div>
+          </div>
         ) : (
-          visible.map((profile, i) => (
-            <div
-              key={profile.id}
-              className="absolute inset-0"
-              style={{
-                zIndex: visible.length - i,
-                opacity: 1 - i * 0.15,
-                filter: i > 0 ? `brightness(${1 - i * 0.12})` : undefined,
-                transform: `scale(${1 - i * 0.05}) translateY(${i * 22}px)`,
-                transition: 'transform 300ms ease, opacity 300ms ease, filter 300ms ease',
-              }}
-            >
-              <SwipeCard
-                ref={i === 0 ? topCardRef : undefined}
-                profile={profile}
-                active={i === 0}
-                onExit={(direction) => handleExit(profile, direction)}
-                onExpand={setExpandedProfile}
-                onReport={handleReport}
-                onBlock={handleBlock}
-              />
+          <>
+            {newPeople.length > 0 && (
+              <div>
+                <h2 className="font-display text-lg font-semibold text-ink">Nouveaux profils</h2>
+                <div className="-mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
+                  {newPeople.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setExpandedProfile(p)}
+                      className="relative h-44 w-32 shrink-0 overflow-hidden rounded-2xl text-left shadow-sm"
+                    >
+                      <img src={avatarFor(p)} alt={p.firstName} className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" />
+                      {isNew(p) && (
+                        <span className="absolute left-2 top-2 rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          Nouveau
+                        </span>
+                      )}
+                      <div className="absolute inset-x-2 bottom-2 text-white">
+                        <p className="text-sm font-semibold">
+                          {p.firstName}, {p.age}
+                        </p>
+                        {p.city && <p className="text-[11px] text-white/75">{p.city}</p>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <h2 className="font-display text-lg font-semibold text-ink">Centres d'intérêt</h2>
+              <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
+                {INTERESTS.map((interest) => {
+                  const Icon = INTEREST_ICONS[interest]
+                  const active = selectedInterest === interest
+                  return (
+                    <button
+                      key={interest}
+                      type="button"
+                      onClick={() => setSelectedInterest(active ? null : interest)}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition ${
+                        active
+                          ? 'border-violet-400 bg-violet-500/10 text-violet-600'
+                          : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+                      }`}
+                    >
+                      <Icon size={14} strokeWidth={2} />
+                      {interest}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          ))
+
+            <div>
+              <h2 className="font-display text-lg font-semibold text-ink">Autour de toi</h2>
+              <p className="text-xs text-ink-soft/60">
+                {selectedInterest
+                  ? `Profils qui aiment "${selectedInterest}" près de toi`
+                  : 'Des profils près de chez toi'}
+              </p>
+
+              <div className="relative mt-3 h-52 overflow-hidden rounded-[28px] bg-gradient-to-br from-mint-500/15 via-surface-soft to-violet-500/15">
+                <svg className="absolute inset-0 h-full w-full opacity-40" preserveAspectRatio="none" viewBox="0 0 300 200">
+                  <path d="M0 40 Q 90 10 150 60 T 300 50" stroke="currentColor" strokeWidth="2" fill="none" className="text-ink/15" />
+                  <path d="M0 150 Q 100 190 180 140 T 300 160" stroke="currentColor" strokeWidth="2" fill="none" className="text-ink/15" />
+                  <circle cx="60" cy="100" r="2.5" className="fill-ink/15" />
+                  <circle cx="220" cy="70" r="2.5" className="fill-ink/15" />
+                  <circle cx="250" cy="150" r="2.5" className="fill-ink/15" />
+                </svg>
+
+                {aroundMe.length === 0 ? (
+                  <div className="flex h-full items-center justify-center px-6 text-center text-sm text-ink-soft/50">
+                    Personne à afficher pour le moment
+                  </div>
+                ) : (
+                  aroundMe.slice(0, 2).map((p, i) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setExpandedProfile(p)}
+                      className={`absolute flex items-center gap-2 rounded-full bg-white/95 py-1.5 pl-1.5 pr-3 shadow-lg backdrop-blur transition hover:scale-105 ${
+                        i === 0 ? 'left-5 top-6' : 'right-5 bottom-6'
+                      }`}
+                    >
+                      <img src={avatarFor(p)} alt={p.firstName} className="h-9 w-9 rounded-full object-cover ring-2 ring-violet-400" />
+                      <span className="text-xs font-semibold text-ink">Rencontrer {p.firstName}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
         )}
       </div>
-
-      {visible.length > 0 && (
-        <div className="relative z-10 flex items-center gap-5">
-          {ACTIONS.map((action) => (
-            <motion.button
-              key={action.direction}
-              type="button"
-              whileTap={{ scale: 0.85 }}
-              whileHover={{ y: -3 }}
-              onClick={() => handleAction(action.direction)}
-              aria-label={action.label}
-              className={`flex items-center justify-center rounded-full bg-white shadow-lg transition ${action.className}`}
-            >
-              <action.Icon
-                size={action.iconSize}
-                strokeWidth={2.5}
-                fill={action.direction === 'pass' ? 'none' : 'currentColor'}
-              />
-            </motion.button>
-          ))}
-        </div>
-      )}
 
       <AnimatePresence>
         {expandedProfile && (
           <ProfileDetailModal
             profile={expandedProfile}
             onClose={() => setExpandedProfile(null)}
-            onLike={() => handleAction('like')}
-            onPass={() => handleAction('pass')}
+            onLike={() => handleLike(expandedProfile)}
+            onPass={() => handlePass(expandedProfile)}
           />
         )}
       </AnimatePresence>
@@ -274,7 +375,7 @@ function Discover() {
                   initial={{ x: -30, rotate: -8, opacity: 0 }}
                   animate={{ x: -14, rotate: -6, opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  src={matchedProfile.photos?.[0] || `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(matchedProfile.firstName)}&backgroundColor=e8c468`}
+                  src={avatarFor(matchedProfile)}
                   alt={matchedProfile.firstName}
                   className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
                 />
