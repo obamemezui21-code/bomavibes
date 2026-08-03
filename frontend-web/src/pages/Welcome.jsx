@@ -52,9 +52,18 @@ function Welcome() {
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="relative mx-auto h-64 w-64 shrink-0"
       >
-        <div className="absolute inset-0 rounded-full bg-violet-500/10" />
-        <div className="absolute inset-7 rounded-full bg-violet-500/15" />
-        <div className="absolute inset-[3.75rem] rounded-full bg-violet-500/25" />
+        {[
+          { inset: 'inset-0', bg: 'bg-violet-500/10' },
+          { inset: 'inset-7', bg: 'bg-violet-500/15' },
+          { inset: 'inset-[3.75rem]', bg: 'bg-violet-500/25' },
+        ].map((ring, i) => (
+          <motion.div
+            key={ring.inset}
+            className={`absolute rounded-full ${ring.inset} ${ring.bg}`}
+            animate={{ scale: [1, 1.1, 1] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}
+          />
+        ))}
 
         {SATELLITE_PHOTOS.map((photo, i) => (
           <img
