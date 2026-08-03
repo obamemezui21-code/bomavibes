@@ -127,7 +127,9 @@ async function handleSwipe(profile, direction) {
                 <MapPin size={13} strokeWidth={2.25} />
                 {publicProfile?.country || 'Autour de toi'}
               </div>
-              <h1 className="font-display text-2xl font-semibold text-ink">Découvrir</h1>
+              <h1 className="font-display text-2xl font-semibold text-ink">
+                Salut {user?.firstName} 👋
+              </h1>
             </div>
             <div className="flex items-center gap-2">
               <button

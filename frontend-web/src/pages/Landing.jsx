@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { BadgeCheck, Camera, Heart, MessageCircle, ShieldCheck, Users } from 'lucide-react'
-import heroPhoto from '../assets/hero.png'
+import heroPhoto from '../assets/hero.jpg'
 import SiteHeader from '../components/SiteHeader.jsx'
 
 const HERO_LINE_1 = "L'amour a sa vibe."
