@@ -23,7 +23,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
         onClick={(e) => e.stopPropagation()}
         className="glass-panel flex max-h-[92svh] w-full max-w-md flex-col overflow-visible rounded-t-[28px] md:max-h-[85svh] md:rounded-[28px]"
       >
-        <div className="relative aspect-[4/5] w-full shrink-0 overflow-hidden rounded-t-[28px] md:rounded-t-[28px]">
+        <div className="relative aspect-[4/4] w-full shrink-0 overflow-hidden rounded-t-[28px] md:rounded-t-[28px]">
           <img src={photos[index]} alt={profile.firstName} className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
 
@@ -43,25 +43,25 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           <button
             type="button"
             onClick={onClose}
-            className="absolute left-3 top-7 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+            className="absolute left-3 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
             aria-label="Retour"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
           </button>
 
-          <div className="absolute inset-x-0 bottom-0 p-5">
-            <div className="flex items-center gap-2">
-              <h2 className="font-display text-2xl font-semibold text-white">
+          <div className="absolute inset-x-0 bottom-0 p-4">
+            <div className="flex items-center gap-1.5">
+              <h2 className="font-display text-xl font-semibold text-white">
                 {profile.firstName}, {profile.age}
               </h2>
               {profile.verified && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-white">
-                  <Check size={13} strokeWidth={3} />
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-500 text-white">
+                  <Check size={10} strokeWidth={3} />
                 </span>
               )}
             </div>
             {profile.city && (
-              <p className="text-sm uppercase tracking-wide text-white/70">
+              <p className="text-xs uppercase tracking-wide text-white/70">
                 {profile.city}
                 {profile.country ? `, ${profile.country}` : ''}
               </p>
@@ -71,33 +71,33 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
 
         {matchPercent != null && (
           <div className="relative z-10 flex justify-center">
-            <span className="absolute -top-5 flex items-center gap-1.5 rounded-full border-2 border-violet-400 bg-white px-4 py-1.5 text-sm font-bold text-violet-600 shadow-lg">
-              <Star size={14} strokeWidth={2.5} fill="currentColor" />
+            <span className="absolute -top-3.5 flex items-center gap-1 rounded-full border border-violet-400 bg-white px-3 py-1 text-xs font-bold text-violet-600 shadow-md">
+              <Star size={11} strokeWidth={2.5} fill="currentColor" />
               {matchPercent}% Match
             </span>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-5 pt-8">
+        <div className="flex-1 overflow-y-auto p-4 pt-6">
           {profile.bio && (
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft/50">À propos</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink">{profile.bio}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">À propos</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink">{profile.bio}</p>
             </div>
           )}
 
           {profile.interests?.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft/50">Centres d'intérêt</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+            <div className="mt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">Centres d'intérêt</p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {profile.interests.map((interest) => {
                   const Icon = iconForInterest(interest)
                   return (
                     <span
                       key={interest}
-                      className="flex items-center gap-1.5 rounded-full bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-600"
+                      className="flex items-center gap-1 rounded-full bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-600"
                     >
-                      <Icon size={12} strokeWidth={2} />
+                      <Icon size={10} strokeWidth={2} />
                       {interest}
                     </span>
                   )
@@ -118,17 +118,17 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-5 border-t border-ink/8 p-4">
+        <div className="flex items-center justify-center gap-4 border-t border-ink/8 p-3.5">
           <motion.button
             whileTap={{ scale: 0.85 }}
             onClick={() => {
               onPass()
               onClose()
             }}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-coral-500 shadow-md"
             aria-label="Passer"
           >
-            <X size={24} strokeWidth={2.5} />
+            <X size={19} strokeWidth={2.5} />
           </motion.button>
           {onSuperlike && (
             <motion.button
@@ -137,10 +137,10 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                 onSuperlike()
                 onClose()
               }}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-600 text-white shadow-xl shadow-violet-500/30"
+              className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/30"
               aria-label="Super like"
             >
-              <Star size={26} strokeWidth={2.5} fill="currentColor" />
+              <Star size={20} strokeWidth={2.5} fill="currentColor" />
             </motion.button>
           )}
           <motion.button
@@ -149,10 +149,10 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               onLike()
               onClose()
             }}
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-mint-500 text-white shadow-lg"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-mint-500 text-white shadow-md"
             aria-label="Aimer"
           >
-            <Heart size={24} strokeWidth={2.5} fill="currentColor" />
+            <Heart size={19} strokeWidth={2.5} fill="currentColor" />
           </motion.button>
         </div>
       </motion.div>
