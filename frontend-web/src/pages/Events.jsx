@@ -6,7 +6,7 @@ const SOCIALS = [
   { label: 'Instagram', href: 'https://instagram.com/bomavibes' },
   { label: 'Facebook', href: 'https://facebook.com/bomavibes' },
   { label: 'TikTok', href: 'https://tiktok.com/@bomavibes' },
-  { label: 'WhatsApp', href: 'https://wa.me/24100000000' },
+  { label: 'WhatsApp', href: 'https://wa.me/33744233809' },
 ]
 
 function Events() {

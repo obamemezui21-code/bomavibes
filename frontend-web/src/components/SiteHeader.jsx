@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext.jsx'
+import logo from '../assets/bomavibes-icon.png'
 
 const NAV_LINKS = [
   { label: 'Accueil', href: '/#top' },
@@ -34,8 +35,16 @@ function SiteHeader() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30">
-      <div className="mx-auto flex max-w-6xl items-center justify-end px-4 py-4 sm:px-8">
+    <header className="fixed inset-x-0 top-0 z-30 bg-[#1F3D2B]/90 shadow-md backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
+        <a href="/" className="flex items-center">
+          <img
+            src={logo}
+            alt="BomaVibes"
+            className="h-10 w-10 rounded-full border-2 border-[#C9962B] object-cover shadow-md"
+          />
+        </a>
+
         {/* Desktop nav */}
         <div className="hidden items-center gap-6 sm:flex">
           {NAV_LINKS.map((l) => (

@@ -76,7 +76,7 @@ const SOCIALS = [
   { label: 'Instagram', href: 'https://instagram.com/bomavibes' },
   { label: 'Facebook', href: 'https://facebook.com/bomavibes' },
   { label: 'TikTok', href: 'https://tiktok.com/@bomavibes' },
-  { label: 'WhatsApp', href: 'https://wa.me/24100000000' },
+  { label: 'WhatsApp', href: 'https://wa.me/33744233809' },
 ]
 
 const FAQS = [
@@ -313,12 +313,22 @@ function Landing() {
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75">
           Une question, une suggestion ? Écris-nous, on te répond avec plaisir.
         </p>
-        <a
-          href="mailto:contact@bomavibes.tech"
-          className="mt-8 inline-block rounded-xl bg-[#C9962B] px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
-        >
-          contact@bomavibes.tech
-        </a>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <a
+            href="mailto:Bomavibes241@gmail.com"
+            className="inline-block rounded-xl bg-[#C9962B] px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
+          >
+            Bomavibes241@gmail.com
+          </a>
+          <a
+            href="https://wa.me/33744233809"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block rounded-xl border border-white/40 bg-white/10 px-8 py-3.5 text-base font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+          >
+            Écrire sur WhatsApp
+          </a>
+        </div>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
           {SOCIALS.map((s) => (

@@ -48,7 +48,7 @@ const SECTIONS = [
     body: [
       'Tu peux à tout moment consulter et modifier tes informations de profil directement dans l\'app.',
       'Tu peux supprimer ton compte et toutes les données associées depuis Paramètres → Supprimer mon compte.',
-      'Pour toute autre demande (accès, rectification, question sur tes données), écris-nous à contact@bomavibes.tech.',
+      'Pour toute autre demande (accès, rectification, question sur tes données), écris-nous à Bomavibes241@gmail.com.',
     ],
   },
   {
@@ -107,9 +107,19 @@ function PrivacyPolicy() {
         <div className="mt-14 border-t border-[#1F3D2B]/10 pt-8">
           <p className="text-sm text-[#6b5d4f]">
             Une question sur tes données ?{' '}
-            <a href="mailto:contact@bomavibes.tech" className="font-semibold text-[#1F3D2B] underline-offset-4 hover:underline">
-              contact@bomavibes.tech
+            <a href="mailto:Bomavibes241@gmail.com" className="font-semibold text-[#1F3D2B] underline-offset-4 hover:underline">
+              Bomavibes241@gmail.com
+            </a>{' '}
+            ou sur{' '}
+            <a
+              href="https://wa.me/33744233809"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-[#1F3D2B] underline-offset-4 hover:underline"
+            >
+              WhatsApp
             </a>
+            .
           </p>
           <Link to="/" className="mt-4 inline-block text-sm font-semibold text-[#1F3D2B] underline-offset-4 hover:underline">
             ← Retour à l'accueil

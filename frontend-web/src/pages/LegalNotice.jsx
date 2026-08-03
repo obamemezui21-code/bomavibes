@@ -7,7 +7,20 @@ const SECTIONS = [
     body: [
       'Raison sociale / nom du responsable : [à compléter]',
       'Adresse : [à compléter]',
-      'Email de contact : contact@bomavibes.tech',
+      'Email de contact : Bomavibes241@gmail.com',
+      (
+        <>
+          WhatsApp :{' '}
+          <a
+            href="https://wa.me/33744233809"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-[#1F3D2B] underline-offset-2 hover:underline"
+          >
+            +33 7 44 23 38 09
+          </a>
+        </>
+      ),
     ],
   },
   {
@@ -45,8 +58,8 @@ function LegalNotice() {
             <section key={s.title}>
               <h2 className="font-display text-lg font-bold text-[#2B1D14]">{s.title}</h2>
               <ul className="mt-3 space-y-2">
-                {s.body.map((line) => (
-                  <li key={line} className="flex gap-2 text-sm leading-relaxed text-[#6b5d4f]">
+                {s.body.map((line, i) => (
+                  <li key={i} className="flex gap-2 text-sm leading-relaxed text-[#6b5d4f]">
                     <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#C9962B]" />
                     {line}
                   </li>

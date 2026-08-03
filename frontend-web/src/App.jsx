@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
+import SplashScreen from './components/SplashScreen.jsx'
 import Landing from './pages/Landing.jsx'
 import Events from './pages/Events.jsx'
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx'
@@ -21,51 +23,56 @@ import AppLayout from './layouts/AppLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 
 function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/evenements" element={<Events />} />
-      <Route path="/confidentialite" element={<PrivacyPolicy />} />
-      <Route path="/conditions" element={<Terms />} />
-      <Route path="/mentions-legales" element={<LegalNotice />} />
-      <Route path="/securite" element={<Safety />} />
-      <Route path="/welcome" element={<Welcome />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/auth/action" element={<AuthAction />} />
-      <Route
-        path="/verify-email"
-        element={
-          <RequireAuth requireVerified={false}>
-            <VerifyEmail />
-          </RequireAuth>
-        }
-      />
-      <Route
-        path="/onboarding"
-        element={
-          <RequireAuth>
-            <Onboarding />
-          </RequireAuth>
-        }
-      />
+  const [showSplash, setShowSplash] = useState(true)
 
-      <Route
-        element={
-          <RequireAuth requireOnboarded>
-            <AppLayout />
-          </RequireAuth>
-        }
-      >
-        <Route path="/discover" element={<Discover />} />
-        <Route path="/matches" element={<Matches />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/chat/:conversationId" element={<Chat />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/settings" element={<Settings />} />
-      </Route>
-    </Routes>
+  return (
+    <>
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/evenements" element={<Events />} />
+        <Route path="/confidentialite" element={<PrivacyPolicy />} />
+        <Route path="/conditions" element={<Terms />} />
+        <Route path="/mentions-legales" element={<LegalNotice />} />
+        <Route path="/securite" element={<Safety />} />
+        <Route path="/welcome" element={<Welcome />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/auth/action" element={<AuthAction />} />
+        <Route
+          path="/verify-email"
+          element={
+            <RequireAuth requireVerified={false}>
+              <VerifyEmail />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/onboarding"
+          element={
+            <RequireAuth>
+              <Onboarding />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          element={
+            <RequireAuth requireOnboarded>
+              <AppLayout />
+            </RequireAuth>
+          }
+        >
+          <Route path="/discover" element={<Discover />} />
+          <Route path="/matches" element={<Matches />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/chat/:conversationId" element={<Chat />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+      </Routes>
+    </>
   )
 }
 
