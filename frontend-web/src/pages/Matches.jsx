@@ -5,12 +5,7 @@ import { Heart, MessageCircle, Sparkles } from 'lucide-react'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { countIncomingLikes } from '../firebase/swipes.js'
-
-function matchPercent(myInterests, theirInterests) {
-  if (!myInterests?.length || !theirInterests?.length) return null
-  const shared = theirInterests.filter((i) => myInterests.includes(i)).length
-  return Math.round((shared / Math.min(myInterests.length, theirInterests.length)) * 100)
-}
+import { matchPercent } from '../lib/interests.js'
 
 function Matches() {
   const navigate = useNavigate()

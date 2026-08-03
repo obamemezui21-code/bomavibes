@@ -1,27 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  BookOpen,
-  Briefcase,
-  Camera,
-  ChefHat,
-  Clapperboard,
-  Coffee,
-  Dumbbell,
-  Heart,
-  Leaf,
-  MapPin,
-  Mountain,
-  Music,
-  Palette,
-  PersonStanding,
-  Plane,
-  Search,
-  Shirt,
-  SlidersHorizontal,
-  Sparkles,
-} from 'lucide-react'
+import { Heart, MapPin, Search, SlidersHorizontal, Sparkles } from 'lucide-react'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
@@ -29,23 +9,8 @@ import { fetchDiscoverCandidates } from '../firebase/discovery.js'
 import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { INTEREST_ICONS, matchPercent } from '../lib/interests.js'
 
-const INTEREST_ICONS = {
-  Danse: PersonStanding,
-  Cuisine: ChefHat,
-  Voyages: Plane,
-  Musique: Music,
-  Sport: Dumbbell,
-  Cinéma: Clapperboard,
-  Lecture: BookOpen,
-  Photo: Camera,
-  Nature: Leaf,
-  Art: Palette,
-  Café: Coffee,
-  Randonnée: Mountain,
-  Mode: Shirt,
-  Business: Briefcase,
-}
 const INTERESTS = Object.keys(INTEREST_ICONS)
 
 const NEW_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000
@@ -113,14 +78,14 @@ function Discover() {
     [searched, selectedInterest],
   )
 
-  async function handleLike(profile) {
+async function handleSwipe(profile, direction) {
     setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
     try {
-      const matchId = await recordSwipeAndMatch(user.id, profile.id, 'like')
+      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction)
       if (matchId) {
         setMatchConversationId(matchId)
         setMatchedProfile(profile)
-      } else {
+      } else if (direction !== 'pass') {
         showToast(`Tu as aimé le profil de ${profile.firstName}.`, 'success')
       }
     } catch {
@@ -128,13 +93,16 @@ function Discover() {
     }
   }
 
-  async function handlePass(profile) {
-    setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
-    try {
-      await recordSwipeAndMatch(user.id, profile.id, 'pass')
-    } catch {
-      showToast("Impossible d'enregistrer ton choix, réessaie.", 'error')
-    }
+  function handleLike(profile) {
+    return handleSwipe(profile, 'like')
+  }
+
+  function handleSuperlike(profile) {
+    return handleSwipe(profile, 'superlike')
+  }
+
+  function handlePass(profile) {
+    return handleSwipe(profile, 'pass')
   }
 
   function handleCloseFilters() {
@@ -321,8 +289,10 @@ function Discover() {
         {expandedProfile && (
           <ProfileDetailModal
             profile={expandedProfile}
+            matchPercent={matchPercent(publicProfile?.interests, expandedProfile.interests)}
             onClose={() => setExpandedProfile(null)}
             onLike={() => handleLike(expandedProfile)}
+            onSuperlike={() => handleSuperlike(expandedProfile)}
             onPass={() => handlePass(expandedProfile)}
           />
         )}
