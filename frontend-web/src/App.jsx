@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import Landing from './pages/Landing.jsx'
 import Events from './pages/Events.jsx'
+import Welcome from './pages/Welcome.jsx'
 import Login from './pages/Login.jsx'
 import Signup from './pages/Signup.jsx'
 import VerifyEmail from './pages/VerifyEmail.jsx'
@@ -20,6 +21,7 @@ function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/evenements" element={<Events />} />
+      <Route path="/welcome" element={<Welcome />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
