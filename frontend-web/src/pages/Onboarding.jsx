@@ -29,7 +29,7 @@ const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 const STEPS = ['Photos', 'À propos de toi', 'Tes centres d\'intérêt', 'Tes préférences']
 
 function Onboarding() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
@@ -73,6 +73,11 @@ function Onboarding() {
 
   function goBack() {
     if (step > 0) setStep((s) => s - 1)
+  }
+
+  async function handleCancel() {
+    await logout()
+    navigate('/')
   }
 
   async function finish() {
@@ -126,9 +131,20 @@ function Onboarding() {
 
       <div className="relative z-10 mx-auto w-full max-w-md">
         <div className="mb-6">
-          <div className="mb-2 flex justify-between text-xs text-ink-soft/60">
+          <div className="mb-2 flex items-center justify-between text-xs text-ink-soft/60">
             <span>{STEPS[step]}</span>
-            <span>{step + 1} / {STEPS.length}</span>
+            <div className="flex items-center gap-2">
+              <span>{step + 1} / {STEPS.length}</span>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
+                aria-label="Annuler l'inscription"
+                title="Annuler l'inscription"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
             <motion.div
