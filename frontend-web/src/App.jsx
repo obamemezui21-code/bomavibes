@@ -36,7 +36,7 @@ function App() {
         <Route path="/conditions" element={<Terms />} />
         <Route path="/mentions-legales" element={<LegalNotice />} />
         <Route path="/securite" element={<Safety />} />
-        <Route path="/premium" element={<Pricing />} />
+        <Route path="/tarifs" element={<Pricing />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
