@@ -1,5 +1,12 @@
-import { doc, getDoc, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { db } from './config.js'
+
+export async function countIncomingLikes(uid) {
+  const snap = await getDocs(
+    query(collection(db, 'swipes'), where('targetId', '==', uid), where('direction', 'in', ['like', 'superlike'])),
+  )
+  return snap.size
+}
 
 export async function recordSwipeAndMatch(uid, targetId, direction) {
   await setDoc(doc(db, 'swipes', `${uid}_${targetId}`), {

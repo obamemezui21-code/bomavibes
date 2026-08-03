@@ -81,7 +81,9 @@ export function ConversationsProvider({ children }) {
           id: match.id,
           profile: {
             firstName: profile.firstName,
+            age: profile.age,
             city: profile.city,
+            interests: profile.interests || [],
             photo:
               profile.photos?.[0] ||
               `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || 'Bomavibes')}&backgroundColor=e8c468`,
