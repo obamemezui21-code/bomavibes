@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TriangleAlert } from 'lucide-react'
+import { ArrowLeft, Moon, Sun, TriangleAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { useTheme } from '../context/ThemeContext.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 
 const inputClass =
-  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Toggle({ checked, onChange }) {
@@ -235,6 +236,7 @@ function Settings() {
   const navigate = useNavigate()
   const { user, logout, deleteAccount } = useAuth()
   const { showToast } = useToast()
+  const { theme, toggleTheme } = useTheme()
 
   const [newMatches, setNewMatches] = useState(true)
   const [newMessages, setNewMessages] = useState(true)
@@ -271,12 +273,25 @@ function Settings() {
             className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5"
             aria-label="Retour"
           >
-            ←
+            <ArrowLeft size={18} />
           </button>
           <h1 className="font-display text-2xl font-semibold text-ink">Paramètres</h1>
         </div>
 
         <div className="space-y-4">
+          <Section title="Apparence">
+            <Row title="Thème sombre" subtitle={theme === 'dark' ? 'Activé' : 'Désactivé'}>
+              <div className="flex items-center gap-2">
+                {theme === 'dark' ? (
+                  <Moon size={15} className="text-ink-soft/60" />
+                ) : (
+                  <Sun size={15} className="text-ink-soft/60" />
+                )}
+                <Toggle checked={theme === 'dark'} onChange={toggleTheme} />
+              </div>
+            </Row>
+          </Section>
+
           <Section title="Notifications">
             <Row title="Nouveaux matchs" subtitle="Reçois une alerte à chaque match">
               <Toggle checked={newMatches} onChange={setNewMatches} />

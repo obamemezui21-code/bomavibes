@@ -23,7 +23,7 @@ const MIN_AGE = 18
 const MAX_AGE = 80
 
 const inputClass =
-  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 const STEPS = ['Photos', 'À propos de toi', 'Tes centres d\'intérêt', 'Tes préférences']
@@ -210,7 +210,7 @@ function Onboarding() {
                       <button
                         type="button"
                         onClick={() => setForm((f) => ({ ...f, age: Math.max(MIN_AGE, f.age - 1) }))}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink/70 shadow-sm transition hover:text-violet-600"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-surface-tint text-ink/70 shadow-sm transition hover:text-violet-600"
                         aria-label="Diminuer l'âge"
                       >
                         <Minus size={16} />
@@ -233,7 +233,7 @@ function Onboarding() {
                       <button
                         type="button"
                         onClick={() => setForm((f) => ({ ...f, age: Math.min(MAX_AGE, f.age + 1) }))}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink/70 shadow-sm transition hover:text-violet-600"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white dark:bg-surface-tint text-ink/70 shadow-sm transition hover:text-violet-600"
                         aria-label="Augmenter l'âge"
                       >
                         <Plus size={16} />

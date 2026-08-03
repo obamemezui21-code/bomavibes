@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-surface: #ffffff;
   --color-surface-soft: #faf6ef;
@@ -39,11 +41,23 @@ html {
   color-scheme: light;
 }
 
+html.dark {
+  --color-surface: #18130f;
+  --color-surface-soft: #201a15;
+  --color-surface-tint: #2a231b;
+
+  --color-ink: #f3ece2;
+  --color-ink-soft: #b8a99a;
+
+  color-scheme: dark;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
   background: var(--color-surface);
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease;
 }
 
 ::selection {
@@ -83,6 +97,16 @@ body {
   background: rgba(31, 61, 43, 0.35);
 }
 
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 /* Shared surfaces */
 .glass-panel {
   background: rgba(255, 255, 255, 0.85);
@@ -96,6 +120,18 @@ body {
   background: #ffffff;
   border: 1px solid rgba(43, 29, 20, 0.06);
   box-shadow: 0 24px 48px -16px rgba(31, 61, 43, 0.18);
+}
+
+.dark .glass-panel {
+  background: rgba(32, 26, 21, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.5);
+}
+
+.dark .glass-panel-solid {
+  background: #201a15;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45);
 }
 
 .text-gradient-brand {

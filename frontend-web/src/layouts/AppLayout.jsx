@@ -36,7 +36,7 @@ function AppLayout() {
 
   return (
     <div className="min-h-svh bg-surface-soft md:flex">
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-svh md:w-60 md:flex-col md:border-r md:border-ink/8 md:bg-white/70 md:p-4 md:backdrop-blur-xl">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-svh md:w-60 md:flex-col md:border-r md:border-ink/8 md:bg-white/70 md:p-4 md:backdrop-blur-xl dark:md:bg-surface/70">
         <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
           <span className="text-ink">Boma</span>
           <span className="text-gradient-brand italic">Vibes</span>
@@ -93,7 +93,7 @@ function AppLayout() {
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 backdrop-blur-xl dark:bg-surface/85 md:hidden">
         {navItems.map((item) => {
           const isActive = location.pathname === item.to
           return (

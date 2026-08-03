@@ -38,7 +38,7 @@ function PasswordInput({ id, value, onChange, placeholder, autoComplete, require
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-ink/10 bg-surface-soft px-3.5 py-2.5 pr-11 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15"
+        className="w-full rounded-xl border border-ink/10 bg-surface-soft px-3.5 py-2.5 pr-11 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15"
       />
       <button
         type="button"

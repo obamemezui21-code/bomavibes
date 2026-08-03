@@ -71,7 +71,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
 
         {matchPercent != null && (
           <div className="relative z-10 flex justify-center">
-            <span className="absolute -top-3.5 flex items-center gap-1 rounded-full border border-violet-400 bg-white px-3 py-1 text-xs font-bold text-violet-600 shadow-md">
+            <span className="absolute -top-3.5 flex items-center gap-1 rounded-full border border-violet-400 bg-white dark:bg-surface-tint px-3 py-1 text-xs font-bold text-violet-600 shadow-md">
               <Star size={11} strokeWidth={2.5} fill="currentColor" />
               {matchPercent}% Match
             </span>
@@ -125,7 +125,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               onPass()
               onClose()
             }}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-coral-500 shadow-md"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-surface-tint text-coral-500 shadow-md"
             aria-label="Passer"
           >
             <X size={19} strokeWidth={2.5} />

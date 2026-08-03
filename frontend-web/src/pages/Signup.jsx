@@ -7,7 +7,7 @@ import GoogleIcon from '../components/GoogleIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 const inputClass =
-  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15'
+  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Signup() {
@@ -169,7 +169,7 @@ function Signup() {
           onClick={handleGoogle}
           disabled={isGoogleLoading}
           whileTap={{ scale: 0.97 }}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-ink/12 bg-white py-2.5 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-ink/12 bg-white dark:bg-surface-tint py-2.5 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <GoogleIcon />
           {isGoogleLoading ? 'Connexion…' : 'Continuer avec Google'}

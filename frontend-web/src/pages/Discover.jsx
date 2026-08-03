@@ -167,7 +167,7 @@ async function handleSwipe(profile, direction) {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Chercher un prénom…"
-                  className="mt-3 w-full rounded-xl border border-ink/12 bg-white px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+                  className="mt-3 w-full rounded-xl border border-ink/12 bg-white dark:bg-surface-tint px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
                 />
               </motion.div>
             )}
@@ -270,7 +270,7 @@ async function handleSwipe(profile, direction) {
                       key={p.id}
                       type="button"
                       onClick={() => setExpandedProfile(p)}
-                      className={`absolute flex items-center gap-2 rounded-full bg-white/95 py-1.5 pl-1.5 pr-3 shadow-lg backdrop-blur transition hover:scale-105 ${
+                      className={`absolute flex items-center gap-2 rounded-full bg-white/95 py-1.5 pl-1.5 pr-3 shadow-lg backdrop-blur transition hover:scale-105 dark:bg-surface-tint/95 ${
                         i === 0 ? 'left-5 top-6' : 'right-5 bottom-6'
                       }`}
                     >

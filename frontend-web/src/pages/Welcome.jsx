@@ -107,7 +107,7 @@ function Welcome() {
           type="button"
           onClick={handleGoogle}
           disabled={isGoogleLoading}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-ink/12 bg-white py-3 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-ink/12 bg-white dark:bg-surface-tint py-3 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <GoogleIcon />
           {isGoogleLoading ? 'Connexion…' : 'Continuer avec Google'}
