@@ -30,6 +30,27 @@ const FEATURES = [
   { icon: Users, title: 'Afrocentré', text: 'Une communauté qui te ressemble' },
 ]
 
+const FEATURE_DETAILS = [
+  {
+    icon: ShieldCheck,
+    title: 'Sécurisé',
+    text: "Tes données ne sont jamais vendues et restent sous ton contrôle : mots de passe chiffrés, connexions protégées, et suppression complète et définitive de tes données en un clic depuis les Paramètres si tu changes d'avis.",
+    link: { to: '/confidentialite', label: 'Notre politique de confidentialité' },
+  },
+  {
+    icon: BadgeCheck,
+    title: 'Authentique',
+    text: 'Chaque profil est modéré pour limiter les faux comptes et les usurpations. Signalement et blocage en un geste, pour une communauté où tu peux vraiment faire confiance à qui tu matches.',
+    link: { to: '/securite', label: 'Sécurité & signalement' },
+  },
+  {
+    icon: Users,
+    title: 'Afrocentré',
+    text: "Pensé par et pour les célibataires africains et afrodescendants : mêmes codes, mêmes valeurs, même énergie. BomaVibes célèbre ta culture au lieu de te demander de t'adapter à celle des autres.",
+    link: null,
+  },
+]
+
 const STEPS = [
   {
     icon: Camera,
@@ -304,6 +325,33 @@ function Landing() {
               </div>
             )
           })}
+        </div>
+      </section>
+
+      {/* Why BomaVibes */}
+      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-10">
+        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Pourquoi BomaVibes</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-center text-lg leading-relaxed text-[#6b5d4f]">
+          Trois principes qui guident tout ce qu'on construit.
+        </p>
+        <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          {FEATURE_DETAILS.map((f) => (
+            <div key={f.title} className="rounded-3xl border border-[#1F3D2B]/8 bg-white p-8 shadow-sm">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
+                <f.icon size={26} strokeWidth={1.75} className="text-[#E8C468]" />
+              </div>
+              <h3 className="mt-6 font-display text-xl font-bold text-[#2B1D14]">{f.title}</h3>
+              <p className="mt-3 text-base leading-relaxed text-[#6b5d4f]">{f.text}</p>
+              {f.link && (
+                <Link
+                  to={f.link.to}
+                  className="mt-4 inline-block text-sm font-semibold text-[#9c7220] underline-offset-2 hover:underline"
+                >
+                  {f.link.label} →
+                </Link>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
