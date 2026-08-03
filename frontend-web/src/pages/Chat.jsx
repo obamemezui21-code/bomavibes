@@ -4,12 +4,16 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Hand, MessageCircle, Send } from 'lucide-react'
 import { useConversations } from '../context/ConversationsContext.jsx'
 
+const TYPING_STOP_DELAY_MS = 2500
+
 function Chat() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
-  const { conversations, typingId, sendMessage, openConversation } = useConversations()
+  const { conversations, typingId, sendMessage, openConversation, setTyping } = useConversations()
   const [draft, setDraft] = useState('')
   const scrollRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
+  const isTypingRef = useRef(false)
 
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
@@ -22,10 +26,32 @@ function Chat() {
     if (conversationId) openConversation(conversationId)
   }, [conversationId, openConversation])
 
+  useEffect(() => {
+    return () => clearTimeout(typingTimeoutRef.current)
+  }, [activeId])
+
+  function handleDraftChange(value) {
+    setDraft(value)
+    if (!active) return
+
+    if (!isTypingRef.current) {
+      isTypingRef.current = true
+      setTyping(active.id, true)
+    }
+    clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false
+      setTyping(active.id, false)
+    }, TYPING_STOP_DELAY_MS)
+  }
+
   function handleSend(e) {
     e.preventDefault()
     const text = draft.trim()
     if (!text || !active) return
+    clearTimeout(typingTimeoutRef.current)
+    isTypingRef.current = false
+    setTyping(active.id, false)
     sendMessage(active.id, text)
     setDraft('')
   }
@@ -43,7 +69,7 @@ function Chat() {
   }
 
   return (
-    <div className="flex h-svh bg-surface-soft md:h-full">
+    <div className="flex h-[calc(100svh-5rem)] bg-surface-soft md:h-full">
       {/* Conversation list */}
       <div
         className={`w-full flex-col border-r border-ink/8 md:flex md:w-80 ${
@@ -165,7 +191,7 @@ function Chat() {
               <input
                 type="text"
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => handleDraftChange(e.target.value)}
                 placeholder="Écris un message…"
                 className="flex-1 rounded-full border border-ink/12 bg-ink/[0.03] px-4 py-2.5 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
               />

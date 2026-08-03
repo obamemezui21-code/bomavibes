@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   addDoc,
   collection,
@@ -12,13 +12,22 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { sendPushNotification } from '../firebase/notify.js'
+import { playNotificationSound } from '../lib/notificationSound.js'
 import { useAuth } from './AuthContext.jsx'
 
 const ConversationsContext = createContext(null)
+const ONLINE_THRESHOLD_MS = 90 * 1000
+const TYPING_THRESHOLD_MS = 6 * 1000
+const HEARTBEAT_INTERVAL_MS = 45 * 1000
 
 function formatTime(date) {
   if (!date) return ''
   return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function isRecent(timestamp, thresholdMs, now) {
+  const ms = timestamp?.toMillis?.()
+  return !!ms && now - ms < thresholdMs
 }
 
 export function ConversationsProvider({ children }) {
@@ -28,15 +37,47 @@ export function ConversationsProvider({ children }) {
   const [profilesById, setProfilesById] = useState({})
   const [activeMessages, setActiveMessages] = useState({})
   const [openMatchId, setOpenMatchId] = useState(null)
+  const [now, setNow] = useState(Date.now())
+  const prevSeenRef = useRef({})
+  const isFirstMatchesSnapshot = useRef(true)
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15 * 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!uid) return undefined
+    updateDoc(doc(db, 'profiles', uid), { lastActive: serverTimestamp() }).catch(() => {})
+    const heartbeat = setInterval(() => {
+      updateDoc(doc(db, 'profiles', uid), { lastActive: serverTimestamp() }).catch(() => {})
+    }, HEARTBEAT_INTERVAL_MS)
+    return () => clearInterval(heartbeat)
+  }, [uid])
 
   useEffect(() => {
     if (!uid) {
       setMatches([])
       return
     }
+    isFirstMatchesSnapshot.current = true
     const q = query(collection(db, 'matches'), where('users', 'array-contains', uid))
     const unsubscribe = onSnapshot(q, (snap) => {
-      setMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      const next = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+
+      if (!isFirstMatchesSnapshot.current) {
+        for (const match of next) {
+          const wasSeen = prevSeenRef.current[match.id]
+          const nowSeen = match.seen?.[uid]
+          if (wasSeen === true && nowSeen === false) {
+            playNotificationSound()
+          }
+        }
+      }
+      isFirstMatchesSnapshot.current = false
+      prevSeenRef.current = Object.fromEntries(next.map((m) => [m.id, m.seen?.[uid]]))
+
+      setMatches(next)
     })
     return unsubscribe
   }, [uid])
@@ -94,12 +135,15 @@ export function ConversationsProvider({ children }) {
           unreadCount: match.seen?.[uid] === false ? 1 : 0,
           lastMessage: match.lastMessage || null,
           messages: activeMessages[match.id] || [],
+          online: isRecent(profile.lastActive, ONLINE_THRESHOLD_MS, now),
+          isTyping: isRecent(match.typing?.[otherUid], TYPING_THRESHOLD_MS, now),
         }
       })
       .filter(Boolean)
       .sort((a, b) => new Date(b.matchedAt) - new Date(a.matchedAt))
-  }, [matches, profilesById, activeMessages, uid])
+  }, [matches, profilesById, activeMessages, uid, now])
 
+  const typingId = conversations.find((c) => c.isTyping)?.id ?? null
   const newMatchesCount = useMemo(() => conversations.filter((c) => c.isNewMatch).length, [conversations])
   const unreadMessagesCount = useMemo(
     () => conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0),
@@ -141,11 +185,18 @@ export function ConversationsProvider({ children }) {
     }
   }
 
+  async function setTyping(matchId, isTyping) {
+    await updateDoc(doc(db, 'matches', matchId), {
+      [`typing.${uid}`]: isTyping ? serverTimestamp() : null,
+    }).catch(() => {})
+  }
+
   return (
     <ConversationsContext.Provider
       value={{
         conversations,
-        typingId: null,
+        typingId,
+        setTyping,
         unreadMessagesCount,
         newMatchesCount,
         openConversation,
