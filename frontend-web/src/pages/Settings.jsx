@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { ArrowLeft, Heart, Moon, ShieldOff, Sun, TriangleAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { db } from '../firebase/config.js'
@@ -72,6 +73,7 @@ function Modal({ onClose, children }) {
 
 function BlockedUsersModal({ onClose }) {
   const { user } = useAuth()
+  const { refreshBlockedIds } = useConversations()
   const { showToast } = useToast()
   const [profiles, setProfiles] = useState(null)
   const [unblockingId, setUnblockingId] = useState(null)
@@ -98,6 +100,7 @@ function BlockedUsersModal({ onClose }) {
     setUnblockingId(id)
     try {
       await unblockUser(user.id, id)
+      await refreshBlockedIds()
       setProfiles((prev) => prev.filter((p) => p.id !== id))
       showToast('Utilisateur débloqué.', 'success')
     } catch {

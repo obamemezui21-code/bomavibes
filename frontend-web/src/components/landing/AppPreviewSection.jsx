@@ -1,24 +1,28 @@
 import { motion } from 'framer-motion'
-import { Heart, Mic, Send, Star, X } from 'lucide-react'
+import { Flag, Heart, Lock, Mic, Send, ShieldOff, Sparkles, Star, X } from 'lucide-react'
 
-function PhoneFrame({ children, delay }) {
+function PhoneFrame({ children, label, delay, tilt }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      whileInView={{ opacity: 1, y: 0, rotate: tilt }}
       viewport={{ once: true, margin: '-60px' }}
+      whileHover={{ rotate: 0, scale: 1.035, y: -6 }}
       transition={{ duration: 0.5, delay, ease: 'easeOut' }}
-      className="mx-auto w-full max-w-[260px] overflow-hidden rounded-[2.25rem] border-[10px] border-[#2B1D14] bg-white shadow-2xl"
+      className="mx-auto w-full max-w-[240px]"
     >
-      <div className="mx-auto -mt-1 h-4 w-24 rounded-b-2xl bg-[#2B1D14]" />
-      {children}
+      <div className="overflow-hidden rounded-[2.25rem] border-[10px] border-[#2B1D14] bg-white shadow-2xl shadow-[#1F3D2B]/20">
+        <div className="mx-auto -mt-1 h-4 w-24 rounded-b-2xl bg-[#2B1D14]" />
+        {children}
+      </div>
+      <p className="mt-4 text-center text-sm font-semibold text-[#2B1D14]">{label}</p>
     </motion.div>
   )
 }
 
 function DiscoverMock() {
   return (
-    <div className="flex h-[440px] flex-col bg-[#FAF6EF] p-3">
+    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Découvrir</p>
       <div className="relative flex-1 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-400 via-pink-300 to-amber-200">
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
@@ -43,7 +47,7 @@ function DiscoverMock() {
 
 function ChatMock() {
   return (
-    <div className="flex h-[440px] flex-col bg-[#FAF6EF] p-3">
+    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Messages</p>
       <div className="flex-1 space-y-2 overflow-hidden">
         <div className="flex justify-start">
@@ -79,7 +83,7 @@ function ChatMock() {
 function ProfileMock() {
   const chips = ['Voyages', 'Musique', 'Cuisine', 'Sport', 'Cinéma', 'Nature']
   return (
-    <div className="flex h-[440px] flex-col bg-[#FAF6EF] p-3">
+    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Votre profil</p>
       <div className="flex flex-col items-center">
         <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-400 to-pink-300 shadow" />
@@ -106,6 +110,107 @@ function ProfileMock() {
   )
 }
 
+function LikesYouMock() {
+  return (
+    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
+      <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Qui vous a aimé·e</p>
+      <div className="grid flex-1 grid-cols-2 gap-2">
+        {['from-violet-400 to-pink-300', 'from-amber-200 to-pink-300', 'from-mint-300 to-violet-300', 'from-pink-300 to-amber-200'].map(
+          (g, i) => (
+            <div key={i} className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${g} blur-[2px]`}>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                <Lock size={14} className="text-white/90" strokeWidth={2.5} />
+              </div>
+            </div>
+          ),
+        )}
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2">
+        <Sparkles size={12} strokeWidth={2.5} className="text-[#2B1D14]" />
+        <span className="text-[10px] font-bold text-[#2B1D14]">12 personnes vous ont aimé·e</span>
+      </div>
+    </div>
+  )
+}
+
+function SecurityMock() {
+  return (
+    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
+      <div className="flex items-center gap-2 rounded-t-xl bg-white px-2 py-2 shadow-sm">
+        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-violet-400 to-pink-300" />
+        <span className="flex-1 text-[11px] font-bold text-[#2B1D14]">Kwame</span>
+      </div>
+      <div className="relative flex-1 rounded-b-xl bg-white px-2 pb-2">
+        <div className="ml-auto mt-2 w-40 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5">
+          <div className="flex items-center gap-2 px-3 py-2.5 text-[10px] font-semibold text-[#2B1D14]">
+            <Flag size={12} strokeWidth={2.25} />
+            Signaler
+          </div>
+          <div className="flex items-center gap-2 border-t border-black/6 px-3 py-2.5 text-[10px] font-semibold text-coral-500">
+            <ShieldOff size={12} strokeWidth={2.25} />
+            Bloquer
+          </div>
+        </div>
+      </div>
+      <p className="mt-2 text-center text-[10px] font-medium text-[#6b5d4f]">
+        Effet immédiat, des deux côtés
+      </p>
+    </div>
+  )
+}
+
+function OnboardingMock() {
+  const countries = [
+    { flag: '🇬🇦', name: 'Gabon', active: true },
+    { flag: '🇨🇲', name: 'Cameroun', active: false },
+    { flag: '🇸🇳', name: 'Sénégal', active: false },
+  ]
+  const regions = ['Estuaire', 'Haut-Ogooué', 'Ngounié']
+  return (
+    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
+      <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Où vous êtes</p>
+      <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-[#9c7220]">Pays</p>
+      <div className="flex flex-wrap gap-1.5">
+        {countries.map((c) => (
+          <span
+            key={c.name}
+            className={`rounded-full border px-2 py-1 text-[9px] font-medium ${
+              c.active ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#6b5d4f]'
+            }`}
+          >
+            {c.flag} {c.name}
+          </span>
+        ))}
+      </div>
+      <p className="mb-2 mt-4 text-[9px] font-semibold uppercase tracking-wide text-[#9c7220]">Région</p>
+      <div className="flex flex-wrap gap-1.5">
+        {regions.map((r, i) => (
+          <span
+            key={r}
+            className={`rounded-full border px-2 py-1 text-[9px] font-medium ${
+              i === 0 ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#6b5d4f]'
+            }`}
+          >
+            {r}
+          </span>
+        ))}
+      </div>
+      <div className="mt-auto rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-center text-[10px] font-bold text-[#2B1D14]">
+        Continuer
+      </div>
+    </div>
+  )
+}
+
+const SCREENS = [
+  { label: 'Découvrir', Mock: DiscoverMock, tilt: -3 },
+  { label: 'Messagerie & notes vocales', Mock: ChatMock, tilt: 2 },
+  { label: 'Profil enrichi', Mock: ProfileMock, tilt: -2 },
+  { label: 'Qui vous a aimé·e', Mock: LikesYouMock, tilt: 3 },
+  { label: 'Sécurité en un geste', Mock: SecurityMock, tilt: -2 },
+  { label: 'Onboarding guidé', Mock: OnboardingMock, tilt: 2 },
+]
+
 function AppPreviewSection() {
   return (
     <section id="apercu" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-24 sm:px-10">
@@ -116,16 +221,12 @@ function AppPreviewSection() {
         </p>
       </div>
 
-      <div className="mt-16 grid grid-cols-1 gap-10 sm:grid-cols-3">
-        <PhoneFrame delay={0}>
-          <DiscoverMock />
-        </PhoneFrame>
-        <PhoneFrame delay={0.1}>
-          <ChatMock />
-        </PhoneFrame>
-        <PhoneFrame delay={0.2}>
-          <ProfileMock />
-        </PhoneFrame>
+      <div className="mt-16 grid grid-cols-2 gap-x-6 gap-y-14 sm:grid-cols-3 sm:gap-x-10">
+        {SCREENS.map(({ label, Mock, tilt }, i) => (
+          <PhoneFrame key={label} label={label} delay={i * 0.08} tilt={tilt}>
+            <Mock />
+          </PhoneFrame>
+        ))}
       </div>
     </section>
   )

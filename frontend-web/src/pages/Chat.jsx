@@ -177,6 +177,7 @@ function Chat() {
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [isSendingVoice, setIsSendingVoice] = useState(false)
   const scrollRef = useRef(null)
+  const bottomRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const isTypingRef = useRef(false)
   const mediaRecorderRef = useRef(null)
@@ -188,16 +189,16 @@ function Chat() {
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
 
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'auto' })
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [activeId])
+  const prevActiveIdRef = useRef(null)
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [active?.messages.length, typingId])
+    const isConversationSwitch = prevActiveIdRef.current !== activeId
+    prevActiveIdRef.current = activeId
+    const frame = requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior: isConversationSwitch ? 'auto' : 'smooth', block: 'end' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activeId, active?.messages.length, typingId])
 
   useEffect(() => {
     if (conversationId) openConversation(conversationId)
@@ -612,6 +613,7 @@ function Chat() {
                   </div>
                 </motion.div>
               )}
+              <div ref={bottomRef} />
             </div>
 
             {editingMessageId && (
