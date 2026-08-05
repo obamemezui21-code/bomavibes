@@ -8,7 +8,7 @@ import amaraPhoto from '../assets/faces/amara.jpg'
 import malikPhoto from '../assets/faces/malik.jpg'
 import ndeyePhoto from '../assets/faces/ndeye.jpg'
 import SiteHeader from '../components/SiteHeader.jsx'
-import PricingTiers from '../components/PricingTiers.jsx'
+import { TIERS } from '../components/PricingTiers.jsx'
 import WwfNewsSection from '../components/WwfNewsSection.jsx'
 
 const WORD_CONTAINER = {
@@ -375,15 +375,42 @@ function Landing() {
         </div>
       </section>
 
-      {/* Nos tarifs */}
-      <section id="tarifs" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-24 sm:px-10">
+      {/* Nos tarifs (teaser) */}
+      <section id="tarifs" className="mx-auto max-w-5xl scroll-mt-20 px-4 py-24 sm:px-10">
         <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Nos tarifs</h2>
         <p className="mx-auto mt-5 max-w-xl text-center text-lg leading-relaxed text-[#6b5d4f]">
           BomaVibes reste gratuit pour matcher et discuter. Choisis le niveau qui te correspond,
           sans engagement caché.
         </p>
-        <div className="mt-16">
-          <PricingTiers />
+
+        <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-3">
+          {TIERS.map((tier) => (
+            <Link
+              key={tier.name}
+              to="/tarifs"
+              className={`rounded-2xl border bg-white p-6 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                tier.highlight ? 'border-[#C9962B]' : 'border-[#1F3D2B]/8'
+              }`}
+            >
+              <img src={tier.badge} alt="" className="mx-auto h-14 w-14 rounded-xl object-cover shadow" />
+              <p className="mt-4 font-display text-base font-bold text-[#2B1D14]">
+                {tier.emoji} {tier.name}
+              </p>
+              <p className="mt-1 text-sm text-[#6b5d4f]">
+                à partir de <span className="font-semibold text-[#2B1D14]">{tier.prices[0].amount}</span>
+                <span className="text-[#9c8f7f]"> / {tier.prices[0].period.toLowerCase()}</span>
+              </p>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Link
+            to="/tarifs"
+            className="inline-block rounded-xl bg-[#1F3D2B] px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#2a5138]"
+          >
+            Voir tous les tarifs
+          </Link>
         </div>
       </section>
 

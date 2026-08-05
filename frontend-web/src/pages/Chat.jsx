@@ -1,10 +1,49 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Hand, MessageCircle, MoreVertical, Pencil, Send, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Hand, MessageCircle, MoreVertical, Pencil, Send, Trash2, TriangleAlert, X } from 'lucide-react'
 import { useConversations } from '../context/ConversationsContext.jsx'
 
 const TYPING_STOP_DELAY_MS = 2500
+
+function DeleteMessageModal({ onCancel, onConfirm, isDeleting }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        onClick={(e) => e.stopPropagation()}
+        className="glass-panel w-full max-w-sm rounded-2xl p-6 text-center"
+      >
+        <TriangleAlert size={32} strokeWidth={1.5} className="mx-auto text-coral-500" />
+        <h2 className="mt-2 font-display text-lg font-semibold text-ink">Supprimer ce message ?</h2>
+        <p className="mt-1 text-sm text-ink-soft/70">Cette action est définitive et ne peut pas être annulée.</p>
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 rounded-xl bg-coral-500 py-2.5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isDeleting ? 'Suppression…' : 'Supprimer'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
 
 function isSameDay(a, b) {
   return !!a && !!b && a.toDateString() === b.toDateString()
@@ -32,6 +71,8 @@ function Chat() {
   const [draft, setDraft] = useState('')
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const scrollRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const isTypingRef = useRef(false)
@@ -95,10 +136,18 @@ function Chat() {
 
   function handleDelete(m) {
     setOpenMenuId(null)
-    if (!active) return
-    if (window.confirm('Supprimer ce message ?')) {
-      deleteMessage(active.id, m.id)
-      if (editingMessageId === m.id) cancelEdit()
+    setDeleteTarget(m)
+  }
+
+  async function confirmDelete() {
+    if (!active || !deleteTarget) return
+    setIsDeleting(true)
+    try {
+      await deleteMessage(active.id, deleteTarget.id)
+      if (editingMessageId === deleteTarget.id) cancelEdit()
+    } finally {
+      setIsDeleting(false)
+      setDeleteTarget(null)
     }
   }
 
@@ -208,14 +257,14 @@ function Chat() {
                         initial={{ opacity: 0, y: 12, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ duration: 0.25 }}
-                        className={`group flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
+                        className={`flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
                       >
                         {m.fromMe && (
                           <div className="relative">
                             <button
                               type="button"
                               onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft/40 opacity-0 transition hover:bg-ink/5 hover:text-ink-soft group-hover:opacity-100"
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft/50 transition hover:bg-ink/5 hover:text-ink-soft active:bg-ink/10"
                               aria-label="Options du message"
                             >
                               <MoreVertical size={14} strokeWidth={2.25} />
@@ -322,6 +371,16 @@ function Chat() {
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        {deleteTarget && (
+          <DeleteMessageModal
+            onCancel={() => setDeleteTarget(null)}
+            onConfirm={confirmDelete}
+            isDeleting={isDeleting}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
