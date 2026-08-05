@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 echo "🚀 Déploiement BomaVibes..."
 
@@ -9,12 +10,12 @@ git pull origin main
 
 echo "🔧 Backend..."
 cd backend
-npm install
+npm ci
 pm2 restart kani-api
 
 echo "🎨 Frontend..."
 cd ../frontend-web
-npm install
+npm ci
 npm run build
 
 echo "📦 Copie du build..."
