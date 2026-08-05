@@ -12,7 +12,8 @@ function useNavItems() {
     { to: '/discover', label: 'Découvrir', icon: Compass },
     { to: '/matches', label: 'Matchs', icon: Heart, badge: newMatchesCount },
     { to: '/chat', label: 'Messages', icon: MessageCircle, badge: unreadMessagesCount },
-    { to: '/profile', label: 'Profil', icon: CircleUserRound, dot: hasUnseenAnnouncement },
+    { to: '/annonces', label: 'Annonces', icon: Bell, ring: hasUnseenAnnouncement },
+    { to: '/profile', label: 'Profil', icon: CircleUserRound },
   ]
 }
 
@@ -25,17 +26,21 @@ function NavBadge({ count }) {
   )
 }
 
-function RingingBell({ className }) {
-  return (
-    <motion.span
-      className={`flex h-4 w-4 items-center justify-center rounded-full bg-coral-500 text-white shadow ${className}`}
-      animate={{ rotate: [0, -18, 14, -10, 6, -3, 0] }}
-      transition={{ duration: 0.7, repeat: Infinity, repeatDelay: 2.2, ease: 'easeInOut' }}
-      style={{ transformOrigin: '50% 0%' }}
-    >
-      <Bell size={10} strokeWidth={2.75} fill="currentColor" />
-    </motion.span>
-  )
+function iconAnimation(item, i, isActive, activeScale) {
+  return {
+    animate: {
+      scale: isActive ? activeScale : 1,
+      y: [0, -3, 0],
+      ...(item.ring ? { rotate: [0, -18, 14, -10, 6, -3, 0] } : {}),
+    },
+    transition: {
+      scale: { type: 'spring', stiffness: 500, damping: 15 },
+      y: { duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 },
+      ...(item.ring
+        ? { rotate: { duration: 0.7, repeat: Infinity, repeatDelay: 2.2, ease: 'easeInOut' } }
+        : {}),
+    },
+  }
 }
 
 function AppLayout() {
@@ -58,8 +63,9 @@ function AppLayout() {
         </div>
 
         <nav className="flex flex-col gap-1">
-          {navItems.map((item) => {
+          {navItems.map((item, i) => {
             const isActive = location.pathname === item.to
+            const anim = iconAnimation(item, i, isActive, 1.12)
             return (
               <NavLink
                 key={item.to}
@@ -74,12 +80,18 @@ function AppLayout() {
                   />
                 )}
                 <motion.span
-                  className="relative z-10 inline-flex"
-                  animate={{ scale: isActive ? 1.12 : 1 }}
+                  className={`relative z-10 inline-flex ${item.ring ? 'text-coral-500' : ''}`}
+                  animate={anim.animate}
                   whileTap={{ scale: 0.85 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                  transition={anim.transition}
+                  style={{ transformOrigin: '50% 0%' }}
                 >
-                  <item.icon size={18} strokeWidth={2} className={isActive ? 'text-[#2B1D14]' : 'text-ink'} />
+                  <item.icon
+                    size={18}
+                    strokeWidth={2}
+                    className={item.ring ? '' : isActive ? 'text-[#2B1D14]' : 'text-ink'}
+                    fill={item.ring ? 'currentColor' : 'none'}
+                  />
                 </motion.span>
                 <span className={`relative z-10 flex-1 ${isActive ? 'text-[#2B1D14]' : 'text-ink/80'}`}>
                   {item.label}
@@ -93,7 +105,6 @@ function AppLayout() {
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
-                {item.dot && <RingingBell className="relative z-10" />}
               </NavLink>
             )
           })}
@@ -113,8 +124,9 @@ function AppLayout() {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 backdrop-blur-xl dark:bg-surface/85 md:hidden">
-        {navItems.map((item) => {
+        {navItems.map((item, i) => {
           const isActive = location.pathname === item.to
+          const anim = iconAnimation(item, i, isActive, 1.15)
           return (
             <NavLink
               key={item.to}
@@ -130,19 +142,24 @@ function AppLayout() {
               )}
               <span className="relative">
                 <motion.span
-                  className="inline-flex"
-                  animate={{ scale: isActive ? 1.15 : 1 }}
+                  className={`inline-flex ${item.ring ? 'text-coral-500' : ''}`}
+                  animate={anim.animate}
                   whileTap={{ scale: 0.8 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                  transition={anim.transition}
+                  style={{ transformOrigin: '50% 0%' }}
                 >
-                  <item.icon size={22} strokeWidth={2} className={isActive ? 'text-violet-600' : 'text-ink-soft/60'} />
+                  <item.icon
+                    size={22}
+                    strokeWidth={2}
+                    className={item.ring ? '' : isActive ? 'text-violet-600' : 'text-ink-soft/60'}
+                    fill={item.ring ? 'currentColor' : 'none'}
+                  />
                 </motion.span>
                 <NavBadge count={item.badge} />
-                {item.dot && (
-                  <RingingBell className="absolute -right-1.5 -top-1.5 ring-2 ring-white dark:ring-surface" />
-                )}
               </span>
-              <span className={isActive ? 'text-violet-600' : 'text-ink-soft/60'}>{item.label}</span>
+              <span className={item.ring ? 'text-coral-500' : isActive ? 'text-violet-600' : 'text-ink-soft/60'}>
+                {item.label}
+              </span>
             </NavLink>
           )
         })}

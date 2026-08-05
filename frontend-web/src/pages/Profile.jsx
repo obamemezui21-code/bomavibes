@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Megaphone, Pencil, Settings, X } from 'lucide-react'
+import { Pencil, Settings, X } from 'lucide-react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { uploadProfilePhoto } from '../firebase/photos.js'
@@ -23,7 +23,7 @@ const inputClass =
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
 function Profile() {
-  const { user, publicProfile, isPublicProfileLoading, logout, hasUnseenAnnouncement } = useAuth()
+  const { user, publicProfile, isPublicProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
@@ -345,18 +345,6 @@ function Profile() {
           >
             {isSaving ? 'Enregistrement…' : 'Enregistrer'}
           </motion.button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/annonces')}
-            className="relative flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
-          >
-            <Megaphone size={16} strokeWidth={2} />
-            Annonces
-            {hasUnseenAnnouncement && (
-              <span className="absolute right-3 top-1.5 h-2 w-2 rounded-full bg-coral-500" />
-            )}
-          </button>
 
           <button
             type="button"

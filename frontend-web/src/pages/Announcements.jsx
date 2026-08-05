@@ -41,7 +41,7 @@ function Announcements() {
       <div className="flex items-center gap-3 border-b border-ink/8 px-4 py-3">
         <button
           type="button"
-          onClick={() => navigate('/profile')}
+          onClick={() => navigate('/discover')}
           className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5"
           aria-label="Retour"
         >
