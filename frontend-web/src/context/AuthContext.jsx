@@ -31,8 +31,8 @@ const ERROR_MESSAGES = {
   'auth/operation-not-allowed': "Ce mode de connexion n'est pas encore activé, réessaie plus tard",
   'auth/unauthorized-domain': "La connexion Google n'est pas encore autorisée sur ce domaine",
   'auth/account-exists-with-different-credential':
-    'Un compte existe déjà avec cet email. Connecte-toi avec ton mot de passe.',
-  'auth/requires-recent-login': 'Pour des raisons de sécurité, reconnecte-toi puis réessaie.',
+    'Un compte existe déjà avec cet email. Connectez-vous avec votre mot de passe.',
+  'auth/requires-recent-login': 'Pour des raisons de sécurité, reconnectez-vous puis réessayez.',
 }
 
 function mapAuthError(error) {
@@ -235,16 +235,16 @@ export function AuthProvider({ children }) {
       if (!res.ok) throw new Error()
       await signOut(auth)
     } catch {
-      throw new Error('Impossible de supprimer ton compte, réessaie.')
+      throw new Error('Impossible de supprimer votre compte, réessayez.')
     }
   }
 
   async function reauthenticate(currentPassword) {
     const currentUser = auth.currentUser
-    if (!currentUser?.email) throw new Error('Session invalide, reconnecte-toi.')
+    if (!currentUser?.email) throw new Error('Session invalide, reconnectez-vous.')
     if (!currentUser.providerData.some((p) => p.providerId === 'password')) {
       throw new Error(
-        'Cette action est réservée aux comptes email/mot de passe. Les comptes Google se gèrent depuis ton compte Google.',
+        'Cette action est réservée aux comptes email/mot de passe. Les comptes Google se gèrent depuis votre compte Google.',
       )
     }
     try {

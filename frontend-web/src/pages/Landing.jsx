@@ -33,19 +33,19 @@ const FEATURE_DETAILS = [
   {
     icon: ShieldCheck,
     title: 'Sécurisé',
-    text: "Tes données ne sont jamais vendues et restent sous ton contrôle : mots de passe chiffrés, connexions protégées, et suppression complète et définitive de tes données en un clic depuis les Paramètres si tu changes d'avis.",
+    text: "Vos données ne sont jamais vendues et restent sous votre contrôle : mots de passe chiffrés, connexions protégées, et suppression complète et définitive de vos données en un clic depuis les Paramètres si vous changez d'avis.",
     link: { to: '/confidentialite', label: 'Notre politique de confidentialité' },
   },
   {
     icon: BadgeCheck,
     title: 'Authentique',
-    text: 'Chaque profil est modéré pour limiter les faux comptes et les usurpations. Signalement et blocage en un geste, pour une communauté où tu peux vraiment faire confiance à qui tu matches.',
+    text: 'Chaque profil est modéré pour limiter les faux comptes et les usurpations. Signalement et blocage en un geste, pour une communauté où vous pouvez vraiment faire confiance à qui vous matchez.',
     link: { to: '/securite', label: 'Sécurité & signalement' },
   },
   {
     icon: Users,
     title: 'Afrocentré',
-    text: "Pensé par et pour les célibataires africains et afrodescendants : mêmes codes, mêmes valeurs, même énergie. BomaVibes célèbre ta culture au lieu de te demander de t'adapter à celle des autres.",
+    text: "Pensé par et pour les célibataires africains et afrodescendants : mêmes codes, mêmes valeurs, même énergie. BomaVibes célèbre votre culture au lieu de vous demander de vous adapter à celle des autres.",
     link: null,
   },
 ]
@@ -53,13 +53,13 @@ const FEATURE_DETAILS = [
 const STEPS = [
   {
     icon: Camera,
-    title: 'Crée ton profil',
-    text: "Donne vie à ton profil. Ajoute tes photos et présente-toi en quelques mots. En seulement 30 secondes, augmente tes chances de faire des rencontres authentiques.",
+    title: 'Créez votre profil',
+    text: "Donnez vie à votre profil. Ajoutez vos photos et présentez-vous en quelques mots. En seulement 30 secondes, augmentez vos chances de faire des rencontres authentiques.",
   },
   {
     icon: Heart,
-    title: 'Découvre & matche',
-    text: "Explore des profils authentiques près de chez toi et matche avec des personnes qui partagent tes valeurs et tes centres d'intérêt.",
+    title: 'Découvrez & matchez',
+    text: "Explorez des profils authentiques près de chez vous et matchez avec des personnes qui partagent vos valeurs et vos centres d'intérêt.",
   },
   {
     icon: MessageCircle,
@@ -84,7 +84,7 @@ const FAQS = [
     question: 'Comment mes données sont-elles protégées ?',
     answer: (
       <>
-        Elles ne sont jamais vendues et restent sous ton contrôle : tu peux les consulter,
+        Elles ne sont jamais vendues et restent sous votre contrôle : vous pouvez les consulter,
         les modifier ou tout supprimer à tout moment. Détails dans notre{' '}
         <Link to="/confidentialite" className="font-semibold text-[#9c7220] underline-offset-2 hover:underline">
           politique de confidentialité
@@ -95,14 +95,14 @@ const FAQS = [
   },
   {
     question: 'Comment supprimer mon compte ?',
-    answer: 'Directement depuis Paramètres → Supprimer mon compte. Toutes tes données sont effacées définitivement, sans délai.',
+    answer: 'Directement depuis Paramètres → Supprimer mon compte. Toutes vos données sont effacées définitivement, sans délai.',
   },
   {
     question: 'Que faire si un profil me met mal à l\'aise ?',
     answer: (
       <>
-        Tu peux le signaler ou le bloquer en un clic depuis la conversation ou le profil.
-        Retrouve nos conseils sur la{' '}
+        Vous pouvez le signaler ou le bloquer en un clic depuis la conversation ou le profil.
+        Retrouvez nos conseils sur la{' '}
         <Link to="/securite" className="font-semibold text-[#9c7220] underline-offset-2 hover:underline">
           page Sécurité
         </Link>
@@ -333,7 +333,7 @@ function Landing() {
       <section id="tarifs" className="mx-auto max-w-5xl scroll-mt-20 px-4 py-24 sm:px-10">
         <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Nos tarifs</h2>
         <p className="mx-auto mt-5 max-w-xl text-center text-lg leading-relaxed text-[#6b5d4f]">
-          BomaVibes reste gratuit pour matcher et discuter. Choisis le niveau qui te correspond,
+          BomaVibes reste gratuit pour matcher et discuter. Choisissez le niveau qui vous correspond,
           sans engagement caché.
         </p>
 
@@ -372,7 +372,7 @@ function Landing() {
       <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-24 text-center sm:px-8">
         <h2 className="font-display text-4xl font-bold text-white sm:text-5xl">Contactez-nous</h2>
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75">
-          Une question, une suggestion ? Écris-nous, on te répond avec plaisir.
+          Une question, une suggestion ? Écrivez-nous, nous vous répondons avec plaisir.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <a

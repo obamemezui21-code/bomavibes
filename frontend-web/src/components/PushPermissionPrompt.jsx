@@ -27,9 +27,9 @@ function PushPermissionPrompt() {
           <Bell size={20} strokeWidth={2} />
         </span>
 
-        <h2 className="relative mt-3 font-display text-base font-bold text-ink">Active tes notifications</h2>
+        <h2 className="relative mt-3 font-display text-base font-bold text-ink">Activez vos notifications</h2>
         <p className="relative mt-1.5 text-xs leading-relaxed text-ink-soft/70">
-          Sois averti(e) des likes, matchs et messages, même app fermée.
+          Soyez averti·e des likes, matchs et messages, même app fermée.
         </p>
 
         <div className="relative mt-4 flex flex-col gap-1.5">

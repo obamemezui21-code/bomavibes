@@ -28,7 +28,7 @@ function AuthLayout({ title, subtitle, children, footer }) {
           className="relative z-10 flex flex-col items-center gap-3 text-center"
         >
           <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
-            Trouve ta <span className="text-[#E8C468]">vibe</span>
+            Trouvez votre <span className="text-[#E8C468]">vibe</span>
           </h1>
           <p className="max-w-xs text-sm leading-relaxed text-white/85">
             La communauté gabonaise pour des rencontres authentiques, vibrantes et sincères.

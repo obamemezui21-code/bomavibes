@@ -26,7 +26,7 @@ const inputClass =
   'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
-const STEPS = ['Photos', 'À propos de toi', 'Tes centres d\'intérêt', 'Tes préférences']
+const STEPS = ['Photos', 'À propos de vous', 'Vos centres d\'intérêt', 'Vos préférences']
 
 function Onboarding() {
   const { user, logout } = useAuth()
@@ -113,7 +113,7 @@ function Onboarding() {
       )
     } catch {
       setIsSaving(false)
-      showToast("Impossible d'enregistrer ton profil, réessaie.", 'error')
+      showToast("Impossible d'enregistrer votre profil, réessayez.", 'error')
       return
     }
     setIsSaving(false)
@@ -166,7 +166,7 @@ function Onboarding() {
             >
               {step === 0 && (
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-ink">Ajoute tes photos</h2>
+                  <h2 className="font-display text-xl font-semibold text-ink">Ajoutez vos photos</h2>
                   <p className="mt-1 text-sm text-ink-soft/60">
                     Un profil avec au moins une photo reçoit bien plus de matchs.
                   </p>
@@ -218,7 +218,7 @@ function Onboarding() {
 
               {step === 1 && (
                 <div className="space-y-5">
-                  <h2 className="font-display text-xl font-semibold text-ink">Parle-nous de toi</h2>
+                  <h2 className="font-display text-xl font-semibold text-ink">Parlez-nous de vous</h2>
 
                   <div>
                     <label className={labelClass}>Âge</label>
@@ -283,7 +283,7 @@ function Onboarding() {
                     <textarea
                       rows="3"
                       maxLength="280"
-                      placeholder="Parle un peu de toi..."
+                      placeholder="Parlez un peu de vous..."
                       value={form.bio}
                       onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
                       className={`${inputClass} resize-none`}
@@ -294,8 +294,8 @@ function Onboarding() {
 
               {step === 2 && (
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-ink">Tes centres d'intérêt</h2>
-                  <p className="mt-1 text-sm text-ink-soft/60">Choisis-en au moins 3.</p>
+                  <h2 className="font-display text-xl font-semibold text-ink">Vos centres d'intérêt</h2>
+                  <p className="mt-1 text-sm text-ink-soft/60">Choisissez-en au moins 3.</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {INTEREST_OPTIONS.map((interest) => {
                       const selected = form.interests.includes(interest)
@@ -320,9 +320,9 @@ function Onboarding() {
 
               {step === 3 && (
                 <div className="space-y-6">
-                  <h2 className="font-display text-xl font-semibold text-ink">Tes préférences</h2>
+                  <h2 className="font-display text-xl font-semibold text-ink">Vos préférences</h2>
                   <div>
-                    <p className={labelClass}>Tu recherches</p>
+                    <p className={labelClass}>Vous recherchez</p>
                     <div className="flex gap-2">
                       {[
                         { value: 'TOUS', label: 'Tout le monde' },

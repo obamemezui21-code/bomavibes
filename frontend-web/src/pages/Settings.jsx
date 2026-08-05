@@ -83,7 +83,7 @@ function ChangeEmailModal({ onClose }) {
     setIsSaving(true)
     try {
       await changeEmail(newEmail, currentPassword)
-      showToast('Vérifie ta nouvelle adresse pour confirmer le changement.', 'success')
+      showToast('Vérifiez votre nouvelle adresse pour confirmer le changement.', 'success')
       onClose()
     } catch (err) {
       setError(err.message)
@@ -94,9 +94,9 @@ function ChangeEmailModal({ onClose }) {
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="font-display text-lg font-semibold text-ink">Modifier ton email</h2>
+      <h2 className="font-display text-lg font-semibold text-ink">Modifier votre email</h2>
       <p className="mt-1 text-sm text-ink-soft/70">
-        Un lien de confirmation sera envoyé à ta nouvelle adresse.
+        Un lien de confirmation sera envoyé à votre nouvelle adresse.
       </p>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         {error && (
@@ -111,7 +111,7 @@ function ChangeEmailModal({ onClose }) {
             required
             value={newEmail}
             onChange={(e) => setNewEmail(e.target.value)}
-            placeholder="toi@exemple.com"
+            placeholder="vous@exemple.com"
             className={inputClass}
           />
         </div>
@@ -121,7 +121,7 @@ function ChangeEmailModal({ onClose }) {
             required
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            placeholder="Confirme ton mot de passe"
+            placeholder="Confirmez votre mot de passe"
           />
         </div>
         <div className="flex gap-3">
@@ -181,7 +181,7 @@ function ChangePasswordModal({ onClose }) {
 
   return (
     <Modal onClose={onClose}>
-      <h2 className="font-display text-lg font-semibold text-ink">Modifier ton mot de passe</h2>
+      <h2 className="font-display text-lg font-semibold text-ink">Modifier votre mot de passe</h2>
       <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         {error && (
           <div className="rounded-xl border border-coral-500/30 bg-coral-500/10 px-3 py-2 text-sm text-coral-400">
@@ -207,7 +207,7 @@ function ChangePasswordModal({ onClose }) {
           />
         </div>
         <div>
-          <label className={labelClass}>Confirme le nouveau mot de passe</label>
+          <label className={labelClass}>Confirmez le nouveau mot de passe</label>
           <PasswordInput
             required
             value={confirmPassword}
@@ -332,10 +332,10 @@ function Settings() {
           </Section>
 
           <Section title="Confidentialité">
-            <Row title="Afficher ma distance" subtitle="Visible sur ton profil public">
+            <Row title="Afficher ma distance" subtitle="Visible sur votre profil public">
               <Toggle checked={showDistance} onChange={setShowDistance} />
             </Row>
-            <Row title="Afficher mon âge" subtitle="Visible sur ton profil public">
+            <Row title="Afficher mon âge" subtitle="Visible sur votre profil public">
               <Toggle checked={showAge} onChange={setShowAge} />
             </Row>
             <Row title="Mode incognito" subtitle="Découvre sans apparaître dans les decks des autres">
@@ -404,9 +404,9 @@ function Settings() {
         <Modal onClose={() => setConfirmDelete(false)}>
           <div className="text-center">
             <TriangleAlert size={32} strokeWidth={1.5} className="mx-auto text-coral-500" />
-            <h2 className="mt-2 font-display text-lg font-semibold text-ink">Supprimer ton compte ?</h2>
+            <h2 className="mt-2 font-display text-lg font-semibold text-ink">Supprimer votre compte ?</h2>
             <p className="mt-1 text-sm text-ink-soft/70">
-              Toutes tes données, matchs et conversations seront définitivement perdus.
+              Toutes vos données, matchs et conversations seront définitivement perdus.
             </p>
             <div className="mt-5 flex gap-3">
               <button

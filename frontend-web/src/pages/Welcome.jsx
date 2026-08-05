@@ -94,7 +94,7 @@ function Welcome() {
         transition={{ delay: 0.1 }}
         className="mt-8 max-w-xs text-center font-display text-2xl font-bold text-ink"
       >
-        Rencontre de nouvelles personnes près de chez toi
+        Rencontrez de nouvelles personnes près de chez vous
       </motion.h1>
 
       {error && <p className="mt-4 max-w-xs text-center text-sm text-coral-400">{error}</p>}
@@ -128,7 +128,7 @@ function Welcome() {
       <p className="mt-6 text-sm text-ink-soft/70">
         Pas encore de compte ?{' '}
         <Link to="/signup" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
-          Inscris-toi
+          Inscrivez-vous
         </Link>
       </p>
     </div>

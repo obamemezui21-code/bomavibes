@@ -7,14 +7,14 @@ const NOTIFICATIONS = {
     prefField: "notifyMatches",
     build: (payload) => ({
       title: "Nouveau match !",
-      body: payload?.firstName ? `Toi et ${payload.firstName} vous êtes plu mutuellement.` : "Tu as un nouveau match.",
+      body: payload?.firstName ? `Vous et ${payload.firstName} vous êtes plu mutuellement.` : "Vous avez un nouveau match.",
     }),
   },
   message: {
     prefField: "notifyMessages",
     build: (payload) => ({
       title: payload?.firstName ? `${payload.firstName}` : "Nouveau message",
-      body: payload?.text || "Tu as reçu un nouveau message.",
+      body: payload?.text || "Vous avez reçu un nouveau message.",
     }),
   },
 };

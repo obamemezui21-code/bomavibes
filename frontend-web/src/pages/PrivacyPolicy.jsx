@@ -5,34 +5,34 @@ const SECTIONS = [
   {
     title: '1. Les données que nous collectons',
     body: [
-      'Informations de compte : prénom, email et mot de passe (ou ton compte Google si tu choisis cette option).',
+      'Informations de compte : prénom, email et mot de passe (ou votre compte Google si vous choisissez cette option).',
       'Informations de profil : âge, genre, photos, bio, centres d\'intérêt et préférences de rencontre (genre recherché, distance).',
-      'Contenu que tu génères : messages échangés avec tes matchs, signalements que tu envoies.',
-      'Données techniques : type d\'appareil, navigateur, et le jeton de notification si tu actives les notifications push.',
+      'Contenu que vous générez : messages échangés avec vos matchs, signalements que vous envoyez.',
+      'Données techniques : type d\'appareil, navigateur, et le jeton de notification si vous activez les notifications push.',
     ],
   },
   {
     title: '2. Pourquoi nous les utilisons',
     body: [
-      'Créer et afficher ton profil aux autres membres, et te proposer des profils pertinents selon tes préférences.',
+      'Créer et afficher votre profil aux autres membres, et vous proposer des profils pertinents selon vos préférences.',
       'Permettre les matchs et la messagerie entre membres qui se sont mutuellement likés.',
       'Vérifier l\'authenticité des profils et assurer la sécurité de la communauté (modération, lutte contre les faux comptes).',
-      'T\'envoyer des notifications liées à l\'app (nouveau match, nouveau message) si tu les as autorisées.',
+      'Vous envoyer des notifications liées à l\'app (nouveau match, nouveau message) si vous les avez autorisées.',
     ],
   },
   {
-    title: '3. Avec qui tes données sont partagées',
+    title: '3. Avec qui vos données sont partagées',
     body: [
-      'Nous ne vendons jamais tes données à des tiers.',
-      'Ton profil (photos, âge, bio, centres d\'intérêt) est visible par les autres membres de BomaVibes dans le cadre normal de l\'app.',
+      'Nous ne vendons jamais vos données à des tiers.',
+      'Votre profil (photos, âge, bio, centres d\'intérêt) est visible par les autres membres de BomaVibes dans le cadre normal de l\'app.',
       'Nous utilisons des prestataires techniques (hébergement, authentification, stockage des photos) uniquement pour faire fonctionner le service, sous leurs propres engagements de sécurité.',
     ],
   },
   {
     title: '4. Combien de temps nous les conservons',
     body: [
-      'Tant que ton compte est actif, pour te fournir le service.',
-      'Si tu supprimes ton compte depuis les Paramètres, toutes tes données (profil, photos, messages) sont définitivement effacées de nos systèmes.',
+      'Tant que votre compte est actif, pour vous fournir le service.',
+      'Si vous supprimez votre compte depuis les Paramètres, toutes vos données (profil, photos, messages) sont définitivement effacées de nos systèmes.',
     ],
   },
   {
@@ -44,17 +44,17 @@ const SECTIONS = [
     ],
   },
   {
-    title: '6. Tes droits',
+    title: '6. Vos droits',
     body: [
-      'Tu peux à tout moment consulter et modifier tes informations de profil directement dans l\'app.',
-      'Tu peux supprimer ton compte et toutes les données associées depuis Paramètres → Supprimer mon compte.',
-      'Pour toute autre demande (accès, rectification, question sur tes données), écris-nous à Bomavibes241@gmail.com.',
+      'Vous pouvez à tout moment consulter et modifier vos informations de profil directement dans l\'app.',
+      'Vous pouvez supprimer votre compte et toutes les données associées depuis Paramètres → Supprimer mon compte.',
+      'Pour toute autre demande (accès, rectification, question sur vos données), écrivez-nous à Bomavibes241@gmail.com.',
     ],
   },
   {
     title: '7. Cookies',
     body: [
-      'Nous utilisons uniquement des cookies/stockage technique nécessaires au fonctionnement du site (garder ta session connectée). Nous n\'utilisons pas de cookies publicitaires tiers.',
+      'Nous utilisons uniquement des cookies/stockage technique nécessaires au fonctionnement du site (garder votre session connectée). Nous n\'utilisons pas de cookies publicitaires tiers.',
     ],
   },
   {
@@ -66,7 +66,7 @@ const SECTIONS = [
   {
     title: '9. Modifications de cette politique',
     body: [
-      'Si cette politique évolue de façon significative, nous t\'en informerons via l\'app avant que les changements prennent effet.',
+      'Si cette politique évolue de façon significative, nous vous en informerons via l\'app avant que les changements prennent effet.',
     ],
   },
 ]
@@ -83,9 +83,9 @@ function PrivacyPolicy() {
         </h1>
         <p className="mt-3 text-sm text-[#6b5d4f]">Dernière mise à jour : août 2026</p>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#6b5d4f]">
-          Chez BomaVibes, on sait que tu nous confies des informations personnelles pour trouver
-          des connexions authentiques. Cette page explique simplement quelles données on
-          collecte, pourquoi, et comment tu gardes le contrôle dessus.
+          Chez BomaVibes, nous savons que vous nous confiez des informations personnelles pour
+          trouver des connexions authentiques. Cette page explique simplement quelles données nous
+          collectons, pourquoi, et comment vous gardez le contrôle dessus.
         </p>
 
         <div className="mt-12 space-y-10">
@@ -106,7 +106,7 @@ function PrivacyPolicy() {
 
         <div className="mt-14 border-t border-[#1F3D2B]/10 pt-8">
           <p className="text-sm text-[#6b5d4f]">
-            Une question sur tes données ?{' '}
+            Une question sur vos données ?{' '}
             <a href="mailto:Bomavibes241@gmail.com" className="font-semibold text-[#1F3D2B] underline-offset-4 hover:underline">
               Bomavibes241@gmail.com
             </a>{' '}

@@ -79,7 +79,7 @@ function AuthAction() {
       await confirmPasswordReset(auth, oobCode, newPassword)
       setStatus('resetDone')
     } catch {
-      setErrorMessage('Impossible de réinitialiser le mot de passe, réessaie.')
+      setErrorMessage('Impossible de réinitialiser le mot de passe, réessayez.')
     } finally {
       setIsSubmitting(false)
     }
@@ -127,7 +127,7 @@ function AuthAction() {
                     required
                     value={retryEmail}
                     onChange={(e) => setRetryEmail(e.target.value)}
-                    placeholder="toi@exemple.com"
+                    placeholder="vous@exemple.com"
                     className={inputClass}
                   />
                   <button type="submit" disabled={isRetrying} className={buttonClass}>
@@ -148,7 +148,7 @@ function AuthAction() {
 
   if (status === 'verified') {
     return (
-      <AuthLayout title="Email vérifié !" subtitle="Ton adresse email est bien confirmée">
+      <AuthLayout title="Email vérifié !" subtitle="Votre adresse email est bien confirmée">
         <div className="space-y-4 text-center">
           <PartyPopper size={40} strokeWidth={1.5} className="mx-auto text-violet-500" />
           <button type="button" onClick={() => navigate('/login')} className={buttonClass}>
@@ -178,7 +178,7 @@ function AuthAction() {
             />
           </div>
           <div>
-            <label className={labelClass}>Confirme le mot de passe</label>
+            <label className={labelClass}>Confirmez le mot de passe</label>
             <PasswordInput
               required
               value={confirmPassword}
@@ -196,7 +196,7 @@ function AuthAction() {
 
   if (status === 'resetDone') {
     return (
-      <AuthLayout title="Mot de passe mis à jour" subtitle="Tu peux te connecter avec ton nouveau mot de passe">
+      <AuthLayout title="Mot de passe mis à jour" subtitle="Vous pouvez vous connecter avec votre nouveau mot de passe">
         <div className="space-y-4 text-center">
           <CircleCheck size={40} strokeWidth={1.5} className="mx-auto text-mint-500" />
           <Link to="/login" className={buttonClass}>

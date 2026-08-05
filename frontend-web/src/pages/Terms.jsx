@@ -5,46 +5,46 @@ const SECTIONS = [
   {
     title: '1. Objet',
     body: [
-      'Ces Conditions d\'utilisation ("CGU") régissent l\'accès et l\'usage de BomaVibes, l\'application de rencontre destinée à la communauté africaine et afrodescendante. En créant un compte, tu acceptes ces conditions.',
+      'Ces Conditions d\'utilisation ("CGU") régissent l\'accès et l\'usage de BomaVibes, l\'application de rencontre destinée à la communauté africaine et afrodescendante. En créant un compte, vous acceptez ces conditions.',
     ],
   },
   {
     title: '2. Qui peut utiliser BomaVibes',
     body: [
-      'Tu dois avoir 18 ans révolus pour créer un compte.',
-      'Tu ne peux avoir qu\'un seul compte, et les informations que tu fournis (prénom, âge, photos) doivent être exactes et te concerner réellement.',
+      'Vous devez avoir 18 ans révolus pour créer un compte.',
+      'Vous ne pouvez avoir qu\'un seul compte, et les informations que vous fournissez (prénom, âge, photos) doivent être exactes et vous concerner réellement.',
       'Nous nous réservons le droit de refuser ou fermer un compte qui ne respecte pas ces règles.',
     ],
   },
   {
-    title: '3. Ton compte',
+    title: '3. Votre compte',
     body: [
-      'Tu es responsable de la confidentialité de ton mot de passe et de toute activité effectuée depuis ton compte.',
-      'Préviens-nous immédiatement à Bomavibes241@gmail.com si tu penses que ton compte a été utilisé sans ton autorisation.',
+      'Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité effectuée depuis votre compte.',
+      'Prévenez-nous immédiatement à Bomavibes241@gmail.com si vous pensez que votre compte a été utilisé sans votre autorisation.',
     ],
   },
   {
     title: '4. Règles de conduite',
     body: [
-      'Respecte les autres membres : pas de harcèlement, propos haineux, menaces ou contenu à caractère sexuel non sollicité.',
+      'Respectez les autres membres : pas de harcèlement, propos haineux, menaces ou contenu à caractère sexuel non sollicité.',
       'Pas de fausse identité, de faux profil, ni d\'usurpation d\'identité.',
       'Pas de sollicitation commerciale, publicité, arnaque ou demande d\'argent envers d\'autres membres.',
-      'Pas de contenu illégal, violent ou portant atteinte aux droits d\'autrui dans tes photos, bio ou messages.',
-      'Le non-respect de ces règles peut entraîner un avertissement, une suspension ou une fermeture définitive de ton compte.',
+      'Pas de contenu illégal, violent ou portant atteinte aux droits d\'autrui dans vos photos, bio ou messages.',
+      'Le non-respect de ces règles peut entraîner un avertissement, une suspension ou une fermeture définitive de votre compte.',
     ],
   },
   {
-    title: '5. Le contenu que tu publies',
+    title: '5. Le contenu que vous publiez',
     body: [
-      'Tu restes propriétaire de tes photos et de ce que tu publies sur ton profil.',
-      'En les publiant, tu nous autorises à les afficher au sein de l\'app, uniquement pour faire fonctionner le service (afficher ton profil aux autres membres).',
-      'Tu garantis avoir le droit de publier ce contenu et qu\'il ne porte pas atteinte aux droits d\'un tiers.',
+      'Vous restez propriétaire de vos photos et de ce que vous publiez sur votre profil.',
+      'En les publiant, vous nous autorisez à les afficher au sein de l\'app, uniquement pour faire fonctionner le service (afficher votre profil aux autres membres).',
+      'Vous garantissez avoir le droit de publier ce contenu et qu\'il ne porte pas atteinte aux droits d\'un tiers.',
     ],
   },
   {
     title: '6. Suspension et suppression',
     body: [
-      'Tu peux supprimer ton compte à tout moment depuis Paramètres → Supprimer mon compte ; toutes tes données sont alors définitivement effacées.',
+      'Vous pouvez supprimer votre compte à tout moment depuis Paramètres → Supprimer mon compte ; toutes vos données sont alors définitivement effacées.',
       'Nous pouvons suspendre ou fermer un compte qui enfreint ces CGU, notamment suite à des signalements d\'autres membres.',
     ],
   },
@@ -52,13 +52,13 @@ const SECTIONS = [
     title: '7. Avertissement',
     body: [
       'BomaVibes est un outil de mise en relation : nous ne vérifions pas l\'identité de chaque membre au-delà de nos contrôles de modération, et nous ne garantissons pas la véracité des profils ni le résultat d\'une rencontre.',
-      'Reste prudent·e lors de tes échanges et de tes rencontres — consulte notre page Sécurité pour des conseils concrets.',
+      'Restez prudent·e lors de vos échanges et de vos rencontres — consultez notre page Sécurité pour des conseils concrets.',
     ],
   },
   {
     title: '8. Modifications',
     body: [
-      'Nous pouvons faire évoluer ces CGU. En cas de changement important, nous t\'en informerons via l\'app avant qu\'il prenne effet.',
+      'Nous pouvons faire évoluer ces CGU. En cas de changement important, nous vous en informerons via l\'app avant qu\'il prenne effet.',
     ],
   },
 ]
@@ -75,8 +75,8 @@ function Terms() {
         </h1>
         <p className="mt-3 text-sm text-[#6b5d4f]">Dernière mise à jour : août 2026</p>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#6b5d4f]">
-          En utilisant BomaVibes, tu acceptes les règles ci-dessous. On les a gardées aussi
-          simples et honnêtes que possible.
+          En utilisant BomaVibes, vous acceptez les règles ci-dessous. Nous les avons gardées
+          aussi simples et honnêtes que possible.
         </p>
 
         <div className="mt-12 space-y-10">

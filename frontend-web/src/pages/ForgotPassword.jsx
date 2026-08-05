@@ -33,7 +33,7 @@ function ForgotPassword() {
   return (
     <AuthLayout
       title="Mot de passe oublié"
-      subtitle="On t'envoie un lien pour le réinitialiser"
+      subtitle="Nous vous envoyons un lien pour le réinitialiser"
       footer={
         <Link to="/login" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
           Retour à la connexion
@@ -75,7 +75,7 @@ function ForgotPassword() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="toi@exemple.com"
+              placeholder="vous@exemple.com"
               className={inputClass}
             />
           </div>

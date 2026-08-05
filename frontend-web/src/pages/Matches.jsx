@@ -34,9 +34,9 @@ function Matches() {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
         <Heart size={40} strokeWidth={1.5} className="text-coral-500" />
-        <h1 className="font-display text-2xl font-semibold text-ink">Tes matchs</h1>
+        <h1 className="font-display text-2xl font-semibold text-ink">Vos matchs</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
-          Quand tu matches avec quelqu'un, tu le retrouveras ici.
+          Quand vous matchez avec quelqu'un, vous le retrouverez ici.
         </p>
       </div>
     )
@@ -45,7 +45,7 @@ function Matches() {
   return (
     <div className="min-h-svh bg-surface-soft p-6 pb-24 md:min-h-full md:pb-6">
       <div className="mx-auto max-w-3xl">
-        <h1 className="font-display text-2xl font-semibold text-ink">Tes matchs</h1>
+        <h1 className="font-display text-2xl font-semibold text-ink">Vos matchs</h1>
 
         <div className="mt-4 flex gap-3">
           <button
@@ -58,7 +58,7 @@ function Matches() {
             </span>
             <div>
               <p className="font-display text-lg font-semibold text-ink">{likesCount ?? '–'}</p>
-              <p className="text-xs text-ink-soft/60">T'ont aimé(e)</p>
+              <p className="text-xs text-ink-soft/60">Vous ont aimé·e</p>
             </div>
           </button>
 
@@ -80,7 +80,7 @@ function Matches() {
         </div>
 
         <p className="mt-6 text-sm font-semibold text-ink">
-          {connectFilter ? 'Tes discussions' : 'Tes matchs'} ({visible.length})
+          {connectFilter ? 'Vos discussions' : 'Vos matchs'} ({visible.length})
         </p>
 
         {visible.length === 0 ? (

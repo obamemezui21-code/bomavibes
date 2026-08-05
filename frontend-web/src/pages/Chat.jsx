@@ -255,7 +255,7 @@ function Chat() {
         }
       }, 1000)
     } catch {
-      showToast('Autorise le micro pour envoyer une note vocale.', 'error')
+      showToast('Autorisez le micro pour envoyer une note vocale.', 'error')
     }
   }
 
@@ -278,7 +278,7 @@ function Chat() {
         const url = await uploadVoiceNote(blob)
         await sendVoiceMessage(active.id, url, duration)
       } catch {
-        showToast("Impossible d'envoyer la note vocale, réessaie.", 'error')
+        showToast("Impossible d'envoyer la note vocale, réessayez.", 'error')
       } finally {
         setIsSendingVoice(false)
       }
@@ -318,7 +318,7 @@ function Chat() {
       setDeleteTarget(null)
     } catch (err) {
       console.error('Échec de la suppression du message:', err)
-      showToast('Impossible de supprimer ce message, réessaie.', 'error')
+      showToast('Impossible de supprimer ce message, réessayez.', 'error')
     } finally {
       setIsDeleting(false)
     }
@@ -330,7 +330,7 @@ function Chat() {
         <MessageCircle size={40} strokeWidth={1.5} className="text-ink-soft/40" />
         <h1 className="font-display text-2xl font-semibold text-ink">Messages</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
-          Tes conversations avec tes matchs apparaîtront ici.
+          Vos conversations avec vos matchs apparaîtront ici.
         </p>
       </div>
     )
@@ -409,7 +409,7 @@ function Chat() {
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                   <Hand size={32} strokeWidth={1.5} className="text-ink-soft/40" />
                   <p className="text-sm text-ink-soft/60">
-                    C'est un match avec {active.profile.firstName} ! Envoie le premier message.
+                    C'est un match avec {active.profile.firstName} ! Envoyez le premier message.
                   </p>
                 </div>
               )}
@@ -566,7 +566,7 @@ function Chat() {
                   type="text"
                   value={draft}
                   onChange={(e) => handleDraftChange(e.target.value)}
-                  placeholder="Écris un message…"
+                  placeholder="Écrivez un message…"
                   disabled={isSendingVoice}
                   className="flex-1 rounded-full border border-ink/12 bg-ink/[0.03] px-4 py-2.5 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
                 />

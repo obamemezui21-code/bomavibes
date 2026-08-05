@@ -109,8 +109,8 @@ function Profile() {
       showToast('Profil mis à jour avec succès.', 'success')
       setTimeout(() => setSuccess(false), 2500)
     } catch {
-      setError('Impossible de mettre à jour ton profil')
-      showToast('Impossible de mettre à jour ton profil', 'error')
+      setError('Impossible de mettre à jour votre profil')
+      showToast('Impossible de mettre à jour votre profil', 'error')
     } finally {
       setIsSaving(false)
     }
@@ -144,7 +144,7 @@ function Profile() {
               src={
                 photoSlots[0]?.previewUrl ||
                 photoSlots[0]?.url ||
-                `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(form.firstName || 'Toi')}&backgroundColor=8b5cf6`
+                `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(form.firstName || 'Vous')}&backgroundColor=8b5cf6`
               }
               alt="Avatar"
               className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
@@ -154,7 +154,7 @@ function Profile() {
             </span>
           </div>
           <h1 className="mt-3 font-display text-2xl font-semibold text-ink">
-            {form.firstName || 'Ton profil'}
+            {form.firstName || 'Votre profil'}
           </h1>
           {user?.email && <p className="text-sm text-ink-soft/60">{user.email}</p>}
 
@@ -330,7 +330,7 @@ function Profile() {
               id="bio"
               rows="3"
               maxLength="280"
-              placeholder="Parle un peu de toi..."
+              placeholder="Parlez un peu de vous..."
               value={form.bio}
               onChange={handleChange('bio')}
               className={`${inputClass} resize-none`}

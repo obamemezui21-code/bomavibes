@@ -51,7 +51,7 @@ function Discover() {
       const candidates = await fetchDiscoverCandidates(user.id, currentFilters)
       setProfiles(candidates)
     } catch {
-      showToast('Impossible de charger les profils, réessaie.', 'error')
+      showToast('Impossible de charger les profils, réessayez.', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -86,10 +86,10 @@ async function handleSwipe(profile, direction) {
         setMatchConversationId(matchId)
         setMatchedProfile(profile)
       } else if (direction !== 'pass') {
-        showToast(`Tu as aimé le profil de ${profile.firstName}.`, 'success')
+        showToast(`Vous avez aimé le profil de ${profile.firstName}.`, 'success')
       }
     } catch {
-      showToast("Impossible d'enregistrer ton choix, réessaie.", 'error')
+      showToast("Impossible d'enregistrer votre choix, réessayez.", 'error')
     }
   }
 
@@ -125,7 +125,7 @@ async function handleSwipe(profile, direction) {
             <div>
               <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
                 <MapPin size={13} strokeWidth={2.25} />
-                {publicProfile?.country || 'Autour de toi'}
+                {publicProfile?.country || 'Autour de vous'}
               </div>
               <h1 className="font-display text-2xl font-semibold text-ink">
                 Salut {user?.firstName} 👋
@@ -222,7 +222,7 @@ async function handleSwipe(profile, direction) {
             <Sparkles size={40} strokeWidth={1.5} className="text-violet-500" />
             <p className="font-display text-lg font-semibold text-ink">Aucun profil pour le moment</p>
             <p className="max-w-xs text-sm text-ink-soft/70">
-              Élargis tes filtres ou reviens plus tard pour voir plus de monde.
+              Élargissez vos filtres ou revenez plus tard pour voir plus de monde.
             </p>
           </div>
         ) : (
@@ -283,11 +283,11 @@ async function handleSwipe(profile, direction) {
             </div>
 
             <div>
-              <h2 className="font-display text-lg font-semibold text-ink">Autour de toi</h2>
+              <h2 className="font-display text-lg font-semibold text-ink">Autour de vous</h2>
               <p className="text-xs text-ink-soft/60">
                 {selectedInterest
-                  ? `Profils qui aiment "${selectedInterest}" près de toi`
-                  : 'Des profils près de chez toi'}
+                  ? `Profils qui aiment "${selectedInterest}" près de vous`
+                  : 'Des profils près de chez vous'}
               </p>
 
               <div className="relative mt-3 h-52 overflow-hidden rounded-[28px] bg-gradient-to-br from-mint-500/15 via-surface-soft to-violet-500/15">
@@ -376,7 +376,7 @@ async function handleSwipe(profile, direction) {
                 C'est un match !
               </motion.p>
               <p className="relative mt-2 text-sm text-ink-soft/80">
-                Toi et {matchedProfile.firstName} vous êtes plu mutuellement.
+                Vous et {matchedProfile.firstName} vous êtes plu mutuellement.
               </p>
 
               <div className="relative mt-6 flex items-center justify-center">
@@ -401,7 +401,7 @@ async function handleSwipe(profile, direction) {
                   animate={{ x: 14, rotate: 6, opacity: 1 }}
                   transition={{ delay: 0.2 }}
                   src="https://api.dicebear.com/9.x/personas/svg?seed=You&backgroundColor=8b5cf6"
-                  alt="Toi"
+                  alt="Vous"
                   className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
                 />
               </div>

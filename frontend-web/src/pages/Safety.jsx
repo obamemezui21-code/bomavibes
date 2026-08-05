@@ -5,34 +5,34 @@ const SECTIONS = [
   {
     title: 'Avant de rencontrer quelqu\'un en vrai',
     body: [
-      'Donne-toi le temps d\'échanger dans l\'app avant de partager ton numéro ou tes réseaux sociaux.',
-      'Fais un appel vidéo avant le premier rendez-vous pour confirmer que la personne correspond à son profil.',
-      'Choisis un lieu public pour votre premier rendez-vous, et prévois ton propre moyen de transport.',
-      'Préviens un·e proche : où tu vas, avec qui, et à quelle heure tu comptes rentrer.',
-      'Fais confiance à ton instinct — si quelque chose te met mal à l\'aise, tu as le droit d\'annuler à tout moment.',
+      'Donnez-vous le temps d\'échanger dans l\'app avant de partager votre numéro ou vos réseaux sociaux.',
+      'Faites un appel vidéo avant le premier rendez-vous pour confirmer que la personne correspond à son profil.',
+      'Choisissez un lieu public pour votre premier rendez-vous, et prévoyez votre propre moyen de transport.',
+      'Prévenez un·e proche : où vous allez, avec qui, et à quelle heure vous comptez rentrer.',
+      'Faites confiance à votre instinct — si quelque chose vous met mal à l\'aise, vous avez le droit d\'annuler à tout moment.',
     ],
   },
   {
     title: 'Ne jamais envoyer d\'argent',
     body: [
-      'Un membre de BomaVibes ne te demandera jamais d\'argent, de code de carte cadeau ou tes coordonnées bancaires.',
-      'Méfie-toi de toute personne qui invente une urgence ou un empêchement pour te demander une aide financière, même après plusieurs échanges touchants — c\'est une technique d\'arnaque sentimentale courante.',
-      'Signale-nous immédiatement tout profil qui te demande de l\'argent, sous quelque forme que ce soit.',
+      'Un membre de BomaVibes ne vous demandera jamais d\'argent, de code de carte cadeau ou vos coordonnées bancaires.',
+      'Méfiez-vous de toute personne qui invente une urgence ou un empêchement pour vous demander une aide financière, même après plusieurs échanges touchants — c\'est une technique d\'arnaque sentimentale courante.',
+      'Signalez-nous immédiatement tout profil qui vous demande de l\'argent, sous quelque forme que ce soit.',
     ],
   },
   {
     title: 'Comment signaler ou bloquer quelqu\'un',
     body: [
-      'Depuis une conversation ou un profil, utilise l\'option "Signaler" pour nous alerter — notre équipe examine chaque signalement.',
-      'Tu peux bloquer un membre à tout moment pour qu\'il ne puisse plus te contacter ni voir ton profil.',
+      'Depuis une conversation ou un profil, utilisez l\'option "Signaler" pour nous alerter — notre équipe examine chaque signalement.',
+      'Vous pouvez bloquer un membre à tout moment pour qu\'il ne puisse plus vous contacter ni voir votre profil.',
       'Les comptes qui violent nos règles (faux profils, harcèlement, arnaques, contenu inapproprié) sont suspendus ou définitivement fermés.',
     ],
   },
   {
     title: 'En cas d\'urgence',
     body: [
-      'Si tu es en danger immédiat, contacte les services d\'urgence locaux avant toute autre démarche.',
-      'Pour tout signalement lié à un comportement sur l\'app, écris-nous à Bomavibes241@gmail.com — on te répond rapidement.',
+      'Si vous êtes en danger immédiat, contactez les services d\'urgence locaux avant toute autre démarche.',
+      'Pour tout signalement lié à un comportement sur l\'app, écrivez-nous à Bomavibes241@gmail.com — nous vous répondons rapidement.',
     ],
   },
 ]
@@ -48,7 +48,7 @@ function Safety() {
           Sécurité &amp; signalement
         </h1>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#6b5d4f]">
-          Ta sécurité passe avant tout. Voici quelques conseils simples pour rencontrer en
+          Votre sécurité passe avant tout. Voici quelques conseils simples pour rencontrer en
           confiance, et comment nous prévenir si quelque chose ne va pas.
         </p>
 

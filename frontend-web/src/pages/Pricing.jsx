@@ -11,10 +11,10 @@ function Pricing() {
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-wide text-[#9c7220]">Nos tarifs</p>
           <h1 className="mt-2 font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">
-            Passe au niveau supérieur
+            Passez au niveau supérieur
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#6b5d4f]">
-            BomaVibes reste gratuit pour matcher et discuter. Choisis le niveau Premium qui te
+            BomaVibes reste gratuit pour matcher et discuter. Choisissez le niveau Premium qui vous
             correspond, sans engagement caché.
           </p>
         </div>
@@ -25,7 +25,7 @@ function Pricing() {
 
         <div className="mt-20 text-center">
           <p className="text-sm text-[#6b5d4f]">
-            Pas encore prêt·e à passer Premium ? Profite gratuitement de toutes les fonctionnalités essentielles.
+            Pas encore prêt·e à passer Premium ? Profitez gratuitement de toutes les fonctionnalités essentielles.
           </p>
           <Link
             to="/signup"

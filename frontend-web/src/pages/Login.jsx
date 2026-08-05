@@ -53,13 +53,13 @@ function Login() {
 
   return (
     <AuthLayout
-      title="Content de te revoir"
-      subtitle="Connecte-toi pour retrouver tes matchs"
+      title="Content de vous revoir"
+      subtitle="Connectez-vous pour retrouver vos matchs"
       footer={
         <>
           Pas encore de compte ?{' '}
           <Link to="/signup" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
-            Inscris-toi
+            Inscrivez-vous
           </Link>
         </>
       }
@@ -90,7 +90,7 @@ function Login() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="toi@exemple.com"
+            placeholder="vous@exemple.com"
             className={inputClass}
           />
         </div>

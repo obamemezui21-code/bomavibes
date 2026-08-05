@@ -39,8 +39,8 @@ function Events() {
           className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#6b5d4f]"
         >
           On prépare des afterworks et des rencontres organisées pour la communauté BomaVibes,
-          pour prolonger les connexions au-delà de l'écran. Rejoins l'app dès maintenant et on
-          te préviendra dès que la première date est fixée.
+          pour prolonger les connexions au-delà de l'écran. Rejoignez l'app dès maintenant et nous
+          vous préviendrons dès que la première date est fixée.
         </motion.p>
 
         <motion.div

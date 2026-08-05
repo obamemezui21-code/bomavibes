@@ -72,13 +72,13 @@ function Signup() {
 
   return (
     <AuthLayout
-      title="Crée ton compte"
-      subtitle="Rejoins la communauté gabonaise"
+      title="Créez votre compte"
+      subtitle="Rejoignez la communauté gabonaise"
       footer={
         <>
           Déjà un compte ?{' '}
           <Link to="/login" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
-            Connecte-toi
+            Connectez-vous
           </Link>
         </>
       }
@@ -125,7 +125,7 @@ function Signup() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="toi@exemple.com"
+            placeholder="vous@exemple.com"
             className={inputClass}
           />
         </div>
@@ -146,7 +146,7 @@ function Signup() {
 
         <div>
           <label htmlFor="confirmPassword" className={labelClass}>
-            Confirme le mot de passe
+            Confirmez le mot de passe
           </label>
           <PasswordInput
             id="confirmPassword"

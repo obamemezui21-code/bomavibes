@@ -40,18 +40,18 @@ function VerifyEmail() {
     if (verified) {
       navigate(profile?.onboarded ? '/discover' : '/onboarding', { replace: true })
     } else {
-      showToast("Ton email n'est pas encore vérifié", 'info')
+      showToast("Votre email n'est pas encore vérifié", 'info')
     }
   }
 
   return (
-    <AuthLayout title="Vérifie ton email" subtitle="Une dernière étape avant de continuer">
+    <AuthLayout title="Vérifiez votre email" subtitle="Une dernière étape avant de continuer">
       <div className="space-y-4 text-center">
         <Mail size={40} strokeWidth={1.5} className="mx-auto text-violet-500" />
         <p className="text-sm leading-relaxed text-ink-soft">
-          On a envoyé un lien de vérification à{' '}
-          <span className="font-semibold text-ink">{user?.email}</span>. Clique sur ce lien, puis
-          reviens ici.
+          Nous avons envoyé un lien de vérification à{' '}
+          <span className="font-semibold text-ink">{user?.email}</span>. Cliquez sur ce lien, puis
+          revenez ici.
         </p>
 
         <motion.button

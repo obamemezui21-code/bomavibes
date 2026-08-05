@@ -29,22 +29,22 @@ function button(link, label) {
       </a>
     </div>
     <p style="color:#6b5d4f;font-size:12px;word-break:break-all;margin-top:16px;">
-      Si le bouton ne fonctionne pas, copie ce lien dans ton navigateur :<br />
+      Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br />
       <a href="${link}" style="color:#9c7220;">${link}</a>
     </p>`;
 }
 
 function passwordResetEmail(link) {
     return {
-        subject: "Réinitialise ton mot de passe BomaVibes",
+        subject: "Réinitialisez votre mot de passe BomaVibes",
         html: wrapper(
-            "Réinitialise ton mot de passe",
+            "Réinitialisez votre mot de passe",
             `<p style="color:#6b5d4f;font-size:14px;line-height:1.6;">
-              Tu as demandé à réinitialiser ton mot de passe. Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe. Ce lien expire dans 1 heure.
+              Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe. Ce lien expire dans 1 heure.
             </p>
             ${button(link, "Réinitialiser mon mot de passe")}
             <p style="color:#6b5d4f;font-size:12px;margin-top:20px;">
-              Si tu n'es pas à l'origine de cette demande, ignore simplement cet email.
+              Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email.
             </p>`,
         ),
     };
@@ -52,11 +52,11 @@ function passwordResetEmail(link) {
 
 function verificationEmail(link, firstName) {
     return {
-        subject: "Confirme ton adresse email BomaVibes",
+        subject: "Confirmez votre adresse email BomaVibes",
         html: wrapper(
             `Bienvenue${firstName ? `, ${firstName}` : ""} !`,
             `<p style="color:#6b5d4f;font-size:14px;line-height:1.6;">
-              Plus qu'une étape avant de rejoindre la communauté : confirme ton adresse email en cliquant sur le bouton ci-dessous.
+              Plus qu'une étape avant de rejoindre la communauté : confirmez votre adresse email en cliquant sur le bouton ci-dessous.
             </p>
             ${button(link, "Confirmer mon email")}`,
         ),
