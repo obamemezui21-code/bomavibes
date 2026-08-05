@@ -4,6 +4,8 @@ const emailActionRoutes = require("./routes/emailActionRoutes");
 const photoRoutes = require("./routes/photoRoutes");
 const notifyRoutes = require("./routes/notifyRoutes");
 const accountRoutes = require("./routes/accountRoutes");
+const newsRoutes = require("./routes/newsRoutes");
+const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 
 const app = express();
 
@@ -22,6 +24,9 @@ app.use("/api/auth", emailActionRoutes);
 app.use("/api/photos", photoRoutes);
 app.use("/api/notify", notifyRoutes);
 app.use("/api/account", accountRoutes);
+app.use("/api/news", newsRoutes);
+
+startWwfNewsScheduler();
 
 // Error handler
 app.use((err, req, res, next) => {

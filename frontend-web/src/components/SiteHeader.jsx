@@ -7,7 +7,7 @@ import logo from '../assets/bomavibes-icon.png'
 const NAV_LINKS = [
   { label: 'Accueil', href: '/#top' },
   { label: 'À propos', href: '/#about' },
-  { label: 'Nos tarifs', href: '/tarifs' },
+  { label: 'Nos tarifs', href: '/#tarifs' },
   { label: 'Événements', href: '/evenements' },
   { label: 'Contact', href: '/#contact' },
 ]

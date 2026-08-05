@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
@@ -122,11 +123,14 @@ export function ConversationsProvider({ children }) {
         ...prev,
         [openMatchId]: snap.docs.map((d) => {
           const data = d.data()
+          const date = data.createdAt?.toDate?.() ?? new Date()
           return {
             id: d.id,
             fromMe: data.senderId === uid,
             text: data.text,
-            time: formatTime(data.createdAt?.toDate?.()),
+            time: formatTime(date),
+            date,
+            edited: !!data.editedAt,
           }
         }),
       }))
@@ -206,6 +210,17 @@ export function ConversationsProvider({ children }) {
     }
   }
 
+  async function editMessage(matchId, messageId, text) {
+    await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
+      text,
+      editedAt: serverTimestamp(),
+    })
+  }
+
+  async function deleteMessage(matchId, messageId) {
+    await deleteDoc(doc(db, 'matches', matchId, 'messages', messageId))
+  }
+
   async function setTyping(matchId, isTyping) {
     await updateDoc(doc(db, 'matches', matchId), {
       [`typing.${uid}`]: isTyping ? serverTimestamp() : null,
@@ -223,6 +238,8 @@ export function ConversationsProvider({ children }) {
         openConversation,
         markMatchesSeen,
         sendMessage,
+        editMessage,
+        deleteMessage,
         showPushPrompt,
         acceptPushPrompt,
         dismissPushPrompt,

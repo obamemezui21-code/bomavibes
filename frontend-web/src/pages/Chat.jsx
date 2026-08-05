@@ -1,16 +1,37 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Hand, MessageCircle, Send } from 'lucide-react'
+import { ArrowLeft, Hand, MessageCircle, MoreVertical, Pencil, Send, Trash2, X } from 'lucide-react'
 import { useConversations } from '../context/ConversationsContext.jsx'
 
 const TYPING_STOP_DELAY_MS = 2500
 
+function isSameDay(a, b) {
+  return !!a && !!b && a.toDateString() === b.toDateString()
+}
+
+function formatDayLabel(date) {
+  if (!date) return ''
+  const now = new Date()
+  const yesterday = new Date(now)
+  yesterday.setDate(now.getDate() - 1)
+  if (isSameDay(date, now)) return "Aujourd'hui"
+  if (isSameDay(date, yesterday)) return 'Hier'
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+  })
+}
+
 function Chat() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
-  const { conversations, typingId, sendMessage, openConversation, setTyping } = useConversations()
+  const { conversations, typingId, sendMessage, editMessage, deleteMessage, openConversation, setTyping } =
+    useConversations()
   const [draft, setDraft] = useState('')
+  const [editingMessageId, setEditingMessageId] = useState(null)
+  const [openMenuId, setOpenMenuId] = useState(null)
   const scrollRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const isTypingRef = useRef(false)
@@ -52,8 +73,33 @@ function Chat() {
     clearTimeout(typingTimeoutRef.current)
     isTypingRef.current = false
     setTyping(active.id, false)
-    sendMessage(active.id, text)
+    if (editingMessageId) {
+      editMessage(active.id, editingMessageId, text)
+      setEditingMessageId(null)
+    } else {
+      sendMessage(active.id, text)
+    }
     setDraft('')
+  }
+
+  function startEdit(m) {
+    setEditingMessageId(m.id)
+    setDraft(m.text)
+    setOpenMenuId(null)
+  }
+
+  function cancelEdit() {
+    setEditingMessageId(null)
+    setDraft('')
+  }
+
+  function handleDelete(m) {
+    setOpenMenuId(null)
+    if (!active) return
+    if (window.confirm('Supprimer ce message ?')) {
+      deleteMessage(active.id, m.id)
+      if (editingMessageId === m.id) cancelEdit()
+    }
   }
 
   if (conversations.length === 0) {
@@ -147,28 +193,80 @@ function Chat() {
               )}
 
               <AnimatePresence initial={false}>
-                {active.messages.map((m) => (
-                  <motion.div
-                    key={m.id}
-                    initial={{ opacity: 0, y: 12, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.25 }}
-                    className={`flex ${m.fromMe ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
-                        m.fromMe
-                          ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
-                          : 'rounded-bl-sm bg-ink/6 text-ink'
-                      }`}
-                    >
-                      <p>{m.text}</p>
-                      <p className={`mt-0.5 text-[10px] ${m.fromMe ? 'text-white/70' : 'text-ink-soft/50'}`}>
-                        {m.time}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+                {active.messages.map((m, i) => {
+                  const showDaySeparator = !isSameDay(m.date, active.messages[i - 1]?.date)
+                  return (
+                    <Fragment key={m.id}>
+                      {showDaySeparator && (
+                        <div className="flex justify-center py-2">
+                          <span className="rounded-full bg-ink/8 px-3 py-1 text-[11px] font-medium text-ink-soft/60">
+                            {formatDayLabel(m.date)}
+                          </span>
+                        </div>
+                      )}
+                      <motion.div
+                        initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.25 }}
+                        className={`group flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {m.fromMe && (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft/40 opacity-0 transition hover:bg-ink/5 hover:text-ink-soft group-hover:opacity-100"
+                              aria-label="Options du message"
+                            >
+                              <MoreVertical size={14} strokeWidth={2.25} />
+                            </button>
+                            <AnimatePresence>
+                              {openMenuId === m.id && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="absolute right-0 top-8 z-10 w-36 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => startEdit(m)}
+                                    className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                                  >
+                                    <Pencil size={14} strokeWidth={2.25} />
+                                    Modifier
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDelete(m)}
+                                    className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
+                                  >
+                                    <Trash2 size={14} strokeWidth={2.25} />
+                                    Supprimer
+                                  </button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
+                        <div
+                          className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
+                            m.fromMe
+                              ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
+                              : 'rounded-bl-sm bg-ink/6 text-ink'
+                          }`}
+                        >
+                          <p>{m.text}</p>
+                          <p className={`mt-0.5 text-[10px] ${m.fromMe ? 'text-white/70' : 'text-ink-soft/50'}`}>
+                            {m.time}
+                            {m.edited && ' · modifié'}
+                          </p>
+                        </div>
+                      </motion.div>
+                    </Fragment>
+                  )
+                })}
               </AnimatePresence>
 
               {typingId === active.id && (
@@ -187,7 +285,23 @@ function Chat() {
               )}
             </div>
 
-            <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-ink/8 p-3">
+            {editingMessageId && (
+              <div className="flex items-center justify-between border-t border-ink/8 bg-violet-500/5 px-4 py-2">
+                <span className="text-xs font-medium text-violet-600">Modification du message</span>
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-ink-soft/60 hover:bg-ink/10"
+                  aria-label="Annuler la modification"
+                >
+                  <X size={14} strokeWidth={2.25} />
+                </button>
+              </div>
+            )}
+            <form
+              onSubmit={handleSend}
+              className={`flex items-center gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
+            >
               <input
                 type="text"
                 value={draft}
@@ -200,7 +314,7 @@ function Chat() {
                 whileTap={{ scale: 0.9 }}
                 disabled={!draft.trim()}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="Envoyer"
+                aria-label={editingMessageId ? 'Enregistrer' : 'Envoyer'}
               >
                 <Send size={16} strokeWidth={2.25} />
               </motion.button>

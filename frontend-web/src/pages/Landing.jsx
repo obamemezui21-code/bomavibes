@@ -8,6 +8,8 @@ import amaraPhoto from '../assets/faces/amara.jpg'
 import malikPhoto from '../assets/faces/malik.jpg'
 import ndeyePhoto from '../assets/faces/ndeye.jpg'
 import SiteHeader from '../components/SiteHeader.jsx'
+import PricingTiers from '../components/PricingTiers.jsx'
+import WwfNewsSection from '../components/WwfNewsSection.jsx'
 
 const WORD_CONTAINER = {
   hidden: {},
@@ -55,17 +57,17 @@ const STEPS = [
   {
     icon: Camera,
     title: 'Crée ton profil',
-    text: 'Ajoute tes photos et parle un peu de toi, ça prend deux minutes.',
+    text: "Donne vie à ton profil. Ajoute tes photos et présente-toi en quelques mots. En seulement 30 secondes, augmente tes chances de faire des rencontres authentiques.",
   },
   {
     icon: Heart,
     title: 'Découvre & matche',
-    text: 'Swipe parmi des profils authentiques de la communauté, près de chez toi.',
+    text: "Explore des profils authentiques près de chez toi et matche avec des personnes qui partagent tes valeurs et tes centres d'intérêt.",
   },
   {
     icon: MessageCircle,
-    title: 'Discute en vrai',
-    text: 'Ça matche ? Lancez la conversation et voyez où ça vous mène.',
+    title: 'Discutez pour de vrai',
+    text: 'Vous avez matché ? Lancez la conversation, apprenez à vous connaître et laissez naître une connexion authentique.',
   },
 ]
 
@@ -260,12 +262,30 @@ function Landing() {
       {/* About */}
       <section id="about" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 text-center sm:px-10">
         <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">À propos de BomaVibes</h2>
-        <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-[#6b5d4f]">
-          BomaVibes est né d'une conviction simple : les célibataires africains et de la
-          communauté noire méritent un espace de rencontre pensé pour eux, qui célèbre leur
-          culture et leurs valeurs. Notre mission est de créer des connexions authentiques,
-          sûres et durables, portées par une communauté vérifiée et bienveillante.
-        </p>
+        <div className="mx-auto mt-6 max-w-3xl space-y-5 text-lg leading-relaxed text-[#6b5d4f]">
+          <p>
+            Chez BomaVibes, nous croyons que l'amour naît lorsque deux personnes peuvent être
+            pleinement elles-mêmes.
+          </p>
+          <p>
+            C'est pourquoi nous avons créé une plateforme de rencontre pensée avant tout pour
+            les célibataires africains et de la diaspora noire : un espace où la culture, les
+            valeurs, les traditions et les ambitions se rencontrent naturellement.
+          </p>
+          <p>
+            Ici, chaque profil est une histoire, chaque échange une opportunité, et chaque
+            rencontre peut devenir le début de quelque chose de beau.
+          </p>
+          <p>
+            Notre priorité est d'offrir une expérience de qualité grâce à une communauté
+            authentique, des profils vérifiés et un environnement sûr, respectueux et
+            bienveillant.
+          </p>
+          <p>
+            Plus qu'une application de rencontre, BomaVibes est une communauté qui rapproche
+            les cœurs, célèbre nos racines et favorise des relations sincères et durables.
+          </p>
+        </div>
       </section>
 
       {/* Promo sections */}
@@ -354,6 +374,20 @@ function Landing() {
           ))}
         </div>
       </section>
+
+      {/* Nos tarifs */}
+      <section id="tarifs" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-24 sm:px-10">
+        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Nos tarifs</h2>
+        <p className="mx-auto mt-5 max-w-xl text-center text-lg leading-relaxed text-[#6b5d4f]">
+          BomaVibes reste gratuit pour matcher et discuter. Choisis le niveau qui te correspond,
+          sans engagement caché.
+        </p>
+        <div className="mt-16">
+          <PricingTiers />
+        </div>
+      </section>
+
+      <WwfNewsSection />
 
       {/* Contact */}
       <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-24 text-center sm:px-8">
