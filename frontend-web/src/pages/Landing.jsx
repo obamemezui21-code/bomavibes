@@ -4,9 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { BadgeCheck, Camera, ChevronDown, Heart, MessageCircle, ShieldCheck, Users } from 'lucide-react'
 import heroPhoto from '../assets/hero.jpg'
 import heroLogoIcon from '../assets/bomavibes-icon.png'
-import amaraPhoto from '../assets/faces/amara.jpg'
-import malikPhoto from '../assets/faces/malik.jpg'
-import ndeyePhoto from '../assets/faces/ndeye.jpg'
 import SiteHeader from '../components/SiteHeader.jsx'
 import { TIERS } from '../components/PricingTiers.jsx'
 import WwfNewsSection from '../components/WwfNewsSection.jsx'
@@ -68,30 +65,6 @@ const STEPS = [
     icon: MessageCircle,
     title: 'Discutez pour de vrai',
     text: 'Vous avez matché ? Lancez la conversation, apprenez à vous connaître et laissez naître une connexion authentique.',
-  },
-]
-
-const PROMOS = [
-  {
-    photo: amaraPhoto,
-    eyebrow: 'Des liens vrais',
-    title: 'Des connexions qui durent',
-    text: "Ici, on ne swipe pas juste pour swiper. BomaVibes met en avant les profils qui cherchent vraiment à connaître quelqu'un — pas juste à collectionner des matchs.",
-    reverse: false,
-  },
-  {
-    photo: malikPhoto,
-    eyebrow: 'Une communauté',
-    title: 'Une communauté qui te ressemble',
-    text: 'Des célibataires africains et afrodescendants, avec les mêmes codes, la même culture, et surtout la même envie de rire vrai.',
-    reverse: true,
-  },
-  {
-    photo: ndeyePhoto,
-    eyebrow: 'En confiance',
-    title: 'Du match au premier rendez-vous',
-    text: "Discute, apprends à connaître l'autre, et passe à l'étape d'après quand tu es prêt·e — en toute sécurité, avec nos conseils pour des rencontres réussies.",
-    reverse: false,
   },
 ]
 
@@ -288,27 +261,6 @@ function Landing() {
         </div>
       </section>
 
-      {/* Promo sections */}
-      <div className="mx-auto max-w-6xl space-y-24 px-4 py-8 sm:px-10">
-        {PROMOS.map((p) => (
-          <section
-            key={p.title}
-            className={`grid grid-cols-1 items-center gap-10 sm:grid-cols-2 sm:gap-16 ${
-              p.reverse ? 'sm:[&>*:first-child]:order-2' : ''
-            }`}
-          >
-            <div className="aspect-[4/3] overflow-hidden rounded-3xl shadow-xl">
-              <img src={p.photo} alt="" className="h-full w-full object-cover" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-[#9c7220]">{p.eyebrow}</p>
-              <h3 className="mt-3 font-display text-3xl font-bold text-[#2B1D14] sm:text-4xl">{p.title}</h3>
-              <p className="mt-5 max-w-md text-lg leading-relaxed text-[#6b5d4f]">{p.text}</p>
-            </div>
-          </section>
-        ))}
-      </div>
-
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-24 sm:px-8">
         <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Questions fréquentes</h2>
@@ -375,6 +327,8 @@ function Landing() {
         </div>
       </section>
 
+      <WwfNewsSection />
+
       {/* Nos tarifs (teaser) */}
       <section id="tarifs" className="mx-auto max-w-5xl scroll-mt-20 px-4 py-24 sm:px-10">
         <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Nos tarifs</h2>
@@ -413,8 +367,6 @@ function Landing() {
           </Link>
         </div>
       </section>
-
-      <WwfNewsSection />
 
       {/* Contact */}
       <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-24 text-center sm:px-8">

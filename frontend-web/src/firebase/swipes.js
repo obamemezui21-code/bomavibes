@@ -9,6 +9,20 @@ export async function countIncomingLikes(uid) {
   return snap.size
 }
 
+export async function getIncomingLikers(uid) {
+  const snap = await getDocs(
+    query(collection(db, 'swipes'), where('targetId', '==', uid), where('direction', 'in', ['like', 'superlike'])),
+  )
+  const swiperIds = snap.docs.map((d) => d.data().swiperId)
+  const profiles = await Promise.all(
+    swiperIds.map(async (swiperId) => {
+      const snapshot = await getDoc(doc(db, 'profiles', swiperId))
+      return snapshot.exists() ? { id: swiperId, ...snapshot.data() } : null
+    }),
+  )
+  return profiles.filter(Boolean)
+}
+
 export async function recordSwipeAndMatch(uid, targetId, direction, firstName) {
   await setDoc(doc(db, 'swipes', `${uid}_${targetId}`), {
     swiperId: uid,

@@ -128,6 +128,9 @@ export function ConversationsProvider({ children }) {
             id: d.id,
             fromMe: data.senderId === uid,
             text: data.text,
+            type: data.type || 'text',
+            audioUrl: data.audioUrl || null,
+            duration: data.duration || 0,
             time: formatTime(date),
             date,
             edited: !!data.editedAt,
@@ -210,6 +213,29 @@ export function ConversationsProvider({ children }) {
     }
   }
 
+  async function sendVoiceMessage(matchId, audioUrl, duration) {
+    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+      senderId: uid,
+      text: '',
+      type: 'voice',
+      audioUrl,
+      duration,
+      createdAt: serverTimestamp(),
+    })
+    const match = matches.find((m) => m.id === matchId)
+    const otherUid = match?.users.find((u) => u !== uid)
+    const preview = '🎤 Message vocal'
+    await updateDoc(doc(db, 'matches', matchId), {
+      lastMessage: preview,
+      lastMessageAt: serverTimestamp(),
+      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
+    })
+
+    if (otherUid) {
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+    }
+  }
+
   async function editMessage(matchId, messageId, text) {
     await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
       text,
@@ -238,6 +264,7 @@ export function ConversationsProvider({ children }) {
         openConversation,
         markMatchesSeen,
         sendMessage,
+        sendVoiceMessage,
         editMessage,
         deleteMessage,
         showPushPrompt,

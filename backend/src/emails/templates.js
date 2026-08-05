@@ -63,4 +63,17 @@ function verificationEmail(link, firstName) {
     };
 }
 
-module.exports = { passwordResetEmail, verificationEmail };
+function featureAnnouncementEmail({ title, description, ctaLabel, ctaLink }) {
+    return {
+        subject: `Nouveau sur BomaVibes : ${title}`,
+        html: wrapper(
+            title,
+            `<p style="color:#6b5d4f;font-size:14px;line-height:1.6;">
+              ${description}
+            </p>
+            ${ctaLink ? button(ctaLink, ctaLabel || 'Découvrir') : ''}`,
+        ),
+    };
+}
+
+module.exports = { passwordResetEmail, verificationEmail, featureAnnouncementEmail };

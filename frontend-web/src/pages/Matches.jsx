@@ -48,7 +48,11 @@ function Matches() {
         <h1 className="font-display text-2xl font-semibold text-ink">Tes matchs</h1>
 
         <div className="mt-4 flex gap-3">
-          <div className="flex flex-1 items-center gap-3 rounded-2xl border border-ink/10 bg-white/60 dark:bg-surface-tint/60 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => navigate('/likes')}
+            className="flex flex-1 items-center gap-3 rounded-2xl border border-ink/10 bg-white/60 dark:bg-surface-tint/60 px-4 py-3 text-left transition hover:bg-white/80"
+          >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-coral-500/15 text-coral-500">
               <Heart size={17} strokeWidth={2.25} />
             </span>
@@ -56,7 +60,7 @@ function Matches() {
               <p className="font-display text-lg font-semibold text-ink">{likesCount ?? '–'}</p>
               <p className="text-xs text-ink-soft/60">T'ont aimé(e)</p>
             </div>
-          </div>
+          </button>
 
           <button
             type="button"

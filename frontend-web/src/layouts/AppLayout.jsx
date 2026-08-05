@@ -7,11 +7,12 @@ import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 
 function useNavItems() {
   const { unreadMessagesCount, newMatchesCount } = useConversations()
+  const { hasUnseenAnnouncement } = useAuth()
   return [
     { to: '/discover', label: 'Découvrir', icon: Compass },
     { to: '/matches', label: 'Matchs', icon: Heart, badge: newMatchesCount },
     { to: '/chat', label: 'Messages', icon: MessageCircle, badge: unreadMessagesCount },
-    { to: '/profile', label: 'Profil', icon: CircleUserRound },
+    { to: '/profile', label: 'Profil', icon: CircleUserRound, dot: hasUnseenAnnouncement },
   ]
 }
 
@@ -76,6 +77,7 @@ function AppLayout() {
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
+                {item.dot && <span className="relative z-10 h-2 w-2 rounded-full bg-coral-500" />}
               </NavLink>
             )
           })}
@@ -117,6 +119,9 @@ function AppLayout() {
                   className={`transition ${isActive ? 'scale-110 text-violet-600' : 'text-ink-soft/60'}`}
                 />
                 <NavBadge count={item.badge} />
+                {item.dot && (
+                  <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-coral-500 ring-2 ring-white dark:ring-surface" />
+                )}
               </span>
               <span className={isActive ? 'text-violet-600' : 'text-ink-soft/60'}>{item.label}</span>
             </NavLink>

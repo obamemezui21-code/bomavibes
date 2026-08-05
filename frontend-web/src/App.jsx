@@ -16,6 +16,8 @@ import ForgotPassword from './pages/ForgotPassword.jsx'
 import AuthAction from './pages/AuthAction.jsx'
 import Discover from './pages/Discover.jsx'
 import Matches from './pages/Matches.jsx'
+import LikesYou from './pages/LikesYou.jsx'
+import Announcements from './pages/Announcements.jsx'
 import Chat from './pages/Chat.jsx'
 import Profile from './pages/Profile.jsx'
 import Settings from './pages/Settings.jsx'
@@ -68,6 +70,8 @@ function App() {
         >
           <Route path="/discover" element={<Discover />} />
           <Route path="/matches" element={<Matches />} />
+          <Route path="/likes" element={<LikesYou />} />
+          <Route path="/annonces" element={<Announcements />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/chat/:conversationId" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />

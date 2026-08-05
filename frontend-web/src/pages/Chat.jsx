@@ -1,10 +1,89 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Hand, MessageCircle, MoreVertical, Pencil, Send, Trash2, TriangleAlert, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  Hand,
+  Mic,
+  MessageCircle,
+  MoreVertical,
+  Pause,
+  Pencil,
+  Play,
+  Send,
+  Trash2,
+  TriangleAlert,
+  X,
+} from 'lucide-react'
 import { useConversations } from '../context/ConversationsContext.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 
 const TYPING_STOP_DELAY_MS = 2500
+const MAX_RECORDING_SECONDS = 120
+
+function formatDuration(totalSeconds) {
+  const s = Math.max(0, Math.round(totalSeconds || 0))
+  const m = Math.floor(s / 60)
+  const rem = s % 60
+  return `${m}:${String(rem).padStart(2, '0')}`
+}
+
+function VoiceMessage({ url, duration, fromMe }) {
+  const audioRef = useRef(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  function togglePlay() {
+    const audio = audioRef.current
+    if (!audio) return
+    if (isPlaying) {
+      audio.pause()
+    } else {
+      audio.play()
+    }
+  }
+
+  const pct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0
+
+  return (
+    <div className="flex w-48 items-center gap-2.5">
+      <button
+        type="button"
+        onClick={togglePlay}
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+          fromMe ? 'bg-white/25 text-[#2B1D14]' : 'bg-violet-500/15 text-violet-600'
+        }`}
+        aria-label={isPlaying ? 'Pause' : 'Lecture'}
+      >
+        {isPlaying ? <Pause size={14} strokeWidth={2.5} /> : <Play size={14} strokeWidth={2.5} />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className={`h-1.5 w-full overflow-hidden rounded-full ${fromMe ? 'bg-white/30' : 'bg-ink/10'}`}>
+          <div
+            className={`h-full rounded-full ${fromMe ? 'bg-[#2B1D14]' : 'bg-violet-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <span className={`mt-1 block text-[10px] ${fromMe ? 'text-white/70' : 'text-ink-soft/50'}`}>
+          {formatDuration(isPlaying || progress > 0 ? progress : duration)}
+        </span>
+      </div>
+      <audio
+        ref={audioRef}
+        src={url}
+        preload="metadata"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(false)
+          setProgress(0)
+        }}
+        onTimeUpdate={(e) => setProgress(e.currentTarget.currentTime)}
+      />
+    </div>
+  )
+}
 
 function DeleteMessageModal({ onCancel, onConfirm, isDeleting }) {
   return (
@@ -66,16 +145,33 @@ function formatDayLabel(date) {
 function Chat() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
-  const { conversations, typingId, sendMessage, editMessage, deleteMessage, openConversation, setTyping } =
-    useConversations()
+  const {
+    conversations,
+    typingId,
+    sendMessage,
+    sendVoiceMessage,
+    editMessage,
+    deleteMessage,
+    openConversation,
+    setTyping,
+  } = useConversations()
+  const { showToast } = useToast()
   const [draft, setDraft] = useState('')
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [isSendingVoice, setIsSendingVoice] = useState(false)
   const scrollRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const isTypingRef = useRef(false)
+  const mediaRecorderRef = useRef(null)
+  const chunksRef = useRef([])
+  const streamRef = useRef(null)
+  const recordingTimerRef = useRef(null)
+  const recordingSecondsRef = useRef(0)
 
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
@@ -122,6 +218,80 @@ function Chat() {
     }
     setDraft('')
   }
+
+  function stopRecordingTimer() {
+    clearInterval(recordingTimerRef.current)
+    recordingTimerRef.current = null
+  }
+
+  function teardownStream() {
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    mediaRecorderRef.current = null
+  }
+
+  async function startRecording() {
+    if (!active || isRecording) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      streamRef.current = stream
+      chunksRef.current = []
+
+      const recorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = recorder
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data)
+      }
+      recorder.start()
+
+      recordingSecondsRef.current = 0
+      setRecordingSeconds(0)
+      setIsRecording(true)
+      recordingTimerRef.current = setInterval(() => {
+        recordingSecondsRef.current += 1
+        setRecordingSeconds(recordingSecondsRef.current)
+        if (recordingSecondsRef.current >= MAX_RECORDING_SECONDS) {
+          stopRecording(true)
+        }
+      }, 1000)
+    } catch {
+      showToast('Autorise le micro pour envoyer une note vocale.', 'error')
+    }
+  }
+
+  function stopRecording(send) {
+    const recorder = mediaRecorderRef.current
+    if (!recorder || recorder.state !== 'recording') return
+    stopRecordingTimer()
+    setIsRecording(false)
+
+    recorder.onstop = async () => {
+      const chunks = chunksRef.current
+      const duration = recordingSecondsRef.current
+      teardownStream()
+
+      if (!send || chunks.length === 0 || duration < 1) return
+
+      const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' })
+      setIsSendingVoice(true)
+      try {
+        const url = await uploadVoiceNote(blob)
+        await sendVoiceMessage(active.id, url, duration)
+      } catch {
+        showToast("Impossible d'envoyer la note vocale, réessaie.", 'error')
+      } finally {
+        setIsSendingVoice(false)
+      }
+    }
+    recorder.stop()
+  }
+
+  useEffect(() => {
+    return () => {
+      stopRecordingTimer()
+      teardownStream()
+    }
+  }, [activeId])
 
   function startEdit(m) {
     setEditingMessageId(m.id)
@@ -196,7 +366,7 @@ function Chat() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-ink">{c.profile.firstName}</p>
                   <p className="truncate text-xs text-ink-soft/60">
-                    {last ? last.text : 'Dites bonjour 👋'}
+                    {last ? (last.type === 'voice' ? '🎤 Message vocal' : last.text) : 'Dites bonjour 👋'}
                   </p>
                 </div>
                 {typingId === c.id && <span className="text-xs text-violet-600">écrit…</span>}
@@ -278,18 +448,22 @@ function Chat() {
                                   transition={{ duration: 0.15 }}
                                   className="absolute right-0 top-8 z-10 w-36 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5"
                                 >
-                                  <button
-                                    type="button"
-                                    onClick={() => startEdit(m)}
-                                    className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
-                                  >
-                                    <Pencil size={14} strokeWidth={2.25} />
-                                    Modifier
-                                  </button>
+                                  {m.type !== 'voice' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => startEdit(m)}
+                                      className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                                    >
+                                      <Pencil size={14} strokeWidth={2.25} />
+                                      Modifier
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => handleDelete(m)}
-                                    className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
+                                    className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5 ${
+                                      m.type !== 'voice' ? 'border-t border-ink/6' : ''
+                                    }`}
                                   >
                                     <Trash2 size={14} strokeWidth={2.25} />
                                     Supprimer
@@ -306,7 +480,11 @@ function Chat() {
                               : 'rounded-bl-sm bg-ink/6 text-ink'
                           }`}
                         >
-                          <p>{m.text}</p>
+                          {m.type === 'voice' ? (
+                            <VoiceMessage url={m.audioUrl} duration={m.duration} fromMe={m.fromMe} />
+                          ) : (
+                            <p>{m.text}</p>
+                          )}
                           <p className={`mt-0.5 text-[10px] ${m.fromMe ? 'text-white/70' : 'text-ink-soft/50'}`}>
                             {m.time}
                             {m.edited && ' · modifié'}
@@ -347,27 +525,75 @@ function Chat() {
                 </button>
               </div>
             )}
-            <form
-              onSubmit={handleSend}
-              className={`flex items-center gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
-            >
-              <input
-                type="text"
-                value={draft}
-                onChange={(e) => handleDraftChange(e.target.value)}
-                placeholder="Écris un message…"
-                className="flex-1 rounded-full border border-ink/12 bg-ink/[0.03] px-4 py-2.5 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
-              />
-              <motion.button
-                type="submit"
-                whileTap={{ scale: 0.9 }}
-                disabled={!draft.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label={editingMessageId ? 'Enregistrer' : 'Envoyer'}
+            {isRecording ? (
+              <div className={`flex items-center gap-3 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}>
+                <button
+                  type="button"
+                  onClick={() => stopRecording(false)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
+                  aria-label="Annuler l'enregistrement"
+                >
+                  <X size={18} strokeWidth={2.25} />
+                </button>
+                <div className="flex flex-1 items-center gap-2.5 rounded-full border border-coral-500/30 bg-coral-500/5 px-4 py-2.5">
+                  <motion.span
+                    className="h-2.5 w-2.5 rounded-full bg-coral-500"
+                    animate={{ opacity: [1, 0.3, 1] }}
+                    transition={{ duration: 1.1, repeat: Infinity }}
+                  />
+                  <span className="text-sm font-medium text-ink">{formatDuration(recordingSeconds)}</span>
+                  <span className="text-xs text-ink-soft/50">Enregistrement…</span>
+                </div>
+                <motion.button
+                  type="button"
+                  onClick={() => stopRecording(true)}
+                  whileTap={{ scale: 0.9 }}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+                  aria-label="Envoyer la note vocale"
+                >
+                  <Send size={16} strokeWidth={2.25} />
+                </motion.button>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSend}
+                className={`flex items-center gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
               >
-                <Send size={16} strokeWidth={2.25} />
-              </motion.button>
-            </form>
+                <input
+                  type="text"
+                  value={draft}
+                  onChange={(e) => handleDraftChange(e.target.value)}
+                  placeholder="Écris un message…"
+                  disabled={isSendingVoice}
+                  className="flex-1 rounded-full border border-ink/12 bg-ink/[0.03] px-4 py-2.5 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
+                />
+                {draft.trim() ? (
+                  <motion.button
+                    type="submit"
+                    whileTap={{ scale: 0.9 }}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+                    aria-label={editingMessageId ? 'Enregistrer' : 'Envoyer'}
+                  >
+                    <Send size={16} strokeWidth={2.25} />
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    type="button"
+                    onClick={startRecording}
+                    disabled={isSendingVoice || !!editingMessageId}
+                    whileTap={{ scale: 0.9 }}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Enregistrer une note vocale"
+                  >
+                    {isSendingVoice ? (
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#2B1D14]/30 border-t-[#2B1D14]" />
+                    ) : (
+                      <Mic size={16} strokeWidth={2.25} />
+                    )}
+                  </motion.button>
+                )}
+              </form>
+            )}
           </>
         )}
       </div>

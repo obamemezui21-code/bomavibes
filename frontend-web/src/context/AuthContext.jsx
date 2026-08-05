@@ -13,7 +13,7 @@ import {
   updatePassword,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth'
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase/config.js'
 import { useToast } from './ToastContext.jsx'
 
@@ -73,6 +73,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isProfileLoading, setIsProfileLoading] = useState(true)
   const [isPublicProfileLoading, setIsPublicProfileLoading] = useState(true)
+  const [latestAnnouncementAt, setLatestAnnouncementAt] = useState(null)
   const { showToast } = useToast()
   const navigate = useNavigate()
 
@@ -119,6 +120,27 @@ export function AuthProvider({ children }) {
     })
     return unsubscribe
   }, [user?.id])
+
+  useEffect(() => {
+    if (!user) {
+      setLatestAnnouncementAt(null)
+      return
+    }
+    const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'), limit(1))
+    const unsubscribe = onSnapshot(q, (snap) => {
+      const latest = snap.docs[0]?.data()?.createdAt?.toDate?.() ?? null
+      setLatestAnnouncementAt(latest)
+    })
+    return unsubscribe
+  }, [user?.id])
+
+  const lastSeenAnnouncementAt = profile?.lastSeenAnnouncementAt?.toDate?.() ?? null
+  const hasUnseenAnnouncement = !!latestAnnouncementAt && (!lastSeenAnnouncementAt || latestAnnouncementAt > lastSeenAnnouncementAt)
+
+  async function markAnnouncementsSeen() {
+    if (!user) return
+    await updateDoc(doc(db, 'users', user.id), { lastSeenAnnouncementAt: serverTimestamp() }).catch(() => {})
+  }
 
   async function login(email, password) {
     try {
@@ -268,6 +290,8 @@ export function AuthProvider({ children }) {
         resendVerificationEmail,
         refreshEmailVerified,
         resetPassword,
+        hasUnseenAnnouncement,
+        markAnnouncementsSeen,
       }}
     >
       {children}
