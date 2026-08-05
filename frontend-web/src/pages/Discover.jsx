@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, MapPin, Search, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { Heart, MapPin, Megaphone, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
@@ -29,7 +29,7 @@ function avatarFor(profile) {
 }
 
 function Discover() {
-  const { user, publicProfile } = useAuth()
+  const { user, publicProfile, hasUnseenAnnouncement, latestAnnouncement, markAnnouncementsSeen } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
 
@@ -154,6 +154,43 @@ async function handleSwipe(profile, direction) {
               </button>
             </div>
           </div>
+
+          <AnimatePresence>
+            {hasUnseenAnnouncement && latestAnnouncement && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="mt-4 overflow-hidden"
+              >
+                <div className="flex items-start gap-3 rounded-2xl border border-violet-400/30 bg-gradient-to-r from-violet-500/10 to-pink-500/10 p-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-600">
+                    <Megaphone size={16} strokeWidth={2.25} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink">{latestAnnouncement.title}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-ink-soft/70">{latestAnnouncement.description}</p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/annonces')}
+                      className="mt-2 text-xs font-semibold text-violet-600 underline-offset-2 hover:underline"
+                    >
+                      En savoir plus →
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={markAnnouncementsSeen}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-soft/50 transition hover:bg-ink/5"
+                    aria-label="Fermer"
+                  >
+                    <X size={14} strokeWidth={2.25} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <AnimatePresence>
             {showSearch && (

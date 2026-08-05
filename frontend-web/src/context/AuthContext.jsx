@@ -73,7 +73,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isProfileLoading, setIsProfileLoading] = useState(true)
   const [isPublicProfileLoading, setIsPublicProfileLoading] = useState(true)
-  const [latestAnnouncementAt, setLatestAnnouncementAt] = useState(null)
+  const [latestAnnouncement, setLatestAnnouncement] = useState(null)
   const { showToast } = useToast()
   const navigate = useNavigate()
 
@@ -123,19 +123,25 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!user) {
-      setLatestAnnouncementAt(null)
+      setLatestAnnouncement(null)
       return
     }
     const q = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'), limit(1))
     const unsubscribe = onSnapshot(q, (snap) => {
-      const latest = snap.docs[0]?.data()?.createdAt?.toDate?.() ?? null
-      setLatestAnnouncementAt(latest)
+      const docSnap = snap.docs[0]
+      if (!docSnap) {
+        setLatestAnnouncement(null)
+        return
+      }
+      const data = docSnap.data()
+      setLatestAnnouncement({ id: docSnap.id, ...data, createdAt: data.createdAt?.toDate?.() ?? null })
     })
     return unsubscribe
   }, [user?.id])
 
   const lastSeenAnnouncementAt = profile?.lastSeenAnnouncementAt?.toDate?.() ?? null
-  const hasUnseenAnnouncement = !!latestAnnouncementAt && (!lastSeenAnnouncementAt || latestAnnouncementAt > lastSeenAnnouncementAt)
+  const hasUnseenAnnouncement =
+    !!latestAnnouncement?.createdAt && (!lastSeenAnnouncementAt || latestAnnouncement.createdAt > lastSeenAnnouncementAt)
 
   async function markAnnouncementsSeen() {
     if (!user) return
@@ -291,6 +297,7 @@ export function AuthProvider({ children }) {
         refreshEmailVerified,
         resetPassword,
         hasUnseenAnnouncement,
+        latestAnnouncement,
         markAnnouncementsSeen,
       }}
     >

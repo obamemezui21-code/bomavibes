@@ -315,9 +315,12 @@ function Chat() {
     try {
       await deleteMessage(active.id, deleteTarget.id)
       if (editingMessageId === deleteTarget.id) cancelEdit()
+      setDeleteTarget(null)
+    } catch (err) {
+      console.error('Échec de la suppression du message:', err)
+      showToast('Impossible de supprimer ce message, réessaie.', 'error')
     } finally {
       setIsDeleting(false)
-      setDeleteTarget(null)
     }
   }
 
