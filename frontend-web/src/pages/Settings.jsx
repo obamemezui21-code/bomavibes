@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { doc, updateDoc } from 'firebase/firestore'
-import { ArrowLeft, Moon, Sun, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, Heart, Moon, Sun, TriangleAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
@@ -369,6 +369,19 @@ function Settings() {
               ) : (
                 <span className="text-xs text-ink-soft/50">Géré par Google</span>
               )}
+            </Row>
+          </Section>
+
+          <Section title="Le projet">
+            <Row title="Soutenir BomaVibes" subtitle="Construisons BomaVibes ensemble">
+              <button
+                type="button"
+                onClick={() => navigate('/soutenir')}
+                className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
+              >
+                <Heart size={13} strokeWidth={2.25} />
+                Découvrir
+              </button>
             </Row>
           </Section>
 

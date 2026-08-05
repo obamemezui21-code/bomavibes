@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Pencil, Settings, X } from 'lucide-react'
+import { Heart, Pencil, Settings, X } from 'lucide-react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { uploadProfilePhoto } from '../firebase/photos.js'
@@ -538,6 +538,15 @@ function Profile() {
           >
             <Settings size={16} strokeWidth={2} />
             Paramètres
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/soutenir')}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+          >
+            <Heart size={16} strokeWidth={2} />
+            Soutenir BomaVibes
           </button>
 
           <button

@@ -21,6 +21,7 @@ import Announcements from './pages/Announcements.jsx'
 import Chat from './pages/Chat.jsx'
 import Profile from './pages/Profile.jsx'
 import Settings from './pages/Settings.jsx'
+import Support from './pages/Support.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
@@ -76,6 +77,7 @@ function App() {
           <Route path="/chat/:conversationId" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/soutenir" element={<Support />} />
         </Route>
       </Routes>
     </>

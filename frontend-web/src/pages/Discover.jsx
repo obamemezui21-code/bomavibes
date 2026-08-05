@@ -5,6 +5,7 @@ import { Heart, MapPin, Megaphone, Search, SlidersHorizontal, Sparkles, X } from
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
+import SupportPromptCard from '../components/SupportPromptCard.jsx'
 import { fetchDiscoverCandidates } from '../firebase/discovery.js'
 import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -191,6 +192,8 @@ async function handleSwipe(profile, direction) {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {!(hasUnseenAnnouncement && latestAnnouncement) && <SupportPromptCard />}
 
           <AnimatePresence>
             {showSearch && (
