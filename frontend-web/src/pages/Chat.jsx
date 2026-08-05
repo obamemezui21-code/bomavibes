@@ -13,13 +13,16 @@ import {
   Play,
   Send,
   ShieldOff,
+  Smile,
   Trash2,
   TriangleAlert,
   X,
 } from 'lucide-react'
+import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { useTheme } from '../context/ThemeContext.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import ReportModal from '../components/ReportModal.jsx'
@@ -164,7 +167,9 @@ function Chat() {
   } = useConversations()
   const { user } = useAuth()
   const { showToast } = useToast()
+  const { theme } = useTheme()
   const [draft, setDraft] = useState('')
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -207,6 +212,10 @@ function Chat() {
   useEffect(() => {
     return () => clearTimeout(typingTimeoutRef.current)
   }, [activeId])
+
+  function handleEmojiClick(emojiData) {
+    handleDraftChange(draft + emojiData.emoji)
+  }
 
   function handleDraftChange(value) {
     setDraft(value)
@@ -383,7 +392,7 @@ function Chat() {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
         <MessageCircle size={40} strokeWidth={1.5} className="text-ink-soft/40" />
-        <h1 className="font-display text-2xl font-semibold text-ink">Messages</h1>
+        <h1 className="font-display text-2xl font-semibold text-ink">Messages 💬</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
           Vos conversations avec vos matchs apparaîtront ici.
         </p>
@@ -400,7 +409,7 @@ function Chat() {
         }`}
       >
         <div className="border-b border-ink/8 p-5">
-          <h1 className="font-display text-xl font-semibold text-ink">Messages</h1>
+          <h1 className="font-display text-xl font-semibold text-ink">Messages 💬</h1>
         </div>
         <div className="flex-1 overflow-y-auto">
           {conversations.map((c) => {
@@ -455,7 +464,7 @@ function Chat() {
               <img src={active.profile.photo} alt={active.profile.firstName} className="h-9 w-9 rounded-full object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink">{active.profile.firstName}</p>
-                <p className="text-xs text-ink-soft/50">{active.online ? 'En ligne' : active.profile.city}</p>
+                <p className="text-xs text-ink-soft/50">{active.online ? '🟢 En ligne' : active.profile.city}</p>
               </div>
 
               <div className="relative">
@@ -509,7 +518,7 @@ function Chat() {
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                   <Hand size={32} strokeWidth={1.5} className="text-ink-soft/40" />
                   <p className="text-sm text-ink-soft/60">
-                    C'est un match avec {active.profile.firstName} ! Envoyez le premier message.
+                    🎉 C'est un match avec {active.profile.firstName} ! Envoyez le premier message.
                   </p>
                 </div>
               )}
@@ -663,6 +672,41 @@ function Chat() {
                 onSubmit={handleSend}
                 className={`flex items-center gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
               >
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker((v) => !v)}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
+                      showEmojiPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/5'
+                    }`}
+                    aria-label="Choisir un emoji"
+                  >
+                    <Smile size={19} strokeWidth={2} />
+                  </button>
+                  <AnimatePresence>
+                    {showEmojiPicker && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowEmojiPicker(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute bottom-full left-0 z-20 mb-2"
+                        >
+                          <EmojiPicker
+                            onEmojiClick={handleEmojiClick}
+                            theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                            searchDisabled={false}
+                            skinTonesDisabled
+                            width={320}
+                            height={380}
+                          />
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
                 <input
                   type="text"
                   value={draft}
