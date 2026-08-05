@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Compass, Heart, MessageCircle, CircleUserRound } from 'lucide-react'
+import { Bell, Compass, Heart, MessageCircle, CircleUserRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
@@ -22,6 +22,19 @@ function NavBadge({ count }) {
     <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-500 px-1 text-[10px] font-bold text-white">
       {count > 9 ? '9+' : count}
     </span>
+  )
+}
+
+function RingingBell({ className }) {
+  return (
+    <motion.span
+      className={`flex h-4 w-4 items-center justify-center rounded-full bg-coral-500 text-white shadow ${className}`}
+      animate={{ rotate: [0, -18, 14, -10, 6, -3, 0] }}
+      transition={{ duration: 0.7, repeat: Infinity, repeatDelay: 2.2, ease: 'easeInOut' }}
+      style={{ transformOrigin: '50% 0%' }}
+    >
+      <Bell size={10} strokeWidth={2.75} fill="currentColor" />
+    </motion.span>
   )
 }
 
@@ -60,11 +73,14 @@ function AppLayout() {
                     transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                   />
                 )}
-                <item.icon
-                  size={18}
-                  strokeWidth={2}
-                  className={`relative z-10 ${isActive ? 'text-[#2B1D14]' : 'text-ink'}`}
-                />
+                <motion.span
+                  className="relative z-10 inline-flex"
+                  animate={{ scale: isActive ? 1.12 : 1 }}
+                  whileTap={{ scale: 0.85 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                >
+                  <item.icon size={18} strokeWidth={2} className={isActive ? 'text-[#2B1D14]' : 'text-ink'} />
+                </motion.span>
                 <span className={`relative z-10 flex-1 ${isActive ? 'text-[#2B1D14]' : 'text-ink/80'}`}>
                   {item.label}
                 </span>
@@ -77,7 +93,7 @@ function AppLayout() {
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
-                {item.dot && <span className="relative z-10 h-2 w-2 rounded-full bg-coral-500" />}
+                {item.dot && <RingingBell className="relative z-10" />}
               </NavLink>
             )
           })}
@@ -113,14 +129,17 @@ function AppLayout() {
                 />
               )}
               <span className="relative">
-                <item.icon
-                  size={22}
-                  strokeWidth={2}
-                  className={`transition ${isActive ? 'scale-110 text-violet-600' : 'text-ink-soft/60'}`}
-                />
+                <motion.span
+                  className="inline-flex"
+                  animate={{ scale: isActive ? 1.15 : 1 }}
+                  whileTap={{ scale: 0.8 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                >
+                  <item.icon size={22} strokeWidth={2} className={isActive ? 'text-violet-600' : 'text-ink-soft/60'} />
+                </motion.span>
                 <NavBadge count={item.badge} />
                 {item.dot && (
-                  <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-coral-500 ring-2 ring-white dark:ring-surface" />
+                  <RingingBell className="absolute -right-1.5 -top-1.5 ring-2 ring-white dark:ring-surface" />
                 )}
               </span>
               <span className={isActive ? 'text-violet-600' : 'text-ink-soft/60'}>{item.label}</span>
