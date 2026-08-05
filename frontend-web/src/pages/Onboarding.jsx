@@ -7,10 +7,20 @@ import { db } from '../firebase/config.js'
 import { uploadProfilePhotos } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
+import {
+  DATING_GOALS,
+  LANGUAGES,
+  LIFESTYLE_GROUPS,
+  MAX_PERSONALITY_TRAITS,
+  PERSONALITY_TRAITS,
+} from '../lib/onboardingOptions.js'
 
 const INTEREST_OPTIONS = [
   'Danse', 'Cuisine', 'Voyages', 'Musique', 'Sport', 'Cinéma',
   'Lecture', 'Photo', 'Nature', 'Art', 'Café', 'Randonnée', 'Mode', 'Business',
+  'Football', 'Fitness', 'Technologie', 'Entrepreneuriat', 'Jeux vidéo',
+  'Culture africaine', 'Spiritualité', 'Famille',
 ]
 
 const GENDER_OPTIONS = [
@@ -26,7 +36,22 @@ const inputClass =
   'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
-const STEPS = ['Photos', 'À propos de vous', 'Vos centres d\'intérêt', 'Vos préférences']
+const chipClass = (selected) =>
+  `rounded-full border px-3.5 py-2 text-sm font-medium transition ${
+    selected
+      ? 'border-violet-400 bg-violet-500/15 text-violet-600'
+      : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+  }`
+
+const STEPS = [
+  'Photos',
+  'À propos de vous',
+  'Où vous êtes',
+  'Vos centres d\'intérêt',
+  'Langues & personnalité',
+  'Style de vie',
+  'Vos préférences',
+]
 
 function Onboarding() {
   const { user, logout } = useAuth()
@@ -42,6 +67,13 @@ function Onboarding() {
     gender: '',
     bio: '',
     interests: [],
+    country: '',
+    region: '',
+    city: '',
+    languages: [],
+    personalityTraits: [],
+    datingGoal: '',
+    lifestyle: { sport: '', travel: '', smoking: '', alcohol: '' },
     prefGender: 'TOUS',
     prefMaxDistance: 25,
   })
@@ -64,6 +96,41 @@ function Onboarding() {
         ? f.interests.filter((i) => i !== interest)
         : [...f.interests, interest],
     }))
+  }
+
+  function toggleLanguage(language) {
+    setForm((f) => ({
+      ...f,
+      languages: f.languages.includes(language)
+        ? f.languages.filter((l) => l !== language)
+        : [...f.languages, language],
+    }))
+  }
+
+  function togglePersonalityTrait(trait) {
+    setForm((f) => {
+      if (f.personalityTraits.includes(trait)) {
+        return { ...f, personalityTraits: f.personalityTraits.filter((t) => t !== trait) }
+      }
+      if (f.personalityTraits.length >= MAX_PERSONALITY_TRAITS) return f
+      return { ...f, personalityTraits: [...f.personalityTraits, trait] }
+    })
+  }
+
+  function selectCountry(code) {
+    setForm((f) => (f.country === code ? f : { ...f, country: code, region: '', city: '' }))
+  }
+
+  function selectRegion(name) {
+    setForm((f) => (f.region === name ? f : { ...f, region: name, city: '' }))
+  }
+
+  function selectCity(name) {
+    setForm((f) => ({ ...f, city: name }))
+  }
+
+  function setLifestyle(key, value) {
+    setForm((f) => ({ ...f, lifestyle: { ...f.lifestyle, [key]: value } }))
   }
 
   function goNext() {
@@ -104,6 +171,13 @@ function Onboarding() {
           gender: form.gender || null,
           bio: form.bio || null,
           interests: form.interests,
+          country: form.country || null,
+          region: form.region || null,
+          city: form.city || null,
+          languages: form.languages,
+          personalityTraits: form.personalityTraits,
+          datingGoal: form.datingGoal || null,
+          lifestyle: form.lifestyle,
           photos: photoUrls,
           verified: false,
           createdAt: serverTimestamp(),
@@ -122,7 +196,17 @@ function Onboarding() {
   }
 
   const canContinue =
-    step === 0 ? true : step === 1 ? form.age && form.gender : step === 2 ? form.interests.length >= 3 : true
+    step === 1
+      ? form.age && form.gender
+      : step === 2
+        ? !!form.country
+        : step === 3
+          ? form.interests.length >= 3
+          : step === 4
+            ? form.languages.length >= 1
+            : step === 6
+              ? !!form.datingGoal
+              : true
 
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-surface-soft px-4 py-8 md:items-center md:justify-center">
@@ -294,31 +378,148 @@ function Onboarding() {
 
               {step === 2 && (
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-ink">Vos centres d'intérêt</h2>
-                  <p className="mt-1 text-sm text-ink-soft/60">Choisissez-en au moins 3.</p>
+                  <h2 className="font-display text-xl font-semibold text-ink">Où vous êtes</h2>
+                  <p className="mt-1 text-sm text-ink-soft/60">Choisissez votre pays, puis votre région et votre ville.</p>
+
                   <div className="mt-4 flex flex-wrap gap-2">
-                    {INTEREST_OPTIONS.map((interest) => {
-                      const selected = form.interests.includes(interest)
-                      return (
-                        <button
-                          key={interest}
-                          type="button"
-                          onClick={() => toggleInterest(interest)}
-                          className={`rounded-full border px-3.5 py-2 text-sm font-medium transition ${
-                            selected
-                              ? 'border-violet-400 bg-violet-500/15 text-violet-600'
-                              : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
-                          }`}
-                        >
-                          {interest}
-                        </button>
-                      )
-                    })}
+                    {COUNTRIES.map((c) => (
+                      <button
+                        key={c.code}
+                        type="button"
+                        onClick={() => selectCountry(c.code)}
+                        className={chipClass(form.country === c.code)}
+                      >
+                        <span className="mr-1.5">{c.flag}</span>
+                        {c.name}
+                      </button>
+                    ))}
                   </div>
+
+                  {form.country && findCountry(form.country)?.regions.length > 0 && (
+                    <div className="mt-5">
+                      <p className={labelClass}>Région</p>
+                      <div className="flex flex-wrap gap-2">
+                        {findCountry(form.country).regions.map((r) => (
+                          <button
+                            key={r.name}
+                            type="button"
+                            onClick={() => selectRegion(r.name)}
+                            className={chipClass(form.region === r.name)}
+                          >
+                            {r.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {form.region && findRegion(form.country, form.region)?.cities.length > 0 && (
+                    <div className="mt-5">
+                      <p className={labelClass}>Ville</p>
+                      <div className="flex flex-wrap gap-2">
+                        {findRegion(form.country, form.region).cities.map((city) => (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={() => selectCity(city)}
+                            className={chipClass(form.city === city)}
+                          >
+                            {city}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
               {step === 3 && (
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-ink">Vos centres d'intérêt</h2>
+                  <p className="mt-1 text-sm text-ink-soft/60">Choisissez-en au moins 3.</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {INTEREST_OPTIONS.map((interest) => (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => toggleInterest(interest)}
+                        className={chipClass(form.interests.includes(interest))}
+                      >
+                        {interest}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold text-ink">Vos langues</h2>
+                    <p className="mt-1 text-sm text-ink-soft/60">Choisissez-en au moins une.</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {LANGUAGES.map((language) => (
+                        <button
+                          key={language}
+                          type="button"
+                          onClick={() => toggleLanguage(language)}
+                          className={chipClass(form.languages.includes(language))}
+                        >
+                          {language}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h2 className="font-display text-xl font-semibold text-ink">Votre personnalité</h2>
+                    <p className="mt-1 text-sm text-ink-soft/60">
+                      Jusqu'à {MAX_PERSONALITY_TRAITS} traits qui vous décrivent.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {PERSONALITY_TRAITS.map((trait) => (
+                        <button
+                          key={trait}
+                          type="button"
+                          onClick={() => togglePersonalityTrait(trait)}
+                          className={chipClass(form.personalityTraits.includes(trait))}
+                        >
+                          {trait}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {step === 5 && (
+                <div>
+                  <h2 className="font-display text-xl font-semibold text-ink">Votre style de vie</h2>
+                  <p className="mt-1 text-sm text-ink-soft/60">Optionnel, mais ça aide à mieux vous faire matcher.</p>
+
+                  <div className="mt-4 space-y-5">
+                    {LIFESTYLE_GROUPS.map((group) => (
+                      <div key={group.key}>
+                        <p className={labelClass}>{group.label}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {group.options.map((option) => (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => setLifestyle(group.key, option)}
+                              className={chipClass(form.lifestyle[group.key] === option)}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {step === 6 && (
                 <div className="space-y-6">
                   <h2 className="font-display text-xl font-semibold text-ink">Vos préférences</h2>
                   <div>
@@ -356,6 +557,21 @@ function Onboarding() {
                       onChange={(e) => setForm((f) => ({ ...f, prefMaxDistance: Number(e.target.value) }))}
                       className="w-full accent-violet-500"
                     />
+                  </div>
+                  <div>
+                    <p className={labelClass}>Objectif de rencontre</p>
+                    <div className="flex flex-wrap gap-2">
+                      {DATING_GOALS.map((goal) => (
+                        <button
+                          key={goal}
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, datingGoal: goal }))}
+                          className={chipClass(form.datingGoal === goal)}
+                        >
+                          {goal}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

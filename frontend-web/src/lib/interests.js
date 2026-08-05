@@ -1,19 +1,27 @@
 import {
+  Activity,
   BookOpen,
   Briefcase,
   Camera,
   ChefHat,
   Clapperboard,
   Coffee,
+  Cpu,
   Dumbbell,
+  Gamepad2,
+  Globe,
   Leaf,
   Mountain,
   Music,
   Palette,
   PersonStanding,
   Plane,
+  Rocket,
   Shirt,
+  Sparkles,
   Tag,
+  Trophy,
+  Users,
 } from 'lucide-react'
 
 export const INTEREST_ICONS = {
@@ -31,6 +39,14 @@ export const INTEREST_ICONS = {
   Randonnée: Mountain,
   Mode: Shirt,
   Business: Briefcase,
+  Football: Trophy,
+  Fitness: Activity,
+  Technologie: Cpu,
+  Entrepreneuriat: Rocket,
+  'Jeux vidéo': Gamepad2,
+  'Culture africaine': Globe,
+  Spiritualité: Sparkles,
+  Famille: Users,
 }
 
 export function iconForInterest(interest) {
