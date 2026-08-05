@@ -7,6 +7,14 @@ import { db } from '../firebase/config.js'
 import { uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
+import {
+  DATING_GOALS,
+  LANGUAGES,
+  LIFESTYLE_GROUPS,
+  MAX_PERSONALITY_TRAITS,
+  PERSONALITY_TRAITS,
+} from '../lib/onboardingOptions.js'
 
 const emptyForm = {
   firstName: '',
@@ -15,18 +23,31 @@ const emptyForm = {
   gender: '',
   city: '',
   country: '',
+  region: '',
   bio: '',
+  languages: [],
+  personalityTraits: [],
+  datingGoal: '',
+  lifestyle: { sport: '', travel: '', smoking: '', alcohol: '' },
 }
 
 const inputClass =
   'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
 const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 
+const chipClass = (selected) =>
+  `rounded-full border px-3.5 py-2 text-sm font-medium transition ${
+    selected
+      ? 'border-violet-400 bg-violet-500/15 text-violet-600'
+      : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+  }`
+
 function Profile() {
   const { user, publicProfile, isPublicProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
+  const [countryCode, setCountryCode] = useState('')
   const [photoSlots, setPhotoSlots] = useState([null, null, null])
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
@@ -42,14 +63,60 @@ function Profile() {
       gender: publicProfile?.gender || '',
       city: publicProfile?.city || '',
       country: publicProfile?.country || '',
+      region: publicProfile?.region || '',
       bio: publicProfile?.bio || '',
+      languages: publicProfile?.languages || [],
+      personalityTraits: publicProfile?.personalityTraits || [],
+      datingGoal: publicProfile?.datingGoal || '',
+      lifestyle: publicProfile?.lifestyle || { sport: '', travel: '', smoking: '', alcohol: '' },
     })
+    setCountryCode(
+      publicProfile?.countryCode ||
+        COUNTRIES.find((c) => c.name.toLowerCase() === (publicProfile?.country || '').toLowerCase())?.code ||
+        '',
+    )
     setPhotoSlots([0, 1, 2].map((i) => (publicProfile?.photos?.[i] ? { url: publicProfile.photos[i] } : null)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPublicProfileLoading])
 
   function handleChange(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
+  }
+
+  function selectCountry(code) {
+    setCountryCode(code)
+    setForm((f) => ({ ...f, country: findCountry(code)?.name || f.country, region: '', city: '' }))
+  }
+
+  function selectRegion(name) {
+    setForm((f) => (f.region === name ? f : { ...f, region: name, city: '' }))
+  }
+
+  function selectCity(name) {
+    setForm((f) => ({ ...f, city: name }))
+  }
+
+  function toggleLanguage(language) {
+    setForm((f) => ({
+      ...f,
+      languages: f.languages.includes(language)
+        ? f.languages.filter((l) => l !== language)
+        : [...f.languages, language],
+    }))
+  }
+
+  function togglePersonalityTrait(trait) {
+    setForm((f) => {
+      if (f.personalityTraits.includes(trait)) {
+        return { ...f, personalityTraits: f.personalityTraits.filter((t) => t !== trait) }
+      }
+      if (f.personalityTraits.length >= MAX_PERSONALITY_TRAITS) return f
+      return { ...f, personalityTraits: [...f.personalityTraits, trait] }
+    })
+  }
+
+  function setLifestyle(key, value) {
+    setForm((f) => ({ ...f, lifestyle: { ...f.lifestyle, [key]: value } }))
   }
 
   function handlePhotoSelect(index, e) {
@@ -99,7 +166,13 @@ function Profile() {
           gender: form.gender || null,
           city: form.city || null,
           country: form.country || null,
+          countryCode: countryCode || null,
+          region: form.region || null,
           bio: form.bio || null,
+          languages: form.languages,
+          personalityTraits: form.personalityTraits,
+          datingGoal: form.datingGoal || null,
+          lifestyle: form.lifestyle,
           photos: photoUrls,
           updatedAt: serverTimestamp(),
         },
@@ -293,7 +366,61 @@ function Profile() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Pays</label>
+            <div className="flex flex-wrap gap-2">
+              {COUNTRIES.map((c) => (
+                <button
+                  key={c.code}
+                  type="button"
+                  onClick={() => selectCountry(c.code)}
+                  className={chipClass(countryCode === c.code)}
+                >
+                  <span className="mr-1.5">{c.flag}</span>
+                  {c.name}
+                </button>
+              ))}
+            </div>
+            {!countryCode && form.country && (
+              <p className="mt-2 text-xs text-ink-soft/50">Actuel : {form.country}</p>
+            )}
+          </div>
+
+          {countryCode && findCountry(countryCode)?.regions.length > 0 && (
+            <div>
+              <label className={labelClass}>Région</label>
+              <div className="flex flex-wrap gap-2">
+                {findCountry(countryCode).regions.map((r) => (
+                  <button
+                    key={r.name}
+                    type="button"
+                    onClick={() => selectRegion(r.name)}
+                    className={chipClass(form.region === r.name)}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {form.region && findRegion(countryCode, form.region)?.cities.length > 0 ? (
+            <div>
+              <label className={labelClass}>Ville</label>
+              <div className="flex flex-wrap gap-2">
+                {findRegion(countryCode, form.region).cities.map((city) => (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => selectCity(city)}
+                    className={chipClass(form.city === city)}
+                  >
+                    {city}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
             <div>
               <label htmlFor="city" className={labelClass}>
                 Ville
@@ -307,20 +434,7 @@ function Profile() {
                 className={inputClass}
               />
             </div>
-            <div>
-              <label htmlFor="country" className={labelClass}>
-                Pays
-              </label>
-              <input
-                id="country"
-                type="text"
-                placeholder="Ex: Gabon"
-                value={form.country}
-                onChange={handleChange('country')}
-                className={inputClass}
-              />
-            </div>
-          </div>
+          )}
 
           <div>
             <label htmlFor="bio" className={labelClass}>
@@ -335,6 +449,77 @@ function Profile() {
               onChange={handleChange('bio')}
               className={`${inputClass} resize-none`}
             />
+          </div>
+
+          <div>
+            <label className={labelClass}>Langues</label>
+            <div className="flex flex-wrap gap-2">
+              {LANGUAGES.map((language) => (
+                <button
+                  key={language}
+                  type="button"
+                  onClick={() => toggleLanguage(language)}
+                  className={chipClass(form.languages.includes(language))}
+                >
+                  {language}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>
+              Personnalité <span className="font-normal text-ink-soft/50">(jusqu'à {MAX_PERSONALITY_TRAITS})</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PERSONALITY_TRAITS.map((trait) => (
+                <button
+                  key={trait}
+                  type="button"
+                  onClick={() => togglePersonalityTrait(trait)}
+                  className={chipClass(form.personalityTraits.includes(trait))}
+                >
+                  {trait}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Objectif de rencontre</label>
+            <div className="flex flex-wrap gap-2">
+              {DATING_GOALS.map((goal) => (
+                <button
+                  key={goal}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, datingGoal: goal }))}
+                  className={chipClass(form.datingGoal === goal)}
+                >
+                  {goal}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className={labelClass}>Style de vie</label>
+            {LIFESTYLE_GROUPS.map((group) => (
+              <div key={group.key}>
+                <p className="mb-1.5 text-xs font-medium text-ink-soft/60">{group.label}</p>
+                <div className="flex flex-wrap gap-2">
+                  {group.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setLifestyle(group.key, option)}
+                      className={chipClass(form.lifestyle[group.key] === option)}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
           <motion.button
