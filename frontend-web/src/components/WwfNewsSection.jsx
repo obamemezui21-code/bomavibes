@@ -51,7 +51,7 @@ function WwfNewsSection() {
           <Leaf size={14} strokeWidth={2.5} />
           En partenariat avec WWF Gabon
         </p>
-        <h2 className="mt-2 font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Actualités</h2>
+        <h2 className="mt-2 font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Notre engagement</h2>
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#6b5d4f]">
           Les dernières nouvelles de WWF Gabon, pour une communauté qui célèbre aussi ses racines.
         </p>

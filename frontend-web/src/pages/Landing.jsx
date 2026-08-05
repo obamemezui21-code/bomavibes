@@ -7,6 +7,15 @@ import heroLogoIcon from '../assets/bomavibes-icon.png'
 import SiteHeader from '../components/SiteHeader.jsx'
 import { TIERS } from '../components/PricingTiers.jsx'
 import WwfNewsSection from '../components/WwfNewsSection.jsx'
+import FeaturesGridSection from '../components/landing/FeaturesGridSection.jsx'
+import SecuritySection from '../components/landing/SecuritySection.jsx'
+import AppPreviewSection from '../components/landing/AppPreviewSection.jsx'
+import AvailabilitySection from '../components/landing/AvailabilitySection.jsx'
+import StatsSection from '../components/landing/StatsSection.jsx'
+import TestimonialsSection from '../components/landing/TestimonialsSection.jsx'
+import PlatformUpdatesSection from '../components/landing/PlatformUpdatesSection.jsx'
+import SupportTeaserSection from '../components/landing/SupportTeaserSection.jsx'
+import FinalCtaSection from '../components/landing/FinalCtaSection.jsx'
 
 const WORD_CONTAINER = {
   hidden: {},
@@ -113,6 +122,14 @@ const FAQS = [
   {
     question: 'BomaVibes est fait pour qui ?',
     answer: 'Pour les célibataires africains et afrodescendants de 18 ans et plus, qui cherchent des connexions authentiques et durables.',
+  },
+  {
+    question: 'Le blocage empêche-t-il vraiment quelqu\'un de me recontacter ?',
+    answer: "Oui. Une fois bloqué·e, la personne disparaît de vos deux côtés (Découvrir, Matchs, Messages), et l'envoi de nouveaux messages est bloqué techniquement, pas seulement caché à l'écran.",
+  },
+  {
+    question: 'Dans quels pays BomaVibes est-il disponible ?',
+    answer: "BomaVibes est disponible dès aujourd'hui au Gabon, avec une extension progressive prévue vers 14 autres pays d'Afrique francophone puis panafricaine. Voir le détail dans la section Disponibilité en Afrique.",
   },
 ]
 
@@ -261,6 +278,40 @@ function Landing() {
         </div>
       </section>
 
+      {/* Why BomaVibes */}
+      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-10">
+        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Pourquoi choisir BomaVibes</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-center text-lg leading-relaxed text-[#6b5d4f]">
+          Trois principes qui guident tout ce qu'on construit.
+        </p>
+        <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
+          {FEATURE_DETAILS.map((f) => (
+            <div key={f.title} className="rounded-3xl border border-[#1F3D2B]/8 bg-white p-8 shadow-sm">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
+                <f.icon size={26} strokeWidth={1.75} className="text-[#E8C468]" />
+              </div>
+              <h3 className="mt-6 font-display text-xl font-bold text-[#2B1D14]">{f.title}</h3>
+              <p className="mt-3 text-base leading-relaxed text-[#6b5d4f]">{f.text}</p>
+              {f.link && (
+                <Link
+                  to={f.link.to}
+                  className="mt-4 inline-block text-sm font-semibold text-[#9c7220] underline-offset-2 hover:underline"
+                >
+                  {f.link.label} →
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <FeaturesGridSection />
+      <SecuritySection />
+      <AppPreviewSection />
+      <AvailabilitySection />
+      <StatsSection />
+      <TestimonialsSection />
+
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-24 sm:px-8">
         <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Questions fréquentes</h2>
@@ -300,33 +351,7 @@ function Landing() {
         </div>
       </section>
 
-      {/* Why BomaVibes */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-10">
-        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Pourquoi BomaVibes</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-center text-lg leading-relaxed text-[#6b5d4f]">
-          Trois principes qui guident tout ce qu'on construit.
-        </p>
-        <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          {FEATURE_DETAILS.map((f) => (
-            <div key={f.title} className="rounded-3xl border border-[#1F3D2B]/8 bg-white p-8 shadow-sm">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
-                <f.icon size={26} strokeWidth={1.75} className="text-[#E8C468]" />
-              </div>
-              <h3 className="mt-6 font-display text-xl font-bold text-[#2B1D14]">{f.title}</h3>
-              <p className="mt-3 text-base leading-relaxed text-[#6b5d4f]">{f.text}</p>
-              {f.link && (
-                <Link
-                  to={f.link.to}
-                  className="mt-4 inline-block text-sm font-semibold text-[#9c7220] underline-offset-2 hover:underline"
-                >
-                  {f.link.label} →
-                </Link>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
+      <PlatformUpdatesSection />
       <WwfNewsSection />
 
       {/* Nos tarifs (teaser) */}
@@ -367,6 +392,9 @@ function Landing() {
           </Link>
         </div>
       </section>
+
+      <SupportTeaserSection />
+      <FinalCtaSection />
 
       {/* Contact */}
       <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-24 text-center sm:px-8">
@@ -429,6 +457,12 @@ function Landing() {
             className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
           >
             Mentions légales
+          </Link>
+          <Link
+            to="/soutenir"
+            className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
+          >
+            Soutenir le projet
           </Link>
         </div>
       </section>
