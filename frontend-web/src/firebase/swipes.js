@@ -1,6 +1,7 @@
 import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { db } from './config.js'
 import { sendPushNotification } from './notify.js'
+import { fetchBlockedIds } from './safety.js'
 
 export async function countIncomingLikes(uid) {
   const snap = await getDocs(
@@ -10,10 +11,13 @@ export async function countIncomingLikes(uid) {
 }
 
 export async function getIncomingLikers(uid) {
-  const snap = await getDocs(
-    query(collection(db, 'swipes'), where('targetId', '==', uid), where('direction', 'in', ['like', 'superlike'])),
-  )
-  const swiperIds = snap.docs.map((d) => d.data().swiperId)
+  const [snap, blockedIds] = await Promise.all([
+    getDocs(
+      query(collection(db, 'swipes'), where('targetId', '==', uid), where('direction', 'in', ['like', 'superlike'])),
+    ),
+    fetchBlockedIds(uid),
+  ])
+  const swiperIds = snap.docs.map((d) => d.data().swiperId).filter((id) => !blockedIds.has(id))
   const profiles = await Promise.all(
     swiperIds.map(async (swiperId) => {
       const snapshot = await getDoc(doc(db, 'profiles', swiperId))

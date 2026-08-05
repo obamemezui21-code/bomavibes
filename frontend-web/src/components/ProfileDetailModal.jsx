@@ -1,11 +1,55 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { ArrowLeft, Check, Heart, Star, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowLeft, Check, Flag, Heart, MoreVertical, ShieldOff, Star, X } from 'lucide-react'
 import { iconForInterest } from '../lib/interests.js'
+import { blockUser, reportUser } from '../firebase/safety.js'
+import { useAuth } from '../context/AuthContext.jsx'
+import { useToast } from '../context/ToastContext.jsx'
+import ReportModal from './ReportModal.jsx'
+import BlockConfirmModal from './BlockConfirmModal.jsx'
 
-function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass }) {
+function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked }) {
+  const { user } = useAuth()
+  const { showToast } = useToast()
   const photos = profile.photos?.length ? profile.photos : [profile.photo]
   const [index, setIndex] = useState(0)
+  const [showMenu, setShowMenu] = useState(false)
+  const [showReport, setShowReport] = useState(false)
+  const [showBlock, setShowBlock] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  async function handleReport(reason, description, alsoBlock) {
+    setIsSubmitting(true)
+    try {
+      await reportUser(user.id, profile.id, reason, description)
+      if (alsoBlock) await blockUser(user.id, profile.id)
+      showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
+      setShowReport(false)
+      if (alsoBlock) {
+        onBlocked?.(profile)
+        onClose()
+      }
+    } catch {
+      showToast("Impossible d'envoyer le signalement, réessayez.", 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleBlock() {
+    setIsSubmitting(true)
+    try {
+      await blockUser(user.id, profile.id)
+      showToast(`Vous avez bloqué ${profile.firstName}.`, 'info')
+      setShowBlock(false)
+      onBlocked?.(profile)
+      onClose()
+    } catch {
+      showToast('Impossible de bloquer ce profil, réessayez.', 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <motion.div
@@ -48,6 +92,51 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           >
             <ArrowLeft size={16} />
           </button>
+
+          <div className="absolute right-3 top-6">
+            <button
+              type="button"
+              onClick={() => setShowMenu((v) => !v)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+              aria-label="Plus d'options"
+            >
+              <MoreVertical size={16} />
+            </button>
+            <AnimatePresence>
+              {showMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-10 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false)
+                      setShowReport(true)
+                    }}
+                    className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                  >
+                    <Flag size={14} strokeWidth={2.25} />
+                    Signaler
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false)
+                      setShowBlock(true)
+                    }}
+                    className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
+                  >
+                    <ShieldOff size={14} strokeWidth={2.25} />
+                    Bloquer
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           <div className="absolute inset-x-0 bottom-0 p-4">
             <div className="flex items-center gap-1.5">
@@ -156,6 +245,23 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           </motion.button>
         </div>
       </motion.div>
+
+      {showReport && (
+        <ReportModal
+          firstName={profile.firstName}
+          onClose={() => setShowReport(false)}
+          onSubmit={handleReport}
+          isSubmitting={isSubmitting}
+        />
+      )}
+      {showBlock && (
+        <BlockConfirmModal
+          firstName={profile.firstName}
+          onCancel={() => setShowBlock(false)}
+          onConfirm={handleBlock}
+          isBlocking={isSubmitting}
+        />
+      )}
     </motion.div>
   )
 }

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
+  Flag,
   Hand,
   Mic,
   MessageCircle,
@@ -11,13 +12,18 @@ import {
   Pencil,
   Play,
   Send,
+  ShieldOff,
   Trash2,
   TriangleAlert,
   X,
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
+import { blockUser, reportUser } from '../firebase/safety.js'
+import ReportModal from '../components/ReportModal.jsx'
+import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 
 const TYPING_STOP_DELAY_MS = 2500
 const MAX_RECORDING_SECONDS = 120
@@ -154,13 +160,19 @@ function Chat() {
     deleteMessage,
     openConversation,
     setTyping,
+    refreshBlockedIds,
   } = useConversations()
+  const { user } = useAuth()
   const { showToast } = useToast()
   const [draft, setDraft] = useState('')
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false)
+  const [showReport, setShowReport] = useState(false)
+  const [showBlock, setShowBlock] = useState(false)
+  const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [isSendingVoice, setIsSendingVoice] = useState(false)
@@ -175,6 +187,13 @@ function Chat() {
 
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'auto' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activeId])
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
@@ -324,6 +343,41 @@ function Chat() {
     }
   }
 
+  async function handleReportUser(reason, description, alsoBlock) {
+    if (!active) return
+    setIsSubmittingSafety(true)
+    try {
+      await reportUser(user.id, active.otherUid, reason, description)
+      if (alsoBlock) {
+        await blockUser(user.id, active.otherUid)
+        await refreshBlockedIds()
+        navigate('/chat')
+      }
+      showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
+      setShowReport(false)
+    } catch {
+      showToast("Impossible d'envoyer le signalement, réessayez.", 'error')
+    } finally {
+      setIsSubmittingSafety(false)
+    }
+  }
+
+  async function handleBlockUser() {
+    if (!active) return
+    setIsSubmittingSafety(true)
+    try {
+      await blockUser(user.id, active.otherUid)
+      await refreshBlockedIds()
+      showToast(`Vous avez bloqué ${active.profile.firstName}.`, 'info')
+      setShowBlock(false)
+      navigate('/chat')
+    } catch {
+      showToast('Impossible de bloquer ce profil, réessayez.', 'error')
+    } finally {
+      setIsSubmittingSafety(false)
+    }
+  }
+
   if (conversations.length === 0) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
@@ -398,9 +452,54 @@ function Chat() {
                 <ArrowLeft size={18} strokeWidth={2} />
               </button>
               <img src={active.profile.photo} alt={active.profile.firstName} className="h-9 w-9 rounded-full object-cover" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink">{active.profile.firstName}</p>
                 <p className="text-xs text-ink-soft/50">{active.online ? 'En ligne' : active.profile.city}</p>
+              </div>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowHeaderMenu((v) => !v)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
+                  aria-label="Options de la conversation"
+                >
+                  <MoreVertical size={16} strokeWidth={2.25} />
+                </button>
+                <AnimatePresence>
+                  {showHeaderMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-9 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowHeaderMenu(false)
+                          setShowReport(true)
+                        }}
+                        className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                      >
+                        <Flag size={14} strokeWidth={2.25} />
+                        Signaler
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowHeaderMenu(false)
+                          setShowBlock(true)
+                        }}
+                        className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
+                      >
+                        <ShieldOff size={14} strokeWidth={2.25} />
+                        Bloquer
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -610,6 +709,23 @@ function Chat() {
           />
         )}
       </AnimatePresence>
+
+      {showReport && active && (
+        <ReportModal
+          firstName={active.profile.firstName}
+          onClose={() => setShowReport(false)}
+          onSubmit={handleReportUser}
+          isSubmitting={isSubmittingSafety}
+        />
+      )}
+      {showBlock && active && (
+        <BlockConfirmModal
+          firstName={active.profile.firstName}
+          onCancel={() => setShowBlock(false)}
+          onConfirm={handleBlockUser}
+          isBlocking={isSubmittingSafety}
+        />
+      )}
     </div>
   )
 }

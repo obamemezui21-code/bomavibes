@@ -14,6 +14,7 @@ import {
 import { db } from '../firebase/config.js'
 import { sendPushNotification } from '../firebase/notify.js'
 import { enablePushForUser } from '../firebase/push.js'
+import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
 import { useAuth } from './AuthContext.jsx'
 
@@ -37,6 +38,7 @@ export function ConversationsProvider({ children }) {
   const uid = user?.id
   const [matches, setMatches] = useState([])
   const [profilesById, setProfilesById] = useState({})
+  const [blockedIds, setBlockedIds] = useState(new Set())
   const [activeMessages, setActiveMessages] = useState({})
   const [openMatchId, setOpenMatchId] = useState(null)
   const [now, setNow] = useState(Date.now())
@@ -48,6 +50,20 @@ export function ConversationsProvider({ children }) {
     const timer = setInterval(() => setNow(Date.now()), 15 * 1000)
     return () => clearInterval(timer)
   }, [])
+
+  async function refreshBlockedIds() {
+    if (!uid) return
+    setBlockedIds(await fetchBlockedIds(uid))
+  }
+
+  useEffect(() => {
+    if (!uid) {
+      setBlockedIds(new Set())
+      return
+    }
+    refreshBlockedIds()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid])
 
   const [showPushPrompt, setShowPushPrompt] = useState(false)
 
@@ -145,10 +161,12 @@ export function ConversationsProvider({ children }) {
     return matches
       .map((match) => {
         const otherUid = match.users.find((u) => u !== uid)
+        if (blockedIds.has(otherUid)) return null
         const profile = profilesById[otherUid]
         if (!profile) return null
         return {
           id: match.id,
+          otherUid,
           profile: {
             firstName: profile.firstName,
             age: profile.age,
@@ -169,7 +187,7 @@ export function ConversationsProvider({ children }) {
       })
       .filter(Boolean)
       .sort((a, b) => new Date(b.matchedAt) - new Date(a.matchedAt))
-  }, [matches, profilesById, activeMessages, uid, now])
+  }, [matches, profilesById, activeMessages, uid, now, blockedIds])
 
   const typingId = conversations.find((c) => c.isTyping)?.id ?? null
   const newMatchesCount = useMemo(() => conversations.filter((c) => c.isNewMatch).length, [conversations])
@@ -270,6 +288,7 @@ export function ConversationsProvider({ children }) {
         showPushPrompt,
         acceptPushPrompt,
         dismissPushPrompt,
+        refreshBlockedIds,
       }}
     >
       {children}

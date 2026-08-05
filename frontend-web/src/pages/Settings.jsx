@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { doc, updateDoc } from 'firebase/firestore'
-import { ArrowLeft, Heart, Moon, Sun, TriangleAlert } from 'lucide-react'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { ArrowLeft, Heart, Moon, ShieldOff, Sun, TriangleAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { db } from '../firebase/config.js'
 import { enablePushForUser } from '../firebase/push.js'
+import { fetchMyBlockedIds, unblockUser } from '../firebase/safety.js'
 import PasswordInput from '../components/PasswordInput.jsx'
 
 const inputClass =
@@ -66,6 +67,74 @@ function Modal({ onClose, children }) {
         {children}
       </div>
     </div>
+  )
+}
+
+function BlockedUsersModal({ onClose }) {
+  const { user } = useAuth()
+  const { showToast } = useToast()
+  const [profiles, setProfiles] = useState(null)
+  const [unblockingId, setUnblockingId] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const ids = await fetchMyBlockedIds(user.id)
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          const snap = await getDoc(doc(db, 'profiles', id))
+          return snap.exists() ? { id, ...snap.data() } : { id, firstName: 'Profil supprimé' }
+        }),
+      )
+      if (!cancelled) setProfiles(results)
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [user.id])
+
+  async function handleUnblock(id) {
+    setUnblockingId(id)
+    try {
+      await unblockUser(user.id, id)
+      setProfiles((prev) => prev.filter((p) => p.id !== id))
+      showToast('Utilisateur débloqué.', 'success')
+    } catch {
+      showToast('Impossible de débloquer, réessayez.', 'error')
+    } finally {
+      setUnblockingId(null)
+    }
+  }
+
+  return (
+    <Modal onClose={onClose}>
+      <h2 className="font-display text-lg font-semibold text-ink">Utilisateurs bloqués</h2>
+      <div className="mt-4 max-h-72 space-y-2 overflow-y-auto">
+        {profiles === null && <p className="text-sm text-ink-soft/60">Chargement…</p>}
+        {profiles?.length === 0 && <p className="text-sm text-ink-soft/60">Vous n'avez bloqué personne.</p>}
+        {profiles?.map((p) => (
+          <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl border border-ink/8 px-3 py-2.5">
+            <span className="text-sm font-medium text-ink">{p.firstName}</span>
+            <button
+              type="button"
+              onClick={() => handleUnblock(p.id)}
+              disabled={unblockingId === p.id}
+              className="text-xs font-semibold text-violet-600 hover:underline disabled:opacity-50"
+            >
+              {unblockingId === p.id ? 'Déblocage…' : 'Débloquer'}
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-5 w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
+      >
+        Fermer
+      </button>
+    </Modal>
   )
 }
 
@@ -253,6 +322,7 @@ function Settings() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [showBlockedModal, setShowBlockedModal] = useState(false)
 
   async function handleNotifyToggle(field, value) {
     setIsTogglingPush(true)
@@ -341,6 +411,16 @@ function Settings() {
             <Row title="Mode incognito" subtitle="Découvre sans apparaître dans les decks des autres">
               <Toggle checked={incognito} onChange={setIncognito} />
             </Row>
+            <Row title="Utilisateurs bloqués" subtitle="Gérer les profils que vous avez bloqués">
+              <button
+                type="button"
+                onClick={() => setShowBlockedModal(true)}
+                className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
+              >
+                <ShieldOff size={13} strokeWidth={2.25} />
+                Gérer
+              </button>
+            </Row>
           </Section>
 
           <Section title="Compte">
@@ -412,6 +492,7 @@ function Settings() {
 
       {showEmailModal && <ChangeEmailModal onClose={() => setShowEmailModal(false)} />}
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
+      {showBlockedModal && <BlockedUsersModal onClose={() => setShowBlockedModal(false)} />}
 
       {confirmDelete && (
         <Modal onClose={() => setConfirmDelete(false)}>

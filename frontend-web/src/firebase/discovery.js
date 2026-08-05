@@ -1,5 +1,6 @@
 import { collection, getDocs, limit, query, startAfter, where } from 'firebase/firestore'
 import { db } from './config.js'
+import { fetchBlockedIds } from './safety.js'
 
 const BATCH_SIZE = 30
 const MAX_PAGES = 3
@@ -11,7 +12,8 @@ async function getSwipedIds(uid) {
 }
 
 export async function fetchDiscoverCandidates(uid, filters) {
-  const swipedIds = await getSwipedIds(uid)
+  const [swipedIds, blockedIds] = await Promise.all([getSwipedIds(uid), fetchBlockedIds(uid)])
+  const excludedIds = new Set([...swipedIds, ...blockedIds])
   const candidates = []
   let lastDoc = null
 
@@ -29,7 +31,7 @@ export async function fetchDiscoverCandidates(uid, filters) {
 
     for (const docSnap of snap.docs) {
       const id = docSnap.id
-      if (id === uid || swipedIds.has(id)) continue
+      if (id === uid || excludedIds.has(id)) continue
       const data = docSnap.data()
       if (filters.minAge != null && data.age != null && data.age < filters.minAge) continue
       if (filters.maxAge != null && data.age != null && data.age > filters.maxAge) continue

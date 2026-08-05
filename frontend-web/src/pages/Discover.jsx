@@ -106,6 +106,10 @@ async function handleSwipe(profile, direction) {
     return handleSwipe(profile, 'pass')
   }
 
+  function handleBlocked(profile) {
+    setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
+  }
+
   function handleCloseFilters() {
     setShowFilters(false)
     loadCandidates(filters)
@@ -336,6 +340,7 @@ async function handleSwipe(profile, direction) {
             onLike={() => handleLike(expandedProfile)}
             onSuperlike={() => handleSuperlike(expandedProfile)}
             onPass={() => handlePass(expandedProfile)}
+            onBlocked={handleBlocked}
           />
         )}
       </AnimatePresence>
