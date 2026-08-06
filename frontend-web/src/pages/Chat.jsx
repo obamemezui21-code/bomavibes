@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
+  ChevronUp,
   Flag,
   Hand,
   Mic,
@@ -183,6 +184,8 @@ function Chat() {
   const [isSendingVoice, setIsSendingVoice] = useState(false)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
+  const listScrollRef = useRef(null)
+  const [showScrollUp, setShowScrollUp] = useState(false)
   const typingTimeoutRef = useRef(null)
   const isTypingRef = useRef(false)
   const mediaRecorderRef = useRef(null)
@@ -404,14 +407,18 @@ function Chat() {
     <div className="flex h-[calc(100svh-5rem)] bg-surface-soft md:h-full">
       {/* Conversation list */}
       <div
-        className={`w-full flex-col border-r border-ink/8 md:flex md:w-80 ${
+        className={`relative w-full flex-col border-r border-ink/8 md:flex md:w-80 ${
           conversationId ? 'hidden' : 'flex'
         }`}
       >
         <div className="border-b border-ink/8 p-5">
           <h1 className="font-display text-xl font-semibold text-ink">Messages 💬</h1>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div
+          ref={listScrollRef}
+          onScroll={(e) => setShowScrollUp(e.currentTarget.scrollTop > 300)}
+          className="flex-1 overflow-y-auto"
+        >
           {conversations.map((c) => {
             const last = c.messages[c.messages.length - 1]
             const isActive = c.id === activeId
@@ -446,6 +453,23 @@ function Chat() {
             )
           })}
         </div>
+
+        <AnimatePresence>
+          {showScrollUp && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, scale: 0.8, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 8 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+              aria-label="Remonter en haut"
+            >
+              <ChevronUp size={18} strokeWidth={2.5} />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Thread */}
