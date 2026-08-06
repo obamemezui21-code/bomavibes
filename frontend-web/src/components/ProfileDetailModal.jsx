@@ -1,12 +1,56 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Check, Flag, Heart, MoreVertical, ShieldOff, Star, X } from 'lucide-react'
+import {
+  ArrowLeft,
+  Check,
+  Flag,
+  Heart,
+  Languages,
+  Leaf,
+  MapPin,
+  MoreVertical,
+  ShieldCheck,
+  ShieldOff,
+  Sparkles,
+  Star,
+  Target,
+  X,
+} from 'lucide-react'
 import { iconForInterest } from '../lib/interests.js'
+import { LIFESTYLE_GROUPS } from '../lib/onboardingOptions.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import ReportModal from './ReportModal.jsx'
 import BlockConfirmModal from './BlockConfirmModal.jsx'
+
+function Chip({ Icon, label }) {
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-600">
+      {Icon && <Icon size={10} strokeWidth={2} />}
+      {label}
+    </span>
+  )
+}
+
+// Generic, reusable chip-list block — add a new profile attribute later by
+// adding one more <InfoSection> call, no structural changes needed.
+function InfoSection({ icon: Icon, title, items, iconFor }) {
+  if (!items?.length) return null
+  return (
+    <div className="mt-5">
+      <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">
+        <Icon size={12} strokeWidth={2.25} />
+        {title}
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <Chip key={item} Icon={iconFor?.(item)} label={item} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked }) {
   const { user } = useAuth()
@@ -150,7 +194,8 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               )}
             </div>
             {profile.city && (
-              <p className="text-xs uppercase tracking-wide text-white/70">
+              <p className="flex items-center gap-1 text-xs uppercase tracking-wide text-white/70">
+                <MapPin size={11} strokeWidth={2.5} />
                 {profile.city}
                 {profile.country ? `, ${profile.country}` : ''}
               </p>
@@ -168,32 +213,40 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
         )}
 
         <div className="flex-1 overflow-y-auto p-4 pt-6">
+          {(profile.datingGoal || profile.verified) && (
+            <div className="flex flex-wrap gap-1.5">
+              {profile.datingGoal && (
+                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
+                  <Target size={11} strokeWidth={2.5} />
+                  {profile.datingGoal}
+                </span>
+              )}
+              {profile.verified && (
+                <span className="flex items-center gap-1 rounded-full bg-mint-500/15 px-2.5 py-1 text-[11px] font-semibold text-mint-600">
+                  <ShieldCheck size={11} strokeWidth={2.5} />
+                  Profil vérifié
+                </span>
+              )}
+            </div>
+          )}
+
           {profile.bio && (
-            <div>
+            <div className="mt-4">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">À propos</p>
               <p className="mt-1 text-sm leading-relaxed text-ink">{profile.bio}</p>
             </div>
           )}
 
-          {profile.interests?.length > 0 && (
-            <div className="mt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">Centres d'intérêt</p>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {profile.interests.map((interest) => {
-                  const Icon = iconForInterest(interest)
-                  return (
-                    <span
-                      key={interest}
-                      className="flex items-center gap-1 rounded-full bg-violet-500/10 px-2.5 py-1 text-[11px] font-medium text-violet-600"
-                    >
-                      <Icon size={10} strokeWidth={2} />
-                      {interest}
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+          <InfoSection icon={Heart} title="Centres d'intérêt" items={profile.interests} iconFor={iconForInterest} />
+          <InfoSection icon={Sparkles} title="Personnalité" items={profile.personalityTraits} />
+          <InfoSection icon={Languages} title="Langues parlées" items={profile.languages} />
+          <InfoSection
+            icon={Leaf}
+            title="Style de vie"
+            items={LIFESTYLE_GROUPS.filter((g) => profile.lifestyle?.[g.key]).map(
+              (g) => `${g.label} : ${profile.lifestyle[g.key]}`,
+            )}
+          />
 
           {profile.prompts?.length > 0 && (
             <div className="mt-5 space-y-3">
