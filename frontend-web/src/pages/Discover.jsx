@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, MapPin, Megaphone, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react'
+import { Heart, MapPin, Megaphone, RotateCcw, Search, SlidersHorizontal, Sparkles, Star, X } from 'lucide-react'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
+import SwipeCard from '../components/SwipeCard.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
 import SupportPromptCard from '../components/SupportPromptCard.jsx'
@@ -10,17 +11,10 @@ import { fetchDiscoverCandidates } from '../firebase/discovery.js'
 import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { INTEREST_ICONS, matchPercent } from '../lib/interests.js'
+import { matchPercent } from '../lib/interests.js'
 
-const INTERESTS = Object.keys(INTEREST_ICONS)
-
-const NEW_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000
 const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
-
-function isNew(profile) {
-  const createdAt = profile.createdAt?.toDate?.()
-  return !!createdAt && Date.now() - createdAt.getTime() < NEW_THRESHOLD_MS
-}
+const DECK_SIZE = 5
 
 function avatarFor(profile) {
   return (
@@ -39,11 +33,12 @@ function Discover() {
   const [isLoading, setIsLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
   const [expandedProfile, setExpandedProfile] = useState(null)
-  const [selectedInterest, setSelectedInterest] = useState(null)
   const [showSearch, setShowSearch] = useState(false)
   const [search, setSearch] = useState('')
   const [matchedProfile, setMatchedProfile] = useState(null)
   const [matchConversationId, setMatchConversationId] = useState(null)
+  const [exitingId, setExitingId] = useState(null)
+  const [exitDirection, setExitDirection] = useState(null)
 
   async function loadCandidates(currentFilters) {
     if (!user?.id) return
@@ -69,17 +64,10 @@ function Discover() {
     return profiles.filter((p) => p.firstName?.toLowerCase().includes(q))
   }, [profiles, search])
 
-  const newPeople = useMemo(
-    () => [...searched].sort((a, b) => (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0)).slice(0, 10),
-    [searched],
-  )
+  const deck = searched.slice(0, DECK_SIZE)
+  const topProfile = deck[0] || null
 
-  const aroundMe = useMemo(
-    () => (selectedInterest ? searched.filter((p) => p.interests?.includes(selectedInterest)) : searched),
-    [searched, selectedInterest],
-  )
-
-async function handleSwipe(profile, direction) {
+  async function handleSwipe(profile, direction) {
     setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
     try {
       const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName)
@@ -94,16 +82,28 @@ async function handleSwipe(profile, direction) {
     }
   }
 
+  function triggerSwipe(profile, direction) {
+    if (exitingId) return
+    setExitDirection(direction)
+    setExitingId(profile.id)
+  }
+
+  function handleExited(profile, direction) {
+    setExitingId(null)
+    setExitDirection(null)
+    handleSwipe(profile, direction)
+  }
+
   function handleLike(profile) {
-    return handleSwipe(profile, 'like')
+    return triggerSwipe(profile, 'like')
   }
 
   function handleSuperlike(profile) {
-    return handleSwipe(profile, 'superlike')
+    return triggerSwipe(profile, 'superlike')
   }
 
   function handlePass(profile) {
-    return handleSwipe(profile, 'pass')
+    return triggerSwipe(profile, 'pass')
   }
 
   function handleBlocked(profile) {
@@ -233,101 +233,59 @@ async function handleSwipe(profile, direction) {
             </p>
           </div>
         ) : (
-          <>
-            {newPeople.length > 0 && (
-              <div>
-                <h2 className="font-display text-lg font-semibold text-ink">Nouveaux profils</h2>
-                <div className="-mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
-                  {newPeople.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setExpandedProfile(p)}
-                      className="relative h-44 w-32 shrink-0 overflow-hidden rounded-2xl text-left shadow-sm"
-                    >
-                      <img src={avatarFor(p)} alt={p.firstName} className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" />
-                      {isNew(p) && (
-                        <span className="absolute left-2 top-2 rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                          Nouveau
-                        </span>
-                      )}
-                      <div className="absolute inset-x-2 bottom-2 text-white">
-                        <p className="text-sm font-semibold">
-                          {p.firstName}, {p.age}
-                        </p>
-                        {p.city && <p className="text-[11px] text-white/75">{p.city}</p>}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <h2 className="font-display text-lg font-semibold text-ink">Centres d'intérêt</h2>
-              <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1">
-                {INTERESTS.map((interest) => {
-                  const Icon = INTEREST_ICONS[interest]
-                  const active = selectedInterest === interest
-                  return (
-                    <button
-                      key={interest}
-                      type="button"
-                      onClick={() => setSelectedInterest(active ? null : interest)}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition ${
-                        active
-                          ? 'border-violet-400 bg-violet-500/10 text-violet-600'
-                          : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
-                      }`}
-                    >
-                      <Icon size={14} strokeWidth={2} />
-                      {interest}
-                    </button>
-                  )
-                })}
-              </div>
+          <div className="flex flex-col items-center">
+            <div className="relative h-[520px] w-full max-w-sm">
+              {deck.map((p, i) => (
+                <SwipeCard
+                  key={p.id}
+                  profile={p}
+                  isTop={i === 0}
+                  stackIndex={i}
+                  exitDirection={exitingId === p.id ? exitDirection : null}
+                  onSwipe={(direction) => triggerSwipe(p, direction)}
+                  onExited={() => handleExited(p, exitDirection)}
+                  onOpenDetail={() => setExpandedProfile(p)}
+                />
+              ))}
             </div>
 
-            <div>
-              <h2 className="font-display text-lg font-semibold text-ink">Autour de vous</h2>
-              <p className="text-xs text-ink-soft/60">
-                {selectedInterest
-                  ? `Profils qui aiment "${selectedInterest}" près de vous`
-                  : 'Des profils près de chez vous'}
-              </p>
-
-              <div className="relative mt-3 h-52 overflow-hidden rounded-[28px] bg-gradient-to-br from-mint-500/15 via-surface-soft to-violet-500/15">
-                <svg className="absolute inset-0 h-full w-full opacity-40" preserveAspectRatio="none" viewBox="0 0 300 200">
-                  <path d="M0 40 Q 90 10 150 60 T 300 50" stroke="currentColor" strokeWidth="2" fill="none" className="text-ink/15" />
-                  <path d="M0 150 Q 100 190 180 140 T 300 160" stroke="currentColor" strokeWidth="2" fill="none" className="text-ink/15" />
-                  <circle cx="60" cy="100" r="2.5" className="fill-ink/15" />
-                  <circle cx="220" cy="70" r="2.5" className="fill-ink/15" />
-                  <circle cx="250" cy="150" r="2.5" className="fill-ink/15" />
-                </svg>
-
-                {aroundMe.length === 0 ? (
-                  <div className="flex h-full items-center justify-center px-6 text-center text-sm text-ink-soft/50">
-                    Personne à afficher pour le moment
-                  </div>
-                ) : (
-                  aroundMe.slice(0, 2).map((p, i) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setExpandedProfile(p)}
-                      className={`absolute flex items-center gap-2 rounded-full bg-white/95 py-1.5 pl-1.5 pr-3 shadow-lg backdrop-blur transition hover:scale-105 dark:bg-surface-tint/95 ${
-                        i === 0 ? 'left-5 top-6' : 'right-5 bottom-6'
-                      }`}
-                    >
-                      <img src={avatarFor(p)} alt={p.firstName} className="h-9 w-9 rounded-full object-cover ring-2 ring-violet-400" />
-                      <span className="text-xs font-semibold text-ink">Rencontrer {p.firstName}</span>
-                    </button>
-                  ))
-                )}
-              </div>
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.85 }}
+                disabled={!topProfile}
+                onClick={() => topProfile && handlePass(topProfile)}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-md disabled:opacity-40 dark:bg-surface-tint"
+                aria-label="Passer"
+              >
+                <X size={24} strokeWidth={2.5} />
+              </motion.button>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.85 }}
+                disabled={!topProfile}
+                onClick={() => topProfile && handleSuperlike(topProfile)}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/30 disabled:opacity-40"
+                aria-label="Super like"
+              >
+                <Star size={19} strokeWidth={2.5} fill="currentColor" />
+              </motion.button>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.85 }}
+                disabled={!topProfile}
+                onClick={() => topProfile && handleLike(topProfile)}
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-mint-500 text-white shadow-md disabled:opacity-40"
+                aria-label="Aimer"
+              >
+                <Heart size={24} strokeWidth={2.5} fill="currentColor" />
+              </motion.button>
             </div>
-          </>
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft/50">
+              <RotateCcw size={12} strokeWidth={2.25} />
+              Glissez la carte, ou utilisez les boutons
+            </p>
+          </div>
         )}
       </div>
 
