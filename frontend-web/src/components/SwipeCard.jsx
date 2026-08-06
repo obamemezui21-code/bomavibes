@@ -89,7 +89,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
             e.stopPropagation()
             onOpenDetail()
           }}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
           aria-label="Voir le profil complet"
         >
           <Info size={16} />
@@ -124,7 +124,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
               {profile.interests.slice(0, 3).map((interest) => (
                 <span
                   key={interest}
-                  className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm"
+                  className="rounded-full bg-white/25 px-2.5 py-1 text-[11px] font-medium text-white"
                 >
                   {interest}
                 </span>

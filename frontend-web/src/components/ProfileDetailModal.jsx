@@ -132,7 +132,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           <button
             type="button"
             onClick={onClose}
-            className="absolute left-3 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+            className="absolute left-3 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
             aria-label="Retour"
           >
             <ArrowLeft size={16} />
@@ -142,7 +142,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
             <button
               type="button"
               onClick={() => setShowMenu((v) => !v)}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
               aria-label="Plus d'options"
             >
               <MoreVertical size={16} />
@@ -154,7 +154,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-10 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5"
+                  className="absolute right-0 top-10 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
                 >
                   <button
                     type="button"

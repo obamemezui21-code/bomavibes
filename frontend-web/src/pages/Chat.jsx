@@ -507,7 +507,7 @@ function Chat() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.95 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-9 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5"
+                      className="absolute right-0 top-9 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
                     >
                       <button
                         type="button"
@@ -582,7 +582,7 @@ function Chat() {
                                   animate={{ opacity: 1, y: 0, scale: 1 }}
                                   exit={{ opacity: 0, y: -4, scale: 0.95 }}
                                   transition={{ duration: 0.15 }}
-                                  className="absolute right-0 top-8 z-10 w-36 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5"
+                                  className="absolute right-0 top-8 z-10 w-36 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
                                 >
                                   {m.type !== 'voice' && (
                                     <button
