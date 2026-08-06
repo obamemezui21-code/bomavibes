@@ -9,7 +9,6 @@ import {
   Leaf,
   MapPin,
   MoreVertical,
-  ShieldCheck,
   ShieldOff,
   Sparkles,
   Star,
@@ -55,7 +54,9 @@ function InfoSection({ icon: Icon, title, items, iconFor }) {
 function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked }) {
   const { user } = useAuth()
   const { showToast } = useToast()
-  const photos = profile.photos?.length ? profile.photos : [profile.photo]
+  const photos = profile.photos?.length
+    ? profile.photos
+    : [`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`]
   const [index, setIndex] = useState(0)
   const [showMenu, setShowMenu] = useState(false)
   const [showReport, setShowReport] = useState(false)
@@ -111,7 +112,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
         onClick={(e) => e.stopPropagation()}
         className="glass-panel flex max-h-[92svh] w-full max-w-md flex-col overflow-visible rounded-t-[28px] md:max-h-[85svh] md:rounded-[28px]"
       >
-        <div className="relative aspect-[4/4] w-full shrink-0 overflow-hidden rounded-t-[28px] md:rounded-t-[28px]">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-t-[28px] md:rounded-t-[28px]">
           <img src={photos[index]} alt={profile.firstName} className="h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
 
@@ -183,6 +184,12 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           </div>
 
           <div className="absolute inset-x-0 bottom-0 p-4">
+            {profile.datingGoal && (
+              <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
+                <Target size={11} strokeWidth={2.5} />
+                {profile.datingGoal}
+              </span>
+            )}
             <div className="flex items-center gap-1.5">
               <h2 className="font-display text-xl font-semibold text-white">
                 {profile.firstName}, {profile.age}
@@ -213,25 +220,8 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
         )}
 
         <div className="flex-1 overflow-y-auto p-4 pt-6">
-          {(profile.datingGoal || profile.verified) && (
-            <div className="flex flex-wrap gap-1.5">
-              {profile.datingGoal && (
-                <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
-                  <Target size={11} strokeWidth={2.5} />
-                  {profile.datingGoal}
-                </span>
-              )}
-              {profile.verified && (
-                <span className="flex items-center gap-1 rounded-full bg-mint-500/15 px-2.5 py-1 text-[11px] font-semibold text-mint-600">
-                  <ShieldCheck size={11} strokeWidth={2.5} />
-                  Profil vérifié
-                </span>
-              )}
-            </div>
-          )}
-
           {profile.bio && (
-            <div className="mt-4">
+            <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">À propos</p>
               <p className="mt-1 text-sm leading-relaxed text-ink">{profile.bio}</p>
             </div>
