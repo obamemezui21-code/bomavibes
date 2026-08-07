@@ -23,11 +23,19 @@ import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { matchPercent } from '../lib/interests.js'
+import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 
 const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
 const DECK_SIZE = 5
 
 function avatarFor(profile) {
+  return (
+    photoVariant(profile.photos?.[0], 'thumb') ||
+    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+  )
+}
+
+function fullPhotoFor(profile) {
   return (
     profile.photos?.[0] ||
     `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
@@ -430,6 +438,7 @@ function Discover() {
                   animate={{ x: -14, rotate: -6, opacity: 1 }}
                   transition={{ delay: 0.2 }}
                   src={avatarFor(matchedProfile)}
+                  onError={fallbackToFullPhoto(fullPhotoFor(matchedProfile))}
                   alt={matchedProfile.firstName}
                   className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
                 />

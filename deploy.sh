@@ -14,7 +14,7 @@ git pull origin main
 
 echo "🔧 Backend..."
 cd backend
-npm ci
+npm install
 pm2 restart kani-api
 
 echo "🎨 Frontend..."

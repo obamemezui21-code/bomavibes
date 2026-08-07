@@ -5,10 +5,11 @@ import { ArrowLeft, Heart, Lock, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { getIncomingLikers } from '../firebase/swipes.js'
+import { photoVariant } from '../lib/photoVariants.js'
 
 function avatarFor(profile) {
   return (
-    profile.photos?.[0] ||
+    photoVariant(profile.photos?.[0], 'thumb') ||
     `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
   )
 }
@@ -75,6 +76,10 @@ function LikesYou() {
                 >
                   <img
                     src={avatarFor(p)}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null
+                      e.currentTarget.src = p.photos?.[0] || avatarFor(p)
+                    }}
                     alt=""
                     className="h-full w-full scale-110 object-cover blur-xl"
                   />

@@ -1,10 +1,18 @@
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Check, Info, MapPin, Target } from 'lucide-react'
+import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 
 const SWIPE_THRESHOLD = 100
 const EXIT_X = 600
 
 function avatarFor(profile) {
+  return (
+    photoVariant(profile.photos?.[0], 'medium') ||
+    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+  )
+}
+
+function fullPhotoFor(profile) {
   return (
     profile.photos?.[0] ||
     `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
@@ -60,6 +68,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
       <div className="relative h-full w-full cursor-grab overflow-hidden rounded-[28px] shadow-xl active:cursor-grabbing">
         <img
           src={avatarFor(profile)}
+          onError={fallbackToFullPhoto(fullPhotoFor(profile))}
           alt={profile.firstName}
           draggable={false}
           className="h-full w-full select-none object-cover"

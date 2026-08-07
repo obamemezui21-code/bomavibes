@@ -6,6 +6,7 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { countIncomingLikes } from '../firebase/swipes.js'
 import { matchPercent } from '../lib/interests.js'
+import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 
 function Matches() {
   const navigate = useNavigate()
@@ -106,7 +107,8 @@ function Matches() {
                 >
                   <div className="relative aspect-[3/4] w-full overflow-hidden">
                     <img
-                      src={conversation.profile.photo}
+                      src={conversation.profile.photoMedium}
+                      onError={fallbackToFullPhoto(conversation.profile.photoFull)}
                       alt={conversation.profile.firstName}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
