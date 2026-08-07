@@ -988,7 +988,7 @@ function Chat() {
                   <Sparkles size={13} strokeWidth={2.25} className="text-violet-500" />
                   Pour briser la glace
                 </p>
-                <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex flex-wrap gap-2 pb-1">
                   {icebreakers.map((suggestion, i) => (
                     <motion.button
                       key={suggestion.text}
@@ -998,9 +998,9 @@ function Chat() {
                       transition={{ delay: i * 0.05, duration: 0.25 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={() => handleIcebreakerClick(suggestion.text)}
-                      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-violet-400/30 bg-gradient-to-r from-violet-500/10 to-pink-500/10 px-3.5 py-2 text-xs font-medium text-ink transition hover:border-violet-400/60 hover:from-violet-500/15 hover:to-pink-500/15"
+                      className="flex max-w-[260px] items-center gap-1.5 rounded-2xl border border-violet-400/30 bg-gradient-to-r from-violet-500/10 to-pink-500/10 px-3.5 py-2 text-left text-xs font-medium text-ink transition hover:border-violet-400/60 hover:from-violet-500/15 hover:to-pink-500/15"
                     >
-                      <span>{suggestion.icon}</span>
+                      <span className="shrink-0">{suggestion.icon}</span>
                       {suggestion.text}
                     </motion.button>
                   ))}
