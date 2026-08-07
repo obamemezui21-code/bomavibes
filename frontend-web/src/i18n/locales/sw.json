@@ -1,0 +1,82 @@
+{
+  "common": {
+    "save": "Hifadhi",
+    "cancel": "Ghairi",
+    "delete": "Futa",
+    "edit": "Hariri",
+    "continue": "Endelea",
+    "back": "Rudi",
+    "logout": "Toka",
+    "close": "Funga",
+    "search": "Tafuta",
+    "loading": "Inapakia…",
+    "seeMore": "Ona zaidi",
+    "confirm": "Thibitisha"
+  },
+  "nav": {
+    "discover": "Gundua",
+    "matches": "Mechi",
+    "messages": "Ujumbe",
+    "announcements": "Matangazo",
+    "profile": "Wasifu",
+    "settings": "Mipangilio"
+  },
+  "auth": {
+    "login": "Ingia",
+    "signup": "Jisajili bure",
+    "email": "Barua pepe",
+    "password": "Nenosiri",
+    "firstName": "Jina la kwanza",
+    "forgotPassword": "Umesahau nenosiri?",
+    "noAccount": "Huna akaunti?",
+    "hasAccount": "Una akaunti tayari?",
+    "continueWithGoogle": "Endelea na Google",
+    "verifyEmailTitle": "Thibitisha barua pepe yako",
+    "verifyEmailBody": "Kiungo cha uthibitisho kimetumwa kwa anwani yako."
+  },
+  "onboarding": {
+    "photos": "Picha",
+    "about": "Kukuhusu",
+    "location": "Ulipo",
+    "interests": "Mambo unayopenda",
+    "languagesPersonality": "Lugha na tabia",
+    "lifestyle": "Mtindo wa maisha",
+    "preferences": "Mapendeleo yako"
+  },
+  "settings": {
+    "title": "Mipangilio",
+    "appearance": "Muonekano",
+    "darkMode": "Mandhari nyeusi",
+    "notifications": "Arifa",
+    "privacy": "Faragha",
+    "account": "Akaunti",
+    "language": "Lugha",
+    "blockedUsers": "Watumiaji waliozuiwa",
+    "manage": "Simamia",
+    "dangerZone": "Eneo la hatari",
+    "deleteAccount": "Futa akaunti yangu"
+  },
+  "discover": {
+    "greeting": "Habari {{name}} 👋",
+    "pass": "Ruka",
+    "superlike": "Super like",
+    "like": "Penda",
+    "swipeHint": "Telezesha kadi, au tumia vitufe",
+    "empty": "Hakuna wasifu kwa sasa",
+    "matchTitle": "Ni mechi!",
+    "sendMessage": "Tuma ujumbe",
+    "keepDiscovering": "Endelea kugundua"
+  },
+  "chat": {
+    "title": "Ujumbe",
+    "emptyState": "Mazungumzo yako na mechi zako yataonekana hapa",
+    "placeholder": "Andika ujumbe…",
+    "report": "Ripoti",
+    "block": "Zuia",
+    "online": "Mtandaoni"
+  },
+  "profile": {
+    "title": "Wasifu wako",
+    "completion": "Ukamilifu wa wasifu"
+  }
+}

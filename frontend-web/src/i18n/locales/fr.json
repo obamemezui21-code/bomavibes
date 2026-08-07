@@ -1,0 +1,82 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "continue": "Continuer",
+    "back": "Retour",
+    "logout": "Déconnexion",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "loading": "Chargement…",
+    "seeMore": "Voir plus",
+    "confirm": "Confirmer"
+  },
+  "nav": {
+    "discover": "Découvrir",
+    "matches": "Matchs",
+    "messages": "Messages",
+    "announcements": "Annonces",
+    "profile": "Profil",
+    "settings": "Paramètres"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "signup": "S'inscrire gratuitement",
+    "email": "Email",
+    "password": "Mot de passe",
+    "firstName": "Prénom",
+    "forgotPassword": "Mot de passe oublié ?",
+    "noAccount": "Pas de compte ?",
+    "hasAccount": "Déjà un compte ?",
+    "continueWithGoogle": "Continuer avec Google",
+    "verifyEmailTitle": "Vérifiez votre email",
+    "verifyEmailBody": "Un lien de confirmation a été envoyé à votre adresse."
+  },
+  "onboarding": {
+    "photos": "Photos",
+    "about": "À propos de vous",
+    "location": "Où vous êtes",
+    "interests": "Vos centres d'intérêt",
+    "languagesPersonality": "Langues & personnalité",
+    "lifestyle": "Style de vie",
+    "preferences": "Vos préférences"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "appearance": "Apparence",
+    "darkMode": "Thème sombre",
+    "notifications": "Notifications",
+    "privacy": "Confidentialité",
+    "account": "Compte",
+    "language": "Langue",
+    "blockedUsers": "Utilisateurs bloqués",
+    "manage": "Gérer",
+    "dangerZone": "Zone de danger",
+    "deleteAccount": "Supprimer mon compte"
+  },
+  "discover": {
+    "greeting": "Salut {{name}} 👋",
+    "pass": "Passer",
+    "superlike": "Super like",
+    "like": "Aimer",
+    "swipeHint": "Glissez la carte, ou utilisez les boutons",
+    "empty": "Aucun profil pour le moment",
+    "matchTitle": "C'est un match !",
+    "sendMessage": "Envoyer un message",
+    "keepDiscovering": "Continuer à découvrir"
+  },
+  "chat": {
+    "title": "Messages",
+    "emptyState": "Vos conversations avec vos matchs apparaîtront ici",
+    "placeholder": "Écrivez un message…",
+    "report": "Signaler",
+    "block": "Bloquer",
+    "online": "En ligne"
+  },
+  "profile": {
+    "title": "Votre profil",
+    "completion": "Profil complété"
+  }
+}

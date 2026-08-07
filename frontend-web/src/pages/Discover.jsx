@@ -1,7 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, MapPin, Megaphone, RotateCcw, Search, SlidersHorizontal, Sparkles, Star, X } from 'lucide-react'
+import {
+  Heart,
+  MapPin,
+  Megaphone,
+  RotateCcw,
+  Search,
+  Send,
+  SlidersHorizontal,
+  Sparkles,
+  Star,
+  X,
+} from 'lucide-react'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import SwipeCard from '../components/SwipeCard.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
@@ -39,17 +50,24 @@ function Discover() {
   const [matchConversationId, setMatchConversationId] = useState(null)
   const [exitingId, setExitingId] = useState(null)
   const [exitDirection, setExitDirection] = useState(null)
+  const [isReviewing, setIsReviewing] = useState(false)
+  const seenIdsRef = useRef(new Set())
 
-  async function loadCandidates(currentFilters) {
+  async function loadCandidates(currentFilters, { includeRefused = false } = {}) {
     if (!user?.id) return
     setIsLoading(true)
     try {
-      const candidates = await fetchDiscoverCandidates(user.id, currentFilters)
+      const candidates = await fetchDiscoverCandidates(user.id, currentFilters, {
+        seenIds: seenIdsRef.current,
+        includeRefused,
+        myInterests: publicProfile?.interests || [],
+      })
       setProfiles(candidates)
     } catch {
       showToast('Impossible de charger les profils, réessayez.', 'error')
     } finally {
       setIsLoading(false)
+      setIsReviewing(false)
     }
   }
 
@@ -66,6 +84,37 @@ function Discover() {
 
   const deck = searched.slice(0, DECK_SIZE)
   const topProfile = deck[0] || null
+
+  useEffect(() => {
+    if (topProfile?.id) seenIdsRef.current.add(topProfile.id)
+  }, [topProfile?.id])
+
+  function handleReviewProfiles() {
+    setIsReviewing(true)
+    loadCandidates(filters, { includeRefused: true })
+  }
+
+  async function handleInviteFriends() {
+    const shareData = {
+      title: 'BomaVibes',
+      text: 'Rejoins-moi sur BomaVibes, la rencontre africaine 💛',
+      url: 'https://bomavibes.tech',
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+      } catch {
+        // user cancelled the native share sheet, nothing to do
+      }
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`)
+      showToast('Lien copié, à toi de le partager !', 'success')
+    } catch {
+      showToast('Impossible de copier le lien.', 'error')
+    }
+  }
 
   async function handleSwipe(profile, direction) {
     setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
@@ -227,10 +276,40 @@ function Discover() {
         ) : searched.length === 0 ? (
           <div className="glass-panel flex flex-col items-center gap-2 rounded-[28px] p-10 text-center">
             <Sparkles size={40} strokeWidth={1.5} className="text-violet-500" />
-            <p className="font-display text-lg font-semibold text-ink">Aucun profil pour le moment</p>
-            <p className="max-w-xs text-sm text-ink-soft/70">
-              Élargissez vos filtres ou revenez plus tard pour voir plus de monde.
+            <p className="font-display text-lg font-semibold text-ink">
+              🎉 Vous avez découvert tous les profils disponibles pour le moment.
             </p>
+            <p className="max-w-xs text-sm text-ink-soft/70">
+              Revenez bientôt, ou essayez l'une de ces options en attendant.
+            </p>
+            <div className="mt-4 flex w-full max-w-xs flex-col gap-2.5">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                disabled={isReviewing}
+                onClick={handleReviewProfiles}
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RotateCcw size={16} strokeWidth={2.25} />
+                {isReviewing ? 'Chargement…' : 'Revoir les profils'}
+              </motion.button>
+              <button
+                type="button"
+                onClick={handleInviteFriends}
+                className="flex items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+              >
+                <Send size={16} strokeWidth={2.25} />
+                Inviter des amis
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFilters(true)}
+                className="flex items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+              >
+                <SlidersHorizontal size={16} strokeWidth={2.25} />
+                Élargir mes préférences
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center">
@@ -249,13 +328,13 @@ function Discover() {
               ))}
             </div>
 
-            <div className="mt-6 flex items-center justify-center gap-4">
+            <div className="mt-6 flex items-center justify-center gap-5">
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.85 }}
                 disabled={!topProfile}
                 onClick={() => topProfile && handlePass(topProfile)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-md disabled:opacity-40 dark:bg-surface-tint"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
                 aria-label="Passer"
               >
                 <X size={24} strokeWidth={2.5} />
@@ -265,20 +344,20 @@ function Discover() {
                 whileTap={{ scale: 0.85 }}
                 disabled={!topProfile}
                 onClick={() => topProfile && handleSuperlike(topProfile)}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/30 disabled:opacity-40"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
                 aria-label="Super like"
               >
-                <Star size={19} strokeWidth={2.5} fill="currentColor" />
+                <Star size={22} strokeWidth={2.5} fill="currentColor" />
               </motion.button>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.85 }}
                 disabled={!topProfile}
                 onClick={() => topProfile && handleLike(topProfile)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-mint-500 text-white shadow-md disabled:opacity-40"
+                className="flex h-20 w-20 items-center justify-center rounded-full bg-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
                 aria-label="Aimer"
               >
-                <Heart size={24} strokeWidth={2.5} fill="currentColor" />
+                <Heart size={30} strokeWidth={2.5} fill="currentColor" />
               </motion.button>
             </div>
             <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft/50">

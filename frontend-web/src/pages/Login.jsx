@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import GoogleIcon from '../components/GoogleIcon.jsx'
@@ -13,6 +14,7 @@ const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
 function Login() {
   const { login, loginWithGoogle, token } = useAuth()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -120,7 +122,7 @@ function Login() {
           whileTap={{ scale: 0.97 }}
           className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting ? 'Connexion…' : 'Se connecter'}
+          {isSubmitting ? 'Connexion…' : t('auth.login')}
         </motion.button>
 
         <div className="flex items-center gap-3">

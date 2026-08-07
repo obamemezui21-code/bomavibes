@@ -10,16 +10,16 @@
   --color-ink: #2b1d14;
   --color-ink-soft: #6b5d4f;
 
-  --color-violet-300: #f3dda0;
-  --color-violet-400: #e8c468;
-  --color-violet-500: #c9962b;
-  --color-violet-600: #9c7220;
-  --color-violet-950: #1f3d2b;
+  --color-violet-300: #e9d5ff;
+  --color-violet-400: #c084fc;
+  --color-violet-500: #a855f7;
+  --color-violet-600: #9333ea;
+  --color-violet-950: #581c87;
 
-  --color-pink-300: #fdefc9;
-  --color-pink-400: #e8c468;
-  --color-pink-500: #c9962b;
-  --color-pink-600: #9c7220;
+  --color-pink-300: #fbcfe8;
+  --color-pink-400: #f472b6;
+  --color-pink-500: #ec4899;
+  --color-pink-600: #db2777;
 
   --color-mint-400: #34d399;
   --color-mint-500: #10b981;
@@ -42,12 +42,12 @@ html {
 }
 
 html.dark {
-  --color-surface: #18130f;
-  --color-surface-soft: #201a15;
-  --color-surface-tint: #2a231b;
+  --color-surface: #0d0c12;
+  --color-surface-soft: #131219;
+  --color-surface-tint: #1c1a24;
 
-  --color-ink: #f3ece2;
-  --color-ink-soft: #b8a99a;
+  --color-ink: #f5f4f7;
+  --color-ink-soft: #b3aebd;
 
   color-scheme: dark;
 }
@@ -123,13 +123,13 @@ body {
 }
 
 .dark .glass-panel {
-  background: rgba(32, 26, 21, 0.85);
+  background: rgba(28, 26, 36, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.5);
 }
 
 .dark .glass-panel-solid {
-  background: #201a15;
+  background: #1c1a24;
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45);
 }

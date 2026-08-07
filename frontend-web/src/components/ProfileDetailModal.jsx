@@ -250,17 +250,17 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-4 border-t border-ink/8 p-3.5">
+        <div className="flex items-center justify-center gap-5 border-t border-ink/8 p-4">
           <motion.button
             whileTap={{ scale: 0.85 }}
             onClick={() => {
               onPass()
               onClose()
             }}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white dark:bg-surface-tint text-coral-500 shadow-md"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 dark:bg-surface-tint"
             aria-label="Passer"
           >
-            <X size={19} strokeWidth={2.5} />
+            <X size={20} strokeWidth={2.5} />
           </motion.button>
           {onSuperlike && (
             <motion.button
@@ -269,7 +269,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                 onSuperlike()
                 onClose()
               }}
-              className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-violet-600 text-white shadow-lg shadow-violet-500/30"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 dark:bg-surface-tint"
               aria-label="Super like"
             >
               <Star size={20} strokeWidth={2.5} fill="currentColor" />
@@ -281,10 +281,10 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               onLike()
               onClose()
             }}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-mint-500 text-white shadow-md"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-coral-500 text-white shadow-xl shadow-coral-500/40"
             aria-label="Aimer"
           >
-            <Heart size={19} strokeWidth={2.5} fill="currentColor" />
+            <Heart size={26} strokeWidth={2.5} fill="currentColor" />
           </motion.button>
         </div>
       </motion.div>

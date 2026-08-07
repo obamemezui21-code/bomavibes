@@ -1,0 +1,82 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "continue": "继续",
+    "back": "返回",
+    "logout": "退出登录",
+    "close": "关闭",
+    "search": "搜索",
+    "loading": "加载中…",
+    "seeMore": "查看更多",
+    "confirm": "确认"
+  },
+  "nav": {
+    "discover": "发现",
+    "matches": "匹配",
+    "messages": "消息",
+    "announcements": "公告",
+    "profile": "我的",
+    "settings": "设置"
+  },
+  "auth": {
+    "login": "登录",
+    "signup": "免费注册",
+    "email": "电子邮箱",
+    "password": "密码",
+    "firstName": "名字",
+    "forgotPassword": "忘记密码？",
+    "noAccount": "还没有账号？",
+    "hasAccount": "已有账号？",
+    "continueWithGoogle": "使用 Google 继续",
+    "verifyEmailTitle": "验证您的邮箱",
+    "verifyEmailBody": "确认链接已发送至您的邮箱地址。"
+  },
+  "onboarding": {
+    "photos": "照片",
+    "about": "关于你",
+    "location": "你的所在地",
+    "interests": "你的兴趣爱好",
+    "languagesPersonality": "语言与性格",
+    "lifestyle": "生活方式",
+    "preferences": "你的偏好"
+  },
+  "settings": {
+    "title": "设置",
+    "appearance": "外观",
+    "darkMode": "深色模式",
+    "notifications": "通知",
+    "privacy": "隐私",
+    "account": "账号",
+    "language": "语言",
+    "blockedUsers": "已屏蔽用户",
+    "manage": "管理",
+    "dangerZone": "危险区域",
+    "deleteAccount": "删除我的账号"
+  },
+  "discover": {
+    "greeting": "你好，{{name}} 👋",
+    "pass": "跳过",
+    "superlike": "超级喜欢",
+    "like": "喜欢",
+    "swipeHint": "滑动卡片，或使用按钮",
+    "empty": "暂时没有更多资料",
+    "matchTitle": "配对成功！",
+    "sendMessage": "发送消息",
+    "keepDiscovering": "继续探索"
+  },
+  "chat": {
+    "title": "消息",
+    "emptyState": "你与匹配对象的对话将显示在这里",
+    "placeholder": "输入消息…",
+    "report": "举报",
+    "block": "屏蔽",
+    "online": "在线"
+  },
+  "profile": {
+    "title": "我的资料",
+    "completion": "资料完整度"
+  }
+}

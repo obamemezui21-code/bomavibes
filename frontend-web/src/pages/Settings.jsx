@@ -10,6 +10,7 @@ import { db } from '../firebase/config.js'
 import { enablePushForUser } from '../firebase/push.js'
 import { fetchMyBlockedIds, unblockUser } from '../firebase/safety.js'
 import PasswordInput from '../components/PasswordInput.jsx'
+import LanguageSwitcher from '../components/LanguageSwitcher.jsx'
 
 const inputClass =
   'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
@@ -382,6 +383,12 @@ function Settings() {
                 <Toggle checked={theme === 'dark'} onChange={toggleTheme} />
               </div>
             </Row>
+          </Section>
+
+          <Section title="Langue">
+            <div className="px-1 py-3">
+              <LanguageSwitcher />
+            </div>
           </Section>
 
           <Section title="Notifications">

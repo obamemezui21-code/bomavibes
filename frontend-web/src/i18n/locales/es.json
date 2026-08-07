@@ -1,0 +1,82 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "continue": "Continuar",
+    "back": "Atrás",
+    "logout": "Cerrar sesión",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "loading": "Cargando…",
+    "seeMore": "Ver más",
+    "confirm": "Confirmar"
+  },
+  "nav": {
+    "discover": "Descubrir",
+    "matches": "Coincidencias",
+    "messages": "Mensajes",
+    "announcements": "Novedades",
+    "profile": "Perfil",
+    "settings": "Ajustes"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "signup": "Regístrate gratis",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "firstName": "Nombre",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "noAccount": "¿Aún no tienes cuenta?",
+    "hasAccount": "¿Ya tienes cuenta?",
+    "continueWithGoogle": "Continuar con Google",
+    "verifyEmailTitle": "Verifica tu correo",
+    "verifyEmailBody": "Se ha enviado un enlace de confirmación a tu dirección."
+  },
+  "onboarding": {
+    "photos": "Fotos",
+    "about": "Sobre ti",
+    "location": "Dónde estás",
+    "interests": "Tus intereses",
+    "languagesPersonality": "Idiomas y personalidad",
+    "lifestyle": "Estilo de vida",
+    "preferences": "Tus preferencias"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "appearance": "Apariencia",
+    "darkMode": "Tema oscuro",
+    "notifications": "Notificaciones",
+    "privacy": "Privacidad",
+    "account": "Cuenta",
+    "language": "Idioma",
+    "blockedUsers": "Usuarios bloqueados",
+    "manage": "Gestionar",
+    "dangerZone": "Zona de peligro",
+    "deleteAccount": "Eliminar mi cuenta"
+  },
+  "discover": {
+    "greeting": "Hola {{name}} 👋",
+    "pass": "Pasar",
+    "superlike": "Super like",
+    "like": "Me gusta",
+    "swipeHint": "Desliza la tarjeta, o usa los botones",
+    "empty": "No hay perfiles por ahora",
+    "matchTitle": "¡Es una coincidencia!",
+    "sendMessage": "Enviar un mensaje",
+    "keepDiscovering": "Seguir descubriendo"
+  },
+  "chat": {
+    "title": "Mensajes",
+    "emptyState": "Tus conversaciones con tus coincidencias aparecerán aquí",
+    "placeholder": "Escribe un mensaje…",
+    "report": "Denunciar",
+    "block": "Bloquear",
+    "online": "En línea"
+  },
+  "profile": {
+    "title": "Tu perfil",
+    "completion": "Perfil completado"
+  }
+}

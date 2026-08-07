@@ -1,0 +1,82 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "continue": "Continue",
+    "back": "Back",
+    "logout": "Log out",
+    "close": "Close",
+    "search": "Search",
+    "loading": "Loading…",
+    "seeMore": "See more",
+    "confirm": "Confirm"
+  },
+  "nav": {
+    "discover": "Discover",
+    "matches": "Matches",
+    "messages": "Messages",
+    "announcements": "Updates",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Log in",
+    "signup": "Sign up for free",
+    "email": "Email",
+    "password": "Password",
+    "firstName": "First name",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "No account yet?",
+    "hasAccount": "Already have an account?",
+    "continueWithGoogle": "Continue with Google",
+    "verifyEmailTitle": "Verify your email",
+    "verifyEmailBody": "A confirmation link has been sent to your address."
+  },
+  "onboarding": {
+    "photos": "Photos",
+    "about": "About you",
+    "location": "Where you are",
+    "interests": "Your interests",
+    "languagesPersonality": "Languages & personality",
+    "lifestyle": "Lifestyle",
+    "preferences": "Your preferences"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "darkMode": "Dark theme",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "account": "Account",
+    "language": "Language",
+    "blockedUsers": "Blocked users",
+    "manage": "Manage",
+    "dangerZone": "Danger zone",
+    "deleteAccount": "Delete my account"
+  },
+  "discover": {
+    "greeting": "Hi {{name}} 👋",
+    "pass": "Pass",
+    "superlike": "Super like",
+    "like": "Like",
+    "swipeHint": "Swipe the card, or use the buttons",
+    "empty": "No profiles right now",
+    "matchTitle": "It's a match!",
+    "sendMessage": "Send a message",
+    "keepDiscovering": "Keep discovering"
+  },
+  "chat": {
+    "title": "Messages",
+    "emptyState": "Your conversations with your matches will appear here",
+    "placeholder": "Write a message…",
+    "report": "Report",
+    "block": "Block",
+    "online": "Online"
+  },
+  "profile": {
+    "title": "Your profile",
+    "completion": "Profile completion"
+  }
+}

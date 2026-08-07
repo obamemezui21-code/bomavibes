@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { Bell, Compass, Heart, MessageCircle, CircleUserRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -8,12 +9,13 @@ import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 function useNavItems() {
   const { unreadMessagesCount, newMatchesCount } = useConversations()
   const { hasUnseenAnnouncement } = useAuth()
+  const { t } = useTranslation()
   return [
-    { to: '/discover', label: 'Découvrir', icon: Compass },
-    { to: '/matches', label: 'Matchs', icon: Heart, badge: newMatchesCount },
-    { to: '/chat', label: 'Messages', icon: MessageCircle, badge: unreadMessagesCount },
-    { to: '/annonces', label: 'Annonces', icon: Bell, ring: hasUnseenAnnouncement },
-    { to: '/profile', label: 'Profil', icon: CircleUserRound },
+    { to: '/discover', label: t('nav.discover'), icon: Compass },
+    { to: '/matches', label: t('nav.matches'), icon: Heart, badge: newMatchesCount },
+    { to: '/chat', label: t('nav.messages'), icon: MessageCircle, badge: unreadMessagesCount },
+    { to: '/annonces', label: t('nav.announcements'), icon: Bell, ring: hasUnseenAnnouncement },
+    { to: '/profile', label: t('nav.profile'), icon: CircleUserRound },
   ]
 }
 
@@ -48,6 +50,7 @@ function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const navItems = useNavItems()
+  const { t } = useTranslation()
 
   function handleLogout() {
     logout()
@@ -115,7 +118,7 @@ function AppLayout() {
           onClick={handleLogout}
           className="mt-auto rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
         >
-          Déconnexion
+          {t('common.logout')}
         </button>
       </aside>
 

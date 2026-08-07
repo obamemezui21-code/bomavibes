@@ -582,27 +582,27 @@ function Chat() {
                                   animate={{ opacity: 1, y: 0, scale: 1 }}
                                   exit={{ opacity: 0, y: -4, scale: 0.95 }}
                                   transition={{ duration: 0.15 }}
-                                  className="absolute right-0 top-8 z-10 w-36 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
+                                  className="absolute right-0 top-8 z-10 flex items-center gap-1 rounded-full bg-white p-1.5 shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
                                 >
                                   {m.type !== 'voice' && (
                                     <button
                                       type="button"
                                       onClick={() => startEdit(m)}
-                                      className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                                      aria-label="Modifier"
+                                      title="Modifier"
+                                      className="flex h-8 w-8 items-center justify-center rounded-full text-ink transition hover:bg-ink/5"
                                     >
-                                      <Pencil size={14} strokeWidth={2.25} />
-                                      Modifier
+                                      <Pencil size={15} strokeWidth={2.25} />
                                     </button>
                                   )}
                                   <button
                                     type="button"
                                     onClick={() => handleDelete(m)}
-                                    className={`flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5 ${
-                                      m.type !== 'voice' ? 'border-t border-ink/6' : ''
-                                    }`}
+                                    aria-label="Supprimer"
+                                    title="Supprimer"
+                                    className="flex h-8 w-8 items-center justify-center rounded-full text-coral-500 transition hover:bg-coral-500/5"
                                   >
-                                    <Trash2 size={14} strokeWidth={2.25} />
-                                    Supprimer
+                                    <Trash2 size={15} strokeWidth={2.25} />
                                   </button>
                                 </motion.div>
                               )}
