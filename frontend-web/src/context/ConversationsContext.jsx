@@ -17,6 +17,7 @@ import { enablePushForUser } from '../firebase/push.js'
 import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
 import { photoVariant } from '../lib/photoVariants.js'
+import { messagePreviewText } from '../lib/messagePreview.js'
 import { useAuth } from './AuthContext.jsx'
 
 const ConversationsContext = createContext(null)
@@ -175,6 +176,9 @@ export function ConversationsProvider({ children }) {
             type: data.type || 'text',
             audioUrl: data.audioUrl || null,
             duration: data.duration || 0,
+            fileUrl: data.fileUrl || null,
+            fileName: data.fileName || null,
+            fileSize: data.fileSize || 0,
             time: formatTime(date),
             date,
             edited: !!data.editedAt,
@@ -276,7 +280,7 @@ export function ConversationsProvider({ children }) {
         ? {
             replyTo: {
               messageId: replyTo.id,
-              text: replyTo.type === 'voice' ? '🎤 Message vocal' : replyTo.text,
+              text: messagePreviewText(replyTo),
               senderId: replyTo.senderId,
             },
           }
@@ -318,6 +322,30 @@ export function ConversationsProvider({ children }) {
     }
   }
 
+  async function sendAttachmentMessage(matchId, attachment) {
+    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+      senderId: uid,
+      text: '',
+      type: attachment.type,
+      fileUrl: attachment.url,
+      fileName: attachment.fileName,
+      fileSize: attachment.fileSize || 0,
+      createdAt: serverTimestamp(),
+    })
+    const match = matches.find((m) => m.id === matchId)
+    const otherUid = match?.users.find((u) => u !== uid)
+    const preview = messagePreviewText({ type: attachment.type, fileName: attachment.fileName })
+    await updateDoc(doc(db, 'matches', matchId), {
+      lastMessage: preview,
+      lastMessageAt: serverTimestamp(),
+      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
+    })
+
+    if (otherUid) {
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+    }
+  }
+
   async function editMessage(matchId, messageId, text) {
     await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
       text,
@@ -348,6 +376,7 @@ export function ConversationsProvider({ children }) {
         markMatchesSeen,
         sendMessage,
         sendVoiceMessage,
+        sendAttachmentMessage,
         editMessage,
         deleteMessage,
         showPushPrompt,

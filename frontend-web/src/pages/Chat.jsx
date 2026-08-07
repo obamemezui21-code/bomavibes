@@ -9,11 +9,14 @@ import {
   ChevronUp,
   Clock,
   Copy,
+  Download,
+  FileText,
   Flag,
   Hand,
   Mic,
   MessageCircle,
   MoreVertical,
+  Paperclip,
   Pause,
   Pencil,
   Play,
@@ -31,10 +34,14 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
+import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachments.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
+import { messagePreviewText } from '../lib/messagePreview.js'
 import ReportModal from '../components/ReportModal.jsx'
 import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
+
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
 const TYPING_STOP_DELAY_MS = 2500
 const MAX_RECORDING_SECONDS = 120
@@ -111,6 +118,58 @@ function VoiceMessage({ url, duration, fromMe }) {
   )
 }
 
+function FileMessage({ url, fileName, fileSize, fromMe }) {
+  return (
+    <a
+      href={url}
+      download={fileName}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="flex w-56 items-center gap-2.5"
+    >
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+          fromMe ? 'bg-white/25 text-[#2B1D14]' : 'bg-violet-500/15 text-violet-600'
+        }`}
+      >
+        <FileText size={16} strokeWidth={2.25} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{fileName}</p>
+        <span className={`text-[10px] ${fromMe ? 'text-white/70' : 'text-ink-soft/50'}`}>
+          {formatFileSize(fileSize)}
+        </span>
+      </div>
+      <Download size={15} strokeWidth={2.25} className="shrink-0 opacity-70" />
+    </a>
+  )
+}
+
+function ImageLightbox({ url, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-6"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white"
+        aria-label="Fermer"
+      >
+        <X size={20} strokeWidth={2.25} />
+      </button>
+      <img
+        src={url}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-full max-w-full rounded-lg object-contain"
+      />
+    </div>
+  )
+}
+
 function DeleteMessageModal({ onCancel, onConfirm, isDeleting }) {
   return (
     <div
@@ -176,6 +235,7 @@ function Chat() {
     typingId,
     sendMessage,
     sendVoiceMessage,
+    sendAttachmentMessage,
     editMessage,
     deleteMessage,
     openConversation,
@@ -200,6 +260,9 @@ function Chat() {
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [isSendingVoice, setIsSendingVoice] = useState(false)
+  const [isSendingAttachment, setIsSendingAttachment] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState(null)
+  const fileInputRef = useRef(null)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
   const listScrollRef = useRef(null)
@@ -334,6 +397,25 @@ function Chat() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend(e)
+    }
+  }
+
+  async function handleAttachmentSelect(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !active) return
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      showToast('Fichier trop volumineux (15 Mo maximum).', 'error')
+      return
+    }
+    setIsSendingAttachment(true)
+    try {
+      const attachment = await uploadChatAttachment(file)
+      await sendAttachmentMessage(active.id, attachment)
+    } catch {
+      showToast("Impossible d'envoyer le fichier, réessayez.", 'error')
+    } finally {
+      setIsSendingAttachment(false)
     }
   }
 
@@ -581,7 +663,7 @@ function Chat() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-ink">{c.profile.firstName}</p>
                   <p className="truncate text-xs text-ink-soft/60">
-                    {last ? (last.type === 'voice' ? '🎤 Message vocal' : last.text) : 'Dites bonjour 👋'}
+                    {last ? messagePreviewText(last) : 'Dites bonjour 👋'}
                   </p>
                 </div>
                 {typingId === c.id && <span className="text-xs text-violet-600">écrit…</span>}
@@ -638,7 +720,7 @@ function Chat() {
                   >
                     <Reply size={18} strokeWidth={2.25} />
                   </button>
-                  {selectedMessage.type !== 'voice' && (
+                  {selectedMessage.type === 'text' && (
                     <button
                       type="button"
                       onClick={() => handleCopy(selectedMessage)}
@@ -649,7 +731,7 @@ function Chat() {
                       <Copy size={17} strokeWidth={2.25} />
                     </button>
                   )}
-                  {selectedMessage.fromMe && selectedMessage.type !== 'voice' && (
+                  {selectedMessage.fromMe && selectedMessage.type === 'text' && (
                     <button
                       type="button"
                       onClick={() => startEdit(selectedMessage)}
@@ -804,6 +886,23 @@ function Chat() {
                           )}
                           {m.type === 'voice' ? (
                             <VoiceMessage url={m.audioUrl} duration={m.duration} fromMe={m.fromMe} />
+                          ) : m.type === 'image' ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setLightboxUrl(m.fileUrl)
+                              }}
+                              className="block"
+                            >
+                              <img
+                                src={m.fileUrl}
+                                alt=""
+                                className="max-h-64 max-w-full rounded-lg object-cover"
+                              />
+                            </button>
+                          ) : m.type === 'file' ? (
+                            <FileMessage url={m.fileUrl} fileName={m.fileName} fileSize={m.fileSize} fromMe={m.fromMe} />
                           ) : (
                             <p>{m.text}</p>
                           )}
@@ -872,9 +971,7 @@ function Chat() {
                   <p className="text-xs font-semibold text-violet-600">
                     {replyTarget.fromMe ? 'Vous' : active.profile.firstName}
                   </p>
-                  <p className="truncate text-xs text-ink-soft/60">
-                    {replyTarget.type === 'voice' ? '🎤 Message vocal' : replyTarget.text}
-                  </p>
+                  <p className="truncate text-xs text-ink-soft/60">{messagePreviewText(replyTarget)}</p>
                 </div>
                 <button
                   type="button"
@@ -933,6 +1030,26 @@ function Chat() {
                 onSubmit={handleSend}
                 className={`flex shrink-0 items-end gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
               >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+                  onChange={handleAttachmentSelect}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSendingAttachment || isSendingVoice || !!editingMessageId}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Joindre un fichier"
+                >
+                  {isSendingAttachment ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink-soft/30 border-t-ink-soft" />
+                  ) : (
+                    <Paperclip size={19} strokeWidth={2} />
+                  )}
+                </button>
                 <div className="relative shrink-0">
                   <button
                     type="button"
@@ -1035,6 +1152,8 @@ function Chat() {
           isBlocking={isSubmittingSafety}
         />
       )}
+
+      {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
     </div>
   )
 }
