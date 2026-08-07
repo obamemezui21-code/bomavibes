@@ -3,7 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
+  Check,
+  CheckCheck,
+  ChevronDown,
   ChevronUp,
+  Clock,
   Flag,
   Hand,
   Mic,
@@ -26,6 +30,7 @@ import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
+import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import ReportModal from '../components/ReportModal.jsx'
 import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 
@@ -186,6 +191,9 @@ function Chat() {
   const bottomRef = useRef(null)
   const listScrollRef = useRef(null)
   const [showScrollUp, setShowScrollUp] = useState(false)
+  const isNearBottomRef = useRef(true)
+  const prevMessageCountRef = useRef(0)
+  const [showNewMessagesPill, setShowNewMessagesPill] = useState(false)
   const typingTimeoutRef = useRef(null)
   const isTypingRef = useRef(false)
   const mediaRecorderRef = useRef(null)
@@ -199,13 +207,49 @@ function Chat() {
 
   const prevActiveIdRef = useRef(null)
 
+  function scrollToBottom(behavior) {
+    bottomRef.current?.scrollIntoView({ behavior, block: 'end' })
+  }
+
+  function handleThreadScroll(e) {
+    const el = e.currentTarget
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150
+    isNearBottomRef.current = nearBottom
+    if (nearBottom) setShowNewMessagesPill(false)
+  }
+
   useEffect(() => {
     const isConversationSwitch = prevActiveIdRef.current !== activeId
     prevActiveIdRef.current = activeId
-    const frame = requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior: isConversationSwitch ? 'auto' : 'smooth', block: 'end' })
-    })
-    return () => cancelAnimationFrame(frame)
+    const messages = active?.messages || []
+    const grew = messages.length > prevMessageCountRef.current
+    const lastMine = messages[messages.length - 1]?.fromMe
+    prevMessageCountRef.current = messages.length
+
+    if (isConversationSwitch) {
+      isNearBottomRef.current = true
+      setShowNewMessagesPill(false)
+      const frame = requestAnimationFrame(() => scrollToBottom('auto'))
+      return () => cancelAnimationFrame(frame)
+    }
+
+    // Never yank the view away while someone is reading older messages —
+    // unless it's their own message, which should always come into view.
+    if (grew && (lastMine || isNearBottomRef.current)) {
+      const frame = requestAnimationFrame(() => scrollToBottom('smooth'))
+      return () => cancelAnimationFrame(frame)
+    }
+    if (grew && !lastMine && !isNearBottomRef.current) {
+      setShowNewMessagesPill(true)
+      return undefined
+    }
+
+    if (typingId === activeId && isNearBottomRef.current) {
+      const frame = requestAnimationFrame(() => scrollToBottom('smooth'))
+      return () => cancelAnimationFrame(frame)
+    }
+    return undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, active?.messages.length, typingId])
 
   useEffect(() => {
@@ -432,7 +476,12 @@ function Chat() {
                 }`}
               >
                 <div className="relative shrink-0">
-                  <img src={c.profile.photo} alt={c.profile.firstName} className="h-12 w-12 rounded-full object-cover" />
+                  <img
+                    src={c.profile.photo}
+                    onError={fallbackToFullPhoto(c.profile.photoFull)}
+                    alt={c.profile.firstName}
+                    className="h-12 w-12 rounded-full object-cover"
+                  />
                   {c.online && (
                     <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-ink bg-mint-500" />
                   )}
@@ -485,10 +534,17 @@ function Chat() {
               >
                 <ArrowLeft size={18} strokeWidth={2} />
               </button>
-              <img src={active.profile.photo} alt={active.profile.firstName} className="h-9 w-9 rounded-full object-cover" />
+              <img
+                src={active.profile.photo}
+                onError={fallbackToFullPhoto(active.profile.photoFull)}
+                alt={active.profile.firstName}
+                className="h-9 w-9 rounded-full object-cover"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink">{active.profile.firstName}</p>
-                <p className="text-xs text-ink-soft/50">{active.online ? '🟢 En ligne' : active.profile.city}</p>
+                <p className="text-xs text-ink-soft/50">
+                  {active.online ? '🟢 En ligne' : active.lastSeenLabel || active.profile.city}
+                </p>
               </div>
 
               <div className="relative">
@@ -537,7 +593,8 @@ function Chat() {
               </div>
             </div>
 
-            <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
+            <div className="relative flex-1 overflow-hidden">
+            <div ref={scrollRef} onScroll={handleThreadScroll} className="h-full space-y-2 overflow-y-auto px-4 py-4">
               {active.messages.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                   <Hand size={32} strokeWidth={1.5} className="text-ink-soft/40" />
@@ -621,9 +678,20 @@ function Chat() {
                           ) : (
                             <p>{m.text}</p>
                           )}
-                          <p className={`mt-0.5 text-[10px] ${m.fromMe ? 'text-white/70' : 'text-ink-soft/50'}`}>
+                          <p
+                            className={`mt-0.5 flex items-center gap-1 text-[10px] ${
+                              m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
+                            }`}
+                          >
                             {m.time}
                             {m.edited && ' · modifié'}
+                            {m.fromMe && (
+                              <span className="inline-flex items-center" aria-label={`Statut : ${m.status}`}>
+                                {m.status === 'sending' && <Clock size={11} strokeWidth={2.5} />}
+                                {m.status === 'sent' && <Check size={12} strokeWidth={2.5} />}
+                                {m.status === 'read' && <CheckCheck size={12} strokeWidth={2.5} className="text-sky-300" />}
+                              </span>
+                            )}
                           </p>
                         </div>
                       </motion.div>
@@ -647,6 +715,26 @@ function Chat() {
                 </motion.div>
               )}
               <div ref={bottomRef} />
+            </div>
+
+            <AnimatePresence>
+              {showNewMessagesPill && (
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.9 }}
+                  onClick={() => {
+                    scrollToBottom('smooth')
+                    setShowNewMessagesPill(false)
+                  }}
+                  className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-xs font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/30"
+                >
+                  Nouveaux messages
+                  <ChevronDown size={14} strokeWidth={2.5} />
+                </motion.button>
+              )}
+            </AnimatePresence>
             </div>
 
             {editingMessageId && (

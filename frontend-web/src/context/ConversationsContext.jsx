@@ -16,6 +16,7 @@ import { sendPushNotification } from '../firebase/notify.js'
 import { enablePushForUser } from '../firebase/push.js'
 import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
+import { photoVariant } from '../lib/photoVariants.js'
 import { useAuth } from './AuthContext.jsx'
 
 const ConversationsContext = createContext(null)
@@ -31,6 +32,22 @@ function formatTime(date) {
 function isRecent(timestamp, thresholdMs, now) {
   const ms = timestamp?.toMillis?.()
   return !!ms && now - ms < thresholdMs
+}
+
+function formatLastSeen(timestamp, now) {
+  const ms = timestamp?.toMillis?.()
+  if (!ms) return null
+  const diffMin = Math.floor((now - ms) / 60000)
+  if (diffMin < 1) return "à l'instant"
+  if (diffMin < 60) return `Vu il y a ${diffMin} min`
+  const date = new Date(ms)
+  const time = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  const today = new Date(now)
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  if (date.toDateString() === today.toDateString()) return `Vu aujourd'hui à ${time}`
+  if (date.toDateString() === yesterday.toDateString()) return `Vu hier à ${time}`
+  return `Vu le ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} à ${time}`
 }
 
 export function ConversationsProvider({ children }) {
@@ -150,6 +167,7 @@ export function ConversationsProvider({ children }) {
             time: formatTime(date),
             date,
             edited: !!data.editedAt,
+            pending: d.metadata.hasPendingWrites,
           }
         }),
       }))
@@ -164,6 +182,15 @@ export function ConversationsProvider({ children }) {
         if (blockedIds.has(otherUid)) return null
         const profile = profilesById[otherUid]
         if (!profile) return null
+        const otherLastReadAt = match.lastReadAt?.[otherUid]?.toMillis?.() ?? null
+        const messages = (activeMessages[match.id] || []).map((m) => {
+          if (!m.fromMe) return m
+          const status = m.pending ? 'sending' : otherLastReadAt && m.date.getTime() <= otherLastReadAt ? 'read' : 'sent'
+          return { ...m, status }
+        })
+        const matchedAt = match.createdAt?.toDate ? match.createdAt.toDate().toISOString() : new Date().toISOString()
+        const lastActivityAt = match.lastMessageAt?.toDate ? match.lastMessageAt.toDate().toISOString() : matchedAt
+        const online = isRecent(profile.lastActive, ONLINE_THRESHOLD_MS, now)
         return {
           id: match.id,
           otherUid,
@@ -173,20 +200,28 @@ export function ConversationsProvider({ children }) {
             city: profile.city,
             interests: profile.interests || [],
             photo:
+              photoVariant(profile.photos?.[0], 'thumb') ||
+              `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || 'Bomavibes')}&backgroundColor=e8c468`,
+            photoMedium:
+              photoVariant(profile.photos?.[0], 'medium') ||
+              `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || 'Bomavibes')}&backgroundColor=e8c468`,
+            photoFull:
               profile.photos?.[0] ||
               `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || 'Bomavibes')}&backgroundColor=e8c468`,
           },
-          matchedAt: match.createdAt?.toDate ? match.createdAt.toDate().toISOString() : new Date().toISOString(),
+          matchedAt,
+          lastActivityAt,
           isNewMatch: match.seen?.[uid] === false,
           unreadCount: match.seen?.[uid] === false ? 1 : 0,
           lastMessage: match.lastMessage || null,
-          messages: activeMessages[match.id] || [],
-          online: isRecent(profile.lastActive, ONLINE_THRESHOLD_MS, now),
+          messages,
+          online,
+          lastSeenLabel: online ? 'En ligne' : formatLastSeen(profile.lastActive, now),
           isTyping: isRecent(match.typing?.[otherUid], TYPING_THRESHOLD_MS, now),
         }
       })
       .filter(Boolean)
-      .sort((a, b) => new Date(b.matchedAt) - new Date(a.matchedAt))
+      .sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
   }, [matches, profilesById, activeMessages, uid, now, blockedIds])
 
   const typingId = conversations.find((c) => c.isTyping)?.id ?? null
@@ -199,9 +234,9 @@ export function ConversationsProvider({ children }) {
   async function openConversation(id) {
     setOpenMatchId(id)
     const match = matches.find((m) => m.id === id)
-    if (match && match.seen?.[uid] === false) {
-      await updateDoc(doc(db, 'matches', id), { [`seen.${uid}`]: true })
-    }
+    const updates = { [`lastReadAt.${uid}`]: serverTimestamp() }
+    if (match?.seen?.[uid] === false) updates[`seen.${uid}`] = true
+    await updateDoc(doc(db, 'matches', id), updates).catch(() => {})
   }
 
   async function markMatchesSeen() {
