@@ -4,6 +4,8 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 
 const SWIPE_THRESHOLD = 100
 const EXIT_X = 600
+const EXIT_TRANSITION = { type: 'tween', duration: 0.22, ease: 'easeIn' }
+const STACK_TRANSITION = { type: 'spring', stiffness: 500, damping: 32 }
 
 function avatarFor(profile) {
   return (
@@ -56,7 +58,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
         zIndex: 10 - stackIndex,
       }}
       animate={animate}
-      transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+      transition={exitDirection ? EXIT_TRANSITION : STACK_TRANSITION}
       onAnimationComplete={() => {
         if (exitDirection) onExited()
       }}
