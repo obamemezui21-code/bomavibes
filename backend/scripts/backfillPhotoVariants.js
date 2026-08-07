@@ -48,18 +48,32 @@ async function main() {
     const userDirs = fs.readdirSync(UPLOAD_ROOT, { withFileTypes: true }).filter((d) => d.isDirectory());
     let filesProcessed = 0;
     let variantsCreated = 0;
+    const failures = [];
 
     for (const userDir of userDirs) {
         const dirPath = path.join(UPLOAD_ROOT, userDir.name);
         const files = fs.readdirSync(dirPath).filter(isBasePhoto);
         for (const file of files) {
-            const created = await processFile(path.join(dirPath, file));
-            filesProcessed += 1;
-            variantsCreated += created;
+            const fullPath = path.join(dirPath, file);
+            try {
+                const created = await processFile(fullPath);
+                filesProcessed += 1;
+                variantsCreated += created;
+            } catch (err) {
+                // One corrupt/unsupported source file (e.g. a mislabeled
+                // HEIC) must not stop the migration for every other user —
+                // record it and keep going.
+                failures.push({ path: fullPath, message: err.message });
+                console.error(`⚠️  Échec sur ${fullPath} : ${err.message}`);
+            }
         }
     }
 
     console.log(`Terminé : ${filesProcessed} photo(s) analysée(s), ${variantsCreated} variante(s) générée(s).`);
+    if (failures.length) {
+        console.log(`\n${failures.length} fichier(s) n'ont pas pu être traités et nécessitent une vérification manuelle :`);
+        failures.forEach((f) => console.log(`  - ${f.path}\n    ${f.message}`));
+    }
     process.exit(0);
 }
 
