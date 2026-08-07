@@ -20,9 +20,9 @@ import { photoVariant } from '../lib/photoVariants.js'
 import { useAuth } from './AuthContext.jsx'
 
 const ConversationsContext = createContext(null)
-const ONLINE_THRESHOLD_MS = 90 * 1000
+const ONLINE_THRESHOLD_MS = 150 * 1000
 const TYPING_THRESHOLD_MS = 6 * 1000
-const HEARTBEAT_INTERVAL_MS = 45 * 1000
+const HEARTBEAT_INTERVAL_MS = 90 * 1000
 
 function formatTime(date) {
   if (!date) return ''
@@ -137,16 +137,26 @@ export function ConversationsProvider({ children }) {
     return unsubscribe
   }, [uid])
 
+  // Keyed on the *set* of matched partner ids, not on `matches` itself —
+  // `matches` gets a new array reference on every match-doc write (new
+  // message, typing ping, read receipt, seen flag), which would otherwise
+  // tear down and re-subscribe every profile listener on each of those,
+  // re-reading every matched profile from Firestore for no reason.
+  const matchedOtherUidsKey = useMemo(() => {
+    if (!uid) return ''
+    return [...new Set(matches.map((m) => m.users.find((u) => u !== uid)).filter(Boolean))].sort().join(',')
+  }, [matches, uid])
+
   useEffect(() => {
-    if (!uid) return
-    const otherUids = [...new Set(matches.map((m) => m.users.find((u) => u !== uid)).filter(Boolean))]
+    if (!uid || !matchedOtherUidsKey) return
+    const otherUids = matchedOtherUidsKey.split(',')
     const unsubscribes = otherUids.map((otherUid) =>
       onSnapshot(doc(db, 'profiles', otherUid), (snap) => {
         setProfilesById((prev) => ({ ...prev, [otherUid]: snap.exists() ? snap.data() : null }))
       }),
     )
     return () => unsubscribes.forEach((unsub) => unsub())
-  }, [uid, matches])
+  }, [uid, matchedOtherUidsKey])
 
   useEffect(() => {
     if (!openMatchId) return
