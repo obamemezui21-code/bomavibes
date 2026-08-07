@@ -6,5 +6,6 @@ export function messagePreviewText(message) {
   if (message.type === 'voice') return '🎤 Message vocal'
   if (message.type === 'image') return '📷 Photo'
   if (message.type === 'file') return `📄 ${message.fileName || 'Document'}`
+  if (message.type === 'sticker') return '😊 Sticker'
   return message.text || ''
 }

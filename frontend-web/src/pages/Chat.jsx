@@ -25,6 +25,7 @@ import {
   ShieldOff,
   Smile,
   Sparkles,
+  Sticker,
   Trash2,
   TriangleAlert,
   X,
@@ -40,6 +41,7 @@ import { blockUser, reportUser } from '../firebase/safety.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { getIcebreakers } from '../lib/icebreakers.js'
+import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
 import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 
@@ -238,6 +240,7 @@ function Chat() {
     sendMessage,
     sendVoiceMessage,
     sendAttachmentMessage,
+    sendStickerMessage,
     editMessage,
     deleteMessage,
     openConversation,
@@ -250,6 +253,7 @@ function Chat() {
   const { theme } = useTheme()
   const [draft, setDraft] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showStickerPicker, setShowStickerPicker] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [replyTarget, setReplyTarget] = useState(null)
@@ -376,6 +380,12 @@ function Chat() {
   function handleIcebreakerClick(text) {
     setDraft(text)
     textareaRef.current?.focus()
+  }
+
+  function handleStickerClick(stickerId) {
+    if (!active) return
+    setShowStickerPicker(false)
+    sendStickerMessage(active.id, stickerId)
   }
 
   function handleDraftChange(value) {
@@ -856,6 +866,14 @@ function Chat() {
               <AnimatePresence initial={false}>
                 {active.messages.map((m, i) => {
                   const showDaySeparator = !isSameDay(m.date, active.messages[i - 1]?.date)
+                  const isSticker = m.type === 'sticker'
+                  const bubbleClass = isSticker
+                    ? 'max-w-[75%] cursor-pointer select-none'
+                    : `max-w-[75%] cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
+                        m.fromMe
+                          ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
+                          : 'rounded-bl-sm bg-ink/6 text-ink'
+                      }`
                   return (
                     <Fragment key={m.id}>
                       {showDaySeparator && (
@@ -879,12 +897,8 @@ function Chat() {
                           onPointerCancel={clearLongPressTimer}
                           onContextMenu={handleMessageContextMenu(m)}
                           style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
-                          className={`max-w-[75%] cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
-                            selectedMessage?.id === m.id ? 'ring-2 ring-violet-400' : ''
-                          } ${
-                            m.fromMe
-                              ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
-                              : 'rounded-bl-sm bg-ink/6 text-ink'
+                          className={`${bubbleClass} ${
+                            selectedMessage?.id === m.id ? 'rounded-2xl ring-2 ring-violet-400' : ''
                           }`}
                         >
                           {m.replyTo && (
@@ -920,12 +934,14 @@ function Chat() {
                             </button>
                           ) : m.type === 'file' ? (
                             <FileMessage url={m.fileUrl} fileName={m.fileName} fileSize={m.fileSize} fromMe={m.fromMe} />
+                          ) : isSticker ? (
+                            <img src={stickerSrc(m.stickerId)} alt="" className="h-28 w-28 object-contain" />
                           ) : (
                             <p>{m.text}</p>
                           )}
                           <p
                             className={`mt-0.5 flex items-center gap-1 text-[10px] ${
-                              m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
+                              isSticker ? 'text-ink-soft/50' : m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
                             }`}
                           >
                             {m.time}
@@ -1123,6 +1139,44 @@ function Chat() {
                             width={320}
                             height={380}
                           />
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowStickerPicker((v) => !v)}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
+                      showStickerPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/5'
+                    }`}
+                    aria-label="Choisir un sticker"
+                  >
+                    <Sticker size={19} strokeWidth={2} />
+                  </button>
+                  <AnimatePresence>
+                    {showStickerPicker && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowStickerPicker(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute bottom-full left-0 z-20 mb-2 grid w-72 grid-cols-4 gap-1.5 rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
+                          style={{ maxHeight: 320, overflowY: 'auto' }}
+                        >
+                          {STICKERS.map((s) => (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => handleStickerClick(s.id)}
+                              className="flex items-center justify-center rounded-xl p-1 transition hover:bg-ink/5"
+                            >
+                              <img src={s.src} alt="" className="h-14 w-14 object-contain" />
+                            </button>
+                          ))}
                         </motion.div>
                       </>
                     )}

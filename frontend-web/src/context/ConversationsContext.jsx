@@ -179,6 +179,7 @@ export function ConversationsProvider({ children }) {
             fileUrl: data.fileUrl || null,
             fileName: data.fileName || null,
             fileSize: data.fileSize || 0,
+            stickerId: data.stickerId || null,
             time: formatTime(date),
             date,
             edited: !!data.editedAt,
@@ -346,6 +347,28 @@ export function ConversationsProvider({ children }) {
     }
   }
 
+  async function sendStickerMessage(matchId, stickerId) {
+    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+      senderId: uid,
+      text: '',
+      type: 'sticker',
+      stickerId,
+      createdAt: serverTimestamp(),
+    })
+    const match = matches.find((m) => m.id === matchId)
+    const otherUid = match?.users.find((u) => u !== uid)
+    const preview = messagePreviewText({ type: 'sticker' })
+    await updateDoc(doc(db, 'matches', matchId), {
+      lastMessage: preview,
+      lastMessageAt: serverTimestamp(),
+      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
+    })
+
+    if (otherUid) {
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+    }
+  }
+
   async function editMessage(matchId, messageId, text) {
     await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
       text,
@@ -377,6 +400,7 @@ export function ConversationsProvider({ children }) {
         sendMessage,
         sendVoiceMessage,
         sendAttachmentMessage,
+        sendStickerMessage,
         editMessage,
         deleteMessage,
         showPushPrompt,
