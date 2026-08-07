@@ -11,7 +11,7 @@ function PhoneFrame({ children, label, delay, tilt }) {
       transition={{ duration: 0.5, delay, ease: 'easeOut' }}
       className="mx-auto w-full max-w-[240px]"
     >
-      <div className="overflow-hidden rounded-[2.25rem] border-[10px] border-[#2B1D14] bg-white shadow-2xl shadow-[#1F3D2B]/20">
+      <div className="overflow-hidden rounded-[2.25rem] border-[10px] border-[#2B1D14] bg-white shadow-2xl shadow-violet-600/20">
         <div className="mx-auto -mt-1 h-4 w-24 rounded-b-2xl bg-[#2B1D14]" />
         {children}
       </div>
@@ -90,7 +90,7 @@ function ProfileMock() {
         <p className="mt-2 text-xs font-bold text-[#2B1D14]">Junior, 29</p>
         <p className="text-[10px] text-[#6b5d4f]">Douala, Cameroun</p>
       </div>
-      <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-[#9c7220]">Centres d'intérêt</p>
+      <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Centres d'intérêt</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {chips.map((c) => (
           <span key={c} className="rounded-full border border-violet-400 bg-violet-500/10 px-2 py-1 text-[9px] font-medium text-violet-600">
@@ -98,7 +98,7 @@ function ProfileMock() {
           </span>
         ))}
       </div>
-      <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-[#9c7220]">Langues</p>
+      <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Langues</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {['Français', 'Anglais', 'Douala'].map((l) => (
           <span key={l} className="rounded-full border border-black/10 px-2 py-1 text-[9px] font-medium text-[#6b5d4f]">
@@ -169,7 +169,7 @@ function OnboardingMock() {
   return (
     <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Où vous êtes</p>
-      <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-[#9c7220]">Pays</p>
+      <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Pays</p>
       <div className="flex flex-wrap gap-1.5">
         {countries.map((c) => (
           <span
@@ -182,7 +182,7 @@ function OnboardingMock() {
           </span>
         ))}
       </div>
-      <p className="mb-2 mt-4 text-[9px] font-semibold uppercase tracking-wide text-[#9c7220]">Région</p>
+      <p className="mb-2 mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Région</p>
       <div className="flex flex-wrap gap-1.5">
         {regions.map((r, i) => (
           <span

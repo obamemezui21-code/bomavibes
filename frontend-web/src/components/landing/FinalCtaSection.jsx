@@ -3,9 +3,9 @@ import { motion } from 'framer-motion'
 
 function FinalCtaSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#1F3D2B] via-[#163d29] to-[#0e2a1e] px-4 py-28 text-center sm:px-10">
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[#C9962B]/15 blur-[100px]" />
-      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-[#7A0F1E]/15 blur-[100px]" />
+    <section className="relative overflow-hidden bg-gradient-to-br from-violet-600 to-violet-950 px-4 py-28 text-center sm:px-10">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-pink-500/15 blur-[100px]" />
+      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-coral-600/15 blur-[100px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -23,7 +23,7 @@ function FinalCtaSection() {
         <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
           <Link
             to="/signup"
-            className="rounded-xl bg-[#C9962B] px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#dba838] hover:shadow-xl active:translate-y-0"
+            className="rounded-xl bg-pink-500 px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-pink-400 hover:shadow-xl active:translate-y-0"
           >
             Créer mon compte gratuitement
           </Link>

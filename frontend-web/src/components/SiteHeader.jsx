@@ -38,13 +38,13 @@ function SiteHeader() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 bg-[#1F3D2B]/90 shadow-md backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-30 bg-violet-600/90 shadow-md backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
         <a href="/" className="flex items-center">
           <img
             src={logo}
             alt="BomaVibes"
-            className="h-10 w-10 rounded-full border-2 border-[#C9962B] object-cover shadow-md"
+            className="h-10 w-10 rounded-full border-2 border-pink-500 object-cover shadow-md"
           />
         </a>
 
@@ -70,7 +70,7 @@ function SiteHeader() {
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-[#1F3D2B] shadow-lg backdrop-blur-sm sm:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-violet-600 shadow-lg backdrop-blur-sm sm:hidden"
           aria-label="Menu"
           aria-expanded={menuOpen}
         >
@@ -92,7 +92,7 @@ function SiteHeader() {
               <a
                 key={l.label}
                 href={l.href}
-                className={`block px-5 py-4 text-sm font-semibold text-[#1F3D2B] hover:bg-[#1F3D2B]/5 ${
+                className={`block px-5 py-4 text-sm font-semibold text-violet-600 hover:bg-violet-600/5 ${
                   i > 0 ? 'border-t border-black/5' : ''
                 }`}
               >
@@ -103,7 +103,7 @@ function SiteHeader() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="block w-full border-t border-black/5 px-5 py-4 text-left text-sm font-semibold text-coral-500 hover:bg-[#1F3D2B]/5"
+                className="block w-full border-t border-black/5 px-5 py-4 text-left text-sm font-semibold text-coral-500 hover:bg-violet-600/5"
               >
                 Déconnexion
               </button>

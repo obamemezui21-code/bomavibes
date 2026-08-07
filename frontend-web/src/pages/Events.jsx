@@ -18,7 +18,7 @@ function Events() {
         <motion.span
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-block rounded-full bg-[#1F3D2B]/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-[#1F3D2B]"
+          className="inline-block rounded-full bg-violet-600/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-violet-600"
         >
           Bientôt disponible
         </motion.span>
@@ -51,13 +51,13 @@ function Events() {
         >
           <Link
             to="/signup"
-            className="rounded-xl bg-[#C9962B] px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
+            className="rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
           >
             Rejoindre BomaVibes
           </Link>
           <a
             href="/#top"
-            className="rounded-xl border border-[#1F3D2B]/20 px-7 py-3 text-sm font-semibold text-[#1F3D2B] transition hover:bg-[#1F3D2B]/5"
+            className="rounded-xl border border-violet-600/20 px-7 py-3 text-sm font-semibold text-violet-600 transition hover:bg-violet-600/5"
           >
             Retour à l'accueil
           </a>
@@ -67,7 +67,7 @@ function Events() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-14 border-t border-[#1F3D2B]/10 pt-8"
+          className="mt-14 border-t border-violet-600/10 pt-8"
         >
           <p className="text-sm text-[#6b5d4f]">Suis-nous pour ne rien manquer de l'annonce :</p>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
@@ -77,7 +77,7 @@ function Events() {
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium text-[#1F3D2B] underline-offset-4 transition hover:underline"
+                className="text-sm font-medium text-violet-600 underline-offset-4 transition hover:underline"
               >
                 {s.label}
               </a>

@@ -69,7 +69,7 @@ function Terms() {
       <SiteHeader />
 
       <div className="mx-auto max-w-3xl px-4 pb-24 pt-32 sm:px-8 sm:pt-40">
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#9c7220]">Légal</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">Légal</p>
         <h1 className="mt-2 font-display text-3xl font-bold text-[#2B1D14] sm:text-4xl">
           Conditions d'utilisation
         </h1>
@@ -86,7 +86,7 @@ function Terms() {
               <ul className="mt-3 space-y-2">
                 {s.body.map((line) => (
                   <li key={line} className="flex gap-2 text-sm leading-relaxed text-[#6b5d4f]">
-                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#C9962B]" />
+                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-pink-500" />
                     {line}
                   </li>
                 ))}
@@ -95,10 +95,10 @@ function Terms() {
           ))}
         </div>
 
-        <div className="mt-14 border-t border-[#1F3D2B]/10 pt-8">
+        <div className="mt-14 border-t border-violet-600/10 pt-8">
           <p className="text-sm text-[#6b5d4f]">
             Une question sur ces conditions ?{' '}
-            <a href="mailto:Bomavibes241@gmail.com" className="font-semibold text-[#1F3D2B] underline-offset-4 hover:underline">
+            <a href="mailto:Bomavibes241@gmail.com" className="font-semibold text-violet-600 underline-offset-4 hover:underline">
               Bomavibes241@gmail.com
             </a>{' '}
             ou sur{' '}
@@ -106,13 +106,13 @@ function Terms() {
               href="https://wa.me/33744233809"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-semibold text-[#1F3D2B] underline-offset-4 hover:underline"
+              className="font-semibold text-violet-600 underline-offset-4 hover:underline"
             >
               WhatsApp
             </a>
             .
           </p>
-          <Link to="/" className="mt-4 inline-block text-sm font-semibold text-[#1F3D2B] underline-offset-4 hover:underline">
+          <Link to="/" className="mt-4 inline-block text-sm font-semibold text-violet-600 underline-offset-4 hover:underline">
             ← Retour à l'accueil
           </Link>
         </div>

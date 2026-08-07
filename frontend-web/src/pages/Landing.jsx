@@ -95,7 +95,7 @@ const FAQS = [
       <>
         Elles ne sont jamais vendues et restent sous votre contrôle : vous pouvez les consulter,
         les modifier ou tout supprimer à tout moment. Détails dans notre{' '}
-        <Link to="/confidentialite" className="font-semibold text-[#9c7220] underline-offset-2 hover:underline">
+        <Link to="/confidentialite" className="font-semibold text-pink-600 underline-offset-2 hover:underline">
           politique de confidentialité
         </Link>
         .
@@ -112,7 +112,7 @@ const FAQS = [
       <>
         Vous pouvez le signaler ou le bloquer en un clic depuis la conversation ou le profil.
         Retrouvez nos conseils sur la{' '}
-        <Link to="/securite" className="font-semibold text-[#9c7220] underline-offset-2 hover:underline">
+        <Link to="/securite" className="font-semibold text-pink-600 underline-offset-2 hover:underline">
           page Sécurité
         </Link>
         .
@@ -175,11 +175,11 @@ function Landing() {
                   animate={logoSettled ? LOGO_PULSE : LOGO_SETTLE}
                   transition={logoSettled ? LOGO_PULSE_TRANSITION : LOGO_SETTLE_TRANSITION}
                   onAnimationComplete={() => setLogoSettled(true)}
-                  className="mx-[0.02em] inline-block h-[0.95em] w-[0.95em] rounded-full object-cover align-middle shadow-md ring-2 ring-[#E8C468]/80"
+                  className="mx-[0.02em] inline-block h-[0.95em] w-[0.95em] rounded-full object-cover align-middle shadow-md ring-2 ring-pink-400/80"
                 />
                 <motion.span variants={LETTER}>M</motion.span>
                 <motion.span variants={LETTER}>A</motion.span>
-                <span className="inline-flex text-[#E8C468]">
+                <span className="inline-flex text-pink-400">
                   <motion.span variants={LETTER}>V</motion.span>
                   <motion.span variants={LETTER}>I</motion.span>
                   <motion.span variants={LETTER}>B</motion.span>
@@ -197,7 +197,7 @@ function Landing() {
             >
               <Link
                 to="/signup"
-                className="rounded-xl bg-[#C9962B] px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#dba838] hover:shadow-xl hover:shadow-black/30 active:translate-y-0"
+                className="rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-pink-400 hover:shadow-xl hover:shadow-black/30 active:translate-y-0"
               >
                 S'inscrire gratuitement
               </Link>
@@ -218,7 +218,7 @@ function Landing() {
               {FEATURES.map((f) => (
                 <div key={f.title} className="flex items-start gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm">
-                    <f.icon size={18} strokeWidth={2} className="text-[#E8C468]" />
+                    <f.icon size={18} strokeWidth={2} className="text-pink-400" />
                   </span>
                   <div>
                     <p className="text-sm font-semibold tracking-wide text-white">{f.title}</p>
@@ -237,11 +237,11 @@ function Landing() {
         <div className="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-10">
           {STEPS.map((s, i) => (
             <div key={s.title} className="relative text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
-                <s.icon size={34} strokeWidth={1.75} className="text-[#E8C468]" />
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-violet-600 shadow-md">
+                <s.icon size={34} strokeWidth={1.75} className="text-pink-400" />
               </div>
               <p className="mt-6 font-display text-xl font-bold text-[#2B1D14] sm:text-2xl">
-                <span className="text-[#C9962B]">{i + 1}.</span> {s.title}
+                <span className="text-pink-500">{i + 1}.</span> {s.title}
               </p>
               <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-[#6b5d4f]">{s.text}</p>
             </div>
@@ -286,16 +286,16 @@ function Landing() {
         </p>
         <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
           {FEATURE_DETAILS.map((f) => (
-            <div key={f.title} className="rounded-3xl border border-[#1F3D2B]/8 bg-white p-8 shadow-sm">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1F3D2B] shadow-md">
-                <f.icon size={26} strokeWidth={1.75} className="text-[#E8C468]" />
+            <div key={f.title} className="rounded-3xl border border-violet-600/8 bg-white p-8 shadow-sm">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 shadow-md">
+                <f.icon size={26} strokeWidth={1.75} className="text-pink-400" />
               </div>
               <h3 className="mt-6 font-display text-xl font-bold text-[#2B1D14]">{f.title}</h3>
               <p className="mt-3 text-base leading-relaxed text-[#6b5d4f]">{f.text}</p>
               {f.link && (
                 <Link
                   to={f.link.to}
-                  className="mt-4 inline-block text-sm font-semibold text-[#9c7220] underline-offset-2 hover:underline"
+                  className="mt-4 inline-block text-sm font-semibold text-pink-600 underline-offset-2 hover:underline"
                 >
                   {f.link.label} →
                 </Link>
@@ -319,7 +319,7 @@ function Landing() {
           {FAQS.map((f, i) => {
             const isOpen = openFaq === i
             return (
-              <div key={f.question} className="border-b border-[#1F3D2B]/10 py-5">
+              <div key={f.question} className="border-b border-violet-600/10 py-5">
                 <button
                   type="button"
                   onClick={() => setOpenFaq(isOpen ? null : i)}
@@ -329,7 +329,7 @@ function Landing() {
                   <span className="font-display text-lg font-bold text-[#2B1D14]">{f.question}</span>
                   <ChevronDown
                     size={20}
-                    className={`shrink-0 text-[#9c7220] transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                    className={`shrink-0 text-pink-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
                 <AnimatePresence initial={false}>
@@ -368,7 +368,7 @@ function Landing() {
               key={tier.name}
               to="/tarifs"
               className={`rounded-2xl border bg-white p-6 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                tier.highlight ? 'border-[#C9962B]' : 'border-[#1F3D2B]/8'
+                tier.highlight ? 'border-pink-500' : 'border-violet-600/8'
               }`}
             >
               <img src={tier.badge} alt="" className="mx-auto h-14 w-14 rounded-xl object-cover shadow" />
@@ -377,7 +377,7 @@ function Landing() {
               </p>
               <p className="mt-1 text-sm text-[#6b5d4f]">
                 à partir de <span className="font-semibold text-[#2B1D14]">{tier.prices[0].amount}</span>
-                <span className="text-[#9c8f7f]"> / {tier.prices[0].period.toLowerCase()}</span>
+                <span className="text-ink-soft/60"> / {tier.prices[0].period.toLowerCase()}</span>
               </p>
             </Link>
           ))}
@@ -386,7 +386,7 @@ function Landing() {
         <div className="mt-10 text-center">
           <Link
             to="/tarifs"
-            className="inline-block rounded-xl bg-[#1F3D2B] px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#2a5138]"
+            className="inline-block rounded-xl bg-violet-600 px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-violet-500"
           >
             Voir tous les tarifs
           </Link>
@@ -397,7 +397,7 @@ function Landing() {
       <FinalCtaSection />
 
       {/* Contact */}
-      <section id="contact" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-24 text-center sm:px-8">
+      <section id="contact" className="scroll-mt-20 bg-violet-600 px-4 py-24 text-center sm:px-8">
         <h2 className="font-display text-4xl font-bold text-white sm:text-5xl">Contactez-nous</h2>
         <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-white/75">
           Une question, une suggestion ? Écrivez-nous, nous vous répondons avec plaisir.
@@ -405,7 +405,7 @@ function Landing() {
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <a
             href="mailto:Bomavibes241@gmail.com"
-            className="inline-block rounded-xl bg-[#C9962B] px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
+            className="inline-block rounded-xl bg-pink-500 px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
           >
             Bomavibes241@gmail.com
           </a>

@@ -52,10 +52,10 @@ function FeaturesGridSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.45, delay: i * 0.05, ease: 'easeOut' }}
-            className="rounded-3xl border border-[#1F3D2B]/8 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+            className="rounded-3xl border border-violet-600/8 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#C9962B]/20 to-[#1F3D2B]/10">
-              <f.icon size={22} strokeWidth={1.75} className="text-[#1F3D2B]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-pink-500/20 to-violet-600/10">
+              <f.icon size={22} strokeWidth={1.75} className="text-violet-600" />
             </div>
             <h3 className="mt-5 font-display text-lg font-bold text-[#2B1D14]">{f.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-[#6b5d4f]">{f.text}</p>

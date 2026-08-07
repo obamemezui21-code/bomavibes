@@ -95,7 +95,7 @@ function LikesYou() {
               ))}
             </div>
 
-            <div className="mt-8 flex flex-col items-center gap-3 rounded-2xl border border-[#C9962B]/30 bg-[#C9962B]/8 p-6 text-center">
+            <div className="mt-8 flex flex-col items-center gap-3 rounded-2xl border border-pink-500/30 bg-pink-500/8 p-6 text-center">
               <p className="text-sm text-ink-soft/80">
                 Débloque leurs profils, matche instantanément et ne rate plus jamais un like avec
                 Premium.
@@ -103,7 +103,7 @@ function LikesYou() {
               <button
                 type="button"
                 onClick={() => navigate('/tarifs')}
-                className="rounded-xl bg-[#C9962B] px-6 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
+                className="rounded-xl bg-pink-500 px-6 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
               >
                 Débloquer avec Premium
               </button>

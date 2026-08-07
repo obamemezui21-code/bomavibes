@@ -13,12 +13,12 @@ function AuthLayout({ title, subtitle, children, footer }) {
           alt="Membres de la communauté BomaVibes"
           className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0e2a1e]/95 via-[#0e2a1e]/60 to-[#0e2a1e]/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-violet-950/95 via-violet-950/60 to-violet-950/30" />
 
         <img
           src={logo}
           alt="BomaVibes"
-          className="absolute left-6 top-6 h-12 w-12 rounded-full border-2 border-[#C9962B] object-cover object-top shadow-md md:left-8 md:top-8"
+          className="absolute left-6 top-6 h-12 w-12 rounded-full border-2 border-pink-500 object-cover object-top shadow-md md:left-8 md:top-8"
         />
 
         <motion.div
@@ -28,7 +28,7 @@ function AuthLayout({ title, subtitle, children, footer }) {
           className="relative z-10 flex flex-col items-center gap-3 text-center"
         >
           <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
-            Trouvez votre <span className="text-[#E8C468]">vibe</span>
+            Trouvez votre <span className="text-pink-400">vibe</span>
           </h1>
           <p className="max-w-xs text-sm leading-relaxed text-white/85">
             La communauté gabonaise pour des rencontres authentiques, vibrantes et sincères.

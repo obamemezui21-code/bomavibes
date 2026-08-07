@@ -28,13 +28,13 @@ function AvailabilitySection() {
               viewport={{ once: true, margin: '-20px' }}
               transition={{ duration: 0.35, delay: i * 0.03, ease: 'easeOut' }}
               className={`flex items-center gap-2.5 rounded-2xl border bg-white px-3.5 py-3 ${
-                isLive ? 'border-[#C9962B]' : 'border-[#1F3D2B]/8'
+                isLive ? 'border-pink-500' : 'border-violet-600/8'
               }`}
             >
               <span className="text-xl">{c.flag}</span>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-[#2B1D14]">{c.name}</p>
-                <p className={`text-[10px] font-semibold uppercase tracking-wide ${isLive ? 'text-[#C9962B]' : 'text-[#9c8f7f]'}`}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wide ${isLive ? 'text-pink-500' : 'text-ink-soft/60'}`}>
                   {isLive ? 'Disponible' : 'Bientôt'}
                 </p>
               </div>

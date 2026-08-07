@@ -10,9 +10,9 @@ function SupportTeaserSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-40px' }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="rounded-[2.5rem] border border-[#C9962B]/25 bg-gradient-to-br from-white to-[#C9962B]/5 p-10 text-center shadow-sm sm:p-14"
+        className="rounded-[2.5rem] border border-pink-500/25 bg-gradient-to-br from-white to-pink-500/5 p-10 text-center shadow-sm sm:p-14"
       >
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#C9962B] to-[#7A0F1E] text-white shadow-md">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-600 text-white shadow-md">
           <HeartHandshake size={26} strokeWidth={1.75} />
         </span>
         <h2 className="mt-5 font-display text-3xl font-bold text-[#2B1D14] sm:text-4xl">
@@ -25,7 +25,7 @@ function SupportTeaserSection() {
         </p>
         <Link
           to="/soutenir"
-          className="mt-7 inline-block rounded-xl bg-[#C9962B] px-8 py-3.5 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:-translate-y-0.5 hover:bg-[#dba838]"
+          className="mt-7 inline-block rounded-xl bg-pink-500 px-8 py-3.5 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:-translate-y-0.5 hover:bg-pink-400"
         >
           Soutenir BomaVibes
         </Link>

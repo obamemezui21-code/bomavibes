@@ -11,8 +11,8 @@ export const TIERS = [
     name: 'VIP',
     tagline: 'Pour découvrir Premium',
     highlight: false,
-    headerClass: 'bg-gradient-to-br from-[#C9962B]/25 to-[#C9962B]/5',
-    checkClass: 'bg-[#C9962B] text-white',
+    headerClass: 'bg-gradient-to-br from-pink-500/25 to-pink-500/5',
+    checkClass: 'bg-pink-500 text-white',
     prices: [
       { period: 'Hebdomadaire', amount: '1 000 FCFA', note: "prix d'entrée" },
       { period: 'Mensuel', amount: '3 500 FCFA', note: '≈ 12,5 % d\'économie vs 4 semaines' },
@@ -35,8 +35,8 @@ export const TIERS = [
     name: 'Diamant Rouge',
     tagline: 'Notre offre premium',
     highlight: true,
-    headerClass: 'bg-gradient-to-br from-[#7A0F1E]/20 to-[#7A0F1E]/5',
-    checkClass: 'bg-[#7A0F1E] text-white',
+    headerClass: 'bg-gradient-to-br from-coral-600/20 to-coral-600/5',
+    checkClass: 'bg-coral-600 text-white',
     prices: [
       { period: 'Mensuel', amount: '7 500 FCFA', note: null },
       { period: 'Annuel', amount: '75 000 FCFA', note: '≈ 2 mois offerts' },
@@ -55,8 +55,8 @@ export const TIERS = [
     name: 'Jadéite Impériale',
     tagline: "L'offre ultra-premium, pour l'exclusivité",
     highlight: false,
-    headerClass: 'bg-gradient-to-br from-[#1F3D2B]/20 to-[#1F3D2B]/5',
-    checkClass: 'bg-[#1F3D2B] text-white',
+    headerClass: 'bg-gradient-to-br from-violet-600/20 to-violet-600/5',
+    checkClass: 'bg-violet-600 text-white',
     prices: [{ period: 'Annuel', amount: '125 000 FCFA', note: 'engagement longue durée' }],
     intro: 'Tout Diamant Rouge, plus :',
     features: [
@@ -80,11 +80,11 @@ function PricingTiers() {
         <div
           key={tier.name}
           className={`relative overflow-hidden rounded-3xl border bg-white shadow-sm ${
-            tier.highlight ? 'border-[#C9962B] shadow-lg shadow-[#C9962B]/10 sm:-translate-y-3' : 'border-[#1F3D2B]/8'
+            tier.highlight ? 'border-pink-500 shadow-lg shadow-pink-500/10 sm:-translate-y-3' : 'border-violet-600/8'
           }`}
         >
           {tier.highlight && (
-            <span className="absolute right-5 top-5 z-10 rounded-full bg-[#C9962B] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#2B1D14]">
+            <span className="absolute right-5 top-5 z-10 rounded-full bg-pink-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-[#2B1D14]">
               Populaire
             </span>
           )}
@@ -105,14 +105,14 @@ function PricingTiers() {
                 <span className="text-sm font-medium text-[#6b5d4f]">{p.period}</span>
                 <div className="text-right">
                   <span className="font-display text-base font-bold text-[#2B1D14]">{p.amount}</span>
-                  {p.note && <p className="text-[11px] text-[#9c7220]">{p.note}</p>}
+                  {p.note && <p className="text-[11px] text-pink-600">{p.note}</p>}
                 </div>
               </div>
             ))}
           </div>
 
           {/* Features */}
-          <div className="border-t border-[#1F3D2B]/8 px-8 py-6">
+          <div className="border-t border-violet-600/8 px-8 py-6">
             {tier.intro && <p className="mb-4 text-sm font-semibold text-[#2B1D14]">{tier.intro}</p>}
             <ul className="space-y-3">
               {tier.features.map((f) => (
@@ -131,8 +131,8 @@ function PricingTiers() {
               to="/signup"
               className={`block rounded-xl py-3 text-center text-sm font-semibold transition ${
                 tier.highlight
-                  ? 'bg-[#C9962B] text-[#2B1D14] shadow-lg hover:bg-[#dba838]'
-                  : 'border border-[#1F3D2B]/20 text-[#1F3D2B] hover:bg-[#1F3D2B]/5'
+                  ? 'bg-pink-500 text-[#2B1D14] shadow-lg hover:bg-pink-400'
+                  : 'border border-violet-600/20 text-violet-600 hover:bg-violet-600/5'
               }`}
             >
               Choisir {tier.name}

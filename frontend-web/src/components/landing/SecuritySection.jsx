@@ -37,7 +37,7 @@ const PILLARS = [
 
 function SecuritySection() {
   return (
-    <section id="securite" className="scroll-mt-20 bg-[#1F3D2B] px-4 py-24 sm:px-10">
+    <section id="securite" className="scroll-mt-20 bg-violet-600 px-4 py-24 sm:px-10">
       <div className="mx-auto max-w-7xl">
         <div className="text-center">
           <h2 className="font-display text-4xl font-bold text-white sm:text-5xl">Votre sécurité est notre priorité</h2>
@@ -57,8 +57,8 @@ function SecuritySection() {
               transition={{ duration: 0.45, delay: i * 0.05, ease: 'easeOut' }}
               className="rounded-3xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C9962B]/15">
-                <p.icon size={22} strokeWidth={1.75} className="text-[#E8C468]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pink-500/15">
+                <p.icon size={22} strokeWidth={1.75} className="text-pink-400" />
               </div>
               <h3 className="mt-5 font-display text-lg font-bold text-white">{p.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-white/70">{p.text}</p>
@@ -69,7 +69,7 @@ function SecuritySection() {
         <div className="mt-12 text-center">
           <Link
             to="/securite"
-            className="inline-block rounded-xl bg-[#C9962B] px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-[#dba838]"
+            className="inline-block rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
           >
             En savoir plus sur la sécurité
           </Link>

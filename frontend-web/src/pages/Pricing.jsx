@@ -9,7 +9,7 @@ function Pricing() {
 
       <div className="mx-auto max-w-6xl px-4 pb-24 pt-32 sm:px-10 sm:pt-40">
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#9c7220]">Nos tarifs</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">Nos tarifs</p>
           <h1 className="mt-2 font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">
             Passez au niveau supérieur
           </h1>
@@ -29,7 +29,7 @@ function Pricing() {
           </p>
           <Link
             to="/signup"
-            className="mt-4 inline-block rounded-xl bg-[#1F3D2B] px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#2a5138]"
+            className="mt-4 inline-block rounded-xl bg-violet-600 px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-violet-500"
           >
             S'inscrire gratuitement
           </Link>

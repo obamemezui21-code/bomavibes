@@ -11,12 +11,12 @@ function formatPublishedAt(value) {
 
 function NewsCardSkeleton() {
   return (
-    <div className="animate-pulse overflow-hidden rounded-3xl border border-[#1F3D2B]/8 bg-white">
-      <div className="h-44 bg-[#1F3D2B]/8" />
+    <div className="animate-pulse overflow-hidden rounded-3xl border border-violet-600/8 bg-white">
+      <div className="h-44 bg-violet-600/8" />
       <div className="space-y-3 p-6">
-        <div className="h-4 w-3/4 rounded bg-[#1F3D2B]/10" />
-        <div className="h-3 w-full rounded bg-[#1F3D2B]/8" />
-        <div className="h-3 w-2/3 rounded bg-[#1F3D2B]/8" />
+        <div className="h-4 w-3/4 rounded bg-violet-600/10" />
+        <div className="h-3 w-full rounded bg-violet-600/8" />
+        <div className="h-3 w-2/3 rounded bg-violet-600/8" />
       </div>
     </div>
   )
@@ -47,7 +47,7 @@ function WwfNewsSection() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-24 sm:px-10">
       <div className="text-center">
-        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#9c7220]">
+        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-pink-600">
           <Leaf size={14} strokeWidth={2.5} />
           En partenariat avec WWF Gabon
         </p>
@@ -69,10 +69,10 @@ function WwfNewsSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
                   transition={{ duration: 0.45, delay: i * 0.06, ease: 'easeOut' }}
-                  className="flex flex-col overflow-hidden rounded-3xl border border-[#1F3D2B]/8 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                  className="flex flex-col overflow-hidden rounded-3xl border border-violet-600/8 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
                   {article.image && (
-                    <div className="h-44 overflow-hidden bg-[#1F3D2B]/5">
+                    <div className="h-44 overflow-hidden bg-violet-600/5">
                       <img
                         src={article.image}
                         alt=""
@@ -83,7 +83,7 @@ function WwfNewsSection() {
                   )}
                   <div className="flex flex-1 flex-col p-6">
                     {publishedLabel && (
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[#9c7220]">{publishedLabel}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">{publishedLabel}</p>
                     )}
                     <h3 className="mt-2 font-display text-lg font-bold leading-snug text-[#2B1D14]">
                       {article.title}
@@ -95,7 +95,7 @@ function WwfNewsSection() {
                       href={article.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1F3D2B] underline-offset-4 hover:underline"
+                      className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-violet-600 underline-offset-4 hover:underline"
                     >
                       Lire l'article
                       <ArrowUpRight size={15} strokeWidth={2.5} />

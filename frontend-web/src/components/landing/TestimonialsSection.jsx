@@ -45,15 +45,15 @@ function TestimonialsSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-30px' }}
             transition={{ duration: 0.45, delay: i * 0.08, ease: 'easeOut' }}
-            className="rounded-3xl border border-[#1F3D2B]/8 bg-white p-7 shadow-sm"
+            className="rounded-3xl border border-violet-600/8 bg-white p-7 shadow-sm"
           >
-            <Quote size={24} strokeWidth={2} className="text-[#C9962B]/40" />
+            <Quote size={24} strokeWidth={2} className="text-pink-500/40" />
             <p className="mt-3 text-sm leading-relaxed text-[#2B1D14]">{t.quote}</p>
             <div className="mt-5 flex items-center gap-3">
               <img src={t.photo} alt="" className="h-10 w-10 rounded-full object-cover" />
               <div>
                 <p className="text-sm font-semibold text-[#2B1D14]">{t.name}</p>
-                <p className="text-xs text-[#9c8f7f]">{t.detail}</p>
+                <p className="text-xs text-ink-soft/60">{t.detail}</p>
               </div>
             </div>
           </motion.div>
