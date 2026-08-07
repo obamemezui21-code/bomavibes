@@ -179,6 +179,7 @@ function Chat() {
     editMessage,
     deleteMessage,
     openConversation,
+    closeConversation,
     setTyping,
     refreshBlockedIds,
   } = useConversations()
@@ -271,11 +272,23 @@ function Chat() {
 
   useEffect(() => {
     if (conversationId) openConversation(conversationId)
-  }, [conversationId, openConversation])
+    // openConversation is a fresh reference on every ConversationsProvider
+    // re-render (heartbeat tick, any match update...) — depending on it here
+    // would re-fire the Firestore write on every one of those, not just on
+    // an actual conversation switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId])
 
   useEffect(() => {
     return () => clearTimeout(typingTimeoutRef.current)
   }, [activeId])
+
+  useEffect(() => {
+    // Stop listening to this conversation's messages once the Chat page is
+    // actually left (not on every re-render — see closeConversation).
+    return () => closeConversation()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     autoResizeTextarea(textareaRef.current)

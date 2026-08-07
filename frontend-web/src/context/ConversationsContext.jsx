@@ -251,6 +251,14 @@ export function ConversationsProvider({ children }) {
     await updateDoc(doc(db, 'matches', id), updates).catch(() => {})
   }
 
+  // openMatchId lives here (above the router), so it survives route changes —
+  // without this, the messages listener for the last-viewed conversation
+  // would keep reading every new message in it even after leaving the Chat
+  // page entirely. Call this on Chat page unmount.
+  function closeConversation() {
+    setOpenMatchId(null)
+  }
+
   async function markMatchesSeen() {
     await Promise.all(
       matches
@@ -336,6 +344,7 @@ export function ConversationsProvider({ children }) {
         unreadMessagesCount,
         newMatchesCount,
         openConversation,
+        closeConversation,
         markMatchesSeen,
         sendMessage,
         sendVoiceMessage,

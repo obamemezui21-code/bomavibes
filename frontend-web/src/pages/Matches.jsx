@@ -18,7 +18,11 @@ function Matches() {
   useEffect(() => {
     const timer = setTimeout(markMatchesSeen, 1200)
     return () => clearTimeout(timer)
-  }, [markMatchesSeen])
+    // markMatchesSeen is a fresh reference on every ConversationsProvider
+    // re-render — depending on it here would keep resetting this timer
+    // during active real-time updates instead of firing once per page visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!user?.id) return
