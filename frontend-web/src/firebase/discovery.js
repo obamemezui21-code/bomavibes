@@ -7,6 +7,11 @@ const BATCH_SIZE = 30
 const MAX_PAGES = 3
 const MIN_CANDIDATES = 10
 
+// The official BomaVibes account used to deliver announcements straight to
+// everyone's inbox (see backend/scripts/announceFeature.js) — never a
+// swipeable candidate.
+const SYSTEM_ACCOUNT_ID = 'bomavibes-team'
+
 const MINUTE_MS = 60 * 1000
 const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
@@ -92,7 +97,7 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
 
     for (const docSnap of snap.docs) {
       const id = docSnap.id
-      if (id === uid || blockedIds.has(id)) continue
+      if (id === uid || id === SYSTEM_ACCOUNT_ID || blockedIds.has(id)) continue
       const data = docSnap.data()
       if (filters.minAge != null && data.age != null && data.age < filters.minAge) continue
       if (filters.maxAge != null && data.age != null && data.age > filters.maxAge) continue
