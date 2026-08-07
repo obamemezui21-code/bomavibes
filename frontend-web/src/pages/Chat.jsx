@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -24,6 +24,7 @@ import {
   Send,
   ShieldOff,
   Smile,
+  Sparkles,
   Trash2,
   TriangleAlert,
   X,
@@ -38,6 +39,7 @@ import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachment
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
+import { getIcebreakers } from '../lib/icebreakers.js'
 import ReportModal from '../components/ReportModal.jsx'
 import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 
@@ -243,7 +245,7 @@ function Chat() {
     setTyping,
     refreshBlockedIds,
   } = useConversations()
-  const { user } = useAuth()
+  const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
   const { theme } = useTheme()
   const [draft, setDraft] = useState('')
@@ -283,6 +285,16 @@ function Chat() {
 
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
+
+  const icebreakers = useMemo(() => {
+    if (!active) return []
+    return getIcebreakers({
+      matchId: active.id,
+      myInterests: publicProfile?.interests || [],
+      theirInterests: active.profile.interests || [],
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.id, active?.profile?.interests, publicProfile?.interests])
 
   const prevActiveIdRef = useRef(null)
 
@@ -359,6 +371,11 @@ function Chat() {
 
   function handleEmojiClick(emojiData) {
     handleDraftChange(draft + emojiData.emoji)
+  }
+
+  function handleIcebreakerClick(text) {
+    setDraft(text)
+    textareaRef.current?.focus()
   }
 
   function handleDraftChange(value) {
@@ -964,6 +981,32 @@ function Chat() {
               )}
             </AnimatePresence>
             </div>
+
+            {active.messages.length === 0 && icebreakers.length > 0 && !editingMessageId && !isRecording && (
+              <div className="shrink-0 border-t border-ink/8 px-4 pb-1 pt-3">
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-ink-soft/60">
+                  <Sparkles size={13} strokeWidth={2.25} className="text-violet-500" />
+                  Pour briser la glace
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {icebreakers.map((suggestion, i) => (
+                    <motion.button
+                      key={suggestion.text}
+                      type="button"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05, duration: 0.25 }}
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => handleIcebreakerClick(suggestion.text)}
+                      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-violet-400/30 bg-gradient-to-r from-violet-500/10 to-pink-500/10 px-3.5 py-2 text-xs font-medium text-ink transition hover:border-violet-400/60 hover:from-violet-500/15 hover:to-pink-500/15"
+                    >
+                      <span>{suggestion.icon}</span>
+                      {suggestion.text}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {replyTarget && !editingMessageId && (
               <div className="flex shrink-0 items-center justify-between gap-2 border-t border-ink/8 bg-ink/[0.03] px-4 py-2">
