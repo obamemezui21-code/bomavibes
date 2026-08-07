@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Copy,
   Flag,
   Hand,
   Mic,
@@ -16,6 +17,7 @@ import {
   Pause,
   Pencil,
   Play,
+  Reply,
   Send,
   ShieldOff,
   Smile,
@@ -36,6 +38,15 @@ import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 
 const TYPING_STOP_DELAY_MS = 2500
 const MAX_RECORDING_SECONDS = 120
+const LONG_PRESS_MS = 450
+const LONG_PRESS_MOVE_TOLERANCE = 10
+const TEXTAREA_MAX_HEIGHT = 120
+
+function autoResizeTextarea(el) {
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT)}px`
+}
 
 function formatDuration(totalSeconds) {
   const s = Math.max(0, Math.round(totalSeconds || 0))
@@ -177,7 +188,8 @@ function Chat() {
   const [draft, setDraft] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
-  const [openMenuId, setOpenMenuId] = useState(null)
+  const [selectedMessage, setSelectedMessage] = useState(null)
+  const [replyTarget, setReplyTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false)
@@ -201,6 +213,9 @@ function Chat() {
   const streamRef = useRef(null)
   const recordingTimerRef = useRef(null)
   const recordingSecondsRef = useRef(0)
+  const textareaRef = useRef(null)
+  const longPressTimerRef = useRef(null)
+  const pointerStartRef = useRef({ x: 0, y: 0 })
 
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
@@ -229,6 +244,8 @@ function Chat() {
     if (isConversationSwitch) {
       isNearBottomRef.current = true
       setShowNewMessagesPill(false)
+      setSelectedMessage(null)
+      setReplyTarget(null)
       const frame = requestAnimationFrame(() => scrollToBottom('auto'))
       return () => cancelAnimationFrame(frame)
     }
@@ -260,6 +277,10 @@ function Chat() {
     return () => clearTimeout(typingTimeoutRef.current)
   }, [activeId])
 
+  useEffect(() => {
+    autoResizeTextarea(textareaRef.current)
+  }, [draft])
+
   function handleEmojiClick(emojiData) {
     handleDraftChange(draft + emojiData.emoji)
   }
@@ -290,9 +311,66 @@ function Chat() {
       editMessage(active.id, editingMessageId, text)
       setEditingMessageId(null)
     } else {
-      sendMessage(active.id, text)
+      sendMessage(active.id, text, replyTarget)
+      setReplyTarget(null)
     }
     setDraft('')
+  }
+
+  function handleTextareaKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend(e)
+    }
+  }
+
+  function clearLongPressTimer() {
+    clearTimeout(longPressTimerRef.current)
+    longPressTimerRef.current = null
+  }
+
+  function handleMessagePointerDown(m) {
+    return (e) => {
+      if (e.pointerType === 'mouse') return
+      pointerStartRef.current = { x: e.clientX, y: e.clientY }
+      clearLongPressTimer()
+      longPressTimerRef.current = setTimeout(() => {
+        longPressTimerRef.current = null
+        setSelectedMessage(m)
+        if (navigator.vibrate) navigator.vibrate(15)
+      }, LONG_PRESS_MS)
+    }
+  }
+
+  function handleMessagePointerMove(e) {
+    if (!longPressTimerRef.current) return
+    const dx = Math.abs(e.clientX - pointerStartRef.current.x)
+    const dy = Math.abs(e.clientY - pointerStartRef.current.y)
+    if (dx > LONG_PRESS_MOVE_TOLERANCE || dy > LONG_PRESS_MOVE_TOLERANCE) clearLongPressTimer()
+  }
+
+  function handleMessageContextMenu(m) {
+    return (e) => {
+      e.preventDefault()
+      setSelectedMessage(m)
+    }
+  }
+
+  function handleReply(m) {
+    setSelectedMessage(null)
+    if (editingMessageId) cancelEdit()
+    setReplyTarget(m)
+    requestAnimationFrame(() => textareaRef.current?.focus())
+  }
+
+  async function handleCopy(m) {
+    setSelectedMessage(null)
+    try {
+      await navigator.clipboard.writeText(m.text || '')
+      showToast('Message copié.', 'success')
+    } catch {
+      showToast('Impossible de copier le message.', 'error')
+    }
   }
 
   function stopRecordingTimer() {
@@ -372,7 +450,8 @@ function Chat() {
   function startEdit(m) {
     setEditingMessageId(m.id)
     setDraft(m.text)
-    setOpenMenuId(null)
+    setSelectedMessage(null)
+    setReplyTarget(null)
   }
 
   function cancelEdit() {
@@ -381,7 +460,7 @@ function Chat() {
   }
 
   function handleDelete(m) {
-    setOpenMenuId(null)
+    setSelectedMessage(null)
     setDeleteTarget(m)
   }
 
@@ -525,73 +604,131 @@ function Chat() {
       <div className={`flex-1 flex-col md:flex ${conversationId ? 'flex' : 'hidden'}`}>
         {active && (
           <>
-            <div className="flex items-center gap-3 border-b border-ink/8 px-4 py-3">
-              <button
-                type="button"
-                onClick={() => navigate('/chat')}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5 md:hidden"
-                aria-label="Retour"
-              >
-                <ArrowLeft size={18} strokeWidth={2} />
-              </button>
-              <img
-                src={active.profile.photo}
-                onError={fallbackToFullPhoto(active.profile.photoFull)}
-                alt={active.profile.firstName}
-                className="h-9 w-9 rounded-full object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink">{active.profile.firstName}</p>
-                <p className="text-xs text-ink-soft/50">
-                  {active.online ? '🟢 En ligne' : active.lastSeenLabel || active.profile.city}
-                </p>
-              </div>
-
-              <div className="relative">
+            {selectedMessage ? (
+              <div className="flex shrink-0 items-center gap-1 border-b border-ink/8 bg-violet-500/8 px-2 py-2">
                 <button
                   type="button"
-                  onClick={() => setShowHeaderMenu((v) => !v)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
-                  aria-label="Options de la conversation"
+                  onClick={() => setSelectedMessage(null)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                  aria-label="Annuler la sélection"
                 >
-                  <MoreVertical size={16} strokeWidth={2.25} />
+                  <X size={18} strokeWidth={2.25} />
                 </button>
-                <AnimatePresence>
-                  {showHeaderMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-9 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
+                <p className="flex-1 truncate px-1 text-sm font-medium text-ink">Message sélectionné</p>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleReply(selectedMessage)}
+                    title="Répondre"
+                    aria-label="Répondre"
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                  >
+                    <Reply size={18} strokeWidth={2.25} />
+                  </button>
+                  {selectedMessage.type !== 'voice' && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(selectedMessage)}
+                      title="Copier"
+                      aria-label="Copier le texte"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
                     >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowHeaderMenu(false)
-                          setShowReport(true)
-                        }}
-                        className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
-                      >
-                        <Flag size={14} strokeWidth={2.25} />
-                        Signaler
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowHeaderMenu(false)
-                          setShowBlock(true)
-                        }}
-                        className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
-                      >
-                        <ShieldOff size={14} strokeWidth={2.25} />
-                        Bloquer
-                      </button>
-                    </motion.div>
+                      <Copy size={17} strokeWidth={2.25} />
+                    </button>
                   )}
-                </AnimatePresence>
+                  {selectedMessage.fromMe && selectedMessage.type !== 'voice' && (
+                    <button
+                      type="button"
+                      onClick={() => startEdit(selectedMessage)}
+                      title="Modifier"
+                      aria-label="Modifier"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                    >
+                      <Pencil size={17} strokeWidth={2.25} />
+                    </button>
+                  )}
+                  {selectedMessage.fromMe && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(selectedMessage)}
+                      title="Supprimer"
+                      aria-label="Supprimer"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-coral-500 transition hover:bg-coral-500/10"
+                    >
+                      <Trash2 size={17} strokeWidth={2.25} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex shrink-0 items-center gap-3 border-b border-ink/8 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={() => navigate('/chat')}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5 md:hidden"
+                  aria-label="Retour"
+                >
+                  <ArrowLeft size={18} strokeWidth={2} />
+                </button>
+                <img
+                  src={active.profile.photo}
+                  onError={fallbackToFullPhoto(active.profile.photoFull)}
+                  alt={active.profile.firstName}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink">{active.profile.firstName}</p>
+                  <p className="text-xs text-ink-soft/50">
+                    {active.online ? '🟢 En ligne' : active.lastSeenLabel || active.profile.city}
+                  </p>
+                </div>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowHeaderMenu((v) => !v)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
+                    aria-label="Options de la conversation"
+                  >
+                    <MoreVertical size={16} strokeWidth={2.25} />
+                  </button>
+                  <AnimatePresence>
+                    {showHeaderMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-9 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowHeaderMenu(false)
+                            setShowReport(true)
+                          }}
+                          className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                        >
+                          <Flag size={14} strokeWidth={2.25} />
+                          Signaler
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowHeaderMenu(false)
+                            setShowBlock(true)
+                          }}
+                          className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
+                        >
+                          <ShieldOff size={14} strokeWidth={2.25} />
+                          Bloquer
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
 
             <div className="relative flex-1 overflow-hidden">
             <div ref={scrollRef} onScroll={handleThreadScroll} className="h-full space-y-2 overflow-y-auto px-4 py-4">
@@ -622,57 +759,36 @@ function Chat() {
                         transition={{ duration: 0.25 }}
                         className={`flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
                       >
-                        {m.fromMe && (
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={() => setOpenMenuId(openMenuId === m.id ? null : m.id)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full text-ink-soft/50 transition hover:bg-ink/5 hover:text-ink-soft active:bg-ink/10"
-                              aria-label="Options du message"
-                            >
-                              <MoreVertical size={14} strokeWidth={2.25} />
-                            </button>
-                            <AnimatePresence>
-                              {openMenuId === m.id && (
-                                <motion.div
-                                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                                  transition={{ duration: 0.15 }}
-                                  className="absolute right-0 top-8 z-10 flex items-center gap-1 rounded-full bg-white p-1.5 shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
-                                >
-                                  {m.type !== 'voice' && (
-                                    <button
-                                      type="button"
-                                      onClick={() => startEdit(m)}
-                                      aria-label="Modifier"
-                                      title="Modifier"
-                                      className="flex h-8 w-8 items-center justify-center rounded-full text-ink transition hover:bg-ink/5"
-                                    >
-                                      <Pencil size={15} strokeWidth={2.25} />
-                                    </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDelete(m)}
-                                    aria-label="Supprimer"
-                                    title="Supprimer"
-                                    className="flex h-8 w-8 items-center justify-center rounded-full text-coral-500 transition hover:bg-coral-500/5"
-                                  >
-                                    <Trash2 size={15} strokeWidth={2.25} />
-                                  </button>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        )}
                         <div
-                          className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
+                          onPointerDown={handleMessagePointerDown(m)}
+                          onPointerMove={handleMessagePointerMove}
+                          onPointerUp={clearLongPressTimer}
+                          onPointerLeave={clearLongPressTimer}
+                          onPointerCancel={clearLongPressTimer}
+                          onContextMenu={handleMessageContextMenu(m)}
+                          style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
+                          className={`max-w-[75%] cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
+                            selectedMessage?.id === m.id ? 'ring-2 ring-violet-400' : ''
+                          } ${
                             m.fromMe
                               ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
                               : 'rounded-bl-sm bg-ink/6 text-ink'
                           }`}
                         >
+                          {m.replyTo && (
+                            <div
+                              className={`mb-1 rounded-lg border-l-2 px-2 py-1 text-xs ${
+                                m.fromMe ? 'border-white/60 bg-black/10' : 'border-violet-400 bg-ink/5'
+                              }`}
+                            >
+                              <p className={`font-semibold ${m.fromMe ? 'text-white/90' : 'text-violet-600'}`}>
+                                {m.replyTo.senderId === user.id ? 'Vous' : active.profile.firstName}
+                              </p>
+                              <p className={`truncate ${m.fromMe ? 'text-white/70' : 'text-ink-soft/60'}`}>
+                                {m.replyTo.text}
+                              </p>
+                            </div>
+                          )}
                           {m.type === 'voice' ? (
                             <VoiceMessage url={m.audioUrl} duration={m.duration} fromMe={m.fromMe} />
                           ) : (
@@ -737,8 +853,28 @@ function Chat() {
             </AnimatePresence>
             </div>
 
+            {replyTarget && !editingMessageId && (
+              <div className="flex shrink-0 items-center justify-between gap-2 border-t border-ink/8 bg-ink/[0.03] px-4 py-2">
+                <div className="min-w-0 flex-1 border-l-2 border-violet-400 pl-2.5">
+                  <p className="text-xs font-semibold text-violet-600">
+                    {replyTarget.fromMe ? 'Vous' : active.profile.firstName}
+                  </p>
+                  <p className="truncate text-xs text-ink-soft/60">
+                    {replyTarget.type === 'voice' ? '🎤 Message vocal' : replyTarget.text}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReplyTarget(null)}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-soft/60 hover:bg-ink/10"
+                  aria-label="Annuler la réponse"
+                >
+                  <X size={14} strokeWidth={2.25} />
+                </button>
+              </div>
+            )}
             {editingMessageId && (
-              <div className="flex items-center justify-between border-t border-ink/8 bg-violet-500/5 px-4 py-2">
+              <div className="flex shrink-0 items-center justify-between border-t border-ink/8 bg-violet-500/5 px-4 py-2">
                 <span className="text-xs font-medium text-violet-600">Modification du message</span>
                 <button
                   type="button"
@@ -751,7 +887,7 @@ function Chat() {
               </div>
             )}
             {isRecording ? (
-              <div className={`flex items-center gap-3 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}>
+              <div className={`flex shrink-0 items-center gap-3 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}>
                 <button
                   type="button"
                   onClick={() => stopRecording(false)}
@@ -782,9 +918,9 @@ function Chat() {
             ) : (
               <form
                 onSubmit={handleSend}
-                className={`flex items-center gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
+                className={`flex shrink-0 items-end gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
               >
-                <div className="relative">
+                <div className="relative shrink-0">
                   <button
                     type="button"
                     onClick={() => setShowEmojiPicker((v) => !v)}
@@ -819,13 +955,15 @@ function Chat() {
                     )}
                   </AnimatePresence>
                 </div>
-                <input
-                  type="text"
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
                   value={draft}
                   onChange={(e) => handleDraftChange(e.target.value)}
+                  onKeyDown={handleTextareaKeyDown}
                   placeholder="Écrivez un message…"
                   disabled={isSendingVoice}
-                  className="flex-1 rounded-full border border-ink/12 bg-ink/[0.03] px-4 py-2.5 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
+                  className="max-h-[120px] flex-1 resize-none overflow-y-auto rounded-2xl border border-ink/12 bg-ink/[0.03] px-4 py-2.5 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
                 />
                 {draft.trim() ? (
                   <motion.button

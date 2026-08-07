@@ -159,6 +159,7 @@ export function ConversationsProvider({ children }) {
           const date = data.createdAt?.toDate?.() ?? new Date()
           return {
             id: d.id,
+            senderId: data.senderId,
             fromMe: data.senderId === uid,
             text: data.text,
             type: data.type || 'text',
@@ -168,6 +169,7 @@ export function ConversationsProvider({ children }) {
             date,
             edited: !!data.editedAt,
             pending: d.metadata.hasPendingWrites,
+            replyTo: data.replyTo || null,
           }
         }),
       }))
@@ -247,11 +249,20 @@ export function ConversationsProvider({ children }) {
     )
   }
 
-  async function sendMessage(matchId, text) {
+  async function sendMessage(matchId, text, replyTo) {
     await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
       text,
       createdAt: serverTimestamp(),
+      ...(replyTo
+        ? {
+            replyTo: {
+              messageId: replyTo.id,
+              text: replyTo.type === 'voice' ? '🎤 Message vocal' : replyTo.text,
+              senderId: replyTo.senderId,
+            },
+          }
+        : {}),
     })
     const match = matches.find((m) => m.id === matchId)
     const otherUid = match?.users.find((u) => u !== uid)
