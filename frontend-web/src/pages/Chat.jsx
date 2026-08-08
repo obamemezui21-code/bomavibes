@@ -322,7 +322,7 @@ function Chat() {
       category: suggestionCategory,
       excludeTexts,
       seed: suggestionRound,
-      max: 4,
+      max: 2,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id, myInterests, theirInterests, suggestionCategory, suggestionRound, sentTexts, suggestionHistoryVersion])
