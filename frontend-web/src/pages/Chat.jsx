@@ -1010,8 +1010,8 @@ function Chat() {
                   className="h-9 w-9 rounded-full object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink">{active.profile.firstName}</p>
-                  <p className="text-xs text-ink-soft/50">
+                  <p className="truncate text-sm font-semibold text-ink">{active.profile.firstName}</p>
+                  <p className="truncate text-xs text-ink-soft/50">
                     {active.online ? '🟢 En ligne' : active.lastSeenLabel || active.profile.city}
                   </p>
                 </div>
