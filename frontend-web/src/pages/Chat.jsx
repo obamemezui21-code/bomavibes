@@ -912,8 +912,7 @@ function Chat() {
                   >
                     <X size={18} strokeWidth={2.25} />
                   </button>
-                  <p className="flex-1 truncate px-1 text-sm font-medium text-ink">Message sélectionné</p>
-                  <div className="flex shrink-0 items-center gap-0.5 overflow-x-auto">
+                  <div className="flex flex-1 items-center justify-end gap-0.5 overflow-x-auto">
                     <button
                       type="button"
                       onClick={() => handleReply(selectedMessage)}
