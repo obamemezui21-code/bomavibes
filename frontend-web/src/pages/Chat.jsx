@@ -1208,102 +1208,119 @@ function Chat() {
                   onChange={handleAttachmentSelect}
                   className="hidden"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isSendingAttachment || isSendingVoice || !!editingMessageId}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Joindre un fichier"
-                >
-                  {isSendingAttachment ? (
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink-soft/30 border-t-ink-soft" />
-                  ) : (
-                    <Paperclip size={20} strokeWidth={2} />
-                  )}
-                </button>
-                <div className="relative shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowEmojiPicker((v) => !v)}
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition ${
-                      showEmojiPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/5'
-                    }`}
-                    aria-label="Choisir un emoji"
-                  >
-                    <Smile size={20} strokeWidth={2} />
-                  </button>
-                  <AnimatePresence>
-                    {showEmojiPicker && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowEmojiPicker(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2"
-                        >
-                          <EmojiPicker
-                            onEmojiClick={handleEmojiClick}
-                            theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
-                            searchDisabled={false}
-                            skinTonesDisabled
-                            width={320}
-                            height={380}
-                          />
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <div className="relative shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowStickerPicker((v) => !v)}
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition ${
-                      showStickerPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/5'
-                    }`}
-                    aria-label="Choisir un sticker"
-                  >
-                    <Sticker size={20} strokeWidth={2} />
-                  </button>
-                  <AnimatePresence>
-                    {showStickerPicker && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowStickerPicker(false)} />
-                        <motion.div
-                          initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute bottom-full left-1/2 z-20 mb-2 grid w-[min(18rem,calc(100vw_-_2rem))] -translate-x-1/2 grid-cols-4 gap-1.5 rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
-                          style={{ maxHeight: 320, overflowY: 'auto' }}
-                        >
-                          {STICKERS.map((s) => (
-                            <button
-                              key={s.id}
-                              type="button"
-                              onClick={() => handleStickerClick(s.id)}
-                              className="flex items-center justify-center rounded-xl p-1 transition hover:bg-ink/5"
+                {/* WhatsApp-style pill: emoji/attach/sticker sit inside the
+                    input itself instead of as separate round buttons beside
+                    it. The textarea provides the pill's own border/background;
+                    the icon buttons are absolutely positioned on top of it. */}
+                <div className="relative flex-1">
+                  <textarea
+                    ref={textareaRef}
+                    rows={1}
+                    value={draft}
+                    onChange={(e) => handleDraftChange(e.target.value)}
+                    onKeyDown={handleTextareaKeyDown}
+                    placeholder="Écrivez un message…"
+                    disabled={isSendingVoice}
+                    className="max-h-[140px] min-h-[48px] w-full resize-none overflow-y-auto rounded-2xl border border-ink/12 bg-ink/[0.03] py-3.5 pl-11 pr-20 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
+                  />
+
+                  <div className="absolute bottom-1.5 left-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPicker((v) => !v)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                        showEmojiPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/10'
+                      }`}
+                      aria-label="Choisir un emoji"
+                    >
+                      <Smile size={19} strokeWidth={2} />
+                    </button>
+                    <AnimatePresence>
+                      {showEmojiPicker && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowEmojiPicker(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute bottom-full left-0 z-20 mb-2"
+                          >
+                            <EmojiPicker
+                              onEmojiClick={handleEmojiClick}
+                              theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
+                              searchDisabled={false}
+                              skinTonesDisabled
+                              width={320}
+                              height={380}
+                            />
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="absolute bottom-1.5 right-1.5 flex items-center gap-0.5">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+                      onChange={handleAttachmentSelect}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isSendingAttachment || isSendingVoice || !!editingMessageId}
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/10 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label="Joindre un fichier"
+                    >
+                      {isSendingAttachment ? (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink-soft/30 border-t-ink-soft" />
+                      ) : (
+                        <Paperclip size={18} strokeWidth={2} />
+                      )}
+                    </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowStickerPicker((v) => !v)}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                          showStickerPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/10'
+                        }`}
+                        aria-label="Choisir un sticker"
+                      >
+                        <Sticker size={18} strokeWidth={2} />
+                      </button>
+                      <AnimatePresence>
+                        {showStickerPicker && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setShowStickerPicker(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute bottom-full right-0 z-20 mb-2 grid w-[min(18rem,calc(100vw_-_2rem))] grid-cols-4 gap-1.5 rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
+                              style={{ maxHeight: 320, overflowY: 'auto' }}
                             >
-                              <img src={s.src} alt="" className="h-14 w-14 object-contain" />
-                            </button>
-                          ))}
-                        </motion.div>
-                      </>
-                    )}
-                  </AnimatePresence>
+                              {STICKERS.map((s) => (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() => handleStickerClick(s.id)}
+                                  className="flex items-center justify-center rounded-xl p-1 transition hover:bg-ink/5"
+                                >
+                                  <img src={s.src} alt="" className="h-14 w-14 object-contain" />
+                                </button>
+                              ))}
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                 </div>
-                <textarea
-                  ref={textareaRef}
-                  rows={1}
-                  value={draft}
-                  onChange={(e) => handleDraftChange(e.target.value)}
-                  onKeyDown={handleTextareaKeyDown}
-                  placeholder="Écrivez un message…"
-                  disabled={isSendingVoice}
-                  className="max-h-[140px] min-h-[48px] flex-1 resize-none overflow-y-auto rounded-2xl border border-ink/12 bg-ink/[0.03] px-4 py-3.5 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
-                />
                 {draft.trim() ? (
                   <motion.button
                     type="submit"
