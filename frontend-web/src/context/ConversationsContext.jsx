@@ -3,6 +3,7 @@ import {
   addDoc,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   onSnapshot,
   orderBy,
@@ -180,6 +181,7 @@ export function ConversationsProvider({ children }) {
             fileName: data.fileName || null,
             fileSize: data.fileSize || 0,
             stickerId: data.stickerId || null,
+            reactions: data.reactions || null,
             time: formatTime(date),
             date,
             edited: !!data.editedAt,
@@ -380,6 +382,16 @@ export function ConversationsProvider({ children }) {
     await deleteDoc(doc(db, 'matches', matchId, 'messages', messageId))
   }
 
+  // One reaction per user per message — tapping the same emoji again clears
+  // it, tapping a different one replaces it (matches WhatsApp's behavior).
+  async function toggleMessageReaction(matchId, messageId, emoji) {
+    const current = activeMessages[matchId]?.find((m) => m.id === messageId)
+    const mine = current?.reactions?.[uid]
+    await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
+      [`reactions.${uid}`]: mine === emoji ? deleteField() : emoji,
+    })
+  }
+
   async function setTyping(matchId, isTyping) {
     await updateDoc(doc(db, 'matches', matchId), {
       [`typing.${uid}`]: isTyping ? serverTimestamp() : null,
@@ -403,6 +415,7 @@ export function ConversationsProvider({ children }) {
         sendStickerMessage,
         editMessage,
         deleteMessage,
+        toggleMessageReaction,
         showPushPrompt,
         acceptPushPrompt,
         dismissPushPrompt,

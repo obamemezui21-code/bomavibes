@@ -13,6 +13,7 @@ import {
   FileText,
   Flag,
   Hand,
+  Info,
   Mic,
   MessageCircle,
   MoreVertical,
@@ -23,6 +24,7 @@ import {
   RefreshCw,
   Reply,
   Send,
+  Share2,
   ShieldOff,
   Smile,
   Sticker,
@@ -57,6 +59,8 @@ const MAX_RECORDING_SECONDS = 120
 const LONG_PRESS_MS = 450
 const LONG_PRESS_MOVE_TOLERANCE = 10
 const TEXTAREA_MAX_HEIGHT = 140
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
+const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
 function autoResizeTextarea(el) {
   if (!el) return
@@ -236,6 +240,90 @@ function formatDayLabel(date) {
   })
 }
 
+function groupReactions(reactions) {
+  const counts = {}
+  for (const emoji of Object.values(reactions || {})) {
+    counts[emoji] = (counts[emoji] || 0) + 1
+  }
+  return counts
+}
+
+function MessageInfoModal({ message, otherName, onClose }) {
+  const fullDate = message.date.toLocaleString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        onClick={(e) => e.stopPropagation()}
+        className="glass-panel w-full max-w-sm rounded-2xl p-5"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-display text-base font-semibold text-ink">Informations</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 hover:bg-ink/10"
+            aria-label="Fermer"
+          >
+            <X size={16} strokeWidth={2.25} />
+          </button>
+        </div>
+        <div className="space-y-2.5 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-ink-soft/60">Envoyé</span>
+            <span className="text-ink">{fullDate}</span>
+          </div>
+          {message.edited && (
+            <div className="flex items-center justify-between">
+              <span className="text-ink-soft/60">Modifié</span>
+              <span className="text-ink">Oui</span>
+            </div>
+          )}
+          {message.fromMe ? (
+            <div className="flex items-center justify-between">
+              <span className="text-ink-soft/60">Statut</span>
+              <span className="flex items-center gap-1.5 text-ink">
+                {message.status === 'sending' && (
+                  <>
+                    <Clock size={13} strokeWidth={2.5} /> Envoi en cours
+                  </>
+                )}
+                {message.status === 'sent' && (
+                  <>
+                    <Check size={14} strokeWidth={2.5} /> Envoyé, non lu
+                  </>
+                )}
+                {message.status === 'read' && (
+                  <>
+                    <CheckCheck size={14} strokeWidth={2.5} className="text-violet-500" /> Lu par {otherName}
+                  </>
+                )}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <span className="text-ink-soft/60">De</span>
+              <span className="text-ink">{otherName}</span>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 function Chat() {
   const { conversationId } = useParams()
   const navigate = useNavigate()
@@ -248,6 +336,7 @@ function Chat() {
     sendStickerMessage,
     editMessage,
     deleteMessage,
+    toggleMessageReaction,
     openConversation,
     closeConversation,
     setTyping,
@@ -261,6 +350,7 @@ function Chat() {
   const [showStickerPicker, setShowStickerPicker] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [selectedMessage, setSelectedMessage] = useState(null)
+  const [infoMessage, setInfoMessage] = useState(null)
   const [replyTarget, setReplyTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -559,6 +649,27 @@ function Chat() {
     }
   }
 
+  function handleReact(m, emoji) {
+    if (!active) return
+    toggleMessageReaction(active.id, m.id, emoji)
+    setSelectedMessage(null)
+  }
+
+  async function handleShare(m) {
+    setSelectedMessage(null)
+    try {
+      await navigator.share({ text: m.text })
+    } catch {
+      // User cancelled the native share sheet, or the browser blocked it —
+      // either way there's nothing useful to show the user here.
+    }
+  }
+
+  function handleShowInfo(m) {
+    setSelectedMessage(null)
+    setInfoMessage(m)
+  }
+
   function stopRecordingTimer() {
     clearInterval(recordingTimerRef.current)
     recordingTimerRef.current = null
@@ -713,7 +824,7 @@ function Chat() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] bg-surface-soft md:h-full">
+    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] bg-surface-soft md:h-svh">
       {/* Conversation list */}
       <div
         className={`relative w-full flex-col border-r border-ink/8 md:flex md:w-80 ${
@@ -791,59 +902,96 @@ function Chat() {
         {active && (
           <>
             {selectedMessage ? (
-              <div className="flex shrink-0 items-center gap-1 border-b border-ink/8 bg-violet-500/8 px-2 py-2">
-                <button
-                  type="button"
-                  onClick={() => setSelectedMessage(null)}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
-                  aria-label="Annuler la sélection"
-                >
-                  <X size={18} strokeWidth={2.25} />
-                </button>
-                <p className="flex-1 truncate px-1 text-sm font-medium text-ink">Message sélectionné</p>
-                <div className="flex shrink-0 items-center gap-0.5">
+              <div className="flex shrink-0 flex-col gap-1.5 border-b border-ink/8 bg-violet-500/8 px-2 py-2">
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => handleReply(selectedMessage)}
-                    title="Répondre"
-                    aria-label="Répondre"
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                    onClick={() => setSelectedMessage(null)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                    aria-label="Annuler la sélection"
                   >
-                    <Reply size={18} strokeWidth={2.25} />
+                    <X size={18} strokeWidth={2.25} />
                   </button>
-                  {selectedMessage.type === 'text' && (
+                  <p className="flex-1 truncate px-1 text-sm font-medium text-ink">Message sélectionné</p>
+                  <div className="flex shrink-0 items-center gap-0.5 overflow-x-auto">
                     <button
                       type="button"
-                      onClick={() => handleCopy(selectedMessage)}
-                      title="Copier"
-                      aria-label="Copier le texte"
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                      onClick={() => handleReply(selectedMessage)}
+                      title="Répondre"
+                      aria-label="Répondre"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
                     >
-                      <Copy size={17} strokeWidth={2.25} />
+                      <Reply size={18} strokeWidth={2.25} />
                     </button>
-                  )}
-                  {selectedMessage.fromMe && selectedMessage.type === 'text' && (
+                    {selectedMessage.type === 'text' && (
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(selectedMessage)}
+                        title="Copier"
+                        aria-label="Copier le texte"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                      >
+                        <Copy size={17} strokeWidth={2.25} />
+                      </button>
+                    )}
+                    {selectedMessage.fromMe && selectedMessage.type === 'text' && (
+                      <button
+                        type="button"
+                        onClick={() => startEdit(selectedMessage)}
+                        title="Modifier"
+                        aria-label="Modifier"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                      >
+                        <Pencil size={17} strokeWidth={2.25} />
+                      </button>
+                    )}
+                    {canShare && selectedMessage.type === 'text' && (
+                      <button
+                        type="button"
+                        onClick={() => handleShare(selectedMessage)}
+                        title="Partager"
+                        aria-label="Partager"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                      >
+                        <Share2 size={17} strokeWidth={2.25} />
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={() => startEdit(selectedMessage)}
-                      title="Modifier"
-                      aria-label="Modifier"
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
+                      onClick={() => handleShowInfo(selectedMessage)}
+                      title="Informations"
+                      aria-label="Informations"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/10"
                     >
-                      <Pencil size={17} strokeWidth={2.25} />
+                      <Info size={17} strokeWidth={2.25} />
                     </button>
-                  )}
-                  {selectedMessage.fromMe && (
+                    {selectedMessage.fromMe && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(selectedMessage)}
+                        title="Supprimer"
+                        aria-label="Supprimer"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-coral-500 transition hover:bg-coral-500/10"
+                      >
+                        <Trash2 size={17} strokeWidth={2.25} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 overflow-x-auto px-1 pb-0.5">
+                  {QUICK_REACTIONS.map((emoji) => (
                     <button
+                      key={emoji}
                       type="button"
-                      onClick={() => handleDelete(selectedMessage)}
-                      title="Supprimer"
-                      aria-label="Supprimer"
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-coral-500 transition hover:bg-coral-500/10"
+                      onClick={() => handleReact(selectedMessage, emoji)}
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-lg transition hover:scale-110 hover:bg-ink/10 ${
+                        selectedMessage.reactions?.[user.id] === emoji ? 'bg-violet-500/15' : ''
+                      }`}
+                      aria-label={`Réagir avec ${emoji}`}
                     >
-                      <Trash2 size={17} strokeWidth={2.25} />
+                      {emoji}
                     </button>
-                  )}
+                  ))}
                 </div>
               </div>
             ) : (
@@ -932,8 +1080,8 @@ function Chat() {
                   const showDaySeparator = !isSameDay(m.date, active.messages[i - 1]?.date)
                   const isSticker = m.type === 'sticker'
                   const bubbleClass = isSticker
-                    ? 'max-w-[75%] cursor-pointer select-none'
-                    : `max-w-[75%] cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
+                    ? 'cursor-pointer select-none'
+                    : `cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
                         m.fromMe
                           ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
                           : 'rounded-bl-sm bg-ink/6 text-ink'
@@ -953,6 +1101,7 @@ function Chat() {
                         transition={{ duration: 0.25 }}
                         className={`flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
                       >
+                        <div className={`flex max-w-[75%] flex-col ${m.fromMe ? 'items-end' : 'items-start'}`}>
                         <div
                           onPointerDown={handleMessagePointerDown(m)}
                           onPointerMove={handleMessagePointerMove}
@@ -1018,6 +1167,26 @@ function Chat() {
                               </span>
                             )}
                           </p>
+                        </div>
+                        {m.reactions && Object.keys(m.reactions).length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(groupReactions(m.reactions)).map(([emoji, count]) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={() => handleReact(m, emoji)}
+                                className={`flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-xs transition ${
+                                  m.reactions[user.id] === emoji
+                                    ? 'border-violet-400 bg-violet-500/15'
+                                    : 'border-ink/10 bg-surface-soft hover:bg-ink/5'
+                                }`}
+                              >
+                                <span>{emoji}</span>
+                                {count > 1 && <span className="text-[10px] text-ink-soft/60">{count}</span>}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                         </div>
                       </motion.div>
                     </Fragment>
@@ -1380,6 +1549,16 @@ function Chat() {
       )}
 
       {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
+
+      <AnimatePresence>
+        {infoMessage && active && (
+          <MessageInfoModal
+            message={infoMessage}
+            otherName={active.profile.firstName}
+            onClose={() => setInfoMessage(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
