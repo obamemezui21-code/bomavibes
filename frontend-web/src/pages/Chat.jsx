@@ -1149,7 +1149,7 @@ function Chat() {
                           ) : isSticker ? (
                             <img src={stickerSrc(m.stickerId)} alt="" className="h-28 w-28 object-contain" />
                           ) : (
-                            <p>{m.text}</p>
+                            <p className="whitespace-pre-wrap break-words">{m.text}</p>
                           )}
                           <p
                             className={`mt-0.5 flex items-center gap-1 text-[10px] ${

@@ -1,5 +1,11 @@
 import { motion } from 'framer-motion'
 import { Flag, Heart, Lock, Mic, Send, ShieldOff, Sparkles, Star, X } from 'lucide-react'
+import amaraPhoto from '../../assets/faces/amara.jpg'
+import juniorPhoto from '../../assets/faces/junior.jpg'
+import kwamePhoto from '../../assets/faces/kwame.jpg'
+import malikPhoto from '../../assets/faces/malik.jpg'
+import ndeyePhoto from '../../assets/faces/ndeye.jpg'
+import zolaPhoto from '../../assets/faces/zola.jpg'
 
 function PhoneFrame({ children, label, delay, tilt }) {
   return (
@@ -24,7 +30,8 @@ function DiscoverMock() {
   return (
     <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Découvrir</p>
-      <div className="relative flex-1 overflow-hidden rounded-2xl bg-gradient-to-br from-violet-400 via-pink-300 to-amber-200">
+      <div className="relative flex-1 overflow-hidden rounded-2xl">
+        <img src={amaraPhoto} alt="Amara" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
           <p className="text-sm font-bold text-white">Amara, 27</p>
           <p className="text-[10px] text-white/80">Libreville · 92% match</p>
@@ -86,7 +93,7 @@ function ProfileMock() {
     <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Votre profil</p>
       <div className="flex flex-col items-center">
-        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-400 to-pink-300 shadow" />
+        <img src={juniorPhoto} alt="Junior" className="h-16 w-16 rounded-full object-cover shadow" />
         <p className="mt-2 text-xs font-bold text-[#2B1D14]">Junior, 29</p>
         <p className="text-[10px] text-[#6b5d4f]">Douala, Cameroun</p>
       </div>
@@ -115,15 +122,14 @@ function LikesYouMock() {
     <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Qui vous a aimé·e</p>
       <div className="grid flex-1 grid-cols-2 gap-2">
-        {['from-violet-400 to-pink-300', 'from-amber-200 to-pink-300', 'from-mint-300 to-violet-300', 'from-pink-300 to-amber-200'].map(
-          (g, i) => (
-            <div key={i} className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${g} blur-[2px]`}>
-              <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                <Lock size={14} className="text-white/90" strokeWidth={2.5} />
-              </div>
+        {[malikPhoto, ndeyePhoto, zolaPhoto, kwamePhoto].map((photo, i) => (
+          <div key={i} className="relative overflow-hidden rounded-xl">
+            <img src={photo} alt="" className="h-full w-full object-cover blur-[2px]" />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <Lock size={14} className="text-white/90" strokeWidth={2.5} />
             </div>
-          ),
-        )}
+          </div>
+        ))}
       </div>
       <div className="mt-3 flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2">
         <Sparkles size={12} strokeWidth={2.5} className="text-[#2B1D14]" />
@@ -137,7 +143,7 @@ function SecurityMock() {
   return (
     <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
       <div className="flex items-center gap-2 rounded-t-xl bg-white px-2 py-2 shadow-sm">
-        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-violet-400 to-pink-300" />
+        <img src={kwamePhoto} alt="Kwame" className="h-7 w-7 rounded-full object-cover" />
         <span className="flex-1 text-[11px] font-bold text-[#2B1D14]">Kwame</span>
       </div>
       <div className="relative flex-1 rounded-b-xl bg-white px-2 pb-2">
