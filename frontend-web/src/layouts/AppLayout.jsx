@@ -122,11 +122,11 @@ function AppLayout() {
         </button>
       </aside>
 
-      <main className="min-h-svh flex-1 pb-20 md:pb-0">
+      <main className="min-h-svh flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 backdrop-blur-xl dark:bg-surface/85 md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl dark:bg-surface/85 md:hidden">
         {navItems.map((item, i) => {
           const isActive = location.pathname === item.to
           const anim = iconAnimation(item, i, isActive, 1.15)
