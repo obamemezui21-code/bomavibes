@@ -56,7 +56,7 @@ const TYPING_STOP_DELAY_MS = 2500
 const MAX_RECORDING_SECONDS = 120
 const LONG_PRESS_MS = 450
 const LONG_PRESS_MOVE_TOLERANCE = 10
-const TEXTAREA_MAX_HEIGHT = 120
+const TEXTAREA_MAX_HEIGHT = 140
 
 function autoResizeTextarea(el) {
   if (!el) return
@@ -1172,12 +1172,12 @@ function Chat() {
                 <button
                   type="button"
                   onClick={() => stopRecording(false)}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
                   aria-label="Annuler l'enregistrement"
                 >
                   <X size={18} strokeWidth={2.25} />
                 </button>
-                <div className="flex flex-1 items-center gap-2.5 rounded-full border border-coral-500/30 bg-coral-500/5 px-4 py-2.5">
+                <div className="flex flex-1 items-center gap-2.5 rounded-full border border-coral-500/30 bg-coral-500/5 px-4 py-3.5">
                   <motion.span
                     className="h-2.5 w-2.5 rounded-full bg-coral-500"
                     animate={{ opacity: [1, 0.3, 1] }}
@@ -1190,10 +1190,10 @@ function Chat() {
                   type="button"
                   onClick={() => stopRecording(true)}
                   whileTap={{ scale: 0.9 }}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
                   aria-label="Envoyer la note vocale"
                 >
-                  <Send size={16} strokeWidth={2.25} />
+                  <Send size={18} strokeWidth={2.25} />
                 </motion.button>
               </div>
             ) : (
@@ -1212,25 +1212,25 @@ function Chat() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isSendingAttachment || isSendingVoice || !!editingMessageId}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Joindre un fichier"
                 >
                   {isSendingAttachment ? (
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink-soft/30 border-t-ink-soft" />
                   ) : (
-                    <Paperclip size={19} strokeWidth={2} />
+                    <Paperclip size={20} strokeWidth={2} />
                   )}
                 </button>
                 <div className="relative shrink-0">
                   <button
                     type="button"
                     onClick={() => setShowEmojiPicker((v) => !v)}
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition ${
                       showEmojiPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/5'
                     }`}
                     aria-label="Choisir un emoji"
                   >
-                    <Smile size={19} strokeWidth={2} />
+                    <Smile size={20} strokeWidth={2} />
                   </button>
                   <AnimatePresence>
                     {showEmojiPicker && (
@@ -1260,12 +1260,12 @@ function Chat() {
                   <button
                     type="button"
                     onClick={() => setShowStickerPicker((v) => !v)}
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition ${
                       showStickerPicker ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/5'
                     }`}
                     aria-label="Choisir un sticker"
                   >
-                    <Sticker size={19} strokeWidth={2} />
+                    <Sticker size={20} strokeWidth={2} />
                   </button>
                   <AnimatePresence>
                     {showStickerPicker && (
@@ -1302,16 +1302,16 @@ function Chat() {
                   onKeyDown={handleTextareaKeyDown}
                   placeholder="Écrivez un message…"
                   disabled={isSendingVoice}
-                  className="max-h-[120px] flex-1 resize-none overflow-y-auto rounded-2xl border border-ink/12 bg-ink/[0.03] px-4 py-2.5 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
+                  className="max-h-[140px] min-h-[48px] flex-1 resize-none overflow-y-auto rounded-2xl border border-ink/12 bg-ink/[0.03] px-4 py-3.5 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
                 />
                 {draft.trim() ? (
                   <motion.button
                     type="submit"
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
                     aria-label={editingMessageId ? 'Enregistrer' : 'Envoyer'}
                   >
-                    <Send size={16} strokeWidth={2.25} />
+                    <Send size={18} strokeWidth={2.25} />
                   </motion.button>
                 ) : (
                   <motion.button
@@ -1319,13 +1319,13 @@ function Chat() {
                     onClick={startRecording}
                     disabled={isSendingVoice || !!editingMessageId}
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Enregistrer une note vocale"
                   >
                     {isSendingVoice ? (
                       <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#2B1D14]/30 border-t-[#2B1D14]" />
                     ) : (
-                      <Mic size={16} strokeWidth={2.25} />
+                      <Mic size={18} strokeWidth={2.25} />
                     )}
                   </motion.button>
                 )}
