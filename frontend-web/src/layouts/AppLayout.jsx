@@ -122,7 +122,7 @@ function AppLayout() {
         </button>
       </aside>
 
-      <main className="min-h-svh flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main className="min-h-svh flex-1 pb-[calc(5rem_+_env(safe-area-inset-bottom))] md:pb-0">
         <Outlet />
       </main>
 

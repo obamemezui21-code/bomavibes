@@ -713,7 +713,7 @@ function Chat() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-5rem-env(safe-area-inset-bottom))] bg-surface-soft md:h-full">
+    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] bg-surface-soft md:h-full">
       {/* Conversation list */}
       <div
         className={`relative w-full flex-col border-r border-ink/8 md:flex md:w-80 ${
@@ -1276,7 +1276,7 @@ function Chat() {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 8, scale: 0.97 }}
                           transition={{ duration: 0.15 }}
-                          className="absolute bottom-full left-1/2 z-20 mb-2 grid w-[min(18rem,calc(100vw-2rem))] -translate-x-1/2 grid-cols-4 gap-1.5 rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
+                          className="absolute bottom-full left-1/2 z-20 mb-2 grid w-[min(18rem,calc(100vw_-_2rem))] -translate-x-1/2 grid-cols-4 gap-1.5 rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
                           style={{ maxHeight: 320, overflowY: 'auto' }}
                         >
                           {STICKERS.map((s) => (
