@@ -1,70 +1,28 @@
 import { motion } from 'framer-motion'
 import { COUNTRIES } from '../../lib/geography.js'
 
-// Only Gabon is live today — everything else is roadmap. Update this set as
+// Gabon and France are live — everything else is roadmap. Update this set as
 // new markets actually launch; never mark a country "Disponible" ahead of
 // the real launch.
-const LIVE_COUNTRY_CODES = new Set(['GA'])
+const LIVE_COUNTRY_CODES = new Set(['GA', 'FR'])
 
-// Marketing roadmap only — deliberately separate from geography.js's
-// COUNTRIES (which powers the onboarding location picker and needs real
-// region/city data). Adding a country here is just a flag + name, no
-// region/city breakdown required, since this grid never feeds the picker.
-const WORLD_AVAILABILITY = [
-  {
-    continent: 'Afrique',
-    countries: COUNTRIES.map((c) => ({ code: c.code, name: c.name, flag: c.flag })),
-  },
-  {
-    continent: 'Europe',
-    countries: [
-      { code: 'FR', name: 'France', flag: '🇫🇷' },
-      { code: 'BE', name: 'Belgique', flag: '🇧🇪' },
-      { code: 'CH', name: 'Suisse', flag: '🇨🇭' },
-      { code: 'GB', name: 'Royaume-Uni', flag: '🇬🇧' },
-      { code: 'DE', name: 'Allemagne', flag: '🇩🇪' },
-      { code: 'ES', name: 'Espagne', flag: '🇪🇸' },
-      { code: 'IT', name: 'Italie', flag: '🇮🇹' },
-      { code: 'PT', name: 'Portugal', flag: '🇵🇹' },
-    ],
-  },
-  {
-    continent: 'Amérique du Nord',
-    countries: [
-      { code: 'CA', name: 'Canada', flag: '🇨🇦' },
-      { code: 'US', name: 'États-Unis', flag: '🇺🇸' },
-      { code: 'MX', name: 'Mexique', flag: '🇲🇽' },
-    ],
-  },
-  {
-    continent: 'Amérique du Sud',
-    countries: [
-      { code: 'BR', name: 'Brésil', flag: '🇧🇷' },
-    ],
-  },
-  {
-    continent: 'Moyen-Orient',
-    countries: [
-      { code: 'AE', name: 'Émirats arabes unis', flag: '🇦🇪' },
-      { code: 'SA', name: 'Arabie saoudite', flag: '🇸🇦' },
-      { code: 'QA', name: 'Qatar', flag: '🇶🇦' },
-    ],
-  },
-  {
-    continent: 'Asie',
-    countries: [
-      { code: 'CN', name: 'Chine', flag: '🇨🇳' },
-      { code: 'IN', name: 'Inde', flag: '🇮🇳' },
-      { code: 'JP', name: 'Japon', flag: '🇯🇵' },
-    ],
-  },
-  {
-    continent: 'Océanie',
-    countries: [
-      { code: 'AU', name: 'Australie', flag: '🇦🇺' },
-    ],
-  },
+// Display order for the continent headings — COUNTRIES itself is grouped by
+// continent already (see geography.js), this just controls the section order.
+const CONTINENT_ORDER = [
+  'Afrique',
+  'Europe',
+  'Amérique du Nord',
+  'Amérique centrale & Caraïbes',
+  'Amérique du Sud',
+  'Moyen-Orient',
+  'Asie',
+  'Océanie',
 ]
+
+const GROUPS = CONTINENT_ORDER.map((continent) => ({
+  continent,
+  countries: COUNTRIES.filter((c) => c.continent === continent),
+}))
 
 function AvailabilitySection() {
   return (
@@ -78,7 +36,7 @@ function AvailabilitySection() {
       </div>
 
       <div className="mt-14 space-y-10">
-        {WORLD_AVAILABILITY.map((group, groupIndex) => (
+        {GROUPS.map((group) => (
           <div key={group.continent}>
             <h3 className="font-display text-lg font-bold text-[#2B1D14]">{group.continent}</h3>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -90,7 +48,7 @@ function AvailabilitySection() {
                     initial={{ opacity: 0, y: 12 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-20px' }}
-                    transition={{ duration: 0.35, delay: (groupIndex * 4 + i) * 0.02, ease: 'easeOut' }}
+                    transition={{ duration: 0.3, delay: (i % 15) * 0.02, ease: 'easeOut' }}
                     className={`flex items-center gap-2.5 rounded-2xl border bg-white px-3.5 py-3 ${
                       isLive ? 'border-pink-500' : 'border-violet-600/8'
                     }`}

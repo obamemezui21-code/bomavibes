@@ -16,6 +16,17 @@ import {
   PERSONALITY_TRAITS,
 } from '../lib/onboardingOptions.js'
 
+const CONTINENT_ORDER = [
+  'Afrique',
+  'Europe',
+  'Amérique du Nord',
+  'Amérique centrale & Caraïbes',
+  'Amérique du Sud',
+  'Moyen-Orient',
+  'Asie',
+  'Océanie',
+]
+
 const INTEREST_OPTIONS = [
   'Danse', 'Cuisine', 'Voyages', 'Musique', 'Sport', 'Cinéma',
   'Lecture', 'Photo', 'Nature', 'Art', 'Café', 'Randonnée', 'Mode', 'Business',
@@ -382,17 +393,24 @@ function Onboarding() {
                   <h2 className="font-display text-xl font-semibold text-ink">Où vous êtes</h2>
                   <p className="mt-1 text-sm text-ink-soft/60">Choisissez votre pays, puis votre région et votre ville.</p>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {COUNTRIES.map((c) => (
-                      <button
-                        key={c.code}
-                        type="button"
-                        onClick={() => selectCountry(c.code)}
-                        className={chipClass(form.country === c.code)}
-                      >
-                        <span className="mr-1.5">{c.flag}</span>
-                        {c.name}
-                      </button>
+                  <div className="mt-4 max-h-72 space-y-4 overflow-y-auto pr-1">
+                    {CONTINENT_ORDER.map((continent) => (
+                      <div key={continent}>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft/50">{continent}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {COUNTRIES.filter((c) => c.continent === continent).map((c) => (
+                            <button
+                              key={c.code}
+                              type="button"
+                              onClick={() => selectCountry(c.code)}
+                              className={chipClass(form.country === c.code)}
+                            >
+                              <span className="mr-1.5">{c.flag}</span>
+                              {c.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
 
