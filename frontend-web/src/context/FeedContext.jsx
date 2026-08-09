@@ -36,8 +36,14 @@ function FeedProvider({ children }) {
         setCursor(nextCursor)
         setHasMore(!!nextCursor)
         if (user?.id) {
-          const liked = await fetchMyLikedPostIds(user.id)
-          setLikedPostIds(liked)
+          // Isolated on purpose: e.g. a missing Firestore index for this
+          // collection-group query must never take down the feed list itself.
+          try {
+            const liked = await fetchMyLikedPostIds(user.id)
+            setLikedPostIds(liked)
+          } catch {
+            // Hearts just won't show as already-liked until this resolves.
+          }
         }
       } finally {
         setIsLoading(false)
@@ -69,7 +75,13 @@ function FeedProvider({ children }) {
   async function createPost(input) {
     if (!user?.id) return
     const postId = await createPostDoc(user.id, input)
-    await loadTab(activeTab)
+    // The post is already written at this point — a failure past this line
+    // (e.g. the feed refresh) must never be reported as a failed publish.
+    try {
+      await loadTab(activeTab)
+    } catch {
+      // Best-effort refresh; the new post will show up next time the tab loads.
+    }
     return postId
   }
 

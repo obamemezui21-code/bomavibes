@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BadgeCheck, Camera, ChevronDown, Heart, MessageCircle, ShieldCheck, Users } from 'lucide-react'
 import heroPhoto from '../assets/hero.jpg'
 import heroLogoIcon from '../assets/bomavibes-icon.png'
+import heroAmara from '../assets/faces/amara.jpg'
+import heroKwame from '../assets/faces/kwame.jpg'
+import heroZola from '../assets/faces/zola.jpg'
 import SiteHeader from '../components/SiteHeader.jsx'
 import { TIERS } from '../components/PricingTiers.jsx'
 import WwfNewsSection from '../components/WwfNewsSection.jsx'
@@ -31,6 +34,14 @@ const LOGO_SETTLE = { opacity: 1, scale: 1, rotate: 0 }
 const LOGO_SETTLE_TRANSITION = { delay: 0.95, type: 'spring', stiffness: 260, damping: 15, mass: 0.7 }
 const LOGO_PULSE = { opacity: 1, scale: [1, 1.045, 1], rotate: 0 }
 const LOGO_PULSE_TRANSITION = { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }
+
+const HERO_SLIDES = [
+  { src: heroPhoto, alt: 'Couple BomaVibes', position: 'object-[68%_35%] sm:object-center' },
+  { src: heroKwame, alt: 'Membre BomaVibes', position: 'object-center' },
+  { src: heroAmara, alt: 'Membre BomaVibes', position: 'object-center' },
+  { src: heroZola, alt: 'Membre BomaVibes', position: 'object-center' },
+]
+const HERO_SLIDE_MS = 5000
 
 const FEATURES = [
   { icon: ShieldCheck, title: 'Sécurisé', text: 'Vos données sont protégées' },
@@ -136,6 +147,14 @@ const FAQS = [
 function Landing() {
   const [logoSettled, setLogoSettled] = useState(false)
   const [openFaq, setOpenFaq] = useState(null)
+  const [heroSlide, setHeroSlide] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setHeroSlide((i) => (i + 1) % HERO_SLIDES.length)
+    }, HERO_SLIDE_MS)
+    return () => clearInterval(timer)
+  }, [])
 
   return (
     <div className="relative min-h-svh bg-[#FAF6EF]">
@@ -143,15 +162,31 @@ function Landing() {
 
       {/* Hero */}
       <div id="top" className="relative flex min-h-svh items-end overflow-hidden sm:items-center">
-        <motion.img
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.9 }}
-          src={heroPhoto}
-          alt="Couple BomaVibes"
-          className="absolute inset-0 h-full w-full object-cover object-[68%_35%] sm:object-center"
-        />
+        <AnimatePresence initial={false}>
+          <motion.img
+            key={heroSlide}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.1, ease: 'easeInOut' }}
+            src={HERO_SLIDES[heroSlide].src}
+            alt={HERO_SLIDES[heroSlide].alt}
+            className={`absolute inset-0 h-full w-full object-cover ${HERO_SLIDES[heroSlide].position}`}
+          />
+        </AnimatePresence>
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/25 sm:bg-gradient-to-r sm:from-black/80 sm:via-black/40 sm:to-transparent" />
+
+        <div className="absolute inset-x-0 bottom-6 z-10 flex justify-center gap-2 sm:bottom-8">
+          {HERO_SLIDES.map((slide, i) => (
+            <button
+              key={slide.src}
+              type="button"
+              onClick={() => setHeroSlide(i)}
+              aria-label={`Photo ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${i === heroSlide ? 'w-6 bg-white' : 'w-1.5 bg-white/40 hover:bg-white/60'}`}
+            />
+          ))}
+        </div>
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-14 pt-32 sm:px-8 sm:py-24">
           <div className="max-w-lg">
