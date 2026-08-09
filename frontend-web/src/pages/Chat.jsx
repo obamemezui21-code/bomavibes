@@ -1100,7 +1100,7 @@ function Chat() {
                         transition={{ duration: 0.25 }}
                         className={`flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`flex max-w-[75%] flex-col ${m.fromMe ? 'items-end' : 'items-start'}`}>
+                        <div className={`flex max-w-[min(75%,32rem)] flex-col ${m.fromMe ? 'items-end' : 'items-start'}`}>
                         <div
                           onPointerDown={handleMessagePointerDown(m)}
                           onPointerMove={handleMessagePointerMove}
@@ -1412,15 +1412,15 @@ function Chat() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 8, scale: 0.97 }}
                             transition={{ duration: 0.15 }}
-                            className="absolute bottom-full left-0 z-20 mb-2"
+                            className="absolute bottom-full left-0 z-20 mb-2 max-w-[calc(100vw_-_2rem)]"
                           >
                             <EmojiPicker
                               onEmojiClick={handleEmojiClick}
                               theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
                               searchDisabled={false}
                               skinTonesDisabled
-                              width={320}
-                              height={380}
+                              width="min(320px, calc(100vw - 2rem))"
+                              height="min(380px, 60vh)"
                             />
                           </motion.div>
                         </>
@@ -1470,7 +1470,7 @@ function Chat() {
                               exit={{ opacity: 0, y: 8, scale: 0.97 }}
                               transition={{ duration: 0.15 }}
                               className="absolute bottom-full right-0 z-20 mb-2 grid w-[min(18rem,calc(100vw_-_2rem))] grid-cols-4 gap-1.5 rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
-                              style={{ maxHeight: 320, overflowY: 'auto' }}
+                              style={{ maxHeight: 'min(320px, 50vh)', overflowY: 'auto' }}
                             >
                               {STICKERS.map((s) => (
                                 <button
