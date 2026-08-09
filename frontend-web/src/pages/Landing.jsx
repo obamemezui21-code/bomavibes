@@ -140,7 +140,7 @@ const FAQS = [
   },
   {
     question: 'Dans quels pays BomaVibes est-il disponible ?',
-    answer: "BomaVibes est disponible dès aujourd'hui au Gabon, avec une extension progressive prévue vers 14 autres pays d'Afrique francophone puis panafricaine. Voir le détail dans la section Disponibilité en Afrique.",
+    answer: "BomaVibes est disponible dès aujourd'hui au Gabon, avec une extension progressive prévue vers 14 autres pays d'Afrique francophone, puis panafricaine, puis dans le monde entier. Voir le détail dans la section Disponibilité dans le monde.",
   },
 ]
 
