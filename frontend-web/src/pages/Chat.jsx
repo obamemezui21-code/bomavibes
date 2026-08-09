@@ -824,7 +824,7 @@ function Chat() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] bg-surface-soft md:h-svh">
+    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] overflow-x-hidden bg-surface-soft md:h-svh">
       {/* Conversation list */}
       <div
         className={`relative w-full flex-col border-r border-ink/8 md:flex md:w-80 ${
@@ -1149,7 +1149,7 @@ function Chat() {
                           ) : isSticker ? (
                             <img src={stickerSrc(m.stickerId)} alt="" className="h-28 w-28 object-contain" />
                           ) : (
-                            <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                            <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{m.text}</p>
                           )}
                           <p
                             className={`mt-0.5 flex items-center gap-1 text-[10px] ${
