@@ -1080,7 +1080,7 @@ function Chat() {
                   const isSticker = m.type === 'sticker'
                   const bubbleClass = isSticker
                     ? 'cursor-pointer select-none'
-                    : `cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
+                    : `min-w-0 max-w-full cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
                         m.fromMe
                           ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
                           : 'rounded-bl-sm bg-ink/6 text-ink'
@@ -1100,7 +1100,7 @@ function Chat() {
                         transition={{ duration: 0.25 }}
                         className={`flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`flex max-w-[min(75%,32rem)] flex-col ${m.fromMe ? 'items-end' : 'items-start'}`}>
+                        <div className={`flex min-w-0 max-w-[min(75%,32rem)] flex-col ${m.fromMe ? 'items-end' : 'items-start'}`}>
                         <div
                           onPointerDown={handleMessagePointerDown(m)}
                           onPointerMove={handleMessagePointerMove}
