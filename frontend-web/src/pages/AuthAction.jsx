@@ -38,8 +38,16 @@ function AuthAction() {
     }
 
     if (mode === 'verifyEmail') {
-      applyActionCode(auth, oobCode)
-        .then(() => setStatus('verified'))
+      // Don't apply the code on mount: email security scanners (Outlook Safe
+      // Links, corporate anti-phishing filters...) commonly pre-fetch/render
+      // links inside emails before the user actually clicks. Since Firebase
+      // action codes are single-use, that would silently burn the code and
+      // the real click would then fail with "invalid link". checkActionCode
+      // is read-only (mirrors the resetPassword branch below), so it's safe
+      // to run eagerly — only the actual applyActionCode is gated behind a
+      // real button click further down.
+      checkActionCode(auth, oobCode)
+        .then(() => setStatus('confirmEmail'))
         .catch(() => {
           setStatus('error')
           setErrorMessage('Ce lien de vérification est invalide ou a expiré.')
@@ -60,6 +68,20 @@ function AuthAction() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function handleConfirmEmail() {
+    setIsSubmitting(true)
+    setErrorMessage('')
+    try {
+      await applyActionCode(auth, oobCode)
+      setStatus('verified')
+    } catch {
+      setStatus('error')
+      setErrorMessage('Ce lien de vérification est invalide ou a expiré.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   async function handleResetSubmit(e) {
     e.preventDefault()
@@ -90,6 +112,24 @@ function AuthAction() {
       <AuthLayout title="Vérification en cours…">
         <div className="flex justify-center py-6">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+        </div>
+      </AuthLayout>
+    )
+  }
+
+  if (status === 'confirmEmail') {
+    return (
+      <AuthLayout title="Confirmez votre email" subtitle="Dernière étape avant de rejoindre BomaVibes">
+        <div className="space-y-4 text-center">
+          <PartyPopper size={40} strokeWidth={1.5} className="mx-auto text-violet-500" />
+          {errorMessage && (
+            <div className="rounded-xl border border-coral-500/30 bg-coral-500/10 px-3 py-2 text-sm text-coral-400">
+              {errorMessage}
+            </div>
+          )}
+          <button type="button" onClick={handleConfirmEmail} disabled={isSubmitting} className={buttonClass}>
+            {isSubmitting ? 'Confirmation…' : 'Confirmer mon email'}
+          </button>
         </div>
       </AuthLayout>
     )
