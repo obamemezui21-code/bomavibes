@@ -17,6 +17,27 @@ const NOTIFICATIONS = {
       body: payload?.text || "Vous avez reçu un nouveau message.",
     }),
   },
+  post_like: {
+    prefField: "notifyFeed",
+    build: (payload) => ({
+      title: payload?.firstName ? `${payload.firstName} a aimé votre publication` : "Nouveau j'aime",
+      body: payload?.preview || "Quelqu'un a aimé votre publication.",
+    }),
+  },
+  post_comment: {
+    prefField: "notifyFeed",
+    build: (payload) => ({
+      title: payload?.firstName ? `${payload.firstName} a commenté votre publication` : "Nouveau commentaire",
+      body: payload?.text || "Vous avez reçu un nouveau commentaire.",
+    }),
+  },
+  comment_reply: {
+    prefField: "notifyFeed",
+    build: (payload) => ({
+      title: payload?.firstName ? `${payload.firstName} a répondu à votre commentaire` : "Nouvelle réponse",
+      body: payload?.text || "Vous avez reçu une réponse à votre commentaire.",
+    }),
+  },
 };
 
 async function notify(req, res) {

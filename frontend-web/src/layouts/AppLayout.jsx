@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Bell, Compass, Heart, MessageCircle, CircleUserRound } from 'lucide-react'
+import { Bell, Compass, Heart, MessageCircle, Newspaper, CircleUserRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
@@ -12,6 +12,7 @@ function useNavItems() {
   const { t } = useTranslation()
   return [
     { to: '/discover', label: t('nav.discover'), icon: Compass },
+    { to: '/feed', label: t('nav.feed'), icon: Newspaper },
     { to: '/matches', label: t('nav.matches'), icon: Heart, badge: newMatchesCount },
     { to: '/chat', label: t('nav.messages'), icon: MessageCircle, badge: unreadMessagesCount },
     { to: '/annonces', label: t('nav.announcements'), icon: Bell, ring: hasUnseenAnnouncement },
@@ -134,7 +135,7 @@ function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              className="relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium"
+              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 px-0.5 py-2.5 text-xs font-medium"
             >
               {isActive && (
                 <motion.div
@@ -160,7 +161,9 @@ function AppLayout() {
                 </motion.span>
                 <NavBadge count={item.badge} />
               </span>
-              <span className={item.ring ? 'text-coral-500' : isActive ? 'text-violet-600' : 'text-ink-soft/60'}>
+              <span
+                className={`w-full truncate px-0.5 text-center ${item.ring ? 'text-coral-500' : isActive ? 'text-violet-600' : 'text-ink-soft/60'}`}
+              >
                 {item.label}
               </span>
             </NavLink>

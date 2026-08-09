@@ -10,7 +10,7 @@ const chipClass = (selected) =>
       : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
   }`
 
-function ReportModal({ firstName, onClose, onSubmit, isSubmitting }) {
+function ReportModal({ firstName, onClose, onSubmit, isSubmitting, title, reasons = REPORT_REASONS }) {
   const [reason, setReason] = useState(null)
   const [description, setDescription] = useState('')
   const [alsoBlock, setAlsoBlock] = useState(true)
@@ -33,12 +33,12 @@ function ReportModal({ firstName, onClose, onSubmit, isSubmitting }) {
       >
         <div className="flex items-center gap-2">
           <Flag size={18} strokeWidth={2.25} className="text-coral-500" />
-          <h2 className="font-display text-lg font-semibold text-ink">Signaler {firstName || 'ce profil'}</h2>
+          <h2 className="font-display text-lg font-semibold text-ink">{title || `Signaler ${firstName || 'ce profil'}`}</h2>
         </div>
         <p className="mt-1 text-sm text-ink-soft/70">Notre équipe examine chaque signalement.</p>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {REPORT_REASONS.map((r) => (
+          {reasons.map((r) => (
             <button key={r} type="button" onClick={() => setReason(r)} className={chipClass(reason === r)}>
               {r}
             </button>

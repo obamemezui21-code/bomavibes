@@ -1,8 +1,9 @@
 import { lazy, Suspense, useState } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Outlet, Route, Routes } from 'react-router-dom'
 import SplashScreen from './components/SplashScreen.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
+import { FeedProvider } from './context/FeedContext.jsx'
 
 // Every page used to be imported eagerly, so a single visitor downloaded
 // Landing's marketing sections, Chat, Settings, every legal page etc. in one
@@ -23,6 +24,8 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
 const AuthAction = lazy(() => import('./pages/AuthAction.jsx'))
 const Discover = lazy(() => import('./pages/Discover.jsx'))
+const Feed = lazy(() => import('./pages/Feed.jsx'))
+const PostDetail = lazy(() => import('./pages/PostDetail.jsx'))
 const Matches = lazy(() => import('./pages/Matches.jsx'))
 const LikesYou = lazy(() => import('./pages/LikesYou.jsx'))
 const Announcements = lazy(() => import('./pages/Announcements.jsx'))
@@ -85,6 +88,16 @@ function App() {
             }
           >
             <Route path="/discover" element={<Discover />} />
+            <Route
+              element={
+                <FeedProvider>
+                  <Outlet />
+                </FeedProvider>
+              }
+            >
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/feed/:postId" element={<PostDetail />} />
+            </Route>
             <Route path="/matches" element={<Matches />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/annonces" element={<Announcements />} />

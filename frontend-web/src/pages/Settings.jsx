@@ -318,6 +318,7 @@ function Settings() {
   const [isTogglingPush, setIsTogglingPush] = useState(false)
   const newMatches = profile?.notifyMatches ?? true
   const newMessages = profile?.notifyMessages ?? true
+  const newFeed = profile?.notifyFeed ?? true
   const [emailUpdates, setEmailUpdates] = useState(false)
   const [showDistance, setShowDistance] = useState(true)
   const [showAge, setShowAge] = useState(true)
@@ -403,6 +404,13 @@ function Settings() {
               <Toggle
                 checked={newMessages}
                 onChange={(v) => handleNotifyToggle('notifyMessages', v)}
+                disabled={isTogglingPush}
+              />
+            </Row>
+            <Row title="Activité du Feed" subtitle="J'aime, commentaires et réponses sur vos publications">
+              <Toggle
+                checked={newFeed}
+                onChange={(v) => handleNotifyToggle('notifyFeed', v)}
                 disabled={isTogglingPush}
               />
             </Row>

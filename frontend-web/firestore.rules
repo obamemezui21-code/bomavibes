@@ -129,5 +129,62 @@ service cloud.firestore {
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
       }
     }
+
+    match /posts/{postId} {
+      function validPostCreate() {
+        let data = request.resource.data;
+        return data.authorId is string
+          && data.type in ['text', 'photo', 'question']
+          && isOptionalString('text', 1000)
+          && (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500))
+          && (data.type != 'photo' || (data.photoUrl is string && data.photoUrl.size() > 0))
+          && (data.type == 'photo' || (data.text is string && data.text.size() > 0))
+          && data.likeCount == 0 && data.commentCount == 0;
+      }
+
+      function isCounterOnlyBump(field) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly([field])
+          && request.resource.data[field] >= 0
+          && (request.resource.data[field] == resource.data[field] + 1
+              || request.resource.data[field] == resource.data[field] - 1);
+      }
+
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validPostCreate();
+      allow update: if isSignedIn() && (
+        (isOwner(resource.data.authorId)
+          && request.resource.data.authorId == resource.data.authorId
+          && request.resource.data.likeCount == resource.data.likeCount
+          && request.resource.data.commentCount == resource.data.commentCount
+          && isOptionalString('text', 1000))
+        || isCounterOnlyBump('likeCount')
+        || isCounterOnlyBump('commentCount')
+      );
+      allow delete: if isSignedIn() && isOwner(resource.data.authorId);
+
+      match /comments/{commentId} {
+        function validComment() {
+          let data = request.resource.data;
+          return data.authorId is string && data.text is string
+            && data.text.size() > 0 && data.text.size() <= 500
+            && (!('parentCommentId' in data) || data.parentCommentId == null || data.parentCommentId is string);
+        }
+
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validComment();
+        allow update: if isSignedIn() && resource.data.authorId == request.auth.uid
+          && request.resource.data.authorId == resource.data.authorId
+          && request.resource.data.text is string && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500;
+        allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      }
+
+      match /likes/{uid} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && uid == request.auth.uid;
+        allow delete: if isSignedIn() && uid == request.auth.uid;
+        allow update: if false;
+      }
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
@@ -8,6 +9,7 @@ import {
   Languages,
   Leaf,
   MapPin,
+  MessageCircle,
   MoreVertical,
   ShieldOff,
   Sparkles,
@@ -51,9 +53,10 @@ function InfoSection({ icon: Icon, title, items, iconFor }) {
   )
 }
 
-function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked }) {
+function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked, matchId, isSelf }) {
   const { user } = useAuth()
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const photos = profile.photos?.length
     ? profile.photos
     : [`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`]
@@ -138,6 +141,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
             <ArrowLeft size={16} />
           </button>
 
+          {!isSelf && (
           <div className="absolute right-3 top-6">
             <button
               type="button"
@@ -182,6 +186,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               )}
             </AnimatePresence>
           </div>
+          )}
 
           <div className="absolute inset-x-0 bottom-0 p-4">
             {profile.datingGoal && (
@@ -250,43 +255,59 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           )}
         </div>
 
-        <div className="flex items-center justify-center gap-5 border-t border-ink/8 p-4">
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={() => {
-              onPass()
-              onClose()
-            }}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 dark:bg-surface-tint"
-            aria-label="Passer"
-          >
-            <X size={20} strokeWidth={2.5} />
-          </motion.button>
-          {onSuperlike && (
+        {isSelf ? null : matchId ? (
+          <div className="flex items-center justify-center border-t border-ink/8 p-4">
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                onClose()
+                navigate(`/chat/${matchId}`)
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
+            >
+              <MessageCircle size={18} strokeWidth={2.25} />
+              Envoyer un message
+            </motion.button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-5 border-t border-ink/8 p-4">
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={() => {
-                onSuperlike()
+                onPass()
                 onClose()
               }}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 dark:bg-surface-tint"
-              aria-label="Super like"
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 dark:bg-surface-tint"
+              aria-label="Passer"
             >
-              <Star size={20} strokeWidth={2.5} fill="currentColor" />
+              <X size={20} strokeWidth={2.5} />
             </motion.button>
-          )}
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={() => {
-              onLike()
-              onClose()
-            }}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-coral-500 text-white shadow-xl shadow-coral-500/40"
-            aria-label="Aimer"
-          >
-            <Heart size={26} strokeWidth={2.5} fill="currentColor" />
-          </motion.button>
-        </div>
+            {onSuperlike && (
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={() => {
+                  onSuperlike()
+                  onClose()
+                }}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 dark:bg-surface-tint"
+                aria-label="Super like"
+              >
+                <Star size={20} strokeWidth={2.5} fill="currentColor" />
+              </motion.button>
+            )}
+            <motion.button
+              whileTap={{ scale: 0.85 }}
+              onClick={() => {
+                onLike()
+                onClose()
+              }}
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-coral-500 text-white shadow-xl shadow-coral-500/40"
+              aria-label="Aimer"
+            >
+              <Heart size={26} strokeWidth={2.5} fill="currentColor" />
+            </motion.button>
+          </div>
+        )}
       </motion.div>
 
       {showReport && (

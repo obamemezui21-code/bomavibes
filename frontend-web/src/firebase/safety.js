@@ -1,7 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore'
 import { db } from './config.js'
 
-export async function reportUser(reporterId, reportedUserId, reason, description) {
+export async function reportUser(reporterId, reportedUserId, reason, description, contextRef) {
   await addDoc(collection(db, 'reports'), {
     reporterId,
     reportedUserId,
@@ -9,6 +9,7 @@ export async function reportUser(reporterId, reportedUserId, reason, description
     description: description || null,
     status: 'pending',
     createdAt: serverTimestamp(),
+    ...(contextRef ? { contextRef } : {}),
   })
 }
 

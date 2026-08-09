@@ -6,3 +6,11 @@ export const REPORT_REASONS = [
   'Mineur',
   'Autre',
 ]
+
+export const CONTENT_REPORT_REASONS = [
+  'Contenu inapproprié',
+  'Spam ou publicité',
+  'Désinformation',
+  'Harcèlement ou propos abusifs',
+  'Autre',
+]
