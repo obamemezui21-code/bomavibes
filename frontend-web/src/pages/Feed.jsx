@@ -13,14 +13,27 @@ import { CONTENT_REPORT_REASONS } from '../lib/reportReasons.js'
 import FeedTabs from '../components/feed/FeedTabs.jsx'
 import PostCard from '../components/feed/PostCard.jsx'
 import PostComposer from '../components/feed/PostComposer.jsx'
+import EditPostModal from '../components/feed/EditPostModal.jsx'
 import FeedEmptyState from '../components/feed/FeedEmptyState.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 function Feed() {
-  const { activeTab, setActiveTab, posts, authorsById, likedPostIds, hasMore, isLoading, isLoadingMore, loadMore, deletePost, toggleLikePost } =
-    useFeed()
+  const {
+    activeTab,
+    setActiveTab,
+    posts,
+    authorsById,
+    likedPostIds,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    loadMore,
+    deletePost,
+    updatePost,
+    toggleLikePost,
+  } = useFeed()
   const { user, publicProfile } = useAuth()
   const { conversations } = useConversations()
   const { showToast } = useToast()
@@ -30,6 +43,7 @@ function Feed() {
   const [expandedAuthorId, setExpandedAuthorId] = useState(null)
   const [reportTarget, setReportTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [editTarget, setEditTarget] = useState(null)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
   const sentinelRef = useRef(null)
 
@@ -125,6 +139,7 @@ function Feed() {
               onOpen={() => navigate(`/feed/${post.id}`)}
               currentUserId={user?.id}
               onDelete={() => setDeleteTarget(post)}
+              onEdit={() => setEditTarget(post)}
               onReport={() => setReportTarget(post)}
             />
           ))}
@@ -139,6 +154,16 @@ function Feed() {
 
       <AnimatePresence>
         {showComposer && <PostComposer onClose={() => setShowComposer(false)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editTarget && (
+          <EditPostModal
+            post={editTarget}
+            onClose={() => setEditTarget(null)}
+            onSave={(text) => updatePost(editTarget.id, text)}
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>

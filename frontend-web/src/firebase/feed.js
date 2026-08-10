@@ -16,6 +16,7 @@ import {
   serverTimestamp,
   startAfter,
   Timestamp,
+  updateDoc,
   where,
 } from 'firebase/firestore'
 import { auth, db } from './config.js'
@@ -126,6 +127,13 @@ async function deletePost(postId, authorId) {
   await deleteDoc(doc(db, 'posts', postId))
 }
 
+async function updatePost(postId, authorId, text) {
+  const postRef = doc(db, 'posts', postId)
+  const snap = await getDoc(postRef)
+  if (!snap.exists() || snap.data().authorId !== authorId) throw new Error('forbidden')
+  await updateDoc(postRef, { text: text || null, editedAt: serverTimestamp() })
+}
+
 async function hasLiked(postId, uid) {
   const snap = await getDoc(doc(db, 'posts', postId, 'likes', uid))
   return snap.exists()
@@ -230,5 +238,6 @@ export {
   subscribeToComments,
   subscribeToPost,
   toggleLike,
+  updatePost,
   uploadFeedPhoto,
 }

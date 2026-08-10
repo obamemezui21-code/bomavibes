@@ -154,6 +154,8 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (isOwner(resource.data.authorId)
           && request.resource.data.authorId == resource.data.authorId
+          && request.resource.data.type == resource.data.type
+          && request.resource.data.photoUrl == resource.data.photoUrl
           && request.resource.data.likeCount == resource.data.likeCount
           && request.resource.data.commentCount == resource.data.commentCount
           && isOptionalString('text', 1000))

@@ -5,6 +5,7 @@ import {
   fetchFeedPage,
   fetchMyLikedPostIds,
   toggleLike as toggleLikeDoc,
+  updatePost as updatePostDoc,
 } from '../firebase/feed.js'
 import { sortForYou, sortPopular } from '../lib/feedRanking.js'
 import { sendPushNotification } from '../firebase/notify.js'
@@ -91,6 +92,12 @@ function FeedProvider({ children }) {
     setPosts((prev) => prev.filter((p) => p.id !== postId))
   }
 
+  async function updatePost(postId, text) {
+    if (!user?.id) return
+    await updatePostDoc(postId, user.id, text)
+    setPosts((prev) => prev.map((p) => (p.id === postId ? { ...p, text, editedAt: true } : p)))
+  }
+
   // Optimistic like/unlike: flip the UI immediately, roll back only on
   // failure — the actual counter always comes from the transaction in
   // firebase/feed.js, this is just responsiveness for the tap.
@@ -138,6 +145,7 @@ function FeedProvider({ children }) {
         isLoadingMore,
         loadMore,
         createPost,
+        updatePost,
         deletePost,
         toggleLikePost,
         refresh: () => loadTab(activeTab),

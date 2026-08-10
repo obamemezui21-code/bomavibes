@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Flag, Heart, MessageCircle, MoreVertical, Send, Sparkles, Trash2 } from 'lucide-react'
+import { Flag, Heart, MessageCircle, MoreVertical, Pencil, Send, Sparkles, Trash2 } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
 import { useToast } from '../../context/ToastContext.jsx'
@@ -45,7 +45,7 @@ function LikeBurst({ burstId }) {
   )
 }
 
-function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, currentUserId, onDelete, onReport }) {
+function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, currentUserId, onDelete, onEdit, onReport }) {
   const [showMenu, setShowMenu] = useState(false)
   const [burstId, setBurstId] = useState(0)
   const { showToast } = useToast()
@@ -120,7 +120,10 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
           >
             {author?.firstName || 'Quelqu’un'}
           </button>
-          <p className="truncate text-xs text-ink-soft/50">{formatRelativeTime(post.createdAt)}</p>
+          <p className="truncate text-xs text-ink-soft/50">
+            {formatRelativeTime(post.createdAt)}
+            {post.editedAt && ' · modifié'}
+          </p>
         </div>
         <div className="relative shrink-0">
           <button
@@ -146,18 +149,32 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
                   className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
                 >
                   {isOwn ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowMenu(false)
-                        onDelete?.()
-                      }}
-                      className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
-                    >
-                      <Trash2 size={14} strokeWidth={2.25} />
-                      Supprimer
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowMenu(false)
+                          onEdit?.()
+                        }}
+                        className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                      >
+                        <Pencil size={14} strokeWidth={2.25} />
+                        Modifier
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowMenu(false)
+                          onDelete?.()
+                        }}
+                        className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
+                      >
+                        <Trash2 size={14} strokeWidth={2.25} />
+                        Supprimer
+                      </button>
+                    </>
                   ) : (
                     <button
                       type="button"

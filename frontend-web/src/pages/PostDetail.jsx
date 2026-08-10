@@ -23,6 +23,7 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { formatRelativeTime } from '../lib/relativeTime.js'
 import CommentItem from '../components/feed/CommentItem.jsx'
 import CommentComposer from '../components/feed/CommentComposer.jsx'
+import EditPostModal from '../components/feed/EditPostModal.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -32,7 +33,7 @@ function PostDetail() {
   const navigate = useNavigate()
   const { user, publicProfile } = useAuth()
   const { conversations } = useConversations()
-  const { deletePost, toggleLikePost, likedPostIds, authorsById: feedAuthorsById } = useFeed()
+  const { deletePost, updatePost, toggleLikePost, likedPostIds, authorsById: feedAuthorsById } = useFeed()
   const { showToast } = useToast()
 
   const [post, setPost] = useState(undefined) // undefined = loading, null = not found
@@ -43,6 +44,7 @@ function PostDetail() {
   const [expandedAuthorId, setExpandedAuthorId] = useState(null)
   const [reportTarget, setReportTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
 
   useEffect(() => {
@@ -221,13 +223,22 @@ function PostDetail() {
         </button>
         <h1 className="min-w-0 flex-1 truncate font-display text-base font-semibold text-ink">Publication</h1>
         {isOwn && (
-          <button
-            type="button"
-            onClick={() => setDeleteTarget(post)}
-            className="text-sm font-semibold text-coral-500 hover:underline"
-          >
-            Supprimer
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="text-sm font-semibold text-ink-soft/60 hover:text-ink"
+            >
+              Modifier
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteTarget(post)}
+              className="text-sm font-semibold text-coral-500 hover:underline"
+            >
+              Supprimer
+            </button>
+          </div>
         )}
         {!isOwn && (
           <button type="button" onClick={() => setReportTarget({ post: true })} className="text-sm font-semibold text-ink-soft/60 hover:text-ink">
@@ -246,7 +257,10 @@ function PostDetail() {
               <button type="button" onClick={() => handleAuthorClick(post.authorId)} className="truncate text-left text-sm font-semibold text-ink hover:underline">
                 {author?.firstName || 'Quelqu’un'}
               </button>
-              <p className="truncate text-xs text-ink-soft/50">{formatRelativeTime(post.createdAt)}</p>
+              <p className="truncate text-xs text-ink-soft/50">
+                {formatRelativeTime(post.createdAt)}
+                {post.editedAt && ' · modifié'}
+              </p>
             </div>
           </div>
 
@@ -337,6 +351,16 @@ function PostDetail() {
           isSubmitting={isSubmittingSafety}
         />
       )}
+
+      <AnimatePresence>
+        {isEditing && (
+          <EditPostModal
+            post={post}
+            onClose={() => setIsEditing(false)}
+            onSave={(text) => updatePost(postId, text)}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {deleteTarget && (
