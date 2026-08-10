@@ -179,15 +179,27 @@ function SupportChatWidget() {
 
   return (
     <>
-      <motion.button
-        type="button"
-        onClick={() => setIsOpen((v) => !v)}
-        whileTap={{ scale: 0.92 }}
-        aria-label={isOpen ? "Fermer l'assistant" : "Ouvrir l'assistant BomaVibes"}
-        className="fixed bottom-5 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-xl shadow-violet-500/30 transition hover:brightness-105 sm:right-6"
-      >
-        {isOpen ? <X size={22} strokeWidth={2.25} /> : <Bot size={24} strokeWidth={2.25} />}
-      </motion.button>
+      <div className="fixed bottom-5 right-4 z-50 h-14 w-14 sm:right-6">
+        {!isOpen && (
+          <motion.span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 blur-xl"
+            animate={{ opacity: [0.45, 0.85, 0.45], scale: [1, 1.3, 1] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+          />
+        )}
+        <motion.button
+          type="button"
+          onClick={() => setIsOpen((v) => !v)}
+          animate={isOpen ? { y: 0, rotate: 0 } : { y: [0, -10, 0], rotate: [0, -3, 3, 0] }}
+          transition={isOpen ? { duration: 0.2 } : { duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+          whileTap={{ scale: 0.92 }}
+          aria-label={isOpen ? "Fermer l'assistant" : "Ouvrir l'assistant BomaVibes"}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-xl shadow-violet-500/30 transition hover:brightness-105"
+        >
+          {isOpen ? <X size={22} strokeWidth={2.25} /> : <Bot size={24} strokeWidth={2.25} />}
+        </motion.button>
+      </div>
 
       <AnimatePresence>
         {isOpen && (
