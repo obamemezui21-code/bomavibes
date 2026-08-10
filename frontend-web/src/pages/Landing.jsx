@@ -19,6 +19,7 @@ import TestimonialsSection from '../components/landing/TestimonialsSection.jsx'
 import PlatformUpdatesSection from '../components/landing/PlatformUpdatesSection.jsx'
 import SupportTeaserSection from '../components/landing/SupportTeaserSection.jsx'
 import FinalCtaSection from '../components/landing/FinalCtaSection.jsx'
+import SupportChatWidget from '../components/landing/SupportChatWidget.jsx'
 
 const WORD_CONTAINER = {
   hidden: {},
@@ -501,6 +502,8 @@ function Landing() {
           </Link>
         </div>
       </section>
+
+      <SupportChatWidget />
     </div>
   )
 }
