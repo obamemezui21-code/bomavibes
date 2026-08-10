@@ -370,6 +370,37 @@ function Profile() {
             </div>
           </div>
 
+          <div className="space-y-2.5">
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+            >
+              <Settings size={16} strokeWidth={2} />
+              Paramètres
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/soutenir')}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+            >
+              <Heart size={16} strokeWidth={2} />
+              Soutenir BomaVibes
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                logout()
+                navigate('/')
+              }}
+              className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink-soft/70 transition hover:bg-ink/5"
+            >
+              Déconnexion
+            </button>
+          </div>
+
           <div>
             <label className={labelClass}>Pays</label>
             <div className="max-h-60 space-y-3 overflow-y-auto pr-1">
@@ -551,35 +582,6 @@ function Profile() {
           >
             {isSaving ? 'Enregistrement…' : 'Enregistrer'}
           </motion.button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/settings')}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
-          >
-            <Settings size={16} strokeWidth={2} />
-            Paramètres
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/soutenir')}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
-          >
-            <Heart size={16} strokeWidth={2} />
-            Soutenir BomaVibes
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              navigate('/')
-            }}
-            className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink-soft/70 transition hover:bg-ink/5"
-          >
-            Déconnexion
-          </button>
         </form>
       </div>
     </div>
