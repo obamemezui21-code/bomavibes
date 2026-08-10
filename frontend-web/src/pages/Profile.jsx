@@ -29,6 +29,7 @@ const emptyForm = {
   languages: [],
   personalityTraits: [],
   datingGoal: '',
+  isEntrepreneur: false,
   lifestyle: { sport: '', travel: '', smoking: '', alcohol: '' },
 }
 
@@ -69,6 +70,7 @@ function Profile() {
       languages: publicProfile?.languages || [],
       personalityTraits: publicProfile?.personalityTraits || [],
       datingGoal: publicProfile?.datingGoal || '',
+      isEntrepreneur: publicProfile?.isEntrepreneur || false,
       lifestyle: publicProfile?.lifestyle || { sport: '', travel: '', smoking: '', alcohol: '' },
     })
     setCountryCode(
@@ -173,6 +175,7 @@ function Profile() {
           languages: form.languages,
           personalityTraits: form.personalityTraits,
           datingGoal: form.datingGoal || null,
+          isEntrepreneur: form.isEntrepreneur,
           lifestyle: form.lifestyle,
           photos: photoUrls,
           updatedAt: serverTimestamp(),
@@ -507,6 +510,16 @@ function Profile() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, isEntrepreneur: !f.isEntrepreneur }))}
+              className={chipClass(form.isEntrepreneur)}
+            >
+              🚀 Je suis entrepreneur·e
+            </button>
           </div>
 
           <div className="space-y-4">

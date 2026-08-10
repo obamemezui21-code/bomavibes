@@ -107,11 +107,20 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
         </button>
 
         <div className="absolute inset-x-0 bottom-0 p-5">
-          {profile.datingGoal && (
-            <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
-              <Target size={11} strokeWidth={2.5} />
-              {profile.datingGoal}
-            </span>
+          {(profile.datingGoal || profile.isEntrepreneur) && (
+            <div className="mb-2 flex flex-wrap items-center gap-1.5">
+              {profile.datingGoal && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
+                  <Target size={11} strokeWidth={2.5} />
+                  {profile.datingGoal}
+                </span>
+              )}
+              {profile.isEntrepreneur && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-1 text-[11px] font-semibold text-white">
+                  🚀 Entrepreneur·e
+                </span>
+              )}
+            </div>
           )}
           <div className="flex items-center gap-1.5">
             <h2 className="font-display text-2xl font-bold text-white">

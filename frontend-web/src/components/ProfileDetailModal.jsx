@@ -189,11 +189,20 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           )}
 
           <div className="absolute inset-x-0 bottom-0 p-4">
-            {profile.datingGoal && (
-              <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
-                <Target size={11} strokeWidth={2.5} />
-                {profile.datingGoal}
-              </span>
+            {(profile.datingGoal || profile.isEntrepreneur) && (
+              <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                {profile.datingGoal && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
+                    <Target size={11} strokeWidth={2.5} />
+                    {profile.datingGoal}
+                  </span>
+                )}
+                {profile.isEntrepreneur && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                    🚀 Entrepreneur·e
+                  </span>
+                )}
+              </div>
             )}
             <div className="flex items-center gap-1.5">
               <h2 className="font-display text-xl font-semibold text-white">

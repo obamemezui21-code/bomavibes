@@ -74,6 +74,7 @@ function Onboarding() {
     languages: [],
     personalityTraits: [],
     datingGoal: '',
+    isEntrepreneur: false,
     lifestyle: { sport: '', travel: '', smoking: '', alcohol: '' },
     prefGender: 'TOUS',
     prefMaxDistance: 25,
@@ -179,6 +180,7 @@ function Onboarding() {
           languages: form.languages,
           personalityTraits: form.personalityTraits,
           datingGoal: form.datingGoal || null,
+          isEntrepreneur: form.isEntrepreneur,
           lifestyle: form.lifestyle,
           photos: photoUrls,
           verified: false,
@@ -581,6 +583,15 @@ function Onboarding() {
                         </button>
                       ))}
                     </div>
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, isEntrepreneur: !f.isEntrepreneur }))}
+                      className={chipClass(form.isEntrepreneur)}
+                    >
+                      🚀 Je suis entrepreneur·e
+                    </button>
                   </div>
                 </div>
               )}
