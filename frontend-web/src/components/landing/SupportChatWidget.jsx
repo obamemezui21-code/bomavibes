@@ -5,6 +5,8 @@ import { Bot, Send, Sparkles, X } from 'lucide-react'
 
 const SUPPORT_EMAIL = 'Bomavibes241@gmail.com'
 const WHATSAPP_URL = 'https://wa.me/33744233809'
+const SETTINGS_ACTION = { label: 'Ouvrir les Paramètres', to: '/settings' }
+const PROFILE_ACTION = { label: 'Ouvrir mon Profil', to: '/profile' }
 
 const BUG_KEYWORDS = [
   'bug', 'erreur', 'plante', 'plantage', 'crash', 'bloque', 'probleme',
@@ -13,70 +15,176 @@ const BUG_KEYWORDS = [
 ]
 
 // Simple, self-contained knowledge base: no API, no cost, no backend call —
-// keyword match against the same answers already on this page's FAQ.
+// keyword match against the app's real pages/settings. `related` lets a
+// matched answer suggest 2-3 logical next questions (chips), so the chat
+// feels conversational without any real NLU behind it.
 const KB = [
   {
+    id: 'gratuit',
     question: 'Est-ce que BomaVibes est gratuit ?',
     keywords: ['gratuit', 'prix', 'payant', 'abonnement', 'tarif', 'combien coute', 'coute'],
     answer: "L'inscription et l'essentiel — créer un profil, matcher, discuter — sont 100% gratuits. Des options premium existent en plus.",
     actions: [{ label: 'Voir les tarifs', to: '/tarifs' }],
+    related: ['soutenir'],
   },
   {
+    id: 'donnees',
     question: 'Comment mes données sont-elles protégées ?',
     keywords: ['donnee', 'confidentialite', 'vie privee', 'proteg', 'rgpd', 'vendu'],
     answer: 'Vos données ne sont jamais vendues et restent sous votre contrôle : vous pouvez les consulter, les modifier ou tout supprimer à tout moment.',
     actions: [{ label: 'Politique de confidentialité', to: '/confidentialite' }],
+    related: ['supprimer-compte', 'securite-compte'],
   },
   {
+    id: 'supprimer-compte',
     question: 'Comment supprimer mon compte ?',
     keywords: ['supprimer compte', 'suppression', 'desinscrire', 'effacer mon compte'],
     answer: 'Directement depuis Paramètres → Supprimer mon compte, une fois connecté·e. Toutes vos données sont effacées définitivement, sans délai.',
+    actions: [SETTINGS_ACTION],
+    related: ['donnees'],
   },
   {
+    id: 'signaler',
     question: 'Que faire si un profil me met mal à l\'aise ?',
     keywords: ['signaler', 'bloquer', 'harcel', 'mal a l aise', 'faux profil', 'arnaque'],
     answer: 'Vous pouvez signaler ou bloquer n\'importe quel profil en un clic depuis la conversation ou le profil concerné, une fois connecté·e.',
     actions: [{ label: 'Page Sécurité', to: '/securite' }],
+    related: ['debloquer', 'blocage'],
   },
   {
+    id: 'blocage',
     question: 'Le blocage empêche-t-il vraiment de me recontacter ?',
     keywords: ['blocage marche', 'recontacter', 'bloque vraiment'],
     answer: "Oui. Une fois bloqué·e, la personne disparaît des deux côtés (Découvrir, Matchs, Messages) et ne peut plus techniquement vous envoyer de message.",
+    related: ['signaler', 'debloquer'],
   },
   {
+    id: 'debloquer',
+    question: 'Comment débloquer quelqu\'un ?',
+    keywords: ['debloquer', 'gerer les bloques', 'utilisateurs bloques'],
+    answer: "Depuis Paramètres → Confidentialité → Utilisateurs bloqués, vous pouvez voir et débloquer n'importe qui à tout moment.",
+    actions: [SETTINGS_ACTION],
+    related: ['signaler'],
+  },
+  {
+    id: 'cible',
     question: 'BomaVibes est fait pour qui ?',
     keywords: ['pour qui', 'cible', 'afrodescendant', 'africain', 'age minimum', '18 ans'],
     answer: 'Pour les célibataires africains et afrodescendants de 18 ans et plus, qui cherchent des connexions authentiques et durables.',
+    related: ['pays'],
   },
   {
+    id: 'pays',
     question: 'Dans quels pays BomaVibes est disponible ?',
     keywords: ['pays', 'disponible', 'gabon', 'france', 'afrique'],
     answer: "BomaVibes est disponible dès aujourd'hui au Gabon et en France, avec une extension progressive vers le reste de l'Afrique puis le monde entier.",
+    related: ['cible'],
   },
   {
+    id: 'matcher',
     question: 'Comment fonctionne le matching ?',
     keywords: ['matcher', 'match', 'decouvrir', 'swipe', 'like'],
     answer: "Dans l'onglet Découvrir, vous parcourez des profils et likez ceux qui vous plaisent. Si la personne vous like aussi, c'est un match et une conversation s'ouvre.",
+    related: ['discuter', 'objectif'],
   },
   {
+    id: 'discuter',
     question: 'Comment discuter avec quelqu\'un ?',
     keywords: ['discuter', 'message', 'chatter', 'ecrire a quelqu un'],
     answer: 'Une fois un match confirmé, une conversation apparaît dans l\'onglet Messages — vous pouvez y écrire, envoyer des photos et des messages vocaux.',
+    related: ['matcher'],
   },
   {
+    id: 'notifications',
     question: 'Je ne reçois pas de notifications',
     keywords: ['notification', 'notifications', 'ne recois pas de notif'],
     answer: "Vérifiez d'abord Paramètres → Notifications dans l'app, puis les autorisations de notifications de votre téléphone/navigateur pour BomaVibes. Si tout est activé et que ça persiste, c'est peut-être un bug — décrivez-le-moi.",
+    actions: [SETTINGS_ACTION],
+    related: ['theme'],
   },
   {
+    id: 'soutenir',
     question: 'Comment soutenir BomaVibes ?',
     keywords: ['soutenir', 'don', 'donation', 'aider le projet'],
     answer: 'Merci ! Vous pouvez contribuer librement au développement de BomaVibes depuis la page Soutenir.',
     actions: [{ label: 'Soutenir BomaVibes', to: '/soutenir' }],
+    related: ['gratuit'],
+  },
+  {
+    id: 'theme',
+    question: 'Comment activer le thème sombre ?',
+    keywords: ['theme sombre', 'mode nuit', 'dark mode', 'mode sombre'],
+    answer: 'Depuis Paramètres → Apparence, activez le thème sombre en un clic.',
+    actions: [SETTINGS_ACTION],
+    related: ['langue', 'notifications'],
+  },
+  {
+    id: 'langue',
+    question: 'Comment changer la langue de l\'appli ?',
+    keywords: ['langue', 'traduction', 'changer de langue', 'francais anglais'],
+    answer: 'BomaVibes est disponible en français, anglais, espagnol, swahili et chinois. Changez la langue depuis Paramètres → Langue.',
+    actions: [SETTINGS_ACTION],
+    related: ['theme'],
+  },
+  {
+    id: 'email-mdp',
+    question: 'Comment changer mon email ou mon mot de passe ?',
+    keywords: ['changer email', 'changer mot de passe', 'mot de passe oublie', 'modifier mon mot de passe'],
+    answer: "Depuis Paramètres → Compte, vous pouvez modifier votre email ou votre mot de passe (si vous vous êtes inscrit·e avec un email, pas avec Google).",
+    actions: [SETTINGS_ACTION],
+    related: ['securite-compte', 'google'],
+  },
+  {
+    id: 'securite-compte',
+    question: 'Que faire si mon compte est piraté ?',
+    keywords: ['securite du compte', 'pirate', 'compte hacke', 'mot de passe vole'],
+    answer: 'Changez votre mot de passe immédiatement depuis Paramètres → Compte, puis contactez-nous si besoin — on vous aide tout de suite.',
+    actions: [SETTINGS_ACTION, { label: 'Nous écrire', href: `mailto:${SUPPORT_EMAIL}` }],
+    related: ['email-mdp'],
+  },
+  {
+    id: 'entrepreneur',
+    question: 'À quoi sert le badge Entrepreneur·e ?',
+    keywords: ['entrepreneur', 'badge entrepreneur', 'business'],
+    answer: "Depuis votre Profil, activez le badge Entrepreneur·e pour le montrer sur votre carte et attirer aussi des connexions professionnelles.",
+    actions: [PROFILE_ACTION],
+    related: ['objectif', 'photo'],
+  },
+  {
+    id: 'photo',
+    question: 'Comment changer ma photo de profil ?',
+    keywords: ['changer photo', 'ajouter photo', 'photo de profil'],
+    answer: 'Depuis votre Profil, vous pouvez ajouter, remplacer ou réorganiser vos photos à tout moment.',
+    actions: [PROFILE_ACTION],
+    related: ['entrepreneur', 'objectif'],
+  },
+  {
+    id: 'objectif',
+    question: 'Comment indiquer ce que je recherche ?',
+    keywords: ['objectif de rencontre', 'relation serieuse', 'amitie', 'casual'],
+    answer: "Sur votre Profil, choisissez votre objectif de rencontre (relation sérieuse, amitié, plus décontracté...) pour que les autres sachent ce que vous recherchez.",
+    actions: [PROFILE_ACTION],
+    related: ['matcher'],
+  },
+  {
+    id: 'google',
+    question: 'Puis-je m\'inscrire avec mon compte Google ?',
+    keywords: ['connexion google', 'compte google', 'se connecter avec google'],
+    answer: "Oui, vous pouvez vous inscrire et vous connecter directement avec votre compte Google, sans mot de passe à retenir.",
+    related: ['email-mdp'],
+  },
+  {
+    id: 'incognito',
+    question: 'À quoi sert le mode incognito ?',
+    keywords: ['incognito', 'navigation privee', 'ne pas apparaitre'],
+    answer: "Le mode incognito (Paramètres → Confidentialité) vous permet de parcourir les profils sans apparaître dans les decks des autres.",
+    actions: [SETTINGS_ACTION],
+    related: ['matcher'],
   },
 ]
 
-const SUGGESTED_QUESTIONS = [KB[0], KB[3], KB[7], KB[5]]
+const KB_BY_ID = new Map(KB.map((entry) => [entry.id, entry]))
+const SUGGESTED_QUESTIONS = ['gratuit', 'signaler', 'discuter', 'pays'].map((id) => KB_BY_ID.get(id))
 
 const DIACRITICS_RE = /[\u0300-\u036f]/g
 
@@ -98,6 +206,11 @@ function findBestMatch(normalizedQuery) {
     }
   }
   return best
+}
+
+function relatedQuestions(entry) {
+  if (!entry.related) return []
+  return entry.related.map((id) => KB_BY_ID.get(id)).filter(Boolean).slice(0, 3)
 }
 
 function buildBugReplyMailto(description) {
@@ -151,6 +264,7 @@ function SupportChatWidget() {
         from: 'bot',
         text: match.answer,
         actions: match.actions,
+        followUps: relatedQuestions(match),
       }
     }
 
@@ -251,6 +365,20 @@ function SupportChatWidget() {
                         )}
                       </div>
                     )}
+                    {m.followUps && m.followUps.length > 0 && (
+                      <div className="mt-2.5 flex flex-col items-start gap-1.5 border-t border-ink/10 pt-2.5">
+                        {m.followUps.map((f) => (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => pushExchange(f.question)}
+                            className="text-left text-xs font-medium text-violet-700 underline-offset-2 hover:underline"
+                          >
+                            {f.question}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -259,7 +387,7 @@ function SupportChatWidget() {
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {SUGGESTED_QUESTIONS.map((q) => (
                     <button
-                      key={q.question}
+                      key={q.id}
                       type="button"
                       onClick={() => pushExchange(q.question)}
                       className="rounded-full border border-violet-600/15 px-3 py-1.5 text-xs font-medium text-violet-700 transition hover:bg-violet-600/5"
