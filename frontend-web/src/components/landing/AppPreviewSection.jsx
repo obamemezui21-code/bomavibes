@@ -6,6 +6,7 @@ import kwamePhoto from '../../assets/faces/kwame.jpg'
 import malikPhoto from '../../assets/faces/malik.jpg'
 import ndeyePhoto from '../../assets/faces/ndeye.jpg'
 import zolaPhoto from '../../assets/faces/zola.jpg'
+import FlagIcon from '../FlagIcon.jsx'
 
 function PhoneFrame({ children, label, delay, tilt }) {
   return (
@@ -167,9 +168,9 @@ function SecurityMock() {
 
 function OnboardingMock() {
   const countries = [
-    { flag: '🇬🇦', name: 'Gabon', active: true },
-    { flag: '🇨🇲', name: 'Cameroun', active: false },
-    { flag: '🇸🇳', name: 'Sénégal', active: false },
+    { code: 'GA', name: 'Gabon', active: true },
+    { code: 'CM', name: 'Cameroun', active: false },
+    { code: 'SN', name: 'Sénégal', active: false },
   ]
   const regions = ['Estuaire', 'Haut-Ogooué', 'Ngounié']
   return (
@@ -184,7 +185,8 @@ function OnboardingMock() {
               c.active ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#6b5d4f]'
             }`}
           >
-            {c.flag} {c.name}
+            <FlagIcon code={c.code} className="mr-1 !h-2.5 !w-3.5 rounded-sm align-[-1px]" />
+            {c.name}
           </span>
         ))}
       </div>

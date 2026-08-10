@@ -1,23 +1,11 @@
 import { motion } from 'framer-motion'
-import { COUNTRIES } from '../../lib/geography.js'
+import { CONTINENT_ORDER, COUNTRIES } from '../../lib/geography.js'
+import FlagIcon from '../FlagIcon.jsx'
 
 // Gabon and France are live — everything else is roadmap. Update this set as
 // new markets actually launch; never mark a country "Disponible" ahead of
 // the real launch.
 const LIVE_COUNTRY_CODES = new Set(['GA', 'FR'])
-
-// Display order for the continent headings — COUNTRIES itself is grouped by
-// continent already (see geography.js), this just controls the section order.
-const CONTINENT_ORDER = [
-  'Afrique',
-  'Europe',
-  'Amérique du Nord',
-  'Amérique centrale & Caraïbes',
-  'Amérique du Sud',
-  'Moyen-Orient',
-  'Asie',
-  'Océanie',
-]
 
 const GROUPS = CONTINENT_ORDER.map((continent) => ({
   continent,
@@ -53,7 +41,7 @@ function AvailabilitySection() {
                       isLive ? 'border-pink-500' : 'border-violet-600/8'
                     }`}
                   >
-                    <span className="text-xl">{c.flag}</span>
+                    <FlagIcon code={c.code} className="!h-5 !w-7 shrink-0 rounded-sm" />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-[#2B1D14]">{c.name}</p>
                       <p className={`text-[10px] font-semibold uppercase tracking-wide ${isLive ? 'text-pink-500' : 'text-ink-soft/60'}`}>

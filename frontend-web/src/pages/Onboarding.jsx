@@ -7,7 +7,8 @@ import { db } from '../firebase/config.js'
 import { uploadProfilePhotos } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
+import { CONTINENT_ORDER, COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
+import FlagIcon from '../components/FlagIcon.jsx'
 import {
   DATING_GOALS,
   LANGUAGES,
@@ -15,17 +16,6 @@ import {
   MAX_PERSONALITY_TRAITS,
   PERSONALITY_TRAITS,
 } from '../lib/onboardingOptions.js'
-
-const CONTINENT_ORDER = [
-  'Afrique',
-  'Europe',
-  'Amérique du Nord',
-  'Amérique centrale & Caraïbes',
-  'Amérique du Sud',
-  'Moyen-Orient',
-  'Asie',
-  'Océanie',
-]
 
 const INTEREST_OPTIONS = [
   'Danse', 'Cuisine', 'Voyages', 'Musique', 'Sport', 'Cinéma',
@@ -405,7 +395,7 @@ function Onboarding() {
                               onClick={() => selectCountry(c.code)}
                               className={chipClass(form.country === c.code)}
                             >
-                              <span className="mr-1.5">{c.flag}</span>
+                              <FlagIcon code={c.code} className="mr-1.5 !h-3.5 !w-5 rounded-sm" />
                               {c.name}
                             </button>
                           ))}

@@ -7,7 +7,8 @@ import { db } from '../firebase/config.js'
 import { uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
+import { CONTINENT_ORDER, COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
+import FlagIcon from '../components/FlagIcon.jsx'
 import {
   DATING_GOALS,
   LANGUAGES,
@@ -368,17 +369,24 @@ function Profile() {
 
           <div>
             <label className={labelClass}>Pays</label>
-            <div className="flex flex-wrap gap-2">
-              {COUNTRIES.map((c) => (
-                <button
-                  key={c.code}
-                  type="button"
-                  onClick={() => selectCountry(c.code)}
-                  className={chipClass(countryCode === c.code)}
-                >
-                  <span className="mr-1.5">{c.flag}</span>
-                  {c.name}
-                </button>
+            <div className="max-h-60 space-y-3 overflow-y-auto pr-1">
+              {CONTINENT_ORDER.map((continent) => (
+                <div key={continent}>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-ink-soft/50">{continent}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {COUNTRIES.filter((c) => c.continent === continent).map((c) => (
+                      <button
+                        key={c.code}
+                        type="button"
+                        onClick={() => selectCountry(c.code)}
+                        className={chipClass(countryCode === c.code)}
+                      >
+                        <FlagIcon code={c.code} className="mr-1.5 !h-3.5 !w-5 rounded-sm" />
+                        {c.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
             {!countryCode && form.country && (

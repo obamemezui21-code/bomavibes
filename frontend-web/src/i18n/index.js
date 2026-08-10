@@ -8,11 +8,11 @@ import sw from './locales/sw.json'
 import zh from './locales/zh.json'
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'sw', label: 'Kiswahili', flag: '🇹🇿' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'fr', label: 'Français', countryCode: 'FR' },
+  { code: 'en', label: 'English', countryCode: 'GB' },
+  { code: 'es', label: 'Español', countryCode: 'ES' },
+  { code: 'sw', label: 'Kiswahili', countryCode: 'TZ' },
+  { code: 'zh', label: '中文', countryCode: 'CN' },
 ]
 
 i18n

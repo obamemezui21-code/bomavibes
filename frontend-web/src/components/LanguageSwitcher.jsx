@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { SUPPORTED_LANGUAGES } from '../i18n/index.js'
+import FlagIcon from './FlagIcon.jsx'
 
 function LanguageSwitcher() {
   const { i18n } = useTranslation()
@@ -19,7 +20,7 @@ function LanguageSwitcher() {
                 : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
             }`}
           >
-            <span className="mr-1.5">{lang.flag}</span>
+            <FlagIcon code={lang.countryCode} className="mr-1.5 !h-3.5 !w-5 rounded-sm" />
             {lang.label}
           </button>
         )

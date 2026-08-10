@@ -4,6 +4,20 @@
 // mapped in detail (the picker will simply skip straight to a free city
 // entry for that country until regions are added).
 
+// Display order shared by every UI that groups countries by continent
+// (onboarding, profile editing, the landing availability section) — kept
+// here once so the three can't drift apart.
+export const CONTINENT_ORDER = [
+  'Afrique',
+  'Europe',
+  'Amérique du Nord',
+  'Amérique centrale & Caraïbes',
+  'Amérique du Sud',
+  'Moyen-Orient',
+  'Asie',
+  'Océanie',
+]
+
 export const COUNTRIES = [
   {
     code: 'GA',
