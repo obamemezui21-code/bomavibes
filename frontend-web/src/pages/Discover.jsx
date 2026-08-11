@@ -321,7 +321,7 @@ function Discover() {
           </div>
         ) : (
           <div className="flex flex-col items-center">
-            <div className="relative h-[520px] w-full max-w-sm">
+            <div className="relative mb-8 h-[520px] w-full max-w-sm">
               {deck.map((p, i) => (
                 <SwipeCard
                   key={p.id}
@@ -334,15 +334,14 @@ function Discover() {
                   onOpenDetail={() => setExpandedProfile(p)}
                 />
               ))}
-            </div>
 
-            <div className="mt-6 flex items-center justify-center gap-5">
+              {/* Floating actions, overlapping the card's edges rather than sitting in their own row */}
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.85 }}
                 disabled={!topProfile}
                 onClick={() => topProfile && handlePass(topProfile)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
+                className="absolute -bottom-5 left-4 z-20 flex h-14 w-14 items-center justify-center rounded-2xl bg-coral-500 text-white shadow-xl shadow-coral-500/30 disabled:opacity-40"
                 aria-label="Passer"
               >
                 <X size={24} strokeWidth={2.5} />
@@ -352,23 +351,24 @@ function Discover() {
                 whileTap={{ scale: 0.85 }}
                 disabled={!topProfile}
                 onClick={() => topProfile && handleSuperlike(topProfile)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
+                className="absolute -right-2 bottom-28 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
                 aria-label="Super like"
               >
-                <Star size={22} strokeWidth={2.5} fill="currentColor" />
+                <Star size={19} strokeWidth={2.5} fill="currentColor" />
               </motion.button>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.85 }}
                 disabled={!topProfile}
                 onClick={() => topProfile && handleLike(topProfile)}
-                className="flex h-20 w-20 items-center justify-center rounded-full bg-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
+                className="absolute -bottom-5 right-4 z-20 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
                 aria-label="Aimer"
               >
-                <Heart size={30} strokeWidth={2.5} fill="currentColor" />
+                <Heart size={28} strokeWidth={2.5} fill="currentColor" />
               </motion.button>
             </div>
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft/50">
+
+            <p className="flex items-center gap-1.5 text-xs text-ink-soft/50">
               <RotateCcw size={12} strokeWidth={2.25} />
               Glissez la carte, ou utilisez les boutons
             </p>

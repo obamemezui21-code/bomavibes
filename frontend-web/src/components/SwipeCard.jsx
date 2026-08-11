@@ -41,6 +41,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
     : {
         scale: 1 - stackIndex * 0.04,
         y: stackIndex * 14,
+        rotate: stackIndex * 3,
         opacity: stackIndex > 2 ? 0 : 1,
       }
 
@@ -106,7 +107,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
           <Info size={16} />
         </button>
 
-        <div className="absolute inset-x-0 bottom-0 p-5">
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-10 pt-5">
           {(profile.datingGoal || profile.isEntrepreneur) && (
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
               {profile.datingGoal && (
