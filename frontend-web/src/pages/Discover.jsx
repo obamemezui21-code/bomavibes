@@ -177,7 +177,7 @@ function Discover() {
   }
 
   return (
-    <div className="relative min-h-svh overflow-hidden bg-surface-soft px-4 pb-10 pt-6 sm:px-6 md:min-h-full">
+    <div className="relative min-h-svh overflow-hidden bg-surface-soft px-4 pb-10 pt-6 sm:px-6 desktop:min-h-full">
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
       <div className="pointer-events-none absolute -right-20 top-40 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 

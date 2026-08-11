@@ -37,7 +37,7 @@ function Announcements() {
   const isLoading = announcements === null
 
   return (
-    <div className="min-h-svh bg-surface-soft pb-24 md:min-h-full md:pb-6">
+    <div className="min-h-svh bg-surface-soft pb-24 desktop:min-h-full desktop:pb-6">
       <div className="flex items-center gap-3 border-b border-ink/8 px-4 py-3">
         <button
           type="button"

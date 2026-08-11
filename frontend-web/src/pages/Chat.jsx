@@ -813,7 +813,7 @@ function Chat() {
 
   if (conversations.length === 0) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
+      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center desktop:min-h-full">
         <MessageCircle size={40} strokeWidth={1.5} className="text-ink-soft/40" />
         <h1 className="font-display text-2xl font-semibold text-ink">Messages 💬</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
@@ -824,10 +824,10 @@ function Chat() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] overflow-x-hidden bg-surface-soft md:h-svh">
+    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] overflow-x-hidden bg-surface-soft desktop:h-svh">
       {/* Conversation list */}
       <div
-        className={`relative w-full flex-col border-r border-ink/8 md:flex md:w-80 ${
+        className={`relative w-full flex-col border-r border-ink/8 desktop:flex desktop:w-80 ${
           conversationId ? 'hidden' : 'flex'
         }`}
       >
@@ -898,7 +898,7 @@ function Chat() {
       </div>
 
       {/* Thread */}
-      <div className={`flex-1 flex-col md:flex ${conversationId ? 'flex' : 'hidden'}`}>
+      <div className={`flex-1 flex-col desktop:flex ${conversationId ? 'flex' : 'hidden'}`}>
         {active && (
           <>
             {selectedMessage ? (
@@ -998,7 +998,7 @@ function Chat() {
                 <button
                   type="button"
                   onClick={() => navigate('/chat')}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5 md:hidden"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5 desktop:hidden"
                   aria-label="Retour"
                 >
                   <ArrowLeft size={18} strokeWidth={2} />

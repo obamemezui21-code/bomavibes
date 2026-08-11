@@ -96,7 +96,7 @@ function Support() {
   }
 
   return (
-    <div className="relative min-h-svh overflow-hidden bg-surface-soft p-6 pb-24 md:min-h-full md:pb-6">
+    <div className="relative min-h-svh overflow-hidden bg-surface-soft p-6 pb-24 desktop:min-h-full desktop:pb-6">
       <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-coral-500/10 blur-[100px]" />
       <div className="pointer-events-none absolute bottom-0 -left-24 h-72 w-72 rounded-full bg-violet-500/10 blur-[100px]" />
 

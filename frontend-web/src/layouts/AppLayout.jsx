@@ -59,8 +59,8 @@ function AppLayout() {
   }
 
   return (
-    <div className="min-h-svh bg-surface-soft md:flex">
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-svh md:w-60 md:flex-col md:border-r md:border-ink/8 md:bg-white/70 md:p-4 md:backdrop-blur-xl dark:md:bg-surface/70">
+    <div className="min-h-svh bg-surface-soft desktop:flex">
+      <aside className="hidden desktop:sticky desktop:top-0 desktop:flex desktop:h-svh desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-white/70 desktop:p-4 desktop:backdrop-blur-xl dark:desktop:bg-surface/70">
         <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
           <span className="text-ink">Boma</span>
           <span className="text-gradient-brand italic">Vibes</span>
@@ -123,11 +123,11 @@ function AppLayout() {
         </button>
       </aside>
 
-      <main className="min-h-svh flex-1 pb-[calc(5rem_+_env(safe-area-inset-bottom))] md:pb-0">
+      <main className="min-h-svh flex-1 pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl dark:bg-surface/85 md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl dark:bg-surface/85 desktop:hidden">
         {navItems.map((item, i) => {
           const isActive = location.pathname === item.to
           const anim = iconAnimation(item, i, isActive, 1.15)

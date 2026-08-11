@@ -193,7 +193,7 @@ function Landing() {
           <div className="max-w-lg">
             <motion.h1
               initial={{ opacity: 1 }}
-              className="font-display text-5xl font-extrabold uppercase leading-none tracking-tight text-white [text-shadow:0_4px_24px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.9)] sm:text-7xl"
+              className="font-display text-[clamp(1.75rem,11vw,3rem)] font-extrabold uppercase leading-none tracking-tight text-white [text-shadow:0_4px_24px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.9)] sm:text-7xl"
               aria-label="BomaVibes"
             >
               <motion.span

@@ -358,7 +358,7 @@ function Settings() {
   }
 
   return (
-    <div className="min-h-svh bg-surface-soft p-6 pb-24 md:min-h-full md:pb-6">
+    <div className="min-h-svh bg-surface-soft p-6 pb-24 desktop:min-h-full desktop:pb-6">
       <div className="mx-auto max-w-lg">
         <div className="mb-6 flex items-center gap-3">
           <button

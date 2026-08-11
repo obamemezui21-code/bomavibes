@@ -37,7 +37,7 @@ function Matches() {
 
   if (conversations.length === 0) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center md:min-h-full">
+      <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center desktop:min-h-full">
         <Heart size={40} strokeWidth={1.5} className="text-coral-500" />
         <h1 className="font-display text-2xl font-semibold text-ink">Vos matchs</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
@@ -48,7 +48,7 @@ function Matches() {
   }
 
   return (
-    <div className="min-h-svh bg-surface-soft p-6 pb-24 md:min-h-full md:pb-6">
+    <div className="min-h-svh bg-surface-soft p-6 pb-24 desktop:min-h-full desktop:pb-6">
       <div className="mx-auto max-w-3xl">
         <h1 className="font-display text-2xl font-semibold text-ink">Vos matchs</h1>
 

@@ -199,7 +199,7 @@ function Profile() {
 
   if (isPublicProfileLoading) {
     return (
-      <div className="flex min-h-svh items-center justify-center bg-surface-soft p-6 md:min-h-full">
+      <div className="flex min-h-svh items-center justify-center bg-surface-soft p-6 desktop:min-h-full">
         <motion.div
           className="h-8 w-8 rounded-full border-2 border-violet-300 border-t-violet-600"
           animate={{ rotate: 360 }}
@@ -210,7 +210,7 @@ function Profile() {
   }
 
   return (
-    <div className="relative min-h-svh overflow-hidden bg-surface-soft p-6 pb-24 md:min-h-full md:pb-6">
+    <div className="relative min-h-svh overflow-hidden bg-surface-soft p-6 pb-24 desktop:min-h-full desktop:pb-6">
       <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-violet-500/10 blur-[100px]" />
       <div className="pointer-events-none absolute bottom-0 -left-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
 

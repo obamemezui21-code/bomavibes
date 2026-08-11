@@ -2,6 +2,23 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * "desktop" = wide viewport AND a real pointing device (mouse/trackpad).
+ * A mobile browser in "Request Desktop Site" mode reports a wide viewport
+ * (~980px+) but keeps `pointer: coarse` (touch) — so plain `md:` alone
+ * can't tell a real desktop from a phone lying about its width. Use this
+ * variant instead of `md:` for any layout that STRUCTURALLY switches
+ * between a mobile view and a multi-column desktop view (sidebar/bottom
+ * nav toggle, chat list+thread columns, etc.) so those never render wider
+ * than the physical screen. Purely cosmetic `md:` sizing (text, spacing)
+ * is unaffected and can keep using the normal breakpoint.
+ */
+@custom-variant desktop {
+  @media (min-width: 48rem) and (pointer: fine) {
+    @slot;
+  }
+}
+
 @theme {
   --color-surface: #ffffff;
   --color-surface-soft: #faf6ef;
@@ -39,6 +56,7 @@
 
 html {
   color-scheme: light;
+  overflow-x: hidden;
 }
 
 html.dark {
@@ -54,6 +72,7 @@ html.dark {
 
 body {
   margin: 0;
+  overflow-x: hidden;
   font-family: var(--font-sans);
   background: var(--color-surface);
   -webkit-font-smoothing: antialiased;
