@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -21,7 +21,6 @@ import {
   Pause,
   Pencil,
   Play,
-  RefreshCw,
   Reply,
   Send,
   Share2,
@@ -42,17 +41,11 @@ import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachment
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
-import { getSuggestions, getRelevantCategories } from '../lib/conversationSuggestions.js'
-import { getSuggestionHistory, addToSuggestionHistory } from '../lib/suggestionHistory.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
 import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
-// Stable reference so `x?.interests || EMPTY_INTERESTS` doesn't create a
-// new array every render — that would otherwise defeat the useMemo hooks
-// that depend on it (see myInterests/theirInterests below).
-const EMPTY_INTERESTS = []
 
 const TYPING_STOP_DELAY_MS = 2500
 const MAX_RECORDING_SECONDS = 120
@@ -342,7 +335,7 @@ function Chat() {
     setTyping,
     refreshBlockedIds,
   } = useConversations()
-  const { user, publicProfile } = useAuth()
+  const { user } = useAuth()
   const { showToast } = useToast()
   const { theme } = useTheme()
   const [draft, setDraft] = useState('')
@@ -363,10 +356,6 @@ function Chat() {
   const [isSendingVoice, setIsSendingVoice] = useState(false)
   const [isSendingAttachment, setIsSendingAttachment] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState(null)
-  const [suggestionCategory, setSuggestionCategory] = useState(null)
-  const [suggestionRound, setSuggestionRound] = useState(0)
-  const [suggestionHistoryVersion, setSuggestionHistoryVersion] = useState(0)
-  const [suggestionsManualOpen, setSuggestionsManualOpen] = useState(null)
   const fileInputRef = useRef(null)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
@@ -388,73 +377,6 @@ function Chat() {
 
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
-
-  const myInterests = publicProfile?.interests || EMPTY_INTERESTS
-  const theirInterests = active?.profile?.interests || EMPTY_INTERESTS
-
-  const sentTexts = useMemo(
-    () => (active?.messages || []).filter((m) => m.type === 'text' && m.text).map((m) => m.text),
-    [active?.messages],
-  )
-
-  const suggestionCategories = useMemo(
-    () => getRelevantCategories(myInterests, theirInterests),
-    [myInterests, theirInterests],
-  )
-
-  const suggestions = useMemo(() => {
-    if (!active) return []
-    const excludeTexts = [...sentTexts, ...getSuggestionHistory(active.id)]
-    return getSuggestions({
-      matchId: active.id,
-      myInterests,
-      theirInterests,
-      category: suggestionCategory,
-      excludeTexts,
-      seed: suggestionRound,
-      max: 2,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.id, myInterests, theirInterests, suggestionCategory, suggestionRound, sentTexts, suggestionHistoryVersion])
-
-  // A recent burst of messages -> keep the helper tucked away by default so
-  // it doesn't compete with an already-flowing conversation. Gone quiet (or
-  // brand new) -> surface it more. The user can always toggle manually.
-  const isConversationBusy = useMemo(() => {
-    const msgs = active?.messages || []
-    if (!msgs.length) return false
-    const now = Date.now()
-    return msgs.filter((m) => now - m.date.getTime() < 3 * 60 * 1000).length >= 3
-  }, [active?.messages])
-
-  const suggestionsAutoOpen = !isConversationBusy
-  const showSuggestions = suggestionsManualOpen ?? suggestionsAutoOpen
-
-  function handleSuggestionClick(text) {
-    setDraft(text)
-    textareaRef.current?.focus()
-    if (active) {
-      addToSuggestionHistory(active.id, [text])
-      setSuggestionHistoryVersion((v) => v + 1)
-    }
-  }
-
-  function handleSuggestionRefresh() {
-    if (active && suggestions.length) {
-      addToSuggestionHistory(active.id, suggestions.map((s) => s.text))
-      setSuggestionHistoryVersion((v) => v + 1)
-    }
-    setSuggestionRound((r) => r + 1)
-  }
-
-  function handleSuggestionCategoryClick(catId) {
-    setSuggestionCategory((prev) => (prev === catId ? null : catId))
-    setSuggestionRound(0)
-  }
-
-  function toggleSuggestionsPanel() {
-    setSuggestionsManualOpen((prev) => !(prev ?? suggestionsAutoOpen))
-  }
 
   const prevActiveIdRef = useRef(null)
 
@@ -482,9 +404,6 @@ function Chat() {
       setShowNewMessagesPill(false)
       setSelectedMessage(null)
       setReplyTarget(null)
-      setSuggestionsManualOpen(null)
-      setSuggestionCategory(null)
-      setSuggestionRound(0)
       const frame = requestAnimationFrame(() => scrollToBottom('auto'))
       return () => cancelAnimationFrame(frame)
     }
@@ -1230,79 +1149,6 @@ function Chat() {
             </AnimatePresence>
             </div>
 
-            {suggestions.length > 0 && !editingMessageId && !isRecording && (
-              <div className="shrink-0 border-t border-ink/8 px-4 pt-2">
-                <button
-                  type="button"
-                  onClick={toggleSuggestionsPanel}
-                  className="flex w-full items-center gap-1.5 py-1.5 text-xs font-medium text-ink-soft/60"
-                >
-                  <span className="flex-1 text-left">
-                    💡 {active.messages.length === 0 ? 'Pour démarrer la conversation' : 'Idées pour continuer la conversation'}
-                  </span>
-                  {showSuggestions ? (
-                    <ChevronDown size={14} strokeWidth={2.25} />
-                  ) : (
-                    <ChevronUp size={14} strokeWidth={2.25} />
-                  )}
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {showSuggestions && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="flex flex-wrap items-center gap-1.5 pb-2">
-                        {suggestionCategories.map((cat) => (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => handleSuggestionCategoryClick(cat.id)}
-                            className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
-                              suggestionCategory === cat.id
-                                ? 'border-violet-400 bg-violet-500/15 text-violet-600'
-                                : 'border-ink/12 text-ink-soft/60 hover:bg-ink/5'
-                            }`}
-                          >
-                            {cat.icon} {cat.label}
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={handleSuggestionRefresh}
-                          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
-                          aria-label="Nouvelles suggestions"
-                          title="Nouvelles suggestions"
-                        >
-                          <RefreshCw size={13} strokeWidth={2.25} />
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 pb-2.5">
-                        {suggestions.map((suggestion, i) => (
-                          <motion.button
-                            key={suggestion.text}
-                            type="button"
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05, duration: 0.25 }}
-                            whileTap={{ scale: 0.96 }}
-                            onClick={() => handleSuggestionClick(suggestion.text)}
-                            className="flex max-w-[260px] items-center gap-1.5 rounded-2xl border border-violet-400/30 bg-gradient-to-r from-violet-500/10 to-pink-500/10 px-3.5 py-2 text-left text-xs font-medium text-ink transition hover:border-violet-400/60 hover:from-violet-500/15 hover:to-pink-500/15"
-                          >
-                            <span className="shrink-0">{suggestion.icon}</span>
-                            {suggestion.text}
-                          </motion.button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
 
             {replyTarget && !editingMessageId && (
               <div className="flex shrink-0 items-center justify-between gap-2 border-t border-ink/8 bg-ink/[0.03] px-4 py-2">
