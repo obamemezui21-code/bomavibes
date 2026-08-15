@@ -817,7 +817,7 @@ function Chat() {
       </div>
 
       {/* Thread */}
-      <div className={`flex-1 flex-col desktop:flex ${conversationId ? 'flex' : 'hidden'}`}>
+      <div className={`min-w-0 flex-1 flex-col desktop:flex ${conversationId ? 'flex' : 'hidden'}`}>
         {active && (
           <>
             {selectedMessage ? (
@@ -982,7 +982,7 @@ function Chat() {
               </div>
             )}
 
-            <div className="relative flex-1 overflow-hidden">
+            <div className="relative min-w-0 flex-1 overflow-hidden">
             <div ref={scrollRef} onScroll={handleThreadScroll} className="h-full space-y-2 overflow-y-auto px-4 py-4">
               {active.messages.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
