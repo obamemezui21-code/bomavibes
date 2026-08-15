@@ -290,7 +290,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                 className="flex flex-1 items-center justify-center gap-2 rounded-full bg-white/80 py-3 text-sm font-semibold text-coral-500 shadow-md transition hover:bg-white hover:shadow-lg dark:bg-surface-tint/80"
                 aria-label="Passer"
               >
-                <X size={18} strokeWidth={2.5} />
+                <X size={16} strokeWidth={2.5} />
                 <span>Passer</span>
               </motion.button>
               {onSuperlike && (
@@ -303,7 +303,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                   className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-400 to-violet-500 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-xl dark:from-violet-500 dark:to-violet-600"
                   aria-label="Super like"
                 >
-                  <Star size={18} strokeWidth={2.5} fill="currentColor" />
+                  <Star size={16} strokeWidth={2.5} fill="currentColor" />
                   <span>Super</span>
                 </motion.button>
               )}
@@ -316,7 +316,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                 className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-coral-400 to-coral-500 py-3 text-sm font-semibold text-white shadow-lg shadow-coral-500/30 transition hover:shadow-xl"
                 aria-label="Aimer"
               >
-                <Heart size={18} strokeWidth={2.5} fill="currentColor" />
+                <Heart size={16} strokeWidth={2.5} fill="currentColor" />
                 <span>Aimer</span>
               </motion.button>
             </div>
