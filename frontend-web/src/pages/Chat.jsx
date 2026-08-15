@@ -86,7 +86,7 @@ function VoiceMessage({ url, duration, fromMe }) {
   const pct = duration > 0 ? Math.min(100, (progress / duration) * 100) : 0
 
   return (
-    <div className="flex w-full max-w-48 items-center gap-2.5">
+    <div className="flex min-w-0 w-full max-w-48 items-center gap-2.5">
       <button
         type="button"
         onClick={togglePlay}
@@ -132,7 +132,7 @@ function FileMessage({ url, fileName, fileSize, fromMe }) {
       target="_blank"
       rel="noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className="flex w-full max-w-56 items-center gap-2.5"
+      className="flex min-w-0 w-full max-w-56 items-center gap-2.5"
     >
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
@@ -1020,7 +1020,7 @@ function Chat() {
                         transition={{ duration: 0.25 }}
                         className={`flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`flex min-w-0 max-w-[min(75%,32rem)] flex-col ${m.fromMe ? 'items-end' : 'items-start'}`}>
+                        <div className={`flex min-w-0 max-w-[min(75%,32rem)] flex-col gap-0.5 ${m.fromMe ? 'items-end' : 'items-start'}`}>
                         <div
                           onPointerDown={handleMessagePointerDown(m)}
                           onPointerMove={handleMessagePointerMove}
@@ -1029,7 +1029,7 @@ function Chat() {
                           onPointerCancel={clearLongPressTimer}
                           onContextMenu={handleMessageContextMenu(m)}
                           style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
-                          className={`${bubbleClass} ${
+                          className={`${bubbleClass} min-w-0 max-w-full ${
                             selectedMessage?.id === m.id ? 'rounded-2xl ring-2 ring-violet-400' : ''
                           }`}
                         >
@@ -1075,7 +1075,8 @@ function Chat() {
                                 e.stopPropagation()
                                 navigate(`/feed/${m.post.postId}`)
                               }}
-                              className="block w-56 overflow-hidden rounded-xl border border-ink/10 bg-white text-left shadow-sm dark:bg-surface-tint"
+                              className="block min-w-0 max-w-full overflow-hidden rounded-xl border border-ink/10 bg-white text-left shadow-sm dark:bg-surface-tint"
+                              style={{ maxWidth: 'clamp(200px, 100%, 224px)' }}
                             >
                               {m.post.photoUrl && (
                                 <img src={m.post.photoUrl} alt="" className="h-32 w-full object-cover" />
@@ -1110,7 +1111,7 @@ function Chat() {
                           </p>
                         </div>
                         {m.reactions && Object.keys(m.reactions).length > 0 && (
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex min-w-0 max-w-full flex-wrap gap-1">
                             {Object.entries(groupReactions(m.reactions)).map(([emoji, count]) => (
                               <button
                                 key={emoji}
