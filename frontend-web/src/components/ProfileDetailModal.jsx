@@ -279,42 +279,47 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
             </motion.button>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-5 border-t border-ink/8 p-4">
-            <motion.button
-              whileTap={{ scale: 0.85 }}
-              onClick={() => {
-                onPass()
-                onClose()
-              }}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 dark:bg-surface-tint"
-              aria-label="Passer"
-            >
-              <X size={20} strokeWidth={2.5} />
-            </motion.button>
-            {onSuperlike && (
+          <div className="border-t border-ink/8 bg-gradient-to-r from-violet-500/5 to-pink-500/5 p-4">
+            <div className="flex w-full items-center justify-center gap-2.5">
               <motion.button
-                whileTap={{ scale: 0.85 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={() => {
-                  onSuperlike()
+                  onPass()
                   onClose()
                 }}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 dark:bg-surface-tint"
-                aria-label="Super like"
+                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-white/80 py-3 text-sm font-semibold text-coral-500 shadow-md transition hover:bg-white hover:shadow-lg dark:bg-surface-tint/80"
+                aria-label="Passer"
               >
-                <Star size={20} strokeWidth={2.5} fill="currentColor" />
+                <X size={18} strokeWidth={2.5} />
+                <span>Passer</span>
               </motion.button>
-            )}
-            <motion.button
-              whileTap={{ scale: 0.85 }}
-              onClick={() => {
-                onLike()
-                onClose()
-              }}
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-coral-500 text-white shadow-xl shadow-coral-500/40"
-              aria-label="Aimer"
-            >
-              <Heart size={26} strokeWidth={2.5} fill="currentColor" />
-            </motion.button>
+              {onSuperlike && (
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  onClick={() => {
+                    onSuperlike()
+                    onClose()
+                  }}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-400 to-violet-500 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 transition hover:shadow-xl dark:from-violet-500 dark:to-violet-600"
+                  aria-label="Super like"
+                >
+                  <Star size={18} strokeWidth={2.5} fill="currentColor" />
+                  <span>Super</span>
+                </motion.button>
+              )}
+              <motion.button
+                whileTap={{ scale: 0.92 }}
+                onClick={() => {
+                  onLike()
+                  onClose()
+                }}
+                className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-coral-400 to-coral-500 py-3 text-sm font-semibold text-white shadow-lg shadow-coral-500/30 transition hover:shadow-xl"
+                aria-label="Aimer"
+              >
+                <Heart size={18} strokeWidth={2.5} fill="currentColor" />
+                <span>Aimer</span>
+              </motion.button>
+            </div>
           </div>
         )}
       </motion.div>
