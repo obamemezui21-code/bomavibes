@@ -4,6 +4,7 @@ import {
   deletePost as deletePostDoc,
   fetchFeedPage,
   fetchMyLikedPostIds,
+  subscribeToNewPostsCount,
   toggleLike as toggleLikeDoc,
   updatePost as updatePostDoc,
 } from '../firebase/feed.js'
@@ -23,6 +24,7 @@ function FeedProvider({ children }) {
   const [hasMore, setHasMore] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [newPostsCount, setNewPostsCount] = useState(0)
 
   const myInterests = publicProfile?.interests || []
 
@@ -58,6 +60,19 @@ function FeedProvider({ children }) {
     loadTab(activeTab)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab])
+
+  // Watches for posts newer than the newest one currently loaded, so the
+  // "X nouveaux posts" banner can appear without polling. The baseline only
+  // moves forward when the visible list itself is refreshed (loadTab), not
+  // on loadMore — otherwise paging down would silently clear the count.
+  useEffect(() => {
+    if (isLoading) return
+    setNewPostsCount(0)
+    const since = posts[0]?.createdAt || null
+    const unsubscribe = subscribeToNewPostsCount(since, activeTab, setNewPostsCount)
+    return unsubscribe
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, posts[0]?.id, activeTab])
 
   async function loadMore() {
     if (!hasMore || isLoadingMore || activeTab === 'foryou' || activeTab === 'popular') return
@@ -143,6 +158,7 @@ function FeedProvider({ children }) {
         hasMore,
         isLoading,
         isLoadingMore,
+        newPostsCount,
         loadMore,
         createPost,
         updatePost,

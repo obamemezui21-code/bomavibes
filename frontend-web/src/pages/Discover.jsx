@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  Bell,
   Heart,
   MapPin,
   Megaphone,
@@ -196,6 +197,17 @@ function Discover() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => navigate('/annonces')}
+                className="relative flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
+                aria-label="Annonces"
+              >
+                <Bell size={17} />
+                {hasUnseenAnnouncement && (
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral-500" />
+                )}
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowSearch((v) => !v)}
                 className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${
                   showSearch
@@ -335,37 +347,39 @@ function Discover() {
                 />
               ))}
 
-              {/* Floating actions, overlapping the card's edges rather than sitting in their own row */}
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.85 }}
-                disabled={!topProfile}
-                onClick={() => topProfile && handlePass(topProfile)}
-                className="absolute -bottom-5 left-4 z-20 flex h-14 w-14 items-center justify-center rounded-2xl bg-coral-500 text-white shadow-xl shadow-coral-500/30 disabled:opacity-40"
-                aria-label="Passer"
-              >
-                <X size={24} strokeWidth={2.5} />
-              </motion.button>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.85 }}
-                disabled={!topProfile}
-                onClick={() => topProfile && handleSuperlike(topProfile)}
-                className="absolute -right-2 bottom-28 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
-                aria-label="Super like"
-              >
-                <Star size={19} strokeWidth={2.5} fill="currentColor" />
-              </motion.button>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.85 }}
-                disabled={!topProfile}
-                onClick={() => topProfile && handleLike(topProfile)}
-                className="absolute -bottom-5 right-4 z-20 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
-                aria-label="Aimer"
-              >
-                <Heart size={28} strokeWidth={2.5} fill="currentColor" />
-              </motion.button>
+              {/* Floating action row, centered and overlapping the card's bottom edge */}
+              <div className="absolute inset-x-0 -bottom-7 z-20 flex items-end justify-center gap-4">
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.85 }}
+                  disabled={!topProfile}
+                  onClick={() => topProfile && handlePass(topProfile)}
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
+                  aria-label="Passer"
+                >
+                  <X size={24} strokeWidth={2.5} />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.85 }}
+                  disabled={!topProfile}
+                  onClick={() => topProfile && handleLike(topProfile)}
+                  className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
+                  aria-label="Aimer"
+                >
+                  <Heart size={30} strokeWidth={2.5} fill="currentColor" />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.85 }}
+                  disabled={!topProfile}
+                  onClick={() => topProfile && handleSuperlike(topProfile)}
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
+                  aria-label="Super like"
+                >
+                  <Star size={22} strokeWidth={2.5} fill="currentColor" />
+                </motion.button>
+              </div>
             </div>
 
             <p className="flex items-center gap-1.5 text-xs text-ink-soft/50">

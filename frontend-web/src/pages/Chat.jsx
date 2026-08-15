@@ -997,7 +997,8 @@ function Chat() {
                 {active.messages.map((m, i) => {
                   const showDaySeparator = !isSameDay(m.date, active.messages[i - 1]?.date)
                   const isSticker = m.type === 'sticker'
-                  const bubbleClass = isSticker
+                  const isPost = m.type === 'post'
+                  const bubbleClass = isSticker || isPost
                     ? 'cursor-pointer select-none'
                     : `min-w-0 max-w-full cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
                         m.fromMe
@@ -1067,12 +1068,34 @@ function Chat() {
                             <FileMessage url={m.fileUrl} fileName={m.fileName} fileSize={m.fileSize} fromMe={m.fromMe} />
                           ) : isSticker ? (
                             <img src={stickerSrc(m.stickerId)} alt="" className="h-28 w-28 object-contain" />
+                          ) : isPost ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/feed/${m.post.postId}`)
+                              }}
+                              className="block w-56 overflow-hidden rounded-xl border border-ink/10 bg-white text-left shadow-sm dark:bg-surface-tint"
+                            >
+                              {m.post.photoUrl && (
+                                <img src={m.post.photoUrl} alt="" className="h-32 w-full object-cover" />
+                              )}
+                              <div className="p-2.5">
+                                <p className="flex items-center gap-1 text-[11px] font-semibold text-violet-600">
+                                  <Send size={11} strokeWidth={2.5} />
+                                  Publication de {m.post.authorName || 'quelqu’un'}
+                                </p>
+                                {m.post.text && (
+                                  <p className="mt-1 line-clamp-2 text-xs text-ink-soft/70">{m.post.text}</p>
+                                )}
+                              </div>
+                            </button>
                           ) : (
                             <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{m.text}</p>
                           )}
                           <p
                             className={`mt-0.5 flex items-center gap-1 text-[10px] ${
-                              isSticker ? 'text-ink-soft/50' : m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
+                              isSticker || isPost ? 'text-ink-soft/50' : m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
                             }`}
                           >
                             {m.time}
@@ -1153,7 +1176,7 @@ function Chat() {
             {replyTarget && !editingMessageId && (
               <div className="flex shrink-0 items-center justify-between gap-2 border-t border-ink/8 bg-ink/[0.03] px-4 py-2">
                 <div className="min-w-0 flex-1 border-l-2 border-violet-400 pl-2.5">
-                  <p className="text-xs font-semibold text-violet-600">
+                  <p className="truncate text-xs font-semibold text-violet-600">
                     {replyTarget.fromMe ? 'Vous' : active.profile.firstName}
                   </p>
                   <p className="truncate text-xs text-ink-soft/60">{messagePreviewText(replyTarget)}</p>

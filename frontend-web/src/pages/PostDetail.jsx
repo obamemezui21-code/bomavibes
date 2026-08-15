@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Heart, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Heart, MessageCircle, Send } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useFeed } from '../context/FeedContext.jsx'
@@ -26,6 +26,7 @@ import CommentComposer from '../components/feed/CommentComposer.jsx'
 import EditPostModal from '../components/feed/EditPostModal.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
+import SendToModal from '../components/feed/SendToModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 function PostDetail() {
@@ -46,6 +47,7 @@ function PostDetail() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
 
   useEffect(() => {
     const unsubscribe = subscribeToPost(postId, setPost)
@@ -222,6 +224,14 @@ function PostDetail() {
           <ArrowLeft size={18} strokeWidth={2} />
         </button>
         <h1 className="min-w-0 flex-1 truncate font-display text-base font-semibold text-ink">Publication</h1>
+        <button
+          type="button"
+          onClick={() => setIsSharing(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
+          aria-label="Envoyer en message"
+        >
+          <Send size={16} strokeWidth={2.25} />
+        </button>
         {isOwn && (
           <div className="flex items-center gap-3">
             <button
@@ -332,6 +342,19 @@ function PostDetail() {
           />
         )}
       </AnimatePresence>
+
+      {isSharing && (
+        <SendToModal
+          post={{
+            postId,
+            authorId: post.authorId,
+            authorName: author?.firstName || '',
+            text: (post.text || '').slice(0, 300),
+            photoUrl: post.photoThumbUrl || post.photoUrl || null,
+          }}
+          onClose={() => setIsSharing(false)}
+        />
+      )}
 
       {reportTarget?.post && (
         <ReportModal

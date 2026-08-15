@@ -370,46 +370,6 @@ function Profile() {
             </div>
           </div>
 
-          <div className="space-y-2.5">
-            <motion.button
-              type="submit"
-              disabled={isSaving}
-              whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSaving ? 'Enregistrement…' : 'Enregistrer'}
-            </motion.button>
-
-            <button
-              type="button"
-              onClick={() => navigate('/settings')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
-            >
-              <Settings size={16} strokeWidth={2} />
-              Paramètres
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigate('/soutenir')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
-            >
-              <Heart size={16} strokeWidth={2} />
-              Soutenir BomaVibes
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                logout()
-                navigate('/')
-              }}
-              className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink-soft/70 transition hover:bg-ink/5"
-            >
-              Déconnexion
-            </button>
-          </div>
-
           <div>
             <label className={labelClass}>Pays</label>
             <div className="max-h-60 space-y-3 overflow-y-auto pr-1">
@@ -581,6 +541,46 @@ function Profile() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="space-y-2.5 border-t border-ink/8 pt-5">
+            <motion.button
+              type="submit"
+              disabled={isSaving}
+              whileTap={{ scale: 0.97 }}
+              className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSaving ? 'Enregistrement…' : 'Enregistrer'}
+            </motion.button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+            >
+              <Settings size={16} strokeWidth={2} />
+              Paramètres
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/soutenir')}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+            >
+              <Heart size={16} strokeWidth={2} />
+              Soutenir BomaVibes
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                logout()
+                navigate('/')
+              }}
+              className="w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink-soft/70 transition hover:bg-ink/5"
+            >
+              Déconnexion
+            </button>
           </div>
         </form>
       </div>

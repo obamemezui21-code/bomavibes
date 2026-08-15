@@ -23,11 +23,11 @@ function CommentComposer({ replyTarget, replyAuthorName, onCancelReply, onSubmit
   return (
     <div className="border-t border-ink/8 bg-surface p-3">
       {replyTarget && (
-        <div className="mb-2 flex items-center justify-between rounded-lg bg-ink/[0.04] px-3 py-1.5 text-xs">
-          <span className="text-ink-soft/70">
+        <div className="mb-2 flex min-w-0 items-center justify-between gap-2 rounded-lg bg-ink/[0.04] px-3 py-1.5 text-xs">
+          <span className="min-w-0 truncate text-ink-soft/70">
             Réponse à <span className="font-semibold text-ink">{replyAuthorName || 'ce commentaire'}</span>
           </span>
-          <button type="button" onClick={onCancelReply} className="text-ink-soft/50 hover:text-ink">
+          <button type="button" onClick={onCancelReply} className="shrink-0 text-ink-soft/50 hover:text-ink">
             <X size={14} strokeWidth={2.25} />
           </button>
         </div>

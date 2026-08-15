@@ -181,6 +181,7 @@ export function ConversationsProvider({ children }) {
             fileName: data.fileName || null,
             fileSize: data.fileSize || 0,
             stickerId: data.stickerId || null,
+            post: data.post || null,
             reactions: data.reactions || null,
             time: formatTime(date),
             date,
@@ -371,6 +372,28 @@ export function ConversationsProvider({ children }) {
     }
   }
 
+  async function sendPostMessage(matchId, post) {
+    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+      senderId: uid,
+      text: '',
+      type: 'post',
+      post,
+      createdAt: serverTimestamp(),
+    })
+    const match = matches.find((m) => m.id === matchId)
+    const otherUid = match?.users.find((u) => u !== uid)
+    const preview = messagePreviewText({ type: 'post' })
+    await updateDoc(doc(db, 'matches', matchId), {
+      lastMessage: preview,
+      lastMessageAt: serverTimestamp(),
+      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
+    })
+
+    if (otherUid) {
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+    }
+  }
+
   async function editMessage(matchId, messageId, text) {
     await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
       text,
@@ -413,6 +436,7 @@ export function ConversationsProvider({ children }) {
         sendVoiceMessage,
         sendAttachmentMessage,
         sendStickerMessage,
+        sendPostMessage,
         editMessage,
         deleteMessage,
         toggleMessageReaction,

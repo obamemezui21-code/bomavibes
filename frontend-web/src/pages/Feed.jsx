@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
-import { Plus } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowUp, Plus } from 'lucide-react'
 import { useFeed } from '../context/FeedContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -14,6 +14,7 @@ import FeedTabs from '../components/feed/FeedTabs.jsx'
 import PostCard from '../components/feed/PostCard.jsx'
 import PostComposer from '../components/feed/PostComposer.jsx'
 import EditPostModal from '../components/feed/EditPostModal.jsx'
+import SendToModal from '../components/feed/SendToModal.jsx'
 import FeedEmptyState from '../components/feed/FeedEmptyState.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
@@ -29,10 +30,12 @@ function Feed() {
     hasMore,
     isLoading,
     isLoadingMore,
+    newPostsCount,
     loadMore,
     deletePost,
     updatePost,
     toggleLikePost,
+    refresh,
   } = useFeed()
   const { user, publicProfile } = useAuth()
   const { conversations } = useConversations()
@@ -44,6 +47,7 @@ function Feed() {
   const [reportTarget, setReportTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [editTarget, setEditTarget] = useState(null)
+  const [shareTarget, setShareTarget] = useState(null)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
   const sentinelRef = useRef(null)
 
@@ -99,6 +103,11 @@ function Feed() {
     }
   }
 
+  async function handleShowNewPosts() {
+    await refresh()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
       <div className="flex items-center justify-between gap-3">
@@ -119,6 +128,27 @@ function Feed() {
       <div className="mt-5">
         <FeedTabs activeTab={activeTab} onChange={setActiveTab} />
       </div>
+
+      <AnimatePresence>
+        {newPostsCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <button
+              type="button"
+              onClick={handleShowNewPosts}
+              className="mx-auto mt-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
+            >
+              <ArrowUp size={14} strokeWidth={2.5} />
+              {newPostsCount === 1 ? '1 nouveau post' : `${newPostsCount}${newPostsCount >= 50 ? '+' : ''} nouveaux posts`}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {isLoading ? (
         <div className="flex justify-center py-16">
@@ -141,6 +171,15 @@ function Feed() {
               onDelete={() => setDeleteTarget(post)}
               onEdit={() => setEditTarget(post)}
               onReport={() => setReportTarget(post)}
+              onShare={() =>
+                setShareTarget({
+                  postId: post.id,
+                  authorId: post.authorId,
+                  authorName: authorsById[post.authorId]?.firstName || '',
+                  text: (post.text || '').slice(0, 300),
+                  photoUrl: post.photoThumbUrl || post.photoUrl || null,
+                })
+              }
             />
           ))}
           <div ref={sentinelRef} />
@@ -189,6 +228,8 @@ function Feed() {
           isSubmitting={isSubmittingSafety}
         />
       )}
+
+      {shareTarget && <SendToModal post={shareTarget} onClose={() => setShareTarget(null)} />}
 
       <AnimatePresence>
         {deleteTarget && (

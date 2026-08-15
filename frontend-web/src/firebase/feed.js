@@ -92,6 +92,20 @@ async function fetchFeedPage({ tab, cursor, pageSize = PAGE_SIZE }) {
   return { posts, authorsById, nextCursor: snap.docs[snap.docs.length - 1] || null }
 }
 
+const NEW_POSTS_LIMIT = 50
+
+// Counts posts newer than `since` without fetching the feed itself — used to
+// power the "X nouveaux posts" banner while the user stays on an older page
+// of the list. Scoped to the questions filter when relevant so the count
+// matches what that tab would actually show.
+function subscribeToNewPostsCount(since, tab, cb) {
+  if (!since) return () => {}
+  const constraints = [where('createdAt', '>', since), orderBy('createdAt', 'desc'), limit(NEW_POSTS_LIMIT)]
+  if (tab === 'questions') constraints.unshift(where('type', '==', 'question'))
+  const q = query(collection(db, 'posts'), ...constraints)
+  return onSnapshot(q, (snap) => cb(snap.size))
+}
+
 async function getPost(postId) {
   const snap = await getDoc(doc(db, 'posts', postId))
   if (!snap.exists()) return null
@@ -236,6 +250,7 @@ export {
   getPost,
   hasLiked,
   subscribeToComments,
+  subscribeToNewPostsCount,
   subscribeToPost,
   toggleLike,
   updatePost,

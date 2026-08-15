@@ -45,7 +45,7 @@ function LikeBurst({ burstId }) {
   )
 }
 
-function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, currentUserId, onDelete, onEdit, onReport }) {
+function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, currentUserId, onDelete, onEdit, onReport, onShare }) {
   const [showMenu, setShowMenu] = useState(false)
   const [burstId, setBurstId] = useState(0)
   const { showToast } = useToast()
@@ -148,6 +148,18 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
                 >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowMenu(false)
+                      onShare?.()
+                    }}
+                    className="flex w-full items-center gap-2 border-b border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                  >
+                    <Send size={14} strokeWidth={2.25} />
+                    Envoyer en message
+                  </button>
                   {isOwn ? (
                     <>
                       <button
