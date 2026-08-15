@@ -282,7 +282,9 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           <div className="border-t border-ink/8 bg-gradient-to-r from-violet-500/5 to-pink-500/5 p-4">
             <div className="flex w-full items-center justify-center gap-2.5">
               <motion.button
-                whileTap={{ scale: 0.92 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.88, rotate: -5 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 onClick={() => {
                   onPass()
                   onClose()
@@ -295,7 +297,9 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               </motion.button>
               {onSuperlike && (
                 <motion.button
-                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.88, rotate: 5 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                   onClick={() => {
                     onSuperlike()
                     onClose()
@@ -308,7 +312,9 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                 </motion.button>
               )}
               <motion.button
-                whileTap={{ scale: 0.92 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.88 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 onClick={() => {
                   onLike()
                   onClose()
