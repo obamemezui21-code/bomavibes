@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app'
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 
@@ -13,6 +14,19 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig)
+
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY
+if (recaptchaSiteKey) {
+  if (import.meta.env.DEV) {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true
+  }
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  })
+} else if (import.meta.env.DEV) {
+  console.warn('VITE_RECAPTCHA_SITE_KEY is not set — Firebase App Check is disabled.')
+}
 
 export const auth = getAuth(app)
 export const db = getFirestore(app)

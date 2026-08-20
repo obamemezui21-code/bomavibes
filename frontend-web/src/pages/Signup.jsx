@@ -158,7 +158,13 @@ function Signup() {
           />
         </div>
 
-        <label className="flex items-start gap-2.5 text-xs leading-relaxed text-ink-soft">
+        <label
+          className={`flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-xs leading-relaxed transition ${
+            acceptedTerms
+              ? 'border-violet-400/40 bg-violet-400/[0.06] text-ink-soft'
+              : 'border-ink/12 bg-ink/[0.03] text-ink-soft'
+          }`}
+        >
           <input
             type="checkbox"
             checked={acceptedTerms}
