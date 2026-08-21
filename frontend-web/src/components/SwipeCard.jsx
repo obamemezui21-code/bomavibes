@@ -51,7 +51,8 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
         scale: 1 - stackIndex * 0.04,
         y: stackIndex * 14,
         rotate: stackIndex * 3,
-        opacity: stackIndex > 2 ? 0 : 1,
+        // Only the top card is visible — no peeking stack behind it.
+        opacity: stackIndex === 0 ? 1 : 0,
       }
 
   const draggable = isTop && !exitDirection
@@ -136,13 +137,13 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
           {(profile.datingGoal || profile.isEntrepreneur) && (
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
               {profile.datingGoal && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-ink-on-brand">
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
                   <Target size={11} strokeWidth={2.5} />
                   {profile.datingGoal}
                 </span>
               )}
               {profile.isEntrepreneur && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/25 px-2.5 py-1 text-[11px] font-semibold text-white">
+                <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
                   🚀 Entrepreneur·e
                 </span>
               )}
@@ -153,7 +154,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
               {profile.firstName}, {profile.age}
             </h2>
             {profile.verified && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-white">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white">
                 <Check size={11} strokeWidth={3} />
               </span>
             )}
@@ -165,14 +166,22 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
               {profile.country ? `, ${profile.country}` : ''}
             </p>
           )}
-          {profile.interests?.length > 0 && (
+          {(profile.interests?.length > 0 || profile.personalityTraits?.length > 0) && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {profile.interests.slice(0, 3).map((interest) => (
+              {profile.interests?.slice(0, 3).map((interest) => (
                 <span
                   key={interest}
-                  className="rounded-full bg-white/25 px-2.5 py-1 text-[11px] font-medium text-white"
+                  className="rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm"
                 >
                   {interest}
+                </span>
+              ))}
+              {profile.personalityTraits?.slice(0, 2).map((trait) => (
+                <span
+                  key={trait}
+                  className="rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm"
+                >
+                  ✨ {trait}
                 </span>
               ))}
             </div>
