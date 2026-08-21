@@ -15,6 +15,7 @@ import {
   LIFESTYLE_GROUPS,
   MAX_PERSONALITY_TRAITS,
   PERSONALITY_TRAITS,
+  RELIGIONS,
 } from '../lib/onboardingOptions.js'
 import { inputClass, labelClass, chipClass } from '../lib/formStyles.js'
 
@@ -65,6 +66,8 @@ function Onboarding() {
     personalityTraits: [],
     datingGoal: '',
     isEntrepreneur: false,
+    religion: '',
+    isTraveling: false,
     lifestyle: { sport: '', travel: '', smoking: '', alcohol: '' },
     prefGender: 'TOUS',
     prefMaxDistance: 25,
@@ -171,6 +174,8 @@ function Onboarding() {
           personalityTraits: form.personalityTraits,
           datingGoal: form.datingGoal || null,
           isEntrepreneur: form.isEntrepreneur,
+          religion: form.religion || null,
+          isTraveling: form.isTraveling,
           lifestyle: form.lifestyle,
           photos: photoUrls,
           verified: false,
@@ -574,7 +579,7 @@ function Onboarding() {
                       ))}
                     </div>
                   </div>
-                  <div>
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, isEntrepreneur: !f.isEntrepreneur }))}
@@ -582,6 +587,28 @@ function Onboarding() {
                     >
                       🚀 Je suis entrepreneur·e
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, isTraveling: !f.isTraveling }))}
+                      className={chipClass(form.isTraveling)}
+                    >
+                      ✈️ Actuellement en voyage
+                    </button>
+                  </div>
+                  <div>
+                    <p className={labelClass}>Religion (optionnel)</p>
+                    <select
+                      value={form.religion}
+                      onChange={(e) => setForm((f) => ({ ...f, religion: e.target.value }))}
+                      className={inputClass}
+                    >
+                      <option value="">Préférer ne pas préciser</option>
+                      {RELIGIONS.map((religion) => (
+                        <option key={religion} value={religion}>
+                          {religion}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               )}

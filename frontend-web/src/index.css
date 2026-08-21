@@ -92,7 +92,12 @@ html.dark {
 
 body {
   margin: 0;
-  overflow-x: hidden;
+  /* Not overflow-x: hidden here — with html's overflow-x already hidden,
+     also setting it on body stops the html->viewport overflow propagation
+     and turns body into its own independent scroll container, which breaks
+     position: sticky for every descendant (nearest scrolling ancestor
+     becomes body instead of the viewport). html alone is enough to block
+     horizontal scroll. */
   font-family: var(--font-sans);
   background: var(--color-surface);
   -webkit-font-smoothing: antialiased;

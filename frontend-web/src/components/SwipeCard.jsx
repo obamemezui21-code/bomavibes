@@ -10,6 +10,25 @@ const STACK_TRANSITION = { type: 'spring', stiffness: 500, damping: 32 }
 const FALLBACK_AVATAR_SEED = (profile) =>
   `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
 
+// Each interest/trait badge gets its own tint from this rotation so the
+// tag row reads as varied instead of one flat color block. Full literal
+// class strings (not built from a variable) so Tailwind's build actually
+// generates them. Picked deterministically from the label so the same tag
+// always gets the same color across cards/re-renders.
+const BADGE_TINTS = [
+  'border-violet-300/40 bg-violet-500/30',
+  'border-pink-300/40 bg-pink-500/30',
+  'border-coral-300/40 bg-coral-500/30',
+  'border-mint-300/40 bg-mint-500/30',
+  'border-sky-300/40 bg-sky-500/30',
+]
+
+function tintForTag(tag) {
+  let hash = 0
+  for (let i = 0; i < tag.length; i++) hash = (hash * 31 + tag.charCodeAt(i)) >>> 0
+  return BADGE_TINTS[hash % BADGE_TINTS.length]
+}
+
 function avatarFor(profile, index) {
   return photoVariant(profile.photos?.[index], 'medium') || FALLBACK_AVATAR_SEED(profile)
 }
@@ -171,7 +190,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
               {profile.interests?.slice(0, 3).map((interest) => (
                 <span
                   key={interest}
-                  className="rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm"
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm ${tintForTag(interest)}`}
                 >
                   {interest}
                 </span>
@@ -179,7 +198,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
               {profile.personalityTraits?.slice(0, 2).map((trait) => (
                 <span
                   key={trait}
-                  className="rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm"
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm ${tintForTag(trait)}`}
                 >
                   ✨ {trait}
                 </span>

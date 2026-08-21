@@ -18,6 +18,12 @@ export const MAX_PERSONALITY_TRAITS = 5
 export const DATING_GOALS = [
   'Relation sérieuse', 'Mariage', 'Faire connaissance', 'Amitié',
   'Relation à distance', 'Rencontres culturelles', 'Partager des passions',
+  'Sortie', 'Discussion',
+]
+
+export const RELIGIONS = [
+  'Christianisme', 'Islam', 'Judaïsme', 'Bouddhisme', 'Hindouisme',
+  'Spiritualité', 'Autre', 'Sans religion',
 ]
 
 export const LIFESTYLE_GROUPS = [

@@ -15,6 +15,7 @@ import {
   LIFESTYLE_GROUPS,
   MAX_PERSONALITY_TRAITS,
   PERSONALITY_TRAITS,
+  RELIGIONS,
 } from '../lib/onboardingOptions.js'
 import { inputClass, labelClass, chipClass } from '../lib/formStyles.js'
 
@@ -31,6 +32,8 @@ const emptyForm = {
   personalityTraits: [],
   datingGoal: '',
   isEntrepreneur: false,
+  religion: '',
+  isTraveling: false,
   lifestyle: { sport: '', travel: '', smoking: '', alcohol: '' },
 }
 
@@ -61,6 +64,8 @@ function Profile() {
       personalityTraits: publicProfile?.personalityTraits || [],
       datingGoal: publicProfile?.datingGoal || '',
       isEntrepreneur: publicProfile?.isEntrepreneur || false,
+      religion: publicProfile?.religion || '',
+      isTraveling: publicProfile?.isTraveling || false,
       lifestyle: publicProfile?.lifestyle || { sport: '', travel: '', smoking: '', alcohol: '' },
     })
     setCountryCode(
@@ -166,6 +171,8 @@ function Profile() {
           personalityTraits: form.personalityTraits,
           datingGoal: form.datingGoal || null,
           isEntrepreneur: form.isEntrepreneur,
+          religion: form.religion || null,
+          isTraveling: form.isTraveling,
           lifestyle: form.lifestyle,
           photos: photoUrls,
           updatedAt: serverTimestamp(),
@@ -502,7 +509,7 @@ function Profile() {
             </div>
           </div>
 
-          <div>
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, isEntrepreneur: !f.isEntrepreneur }))}
@@ -510,6 +517,29 @@ function Profile() {
             >
               🚀 Je suis entrepreneur·e
             </button>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, isTraveling: !f.isTraveling }))}
+              className={chipClass(form.isTraveling)}
+            >
+              ✈️ Actuellement en voyage
+            </button>
+          </div>
+
+          <div>
+            <label className={labelClass}>Religion (optionnel)</label>
+            <select
+              value={form.religion}
+              onChange={(e) => setForm((f) => ({ ...f, religion: e.target.value }))}
+              className={inputClass}
+            >
+              <option value="">Préférer ne pas préciser</option>
+              {RELIGIONS.map((religion) => (
+                <option key={religion} value={religion}>
+                  {religion}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-4">

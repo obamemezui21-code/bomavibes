@@ -4,10 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
   Check,
+  Globe2,
   Heart,
   MapPin,
   Megaphone,
   MessageCircle,
+  Plane,
   RotateCcw,
   Search,
   Send,
@@ -28,10 +30,13 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { matchPercent } from '../lib/interests.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
+import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
+import { RELIGIONS } from '../lib/onboardingOptions.js'
 
 const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
 const DECK_SIZE = 5
-const GOAL_CHIPS = ['Relation sérieuse', 'Amitié', 'Faire connaissance']
+const NEARBY_CHIP = 'À proximité'
+const GOAL_CHIPS = [NEARBY_CHIP, 'Relation sérieuse', 'Amitié', 'Sortie', 'Discussion']
 
 function avatarFor(profile) {
   return (
@@ -58,13 +63,25 @@ function Discover() {
   const [showFilters, setShowFilters] = useState(false)
   const [expandedProfile, setExpandedProfile] = useState(null)
   const [search, setSearch] = useState('')
-  const [goalFilter, setGoalFilter] = useState(null)
+  const [activeChip, setActiveChip] = useState(null)
+  const [countryFilter, setCountryFilter] = useState('')
+  const [religionFilter, setReligionFilter] = useState('')
+  const [travelingOnly, setTravelingOnly] = useState(false)
   const [matchedProfile, setMatchedProfile] = useState(null)
   const [matchConversationId, setMatchConversationId] = useState(null)
   const [exitingId, setExitingId] = useState(null)
   const [exitDirection, setExitDirection] = useState(null)
   const [isReviewing, setIsReviewing] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
   const seenIdsRef = useRef(new Set())
+
+  useEffect(() => {
+    function handleScroll() {
+      setIsScrolled(window.scrollY > 8)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   async function loadCandidates(currentFilters, { includeRefused = false } = {}) {
     if (!user?.id) return
@@ -91,13 +108,20 @@ function Discover() {
 
   const searched = useMemo(() => {
     let list = profiles
-    if (goalFilter) list = list.filter((p) => p.datingGoal === goalFilter)
+    if (activeChip === NEARBY_CHIP) {
+      if (publicProfile?.city) list = list.filter((p) => p.city === publicProfile.city)
+    } else if (activeChip) {
+      list = list.filter((p) => p.datingGoal === activeChip)
+    }
+    if (countryFilter) list = list.filter((p) => p.country === countryFilter)
+    if (religionFilter) list = list.filter((p) => p.religion === religionFilter)
+    if (travelingOnly) list = list.filter((p) => p.isTraveling)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((p) => p.firstName?.toLowerCase().includes(q))
     }
     return list
-  }, [profiles, search, goalFilter])
+  }, [profiles, search, activeChip, countryFilter, religionFilter, travelingOnly, publicProfile])
 
   const deck = searched.slice(0, DECK_SIZE)
   const topProfile = deck[0] || null
@@ -186,12 +210,17 @@ function Discover() {
   }
 
   return (
-    <div className="relative min-h-svh overflow-hidden bg-surface-soft px-4 pb-10 pt-6 sm:px-6 desktop:min-h-full">
+    <div className="relative min-h-svh bg-surface-soft desktop:min-h-full">
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
       <div className="pointer-events-none absolute -right-20 top-40 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6">
-        <div>
+      {/* Sticky nav — solid at the very top, fades into a blurred glass bar once scrolled */}
+      <div
+        className={`sticky top-0 z-30 px-4 pt-6 transition-colors duration-300 sm:px-6 ${
+          isScrolled ? 'bg-surface-soft/70 backdrop-blur-xl' : 'bg-surface-soft'
+        }`}
+      >
+        <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
@@ -239,9 +268,9 @@ function Discover() {
           <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
             <button
               type="button"
-              onClick={() => setGoalFilter(null)}
+              onClick={() => setActiveChip(null)}
               className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                !goalFilter
+                !activeChip
                   ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
                   : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
               }`}
@@ -252,9 +281,9 @@ function Discover() {
               <button
                 key={goal}
                 type="button"
-                onClick={() => setGoalFilter((prev) => (prev === goal ? null : goal))}
+                onClick={() => setActiveChip((prev) => (prev === goal ? null : goal))}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                  goalFilter === goal
+                  activeChip === goal
                     ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
                     : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
                 }`}
@@ -264,6 +293,57 @@ function Discover() {
             ))}
           </div>
 
+          <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1">
+            <div className="relative shrink-0">
+              <Globe2 size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+              <select
+                value={countryFilter}
+                onChange={(e) => setCountryFilter(e.target.value)}
+                className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
+              >
+                <option value="">Tous pays</option>
+                {CONTINENT_ORDER.map((continent) => (
+                  <optgroup key={continent} label={continent}>
+                    {COUNTRIES.filter((c) => c.continent === continent).map((c) => (
+                      <option key={c.code} value={c.name}>
+                        {c.flag} {c.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+            <div className="relative shrink-0">
+              <select
+                value={religionFilter}
+                onChange={(e) => setReligionFilter(e.target.value)}
+                className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 px-3 text-xs font-medium text-ink-soft/80 outline-none"
+              >
+                <option value="">Toutes religions</option>
+                {RELIGIONS.map((religion) => (
+                  <option key={religion} value={religion}>
+                    {religion}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="relative shrink-0">
+              <Plane size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+              <select
+                value={travelingOnly ? 'traveling' : ''}
+                onChange={(e) => setTravelingOnly(e.target.value === 'traveling')}
+                className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
+              >
+                <option value="">Tous</option>
+                <option value="traveling">En voyage</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 sm:px-6">
+        <div>
           <AnimatePresence>
             {hasUnseenAnnouncement && latestAnnouncement && (
               <motion.div
