@@ -218,6 +218,7 @@ export function ConversationsProvider({ children }) {
             firstName: profile.firstName,
             age: profile.age,
             city: profile.city,
+            verified: !!profile.verified,
             interests: profile.interests || [],
             photo:
               photoVariant(profile.photos?.[0], 'thumb') ||

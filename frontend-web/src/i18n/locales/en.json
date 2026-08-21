@@ -15,11 +15,12 @@
   },
   "nav": {
     "discover": "Discover",
-    "feed": "Feed",
+    "feed": "News",
     "matches": "Matches",
     "messages": "Messages",
     "announcements": "Updates",
     "profile": "Profile",
+    "events": "Events",
     "settings": "Settings"
   },
   "auth": {

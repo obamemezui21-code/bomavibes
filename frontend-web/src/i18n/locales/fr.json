@@ -15,11 +15,12 @@
   },
   "nav": {
     "discover": "Découvrir",
-    "feed": "Feed",
+    "feed": "Actus",
     "matches": "Matchs",
     "messages": "Messages",
     "announcements": "Annonces",
     "profile": "Profil",
+    "events": "Événements",
     "settings": "Paramètres"
   },
   "auth": {

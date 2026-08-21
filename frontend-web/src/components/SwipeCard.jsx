@@ -94,117 +94,123 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
       }}
       className="absolute inset-0"
     >
-      <div className="relative h-full w-full cursor-grab overflow-hidden rounded-[28px] shadow-xl active:cursor-grabbing">
-        <img
-          src={avatarFor(profile, photoIndex)}
-          onError={fallbackToFullPhoto(fullPhotoFor(profile, photoIndex))}
-          alt={profile.firstName}
-          draggable={false}
-          className="h-full w-full select-none object-cover"
-        />
-        <div
-          onClick={(e) => {
-            if (Math.abs(x.get()) < 5) handlePhotoZoneClick(e)
-          }}
-          className="absolute inset-0"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+      {/* Shadow lives on this outer box; overflow-hidden (for the rounded
+          image/content) is on a separate inner wrapper — an element's own
+          overflow-hidden clips its own box-shadow, so combining both on one
+          div was silently hiding the "lifted off the background" shadow. */}
+      <div className="relative h-full w-full cursor-grab rounded-[28px] shadow-xl active:cursor-grabbing">
+        <div className="relative h-full w-full overflow-hidden rounded-[28px]">
+          <img
+            src={avatarFor(profile, photoIndex)}
+            onError={fallbackToFullPhoto(fullPhotoFor(profile, photoIndex))}
+            alt={profile.firstName}
+            draggable={false}
+            className="h-full w-full select-none object-cover"
+          />
+          <div
+            onClick={(e) => {
+              if (Math.abs(x.get()) < 5) handlePhotoZoneClick(e)
+            }}
+            className="absolute inset-0"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
 
-        {photoCount > 1 && (
-          <div className="pointer-events-none absolute inset-x-3 top-3 flex gap-1">
-            {Array.from({ length: photoCount }).map((_, i) => (
-              <span key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/30">
-                <span
-                  className="block h-full rounded-full bg-white transition-all duration-200"
-                  style={{ width: i <= photoIndex ? '100%' : '0%' }}
-                />
-              </span>
-            ))}
-          </div>
-        )}
-
-        {isTop && (
-          <>
-            <motion.div
-              style={{ opacity: likeOpacity }}
-              className="absolute left-6 top-8 rotate-[-12deg] rounded-lg border-4 border-mint-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-mint-500"
-            >
-              Like
-            </motion.div>
-            <motion.div
-              style={{ opacity: nopeOpacity }}
-              className="absolute right-6 top-8 rotate-[12deg] rounded-lg border-4 border-coral-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-coral-500"
-            >
-              Nope
-            </motion.div>
-          </>
-        )}
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpenDetail()
-          }}
-          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
-          aria-label="Voir le profil complet"
-        >
-          <Info size={16} />
-        </button>
-
-        <div className="absolute inset-x-0 bottom-0 px-5 pb-10 pt-5">
-          {(profile.datingGoal || profile.isEntrepreneur) && (
-            <div className="mb-2 flex flex-wrap items-center gap-1.5">
-              {profile.datingGoal && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-                  <Target size={11} strokeWidth={2.5} />
-                  {profile.datingGoal}
+          {photoCount > 1 && (
+            <div className="pointer-events-none absolute inset-x-3 top-3 flex gap-1">
+              {Array.from({ length: photoCount }).map((_, i) => (
+                <span key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/30">
+                  <span
+                    className="block h-full rounded-full bg-white transition-all duration-200"
+                    style={{ width: i <= photoIndex ? '100%' : '0%' }}
+                  />
                 </span>
-              )}
-              {profile.isEntrepreneur && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-                  🚀 Entrepreneur·e
+              ))}
+            </div>
+          )}
+
+          {isTop && (
+            <>
+              <motion.div
+                style={{ opacity: likeOpacity }}
+                className="absolute left-6 top-8 rotate-[-12deg] rounded-lg border-4 border-mint-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-mint-500"
+              >
+                Like
+              </motion.div>
+              <motion.div
+                style={{ opacity: nopeOpacity }}
+                className="absolute right-6 top-8 rotate-[12deg] rounded-lg border-4 border-coral-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-coral-500"
+              >
+                Nope
+              </motion.div>
+            </>
+          )}
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenDetail()
+            }}
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
+            aria-label="Voir le profil complet"
+          >
+            <Info size={16} />
+          </button>
+
+          <div className="absolute inset-x-0 bottom-0 px-5 pb-10 pt-5">
+            {(profile.datingGoal || profile.isEntrepreneur) && (
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                {profile.datingGoal && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                    <Target size={11} strokeWidth={2.5} />
+                    {profile.datingGoal}
+                  </span>
+                )}
+                {profile.isEntrepreneur && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                    🚀 Entrepreneur·e
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <h2 className="font-display text-2xl font-bold text-white">
+                {profile.firstName}, {profile.age}
+              </h2>
+              {profile.verified && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white">
+                  <Check size={11} strokeWidth={3} />
                 </span>
               )}
             </div>
-          )}
-          <div className="flex items-center gap-1.5">
-            <h2 className="font-display text-2xl font-bold text-white">
-              {profile.firstName}, {profile.age}
-            </h2>
-            {profile.verified && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white">
-                <Check size={11} strokeWidth={3} />
-              </span>
+            {profile.city && (
+              <p className="mt-0.5 flex items-center gap-1 text-sm text-white/80">
+                <MapPin size={12} strokeWidth={2.5} />
+                {profile.city}
+                {profile.country ? `, ${profile.country}` : ''}
+              </p>
+            )}
+            {(profile.interests?.length > 0 || profile.personalityTraits?.length > 0) && (
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {profile.interests?.slice(0, 3).map((interest) => (
+                  <span
+                    key={interest}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm ${tintForTag(interest)}`}
+                  >
+                    {interest}
+                  </span>
+                ))}
+                {profile.personalityTraits?.slice(0, 2).map((trait) => (
+                  <span
+                    key={trait}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm ${tintForTag(trait)}`}
+                  >
+                    ✨ {trait}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
-          {profile.city && (
-            <p className="mt-0.5 flex items-center gap-1 text-sm text-white/80">
-              <MapPin size={12} strokeWidth={2.5} />
-              {profile.city}
-              {profile.country ? `, ${profile.country}` : ''}
-            </p>
-          )}
-          {(profile.interests?.length > 0 || profile.personalityTraits?.length > 0) && (
-            <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {profile.interests?.slice(0, 3).map((interest) => (
-                <span
-                  key={interest}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm ${tintForTag(interest)}`}
-                >
-                  {interest}
-                </span>
-              ))}
-              {profile.personalityTraits?.slice(0, 2).map((trait) => (
-                <span
-                  key={trait}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-sm ${tintForTag(trait)}`}
-                >
-                  ✨ {trait}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </motion.div>

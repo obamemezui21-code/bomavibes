@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUp, Plus } from 'lucide-react'
+import { ArrowUp, Image as ImageIcon, Plus, Send } from 'lucide-react'
 import { useFeed } from '../context/FeedContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -10,6 +10,7 @@ import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { matchPercent } from '../lib/interests.js'
 import { CONTENT_REPORT_REASONS } from '../lib/reportReasons.js'
+import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import FeedTabs from '../components/feed/FeedTabs.jsx'
 import PostCard from '../components/feed/PostCard.jsx'
 import PostComposer from '../components/feed/PostComposer.jsx'
@@ -43,6 +44,7 @@ function Feed() {
   const navigate = useNavigate()
 
   const [showComposer, setShowComposer] = useState(false)
+  const [composerType, setComposerType] = useState('text')
   const [expandedAuthorId, setExpandedAuthorId] = useState(null)
   const [reportTarget, setReportTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -108,20 +110,60 @@ function Feed() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  function openComposer(type = 'text') {
+    setComposerType(type)
+    setShowComposer(true)
+  }
+
+  const myPhoto = publicProfile?.photos?.[0]
+  const myAvatarUrl = myPhoto
+    ? photoVariant(myPhoto, 'thumb')
+    : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(user?.firstName || user?.id || '')}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-display text-2xl font-semibold text-ink">Feed</h1>
-          <p className="mt-0.5 text-sm text-ink-soft/70">Découvrez ce que la communauté partage aujourd'hui.</p>
-        </div>
+      <div className="min-w-0">
+        <h1 className="font-display text-2xl font-semibold text-ink">Actualités</h1>
+        <p className="mt-0.5 text-sm text-ink-soft/70">Partagez vos moments BomaVibes ✨</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => openComposer('text')}
+        className="mt-4 flex flex-col items-center gap-1.5"
+      >
+        <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-violet-400/50 text-violet-500 transition hover:border-violet-400 hover:bg-violet-500/5">
+          <Plus size={22} strokeWidth={2.25} />
+        </span>
+        <span className="text-xs font-medium text-ink-soft/70">Ajouter</span>
+      </button>
+
+      <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-ink/8 bg-white p-3 shadow-sm dark:bg-surface-tint">
+        <img src={myAvatarUrl} onError={myPhoto ? fallbackToFullPhoto(myPhoto) : undefined} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
         <button
           type="button"
-          onClick={() => setShowComposer(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
+          onClick={() => openComposer('text')}
+          className="min-w-0 flex-1 truncate rounded-full bg-ink/[0.04] px-3.5 py-2 text-left text-sm text-ink-soft/60"
         >
-          <Plus size={16} strokeWidth={2.5} />
+          Partage quelque chose... ✨
+        </button>
+      </div>
+      <div className="mt-2 flex items-center justify-between px-1">
+        <button
+          type="button"
+          onClick={() => openComposer('photo')}
+          className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-violet-600"
+        >
+          <ImageIcon size={16} strokeWidth={2.25} className="text-pink-500" />
+          Photo
+        </button>
+        <button
+          type="button"
+          onClick={() => openComposer('text')}
+          className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-1.5 text-sm font-semibold text-ink-on-brand shadow-md shadow-violet-500/25"
+        >
           Publier
+          <Send size={13} strokeWidth={2.5} />
         </button>
       </div>
 
@@ -192,7 +234,7 @@ function Feed() {
       )}
 
       <AnimatePresence>
-        {showComposer && <PostComposer onClose={() => setShowComposer(false)} />}
+        {showComposer && <PostComposer initialType={composerType} onClose={() => setShowComposer(false)} />}
       </AnimatePresence>
 
       <AnimatePresence>

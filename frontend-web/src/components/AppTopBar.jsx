@@ -19,7 +19,7 @@ function AppTopBar() {
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 border-b border-ink/8 bg-surface px-3 sm:px-4">
       <div className="flex items-center gap-2">
         <NavLink
-          to="/evenements"
+          to="/events"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-ink/8 text-ink transition hover:bg-ink/12"
           aria-label="Événements"
         >

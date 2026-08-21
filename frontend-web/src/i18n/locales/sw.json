@@ -15,11 +15,12 @@
   },
   "nav": {
     "discover": "Gundua",
-    "feed": "Feed",
+    "feed": "Habari",
     "matches": "Mechi",
     "messages": "Ujumbe",
     "announcements": "Matangazo",
     "profile": "Wasifu",
+    "events": "Matukio",
     "settings": "Mipangilio"
   },
   "auth": {

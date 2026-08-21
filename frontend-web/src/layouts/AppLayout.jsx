@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Compass, Heart, MessageCircle, Newspaper, CircleUserRound } from 'lucide-react'
+import { Compass, Heart, MessageCircle, Newspaper, Ticket } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
@@ -15,7 +15,7 @@ function useNavItems() {
     { to: '/feed', label: t('nav.feed'), icon: Newspaper },
     { to: '/matches', label: t('nav.matches'), icon: Heart, badge: newMatchesCount },
     { to: '/chat', label: t('nav.messages'), icon: MessageCircle, badge: unreadMessagesCount },
-    { to: '/profile', label: t('nav.profile'), icon: CircleUserRound },
+    { to: '/events', label: t('nav.events'), icon: Ticket },
   ]
 }
 

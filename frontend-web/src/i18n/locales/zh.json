@@ -20,6 +20,7 @@
     "messages": "消息",
     "announcements": "公告",
     "profile": "我的",
+    "events": "活动",
     "settings": "设置"
   },
   "auth": {

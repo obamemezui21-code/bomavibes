@@ -22,6 +22,7 @@ import {
   Pencil,
   Play,
   Reply,
+  Search,
   Send,
   Share2,
   ShieldOff,
@@ -215,6 +216,11 @@ function DeleteMessageModal({ onCancel, onConfirm, isDeleting }) {
   )
 }
 
+function formatListTime(iso) {
+  if (!iso) return ''
+  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
 function isSameDay(a, b) {
   return !!a && !!b && a.toDateString() === b.toDateString()
 }
@@ -339,6 +345,7 @@ function Chat() {
   const { showToast } = useToast()
   const { theme } = useTheme()
   const [draft, setDraft] = useState('')
+  const [listSearch, setListSearch] = useState('')
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showStickerPicker, setShowStickerPicker] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
@@ -742,6 +749,12 @@ function Chat() {
     )
   }
 
+  const newMatches = conversations.filter((c) => c.isNewMatch)
+  const query = listSearch.trim().toLowerCase()
+  const visibleConversations = query
+    ? conversations.filter((c) => c.profile.firstName.toLowerCase().includes(query))
+    : conversations
+
   return (
     <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] overflow-x-hidden bg-surface-soft desktop:h-svh">
       {/* Conversation list */}
@@ -750,52 +763,118 @@ function Chat() {
           conversationId ? 'hidden' : 'flex'
         }`}
       >
-        <div className="border-b border-ink/8 p-5">
-          <h1 className="font-display text-xl font-semibold text-ink">Messages 💬</h1>
+        <div className="border-b border-ink/8 px-5 pb-4 pt-5">
+          <h1 className="font-display text-xl font-semibold text-ink">Messages</h1>
+          <div className="relative mt-3">
+            <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+            <input
+              type="text"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              placeholder="Rechercher..."
+              className="w-full rounded-full border border-ink/12 bg-ink/[0.04] py-2.5 pl-9 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06]"
+            />
+          </div>
         </div>
         <div
           ref={listScrollRef}
           onScroll={(e) => setShowScrollUp(e.currentTarget.scrollTop > 300)}
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto px-3 py-3"
         >
-          {conversations.map((c) => {
-            const last = c.messages[c.messages.length - 1]
-            const isActive = c.id === activeId
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => navigate(`/chat/${c.id}`)}
-                className={`flex w-full items-center gap-3 border-b border-ink/6 px-4 py-3 text-left transition hover:bg-ink/5 ${
-                  isActive ? 'bg-violet-500/5' : ''
-                }`}
-              >
-                <div className="relative shrink-0">
-                  <img
-                    src={c.profile.photo}
-                    onError={fallbackToFullPhoto(c.profile.photoFull)}
-                    alt={c.profile.firstName}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
-                  {c.online && (
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-ink bg-mint-500" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-ink">{c.profile.firstName}</p>
-                  <p className="truncate text-xs text-ink-soft/60">
-                    {last ? messagePreviewText(last) : 'Dites bonjour 👋'}
-                  </p>
-                </div>
-                {typingId === c.id && <span className="text-xs text-violet-600">écrit…</span>}
-                {!!c.unreadCount && typingId !== c.id && (
-                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-coral-500 px-1 text-[10px] font-bold text-white">
-                    {c.unreadCount}
-                  </span>
-                )}
-              </button>
-            )
-          })}
+          {newMatches.length > 0 && !query && (
+            <div className="mb-4">
+              <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">
+                Nouveaux matchs
+              </p>
+              <div className="mt-2 flex gap-3 overflow-x-auto px-1 pb-1">
+                {newMatches.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => navigate(`/chat/${c.id}`)}
+                    className="flex shrink-0 flex-col items-center gap-1"
+                  >
+                    <span className="relative block rounded-full bg-gradient-to-br from-pink-500 to-violet-500 p-[2px]">
+                      <img
+                        src={c.profile.photo}
+                        onError={fallbackToFullPhoto(c.profile.photoFull)}
+                        alt={c.profile.firstName}
+                        className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                      />
+                      {c.online && (
+                        <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface-soft bg-mint-500" />
+                      )}
+                    </span>
+                    <span className="max-w-[4rem] truncate text-xs font-medium text-ink">{c.profile.firstName}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {visibleConversations.map((c) => {
+              const last = c.messages[c.messages.length - 1]
+              const isActive = c.id === activeId
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => navigate(`/chat/${c.id}`)}
+                  className={`flex w-full min-w-0 items-center gap-3 rounded-2xl border bg-white p-3 text-left shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint ${
+                    isActive ? 'border-violet-400/60 ring-2 ring-violet-400/30' : 'border-ink/8'
+                  }`}
+                >
+                  <div className="relative shrink-0">
+                    <img
+                      src={c.profile.photo}
+                      onError={fallbackToFullPhoto(c.profile.photoFull)}
+                      alt={c.profile.firstName}
+                      className="h-12 w-12 rounded-full object-cover"
+                    />
+                    {c.online && (
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-mint-500 dark:border-surface-tint" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-1 truncate text-sm font-semibold text-ink">
+                      <span className="truncate">
+                        {c.profile.firstName}
+                        {c.profile.age ? `, ${c.profile.age}` : ''}
+                      </span>
+                      {c.profile.verified && (
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white">
+                          <Check size={9} strokeWidth={3} />
+                        </span>
+                      )}
+                    </p>
+                    <p className="truncate text-xs text-ink-soft/60">
+                      {typingId === c.id ? (
+                        <span className="text-violet-600">écrit…</span>
+                      ) : last ? (
+                        messagePreviewText(last)
+                      ) : (
+                        'Dites bonjour 👋'
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    {c.lastActivityAt && (
+                      <span className="text-[11px] text-ink-soft/50">{formatListTime(c.lastActivityAt)}</span>
+                    )}
+                    {!!c.unreadCount && typingId !== c.id && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1 text-[10px] font-bold text-ink-on-brand">
+                        {c.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+            {visibleConversations.length === 0 && (
+              <p className="px-2 py-8 text-center text-sm text-ink-soft/50">Aucune conversation trouvée.</p>
+            )}
+          </div>
         </div>
 
         <AnimatePresence>

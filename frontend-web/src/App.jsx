@@ -35,6 +35,7 @@ const Profile = lazy(() => import('./pages/Profile.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Support = lazy(() => import('./pages/Support.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
+const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -92,6 +93,7 @@ function App() {
               <Route path="/feed/:postId" element={<PostDetail />} />
             </Route>
             <Route path="/matches" element={<Matches />} />
+            <Route path="/events" element={<EventsHub />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/annonces" element={<Announcements />} />
             <Route path="/chat" element={<Chat />} />

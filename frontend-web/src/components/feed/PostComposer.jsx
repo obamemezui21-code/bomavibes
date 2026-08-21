@@ -14,11 +14,11 @@ const TYPES = [
   { id: 'question', label: 'Question', icon: HelpCircle },
 ]
 
-function PostComposer({ onClose }) {
+function PostComposer({ onClose, initialType = 'text' }) {
   const { createPost } = useFeed()
   const { showToast } = useToast()
   const fileInputRef = useRef(null)
-  const [type, setType] = useState('text')
+  const [type, setType] = useState(initialType)
   const [text, setText] = useState('')
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
