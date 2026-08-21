@@ -118,7 +118,7 @@ function Feed() {
         <button
           type="button"
           onClick={() => setShowComposer(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
+          className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
         >
           <Plus size={16} strokeWidth={2.5} />
           Publier
@@ -141,7 +141,7 @@ function Feed() {
             <button
               type="button"
               onClick={handleShowNewPosts}
-              className="mx-auto mt-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
+              className="mx-auto mt-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
             >
               <ArrowUp size={14} strokeWidth={2.5} />
               {newPostsCount === 1 ? '1 nouveau post' : `${newPostsCount}${newPostsCount >= 50 ? '+' : ''} nouveaux posts`}

@@ -91,7 +91,7 @@ function VoiceMessage({ url, duration, fromMe }) {
         type="button"
         onClick={togglePlay}
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-          fromMe ? 'bg-white/25 text-[#2B1D14]' : 'bg-violet-500/15 text-violet-600'
+          fromMe ? 'bg-white/25 text-ink-on-brand' : 'bg-violet-500/15 text-violet-600'
         }`}
         aria-label={isPlaying ? 'Pause' : 'Lecture'}
       >
@@ -100,7 +100,7 @@ function VoiceMessage({ url, duration, fromMe }) {
       <div className="min-w-0 flex-1">
         <div className={`h-1.5 w-full overflow-hidden rounded-full ${fromMe ? 'bg-white/30' : 'bg-ink/10'}`}>
           <div
-            className={`h-full rounded-full ${fromMe ? 'bg-[#2B1D14]' : 'bg-violet-500'}`}
+            className={`h-full rounded-full ${fromMe ? 'bg-ink-on-brand' : 'bg-violet-500'}`}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -136,7 +136,7 @@ function FileMessage({ url, fileName, fileSize, fromMe }) {
     >
       <span
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-          fromMe ? 'bg-white/25 text-[#2B1D14]' : 'bg-violet-500/15 text-violet-600'
+          fromMe ? 'bg-white/25 text-ink-on-brand' : 'bg-violet-500/15 text-violet-600'
         }`}
       >
         <FileText size={16} strokeWidth={2.25} />
@@ -807,7 +807,7 @@ function Chat() {
               exit={{ opacity: 0, scale: 0.8, y: 8 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25"
               aria-label="Remonter en haut"
             >
               <ChevronUp size={18} strokeWidth={2.5} />
@@ -1002,7 +1002,7 @@ function Chat() {
                     ? 'cursor-pointer select-none'
                     : `min-w-0 max-w-full cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
                         m.fromMe
-                          ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]'
+                          ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand'
                           : 'rounded-bl-sm bg-ink/6 text-ink'
                       }`
                   return (
@@ -1164,7 +1164,7 @@ function Chat() {
                     scrollToBottom('smooth')
                     setShowNewMessagesPill(false)
                   }}
-                  className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-xs font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/30"
+                  className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-xs font-semibold text-ink-on-brand shadow-lg shadow-violet-500/30"
                 >
                   Nouveaux messages
                   <ChevronDown size={14} strokeWidth={2.5} />
@@ -1175,12 +1175,12 @@ function Chat() {
 
 
             {replyTarget && !editingMessageId && (
-              <div className="flex shrink-0 items-center justify-between gap-2 border-t border-ink/8 bg-ink/[0.03] px-4 py-2">
-                <div className="min-w-0 flex-1 border-l-2 border-violet-400 pl-2.5">
+              <div className="flex min-w-0 max-w-full shrink-0 items-center justify-between gap-2 border-t border-ink/8 bg-ink/[0.03] px-4 py-2">
+                <div className="min-w-0 max-w-full flex-1 border-l-2 border-violet-400 pl-2.5">
                   <p className="truncate text-xs font-semibold text-violet-600">
                     {replyTarget.fromMe ? 'Vous' : active.profile.firstName}
                   </p>
-                  <p className="truncate text-xs text-ink-soft/60">{messagePreviewText(replyTarget)}</p>
+                  <p className="max-w-full truncate text-xs text-ink-soft/60">{messagePreviewText(replyTarget)}</p>
                 </div>
                 <button
                   type="button"
@@ -1228,7 +1228,7 @@ function Chat() {
                   type="button"
                   onClick={() => stopRecording(true)}
                   whileTap={{ scale: 0.9 }}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25"
                   aria-label="Envoyer la note vocale"
                 >
                   <Send size={18} strokeWidth={2.25} />
@@ -1363,7 +1363,7 @@ function Chat() {
                   <motion.button
                     type="submit"
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25"
                     aria-label={editingMessageId ? 'Enregistrer' : 'Envoyer'}
                   >
                     <Send size={18} strokeWidth={2.25} />
@@ -1374,11 +1374,11 @@ function Chat() {
                     onClick={startRecording}
                     disabled={isSendingVoice || !!editingMessageId}
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Enregistrer une note vocale"
                   >
                     {isSendingVoice ? (
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#2B1D14]/30 border-t-[#2B1D14]" />
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-on-brand/30 border-t-ink-on-brand" />
                     ) : (
                       <Mic size={18} strokeWidth={2.25} />
                     )}

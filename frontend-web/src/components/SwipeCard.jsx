@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Check, Info, MapPin, Target } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
@@ -6,22 +7,20 @@ const SWIPE_THRESHOLD = 100
 const EXIT_X = 600
 const EXIT_TRANSITION = { type: 'tween', duration: 0.22, ease: 'easeIn' }
 const STACK_TRANSITION = { type: 'spring', stiffness: 500, damping: 32 }
+const FALLBACK_AVATAR_SEED = (profile) =>
+  `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
 
-function avatarFor(profile) {
-  return (
-    photoVariant(profile.photos?.[0], 'medium') ||
-    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
-  )
+function avatarFor(profile, index) {
+  return photoVariant(profile.photos?.[index], 'medium') || FALLBACK_AVATAR_SEED(profile)
 }
 
-function fullPhotoFor(profile) {
-  return (
-    profile.photos?.[0] ||
-    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
-  )
+function fullPhotoFor(profile, index) {
+  return profile.photos?.[index] || FALLBACK_AVATAR_SEED(profile)
 }
 
 function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExited, onOpenDetail }) {
+  const [photoIndex, setPhotoIndex] = useState(0)
+  const photoCount = profile.photos?.length || 1
   const x = useMotionValue(0)
   const rotate = useTransform(x, [-300, 300], [-20, 20])
   const likeOpacity = useTransform(x, [20, 120], [0, 1])
@@ -30,6 +29,16 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
   function handleDragEnd(_, info) {
     if (info.offset.x > SWIPE_THRESHOLD) onSwipe('like')
     else if (info.offset.x < -SWIPE_THRESHOLD) onSwipe('pass')
+  }
+
+  function handlePhotoZoneClick(e) {
+    if (photoCount <= 1) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const tappedRight = e.clientX - rect.left > rect.width / 2
+    setPhotoIndex((i) => {
+      if (tappedRight) return Math.min(i + 1, photoCount - 1)
+      return Math.max(i - 1, 0)
+    })
   }
 
   const animate = exitDirection
@@ -63,20 +72,36 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
       onAnimationComplete={() => {
         if (exitDirection) onExited()
       }}
-      onClick={() => {
-        if (Math.abs(x.get()) < 5) onOpenDetail()
-      }}
       className="absolute inset-0"
     >
       <div className="relative h-full w-full cursor-grab overflow-hidden rounded-[28px] shadow-xl active:cursor-grabbing">
         <img
-          src={avatarFor(profile)}
-          onError={fallbackToFullPhoto(fullPhotoFor(profile))}
+          src={avatarFor(profile, photoIndex)}
+          onError={fallbackToFullPhoto(fullPhotoFor(profile, photoIndex))}
           alt={profile.firstName}
           draggable={false}
           className="h-full w-full select-none object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+        <div
+          onClick={(e) => {
+            if (Math.abs(x.get()) < 5) handlePhotoZoneClick(e)
+          }}
+          className="absolute inset-0"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+
+        {photoCount > 1 && (
+          <div className="pointer-events-none absolute inset-x-3 top-3 flex gap-1">
+            {Array.from({ length: photoCount }).map((_, i) => (
+              <span key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/30">
+                <span
+                  className="block h-full rounded-full bg-white transition-all duration-200"
+                  style={{ width: i <= photoIndex ? '100%' : '0%' }}
+                />
+              </span>
+            ))}
+          </div>
+        )}
 
         {isTop && (
           <>
@@ -111,7 +136,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
           {(profile.datingGoal || profile.isEntrepreneur) && (
             <div className="mb-2 flex flex-wrap items-center gap-1.5">
               {profile.datingGoal && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-ink-on-brand">
                   <Target size={11} strokeWidth={2.5} />
                   {profile.datingGoal}
                 </span>

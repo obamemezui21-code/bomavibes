@@ -119,7 +119,7 @@ function Matches() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />
 
                     {percent != null && (
-                      <span className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold text-[#2B1D14] shadow">
+                      <span className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold text-ink-on-brand shadow">
                         {percent}% Match
                       </span>
                     )}

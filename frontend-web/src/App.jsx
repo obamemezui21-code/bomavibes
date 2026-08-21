@@ -4,6 +4,7 @@ import SplashScreen from './components/SplashScreen.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import { FeedProvider } from './context/FeedContext.jsx'
+import { FullPageSpinner } from './components/ui/Spinner.jsx'
 
 // Every page used to be imported eagerly, so a single visitor downloaded
 // Landing's marketing sections, Chat, Settings, every legal page etc. in one
@@ -35,21 +36,13 @@ const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Support = lazy(() => import('./pages/Support.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 
-function RouteLoader() {
-  return (
-    <div className="flex min-h-svh items-center justify-center bg-surface">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-400/30 border-t-violet-500" />
-    </div>
-  )
-}
-
 function App() {
   const [showSplash, setShowSplash] = useState(true)
 
   return (
     <>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
-      <Suspense fallback={<RouteLoader />}>
+      <Suspense fallback={<FullPageSpinner />}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/evenements" element={<Events />} />

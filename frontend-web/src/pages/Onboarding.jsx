@@ -16,6 +16,7 @@ import {
   MAX_PERSONALITY_TRAITS,
   PERSONALITY_TRAITS,
 } from '../lib/onboardingOptions.js'
+import { inputClass, labelClass, chipClass } from '../lib/formStyles.js'
 
 const INTEREST_OPTIONS = [
   'Danse', 'Cuisine', 'Voyages', 'Musique', 'Sport', 'Cinéma',
@@ -32,17 +33,6 @@ const GENDER_OPTIONS = [
 
 const MIN_AGE = 18
 const MAX_AGE = 80
-
-const inputClass =
-  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
-const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
-
-const chipClass = (selected) =>
-  `rounded-full border px-3.5 py-2 text-sm font-medium transition ${
-    selected
-      ? 'border-violet-400 bg-violet-500/15 text-violet-600'
-      : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
-  }`
 
 const STEPS = [
   'Photos',
@@ -613,7 +603,7 @@ function Onboarding() {
               whileTap={{ scale: 0.97 }}
               onClick={goNext}
               disabled={!canContinue || isSaving}
-              className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? 'Finalisation…' : step === STEPS.length - 1 ? 'Terminer' : 'Continuer'}
             </motion.button>

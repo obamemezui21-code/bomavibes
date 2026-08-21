@@ -192,7 +192,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
             {(profile.datingGoal || profile.isEntrepreneur) && (
               <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
                 {profile.datingGoal && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-[#2B1D14]">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-semibold text-ink-on-brand">
                     <Target size={11} strokeWidth={2.5} />
                     {profile.datingGoal}
                   </span>
@@ -272,7 +272,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                 onClose()
                 navigate(`/chat/${matchId}`)
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
             >
               <MessageCircle size={18} strokeWidth={2.25} />
               Envoyer un message

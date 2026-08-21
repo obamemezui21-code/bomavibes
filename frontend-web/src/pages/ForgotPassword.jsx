@@ -4,10 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { MailCheck } from 'lucide-react'
 import AuthLayout from '../components/AuthLayout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-
-const inputClass =
-  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
-const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
+import { inputClass, labelClass } from '../lib/formStyles.js'
 
 function ForgotPassword() {
   const { resetPassword } = useAuth()
@@ -84,7 +81,7 @@ function ForgotPassword() {
             type="submit"
             disabled={isSubmitting}
             whileTap={{ scale: 0.97 }}
-            className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? 'Envoi…' : 'Envoyer le lien'}
           </motion.button>

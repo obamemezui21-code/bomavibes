@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { Flag } from 'lucide-react'
 import { REPORT_REASONS } from '../lib/reportReasons.js'
+import Modal from './ui/Modal.jsx'
+import Button from './ui/Button.jsx'
 
 const chipClass = (selected) =>
   `rounded-xl border px-3.5 py-2 text-sm font-medium transition ${
@@ -16,21 +17,7 @@ function ReportModal({ firstName, onClose, onSubmit, isSubmitting, title, reason
   const [alsoBlock, setAlsoBlock] = useState(true)
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
-      onClick={(e) => {
-        e.stopPropagation()
-        onClose()
-      }}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 8 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
-        onClick={(e) => e.stopPropagation()}
-        className="glass-panel w-full max-w-sm rounded-2xl p-6"
-      >
+    <Modal onClose={onClose}>
         <div className="flex items-center gap-2">
           <Flag size={18} strokeWidth={2.25} className="text-coral-500" />
           <h2 className="font-display text-lg font-semibold text-ink">{title || `Signaler ${firstName || 'ce profil'}`}</h2>
@@ -65,24 +52,19 @@ function ReportModal({ firstName, onClose, onSubmit, isSubmitting, title, reason
         </label>
 
         <div className="mt-5 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
-          >
+          <Button variant="secondary" className="flex-1" onClick={onClose}>
             Annuler
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
+            className="flex-1"
             onClick={() => onSubmit(reason, description.trim(), alsoBlock)}
             disabled={!reason || isSubmitting}
-            className="flex-1 rounded-xl bg-coral-500 py-2.5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? 'Envoi…' : 'Signaler'}
-          </button>
+          </Button>
         </div>
-      </motion.div>
-    </div>
+    </Modal>
   )
 }
 

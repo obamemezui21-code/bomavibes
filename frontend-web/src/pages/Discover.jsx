@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
+  Check,
   Heart,
   MapPin,
   Megaphone,
@@ -19,6 +20,7 @@ import SwipeCard from '../components/SwipeCard.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
 import SupportPromptCard from '../components/SupportPromptCard.jsx'
+import { TIERS } from '../components/PricingTiers.jsx'
 import { fetchDiscoverCandidates } from '../firebase/discovery.js'
 import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -28,6 +30,7 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 
 const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
 const DECK_SIZE = 5
+const GOAL_CHIPS = ['Relation sérieuse', 'Amitié', 'Faire connaissance']
 
 function avatarFor(profile) {
   return (
@@ -53,8 +56,8 @@ function Discover() {
   const [isLoading, setIsLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
   const [expandedProfile, setExpandedProfile] = useState(null)
-  const [showSearch, setShowSearch] = useState(false)
   const [search, setSearch] = useState('')
+  const [goalFilter, setGoalFilter] = useState(null)
   const [matchedProfile, setMatchedProfile] = useState(null)
   const [matchConversationId, setMatchConversationId] = useState(null)
   const [exitingId, setExitingId] = useState(null)
@@ -86,10 +89,14 @@ function Discover() {
   }, [user?.id])
 
   const searched = useMemo(() => {
-    if (!search.trim()) return profiles
-    const q = search.trim().toLowerCase()
-    return profiles.filter((p) => p.firstName?.toLowerCase().includes(q))
-  }, [profiles, search])
+    let list = profiles
+    if (goalFilter) list = list.filter((p) => p.datingGoal === goalFilter)
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      list = list.filter((p) => p.firstName?.toLowerCase().includes(q))
+    }
+    return list
+  }, [profiles, search, goalFilter])
 
   const deck = searched.slice(0, DECK_SIZE)
   const topProfile = deck[0] || null
@@ -194,39 +201,66 @@ function Discover() {
                 Salut {user?.firstName} 👋
               </h1>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => navigate('/annonces')}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
-                aria-label="Annonces"
-              >
-                <Bell size={17} />
-                {hasUnseenAnnouncement && (
-                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral-500" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowSearch((v) => !v)}
-                className={`flex h-10 w-10 items-center justify-center rounded-full border transition ${
-                  showSearch
-                    ? 'border-violet-400/60 bg-violet-500/10 text-violet-600'
-                    : 'border-ink/12 bg-ink/[0.03] text-ink/80 hover:border-violet-400/60 hover:text-violet-600'
-                }`}
-                aria-label="Rechercher"
-              >
-                <Search size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowFilters(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
-                aria-label="Filtres"
-              >
-                <SlidersHorizontal size={17} />
-              </button>
+            <button
+              type="button"
+              onClick={() => navigate('/annonces')}
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
+              aria-label="Annonces"
+            >
+              <Bell size={17} />
+              {hasUnseenAnnouncement && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral-500" />
+              )}
+            </button>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher des gens…"
+                className="w-full rounded-full border border-ink/12 bg-white dark:bg-surface-tint py-2.5 pl-10 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+              />
             </div>
+            <button
+              type="button"
+              onClick={() => setShowFilters(true)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
+              aria-label="Filtres"
+            >
+              <SlidersHorizontal size={17} />
+            </button>
+          </div>
+
+          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setGoalFilter(null)}
+              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                !goalFilter
+                  ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
+                  : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+              }`}
+            >
+              Tout
+            </button>
+            {GOAL_CHIPS.map((goal) => (
+              <button
+                key={goal}
+                type="button"
+                onClick={() => setGoalFilter((prev) => (prev === goal ? null : goal))}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                  goalFilter === goal
+                    ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
+                    : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+                }`}
+              >
+                {goal}
+              </button>
+            ))}
           </div>
 
           <AnimatePresence>
@@ -267,26 +301,6 @@ function Discover() {
           </AnimatePresence>
 
           {!(hasUnseenAnnouncement && latestAnnouncement) && <SupportPromptCard />}
-
-          <AnimatePresence>
-            {showSearch && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <input
-                  type="text"
-                  autoFocus
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Chercher un prénom…"
-                  className="mt-3 w-full rounded-xl border border-ink/12 bg-white dark:bg-surface-tint px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         {isLoading ? (
@@ -308,7 +322,7 @@ function Discover() {
                 whileTap={{ scale: 0.97 }}
                 disabled={isReviewing}
                 onClick={handleReviewProfiles}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RotateCcw size={16} strokeWidth={2.25} />
                 {isReviewing ? 'Chargement…' : 'Revoir les profils'}
@@ -354,10 +368,20 @@ function Discover() {
                   whileTap={{ scale: 0.85 }}
                   disabled={!topProfile}
                   onClick={() => topProfile && handlePass(topProfile)}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-coral-500/20 ring-1 ring-coral-500/15 disabled:opacity-40 dark:bg-surface-tint"
                   aria-label="Passer"
                 >
                   <X size={24} strokeWidth={2.5} />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.85 }}
+                  disabled={!topProfile}
+                  onClick={() => topProfile && handleSuperlike(topProfile)}
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-violet-500/20 ring-1 ring-violet-500/15 disabled:opacity-40 dark:bg-surface-tint"
+                  aria-label="Super like"
+                >
+                  <Star size={22} strokeWidth={2.5} fill="currentColor" />
                 </motion.button>
                 <motion.button
                   type="button"
@@ -369,16 +393,6 @@ function Discover() {
                 >
                   <Heart size={30} strokeWidth={2.5} fill="currentColor" />
                 </motion.button>
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.85 }}
-                  disabled={!topProfile}
-                  onClick={() => topProfile && handleSuperlike(topProfile)}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-black/10 disabled:opacity-40 dark:bg-surface-tint"
-                  aria-label="Super like"
-                >
-                  <Star size={22} strokeWidth={2.5} fill="currentColor" />
-                </motion.button>
               </div>
             </div>
 
@@ -386,6 +400,54 @@ function Discover() {
               <RotateCcw size={12} strokeWidth={2.25} />
               Glissez la carte, ou utilisez les boutons
             </p>
+
+            <div className="mt-8 w-full">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="flex items-center gap-1.5 font-display text-base font-semibold text-ink">
+                  👑 Forfaits &amp; Abonnements
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => navigate('/tarifs')}
+                  className="text-xs font-semibold text-violet-600 hover:underline"
+                >
+                  Tout voir →
+                </button>
+              </div>
+              <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+                {TIERS.map((tier) => (
+                  <button
+                    key={tier.name}
+                    type="button"
+                    onClick={() => navigate('/tarifs')}
+                    className={`relative w-40 shrink-0 rounded-2xl border p-3.5 text-left transition hover:-translate-y-0.5 ${
+                      tier.highlight ? 'border-coral-500/40' : 'border-ink/10'
+                    } ${tier.headerClass}`}
+                  >
+                    {tier.highlight && (
+                      <span className="absolute -top-2 right-3 rounded-full bg-coral-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                        Top choix
+                      </span>
+                    )}
+                    <p className="text-sm font-bold text-ink">
+                      {tier.emoji} {tier.name}
+                    </p>
+                    <p className="mt-1 text-base font-bold text-ink">
+                      {tier.prices[1]?.amount || tier.prices[0].amount}
+                      <span className="text-xs font-medium text-ink-soft/60"> /{(tier.prices[1]?.period || tier.prices[0].period).toLowerCase()}</span>
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {tier.features.slice(0, 3).map((f) => (
+                        <li key={f} className="flex items-center gap-1 text-[11px] text-ink-soft/70">
+                          <Check size={11} strokeWidth={3} className="shrink-0 text-mint-600" />
+                          <span className="truncate">{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -479,7 +541,7 @@ function Discover() {
                   type="button"
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigate(`/chat/${matchConversationId}`)}
-                  className="rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25"
+                  className="rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
                 >
                   Envoyer un message
                 </motion.button>

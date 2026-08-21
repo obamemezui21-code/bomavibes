@@ -37,7 +37,7 @@ function PushPermissionPrompt() {
             type="button"
             whileTap={{ scale: 0.97 }}
             onClick={acceptPushPrompt}
-            className="rounded-lg bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-xs font-semibold text-[#2B1D14] shadow-md shadow-violet-500/25"
+            className="rounded-lg bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-xs font-semibold text-ink-on-brand shadow-md shadow-violet-500/25"
           >
             Activer
           </motion.button>

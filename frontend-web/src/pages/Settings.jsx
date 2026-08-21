@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { ArrowLeft, Heart, Moon, ShieldOff, Sun, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, Heart, Moon, ShieldOff, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -11,10 +11,10 @@ import { enablePushForUser } from '../firebase/push.js'
 import { fetchMyBlockedIds, unblockUser } from '../firebase/safety.js'
 import PasswordInput from '../components/PasswordInput.jsx'
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx'
-
-const inputClass =
-  'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white dark:focus:bg-ink/[0.06] focus:ring-4 focus:ring-violet-400/15'
-const labelClass = 'mb-1.5 block text-sm font-medium text-ink/80'
+import Modal from '../components/ui/Modal.jsx'
+import ConfirmModal from '../components/ui/ConfirmModal.jsx'
+import Button from '../components/ui/Button.jsx'
+import { inputClass, labelClass } from '../lib/formStyles.js'
 
 function Toggle({ checked, onChange, disabled }) {
   return (
@@ -52,22 +52,6 @@ function Section({ title, children }) {
     <div className="glass-panel rounded-2xl p-4">
       <p className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-violet-600">{title}</p>
       <div className="divide-y divide-ink/6">{children}</div>
-    </div>
-  )
-}
-
-function Modal({ onClose, children }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="glass-panel w-full max-w-sm rounded-2xl p-6"
-      >
-        {children}
-      </div>
     </div>
   )
 }
@@ -131,13 +115,9 @@ function BlockedUsersModal({ onClose }) {
           </div>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="mt-5 w-full rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
-      >
+      <Button variant="secondary" className="mt-5 w-full" onClick={onClose}>
         Fermer
-      </button>
+      </Button>
     </Modal>
   )
 }
@@ -198,20 +178,12 @@ function ChangeEmailModal({ onClose }) {
           />
         </div>
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
-          >
+          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
             Annuler
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" className="flex-1" disabled={isSaving}>
             {isSaving ? 'Envoi…' : 'Confirmer'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -289,20 +261,12 @@ function ChangePasswordModal({ onClose }) {
           />
         </div>
         <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
-          >
+          <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
             Annuler
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          </Button>
+          <Button type="submit" className="flex-1" disabled={isSaving}>
             {isSaving ? 'Mise à jour…' : 'Confirmer'}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -513,32 +477,15 @@ function Settings() {
       {showBlockedModal && <BlockedUsersModal onClose={() => setShowBlockedModal(false)} />}
 
       {confirmDelete && (
-        <Modal onClose={() => setConfirmDelete(false)}>
-          <div className="text-center">
-            <TriangleAlert size={32} strokeWidth={1.5} className="mx-auto text-coral-500" />
-            <h2 className="mt-2 font-display text-lg font-semibold text-ink">Supprimer votre compte ?</h2>
-            <p className="mt-1 text-sm text-ink-soft/70">
-              Toutes vos données, matchs et conversations seront définitivement perdus.
-            </p>
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="flex-1 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 hover:bg-ink/5"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                disabled={isDeleting}
-                className="flex-1 rounded-xl bg-coral-500 py-2.5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isDeleting ? 'Suppression…' : 'Supprimer'}
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <ConfirmModal
+          title="Supprimer votre compte ?"
+          description="Toutes vos données, matchs et conversations seront définitivement perdus."
+          confirmLabel="Supprimer"
+          confirmingLabel="Suppression…"
+          isConfirming={isDeleting}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={handleDeleteAccount}
+        />
       )}
     </div>
   )

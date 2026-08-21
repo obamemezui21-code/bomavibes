@@ -91,11 +91,11 @@ function AppLayout() {
                   <item.icon
                     size={18}
                     strokeWidth={2}
-                    className={item.ring ? '' : isActive ? 'text-[#2B1D14]' : 'text-ink'}
+                    className={item.ring ? '' : isActive ? 'text-ink-on-brand' : 'text-ink'}
                     fill={item.ring ? 'currentColor' : 'none'}
                   />
                 </motion.span>
-                <span className={`relative z-10 flex-1 ${isActive ? 'text-[#2B1D14]' : 'text-ink/80'}`}>
+                <span className={`relative z-10 flex-1 ${isActive ? 'text-ink-on-brand' : 'text-ink/80'}`}>
                   {item.label}
                 </span>
                 {!!item.badge && (

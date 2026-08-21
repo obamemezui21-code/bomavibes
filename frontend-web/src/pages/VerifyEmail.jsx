@@ -59,7 +59,7 @@ function VerifyEmail() {
           whileTap={{ scale: 0.97 }}
           onClick={handleCheck}
           disabled={isChecking}
-          className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isChecking ? 'Vérification…' : "J'ai vérifié mon email"}
         </motion.button>

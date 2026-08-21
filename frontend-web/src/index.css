@@ -26,6 +26,10 @@
 
   --color-ink: #2b1d14;
   --color-ink-soft: #6b5d4f;
+  /* Fixed (non theme-reactive) dark ink for text/fills that sit permanently
+     on the violet/pink/coral brand gradient — must NOT flip to light in dark
+     mode the way --color-ink does, since the gradient itself never changes. */
+  --color-ink-on-brand: #2b1d14;
 
   --color-violet-300: #e9d5ff;
   --color-violet-400: #c084fc;
@@ -52,6 +56,19 @@
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-hero: "Fraunces", serif;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(31, 61, 43, 0.06);
+  --shadow-md: 0 8px 24px -8px rgba(31, 61, 43, 0.16);
+  --shadow-lg: 0 24px 48px -16px rgba(31, 61, 43, 0.2);
+  --shadow-glass: 0 24px 48px -16px rgba(31, 61, 43, 0.2);
+  --shadow-glass-solid: 0 24px 48px -16px rgba(31, 61, 43, 0.18);
 }
 
 html {
@@ -66,6 +83,9 @@ html.dark {
 
   --color-ink: #f5f4f7;
   --color-ink-soft: #b3aebd;
+
+  --shadow-glass: 0 24px 48px -16px rgba(0, 0, 0, 0.5);
+  --shadow-glass-solid: 0 24px 48px -16px rgba(0, 0, 0, 0.45);
 
   color-scheme: dark;
 }
@@ -132,25 +152,25 @@ body {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(31, 61, 43, 0.1);
-  box-shadow: 0 24px 48px -16px rgba(31, 61, 43, 0.2);
+  box-shadow: var(--shadow-glass);
 }
 
 .glass-panel-solid {
   background: #ffffff;
   border: 1px solid rgba(43, 29, 20, 0.06);
-  box-shadow: 0 24px 48px -16px rgba(31, 61, 43, 0.18);
+  box-shadow: var(--shadow-glass-solid);
 }
 
 .dark .glass-panel {
   background: rgba(28, 26, 36, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-glass);
 }
 
 .dark .glass-panel-solid {
   background: #1c1a24;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-glass-solid);
 }
 
 .text-gradient-brand {
@@ -188,4 +208,12 @@ body {
 }
 .animate-float-slower {
   animation: float-slower 13s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-float-slower,
+  .typewriter-cursor {
+    animation: none;
+  }
 }

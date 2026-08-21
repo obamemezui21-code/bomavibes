@@ -103,7 +103,7 @@ function LikesYou() {
               <button
                 type="button"
                 onClick={() => navigate('/tarifs')}
-                className="rounded-xl bg-pink-500 px-6 py-2.5 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
+                className="rounded-xl bg-pink-500 px-6 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg transition hover:bg-pink-400"
               >
                 Débloquer avec Premium
               </button>
