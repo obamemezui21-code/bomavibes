@@ -97,8 +97,11 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
       {/* Shadow lives on this outer box; overflow-hidden (for the rounded
           image/content) is on a separate inner wrapper — an element's own
           overflow-hidden clips its own box-shadow, so combining both on one
-          div was silently hiding the "lifted off the background" shadow. */}
-      <div className="relative h-full w-full cursor-grab rounded-[28px] shadow-xl active:cursor-grabbing">
+          div was silently hiding the "lifted off the background" shadow.
+          A plain black shadow-xl barely reads against the app's dark theme
+          background, so this pairs a strong dark contact shadow with a
+          soft violet glow that stays visible on both light and dark pages. */}
+      <div className="relative h-full w-full cursor-grab rounded-[28px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.55),0_10px_24px_-8px_rgba(168,85,247,0.35)] active:cursor-grabbing">
         <div className="relative h-full w-full overflow-hidden rounded-[28px]">
           <img
             src={avatarFor(profile, photoIndex)}

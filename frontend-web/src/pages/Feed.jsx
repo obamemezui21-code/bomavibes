@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowUp, Image as ImageIcon, Plus, Send } from 'lucide-react'
@@ -8,12 +8,15 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
+import { deleteStory, markStoryViewed, subscribeToActiveStories } from '../firebase/stories.js'
 import { matchPercent } from '../lib/interests.js'
 import { CONTENT_REPORT_REASONS } from '../lib/reportReasons.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import FeedTabs from '../components/feed/FeedTabs.jsx'
 import PostCard from '../components/feed/PostCard.jsx'
 import PostComposer from '../components/feed/PostComposer.jsx'
+import StoryComposer from '../components/feed/StoryComposer.jsx'
+import StoryViewer from '../components/feed/StoryViewer.jsx'
 import EditPostModal from '../components/feed/EditPostModal.jsx'
 import SendToModal from '../components/feed/SendToModal.jsx'
 import FeedEmptyState from '../components/feed/FeedEmptyState.jsx'
@@ -51,7 +54,22 @@ function Feed() {
   const [editTarget, setEditTarget] = useState(null)
   const [shareTarget, setShareTarget] = useState(null)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
+  const [stories, setStories] = useState([])
+  const [storyAuthorsById, setStoryAuthorsById] = useState({})
+  const [showStoryComposer, setShowStoryComposer] = useState(false)
+  const [viewerIndex, setViewerIndex] = useState(null)
+  const [storyReportTarget, setStoryReportTarget] = useState(null)
+  const [storyDeleteTarget, setStoryDeleteTarget] = useState(null)
+  const [isSubmittingStorySafety, setIsSubmittingStorySafety] = useState(false)
   const sentinelRef = useRef(null)
+
+  useEffect(() => {
+    const unsubscribe = subscribeToActiveStories((fetchedStories, authors) => {
+      setStories(fetchedStories)
+      setStoryAuthorsById((prev) => ({ ...prev, ...authors }))
+    })
+    return unsubscribe
+  }, [])
 
   useEffect(() => {
     const el = sentinelRef.current
@@ -120,6 +138,67 @@ function Feed() {
     ? photoVariant(myPhoto, 'thumb')
     : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(user?.firstName || user?.id || '')}&backgroundColor=f3e8ff,fce7f3,ede9fe`
 
+  const myStories = useMemo(
+    () => stories.filter((s) => s.authorId === user?.id).slice().reverse(),
+    [stories, user],
+  )
+
+  const otherStoryGroups = useMemo(() => {
+    const map = new Map()
+    for (const s of stories) {
+      if (s.authorId === user?.id) continue
+      if (!map.has(s.authorId)) map.set(s.authorId, [])
+      map.get(s.authorId).push(s)
+    }
+    return [...map.entries()].map(([authorId, list]) => ({
+      author: storyAuthorsById[authorId],
+      stories: [...list].reverse(),
+      allViewed: list.every((s) => (s.viewedBy || []).includes(user?.id)),
+    }))
+  }, [stories, storyAuthorsById, user])
+
+  const storyGroups = useMemo(() => {
+    if (myStories.length === 0) return otherStoryGroups
+    return [
+      { author: publicProfile ? { ...publicProfile, id: user?.id } : null, stories: myStories, allViewed: true },
+      ...otherStoryGroups,
+    ]
+  }, [otherStoryGroups, myStories, publicProfile, user])
+
+  function handleStoryViewed(story) {
+    if (!user?.id || story.authorId === user.id) return
+    if ((story.viewedBy || []).includes(user.id)) return
+    markStoryViewed(story.id, user.id).catch(() => {})
+  }
+
+  async function confirmDeleteStory() {
+    if (!storyDeleteTarget) return
+    setIsSubmittingStorySafety(true)
+    try {
+      await deleteStory(storyDeleteTarget.id, user.id)
+      setStoryDeleteTarget(null)
+    } catch {
+      showToast('Impossible de supprimer cette story, réessayez.', 'error')
+    } finally {
+      setIsSubmittingStorySafety(false)
+    }
+  }
+
+  async function handleReportStorySubmit(reason, description, alsoBlock) {
+    if (!storyReportTarget) return
+    setIsSubmittingStorySafety(true)
+    try {
+      await reportUser(user.id, storyReportTarget.authorId, reason, description, { storyId: storyReportTarget.id })
+      if (alsoBlock) await blockUser(user.id, storyReportTarget.authorId)
+      showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
+      setStoryReportTarget(null)
+    } catch {
+      showToast("Impossible d'envoyer le signalement, réessayez.", 'error')
+    } finally {
+      setIsSubmittingStorySafety(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
       <div className="min-w-0">
@@ -127,16 +206,81 @@ function Feed() {
         <p className="mt-0.5 text-sm text-ink-soft/70">Partagez vos moments BomaVibes ✨</p>
       </div>
 
-      <button
-        type="button"
-        onClick={() => openComposer('text')}
-        className="mt-4 flex flex-col items-center gap-1.5"
-      >
-        <span className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-violet-400/50 text-violet-500 transition hover:border-violet-400 hover:bg-violet-500/5">
-          <Plus size={22} strokeWidth={2.25} />
-        </span>
-        <span className="text-xs font-medium text-ink-soft/70">Ajouter</span>
-      </button>
+      <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => (myStories.length > 0 ? setViewerIndex(0) : setShowStoryComposer(true))}
+              className={`block rounded-full p-[2px] ${
+                myStories.length > 0
+                  ? 'bg-gradient-to-br from-pink-500 to-violet-500'
+                  : 'border-2 border-dashed border-violet-400/50'
+              }`}
+            >
+              {myStories.length > 0 ? (
+                <img
+                  src={myAvatarUrl}
+                  onError={myPhoto ? fallbackToFullPhoto(myPhoto) : undefined}
+                  alt=""
+                  className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                />
+              ) : (
+                <span className="flex h-14 w-14 items-center justify-center rounded-full text-violet-500">
+                  <Plus size={22} strokeWidth={2.25} />
+                </span>
+              )}
+            </button>
+            {myStories.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowStoryComposer(true)
+                }}
+                className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white ring-2 ring-surface-soft"
+                aria-label="Ajouter une story"
+              >
+                <Plus size={11} strokeWidth={3} />
+              </button>
+            )}
+          </div>
+          <span className="max-w-[4rem] truncate text-xs font-medium text-ink-soft/70">
+            {myStories.length > 0 ? 'Vous' : 'Ajouter'}
+          </span>
+        </div>
+
+        {otherStoryGroups.map((g, i) => {
+          const authorPhoto = g.author?.photos?.[0]
+          const avatarUrl = authorPhoto
+            ? photoVariant(authorPhoto, 'thumb')
+            : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(g.author?.firstName || 'Bomavibes')}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+          return (
+            <button
+              key={g.stories[0]?.authorId || i}
+              type="button"
+              onClick={() => setViewerIndex(myStories.length > 0 ? i + 1 : i)}
+              className="flex shrink-0 flex-col items-center gap-1"
+            >
+              <span
+                className={`block rounded-full p-[2px] ${
+                  g.allViewed ? 'bg-ink/15' : 'bg-gradient-to-br from-pink-500 to-violet-500'
+                }`}
+              >
+                <img
+                  src={avatarUrl}
+                  onError={authorPhoto ? fallbackToFullPhoto(authorPhoto) : undefined}
+                  alt=""
+                  className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                />
+              </span>
+              <span className="max-w-[4rem] truncate text-xs font-medium text-ink-soft/70">
+                {g.author?.firstName || '…'}
+              </span>
+            </button>
+          )
+        })}
+      </div>
 
       <div className="mt-5 flex items-center gap-2.5 rounded-2xl border border-ink/8 bg-white p-3 shadow-sm dark:bg-surface-tint">
         <img src={myAvatarUrl} onError={myPhoto ? fallbackToFullPhoto(myPhoto) : undefined} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
@@ -235,6 +379,53 @@ function Feed() {
 
       <AnimatePresence>
         {showComposer && <PostComposer initialType={composerType} onClose={() => setShowComposer(false)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showStoryComposer && user?.id && (
+          <StoryComposer userId={user.id} onClose={() => setShowStoryComposer(false)} />
+        )}
+      </AnimatePresence>
+
+      {viewerIndex !== null && storyGroups.length > 0 && (
+        <StoryViewer
+          groups={storyGroups}
+          startGroupIndex={viewerIndex}
+          currentUserId={user?.id}
+          onClose={() => setViewerIndex(null)}
+          onViewed={handleStoryViewed}
+          onDelete={(story) => {
+            setViewerIndex(null)
+            setStoryDeleteTarget(story)
+          }}
+          onReport={(story) => {
+            setViewerIndex(null)
+            setStoryReportTarget(story)
+          }}
+        />
+      )}
+
+      {storyReportTarget && (
+        <ReportModal
+          title="Signaler cette story"
+          reasons={CONTENT_REPORT_REASONS}
+          onClose={() => setStoryReportTarget(null)}
+          onSubmit={handleReportStorySubmit}
+          isSubmitting={isSubmittingStorySafety}
+        />
+      )}
+
+      <AnimatePresence>
+        {storyDeleteTarget && (
+          <ConfirmDialog
+            title="Supprimer cette story ?"
+            description="Cette action est définitive et ne peut pas être annulée."
+            confirmLabel="Supprimer"
+            isConfirming={isSubmittingStorySafety}
+            onCancel={() => setStoryDeleteTarget(null)}
+            onConfirm={confirmDeleteStory}
+          />
+        )}
       </AnimatePresence>
 
       <AnimatePresence>

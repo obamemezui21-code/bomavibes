@@ -42,9 +42,11 @@ import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachment
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
+import { matchPercent } from '../lib/interests.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
 import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
+import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
@@ -216,6 +218,23 @@ function DeleteMessageModal({ onCancel, onConfirm, isDeleting }) {
   )
 }
 
+// Builds a ProfileDetailModal-shaped object straight from the already-loaded
+// conversation data — no Firestore round-trip — so tapping a chat header
+// opens the profile instantly instead of waiting on a fetch. Only the fields
+// ConversationsContext already carries are available (no bio/personality
+// traits/other photos); that's a real subset of the profile, not fake data.
+function buildChatProfile(c) {
+  return {
+    id: c.otherUid,
+    firstName: c.profile.firstName,
+    age: c.profile.age,
+    city: c.profile.city,
+    verified: c.profile.verified,
+    interests: c.profile.interests,
+    photos: [c.profile.photoFull],
+  }
+}
+
 function formatListTime(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -341,11 +360,12 @@ function Chat() {
     setTyping,
     refreshBlockedIds,
   } = useConversations()
-  const { user } = useAuth()
+  const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
   const { theme } = useTheme()
   const [draft, setDraft] = useState('')
   const [listSearch, setListSearch] = useState('')
+  const [expandedProfile, setExpandedProfile] = useState(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showStickerPicker, setShowStickerPicker] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
@@ -737,6 +757,15 @@ function Chat() {
     }
   }
 
+  // ProfileDetailModal already performs the actual block write itself before
+  // calling this — just handle the chat-specific fallout (refresh the
+  // blocked-ids cache, leave a conversation that no longer applies).
+  async function handleProfileBlocked() {
+    await refreshBlockedIds()
+    setExpandedProfile(null)
+    navigate('/chat')
+  }
+
   if (conversations.length === 0) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center desktop:min-h-full">
@@ -756,7 +785,7 @@ function Chat() {
     : conversations
 
   return (
-    <div className="flex h-[calc(100dvh_-_5rem_-_env(safe-area-inset-bottom))] overflow-x-hidden bg-surface-soft desktop:h-svh">
+    <div className="flex h-[calc(100dvh_-_5rem_-_3.5rem_-_env(safe-area-inset-bottom))] overflow-hidden bg-surface-soft desktop:h-[calc(100svh_-_3.5rem)]">
       {/* Conversation list */}
       <div
         className={`relative w-full flex-col border-r border-ink/8 desktop:flex desktop:w-80 ${
@@ -851,10 +880,8 @@ function Chat() {
                     <p className="truncate text-xs text-ink-soft/60">
                       {typingId === c.id ? (
                         <span className="text-violet-600">écrit…</span>
-                      ) : last ? (
-                        messagePreviewText(last)
                       ) : (
-                        'Dites bonjour 👋'
+                        (last ? messagePreviewText(last) : c.lastMessage) || 'Dites bonjour 👋'
                       )}
                     </p>
                   </div>
@@ -1001,18 +1028,24 @@ function Chat() {
                 >
                   <ArrowLeft size={18} strokeWidth={2} />
                 </button>
-                <img
-                  src={active.profile.photo}
-                  onError={fallbackToFullPhoto(active.profile.photoFull)}
-                  alt={active.profile.firstName}
-                  className="h-9 w-9 rounded-full object-cover"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-ink">{active.profile.firstName}</p>
-                  <p className="truncate text-xs text-ink-soft/50">
-                    {active.online ? '🟢 En ligne' : active.lastSeenLabel || active.profile.city}
-                  </p>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setExpandedProfile(buildChatProfile(active))}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
+                  <img
+                    src={active.profile.photo}
+                    onError={fallbackToFullPhoto(active.profile.photoFull)}
+                    alt={active.profile.firstName}
+                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{active.profile.firstName}</p>
+                    <p className="truncate text-xs text-ink-soft/50">
+                      {active.online ? '🟢 En ligne' : active.lastSeenLabel || active.profile.city}
+                    </p>
+                  </div>
+                </button>
 
                 <div className="relative">
                   <button
@@ -1497,6 +1530,18 @@ function Chat() {
       )}
 
       {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
+
+      <AnimatePresence>
+        {expandedProfile && (
+          <ProfileDetailModal
+            profile={expandedProfile}
+            matchPercent={matchPercent(publicProfile?.interests, expandedProfile.interests)}
+            onClose={() => setExpandedProfile(null)}
+            onBlocked={handleProfileBlocked}
+            matchId={active?.id || null}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {infoMessage && active && (
