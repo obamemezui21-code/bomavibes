@@ -216,7 +216,7 @@ function Discover() {
 
       {/* Sticky nav — solid at the very top, fades into a blurred glass bar once scrolled */}
       <div
-        className={`sticky top-0 z-30 px-4 pt-6 transition-colors duration-300 sm:px-6 ${
+        className={`sticky top-14 z-30 px-4 pt-6 transition-colors duration-300 sm:px-6 ${
           isScrolled ? 'bg-surface-soft/70 backdrop-blur-xl' : 'bg-surface-soft'
         }`}
       >

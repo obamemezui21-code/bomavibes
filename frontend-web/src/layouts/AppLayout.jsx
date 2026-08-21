@@ -5,6 +5,7 @@ import { Compass, Heart, MessageCircle, Newspaper, CircleUserRound } from 'lucid
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
+import AppTopBar from '../components/AppTopBar.jsx'
 
 function useNavItems() {
   const { unreadMessagesCount, newMatchesCount } = useConversations()
@@ -57,73 +58,76 @@ function AppLayout() {
   }
 
   return (
-    <div className="min-h-svh bg-surface-soft desktop:flex">
-      <aside className="hidden desktop:sticky desktop:top-0 desktop:flex desktop:h-svh desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-white/70 desktop:p-4 desktop:backdrop-blur-xl dark:desktop:bg-surface/70">
-        <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
-          <span className="text-ink">Boma</span>
-          <span className="text-gradient-brand italic">Vibes</span>
-        </div>
+    <div className="min-h-svh bg-surface-soft">
+      <AppTopBar />
+      <div className="desktop:flex">
+        <aside className="hidden desktop:sticky desktop:top-14 desktop:flex desktop:h-[calc(100svh-3.5rem)] desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-white/70 desktop:p-4 desktop:backdrop-blur-xl dark:desktop:bg-surface/70">
+          <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
+            <span className="text-ink">Boma</span>
+            <span className="text-gradient-brand italic">Vibes</span>
+          </div>
 
-        <nav className="flex flex-col gap-1">
-          {navItems.map((item, i) => {
-            const isActive = location.pathname === item.to
-            const anim = iconAnimation(item, i, isActive, 1.12)
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="nav-active-pill"
-                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 shadow-lg shadow-violet-500/25"
-                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                  />
-                )}
-                <motion.span
-                  className={`relative z-10 inline-flex ${item.ring ? 'text-coral-500' : ''}`}
-                  animate={anim.animate}
-                  whileTap={{ scale: 0.85 }}
-                  transition={anim.transition}
-                  style={{ transformOrigin: '50% 0%' }}
+          <nav className="flex flex-col gap-1">
+            {navItems.map((item, i) => {
+              const isActive = location.pathname === item.to
+              const anim = iconAnimation(item, i, isActive, 1.12)
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className="relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition"
                 >
-                  <item.icon
-                    size={18}
-                    strokeWidth={2}
-                    className={item.ring ? '' : isActive ? 'text-ink-on-brand' : 'text-ink'}
-                    fill={item.ring ? 'currentColor' : 'none'}
-                  />
-                </motion.span>
-                <span className={`relative z-10 flex-1 ${isActive ? 'text-ink-on-brand' : 'text-ink/80'}`}>
-                  {item.label}
-                </span>
-                {!!item.badge && (
-                  <span
-                    className={`relative z-10 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
-                      isActive ? 'bg-white text-violet-600' : 'bg-coral-500 text-white'
-                    }`}
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 shadow-lg shadow-violet-500/25"
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    />
+                  )}
+                  <motion.span
+                    className={`relative z-10 inline-flex ${item.ring ? 'text-coral-500' : ''}`}
+                    animate={anim.animate}
+                    whileTap={{ scale: 0.85 }}
+                    transition={anim.transition}
+                    style={{ transformOrigin: '50% 0%' }}
                   >
-                    {item.badge > 9 ? '9+' : item.badge}
+                    <item.icon
+                      size={18}
+                      strokeWidth={2}
+                      className={item.ring ? '' : isActive ? 'text-ink-on-brand' : 'text-ink'}
+                      fill={item.ring ? 'currentColor' : 'none'}
+                    />
+                  </motion.span>
+                  <span className={`relative z-10 flex-1 ${isActive ? 'text-ink-on-brand' : 'text-ink/80'}`}>
+                    {item.label}
                   </span>
-                )}
-              </NavLink>
-            )
-          })}
-        </nav>
+                  {!!item.badge && (
+                    <span
+                      className={`relative z-10 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+                        isActive ? 'bg-white text-violet-600' : 'bg-coral-500 text-white'
+                      }`}
+                    >
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </span>
+                  )}
+                </NavLink>
+              )
+            })}
+          </nav>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="mt-auto rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
-        >
-          {t('common.logout')}
-        </button>
-      </aside>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="mt-auto rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
+          >
+            {t('common.logout')}
+          </button>
+        </aside>
 
-      <main className="min-h-svh flex-1 pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
-        <Outlet />
-      </main>
+        <main className="min-h-svh flex-1 pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
+          <Outlet />
+        </main>
+      </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl dark:bg-surface/85 desktop:hidden">
         {navItems.map((item, i) => {
