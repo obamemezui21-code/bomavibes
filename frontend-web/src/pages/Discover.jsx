@@ -72,16 +72,7 @@ function Discover() {
   const [exitingId, setExitingId] = useState(null)
   const [exitDirection, setExitDirection] = useState(null)
   const [isReviewing, setIsReviewing] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
   const seenIdsRef = useRef(new Set())
-
-  useEffect(() => {
-    function handleScroll() {
-      setIsScrolled(window.scrollY > 8)
-    }
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   async function loadCandidates(currentFilters, { includeRefused = false } = {}) {
     if (!user?.id) return
@@ -214,12 +205,7 @@ function Discover() {
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
       <div className="pointer-events-none absolute -right-20 top-40 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 
-      {/* Sticky nav — solid at the very top, fades into a blurred glass bar once scrolled */}
-      <div
-        className={`sticky top-14 z-30 px-4 pt-6 transition-colors duration-300 sm:px-6 ${
-          isScrolled ? 'bg-surface-soft/70 backdrop-blur-xl' : 'bg-surface-soft'
-        }`}
-      >
+      <div className="px-4 pt-6 sm:px-6">
         <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
           <div className="flex items-center justify-between">
             <div>
