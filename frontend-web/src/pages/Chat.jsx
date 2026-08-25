@@ -16,7 +16,6 @@ import {
   Info,
   Mic,
   MessageCircle,
-  MoreVertical,
   Paperclip,
   Pause,
   Pencil,
@@ -25,11 +24,11 @@ import {
   Search,
   Send,
   Share2,
-  ShieldOff,
   Smile,
   Sticker,
   Trash2,
   TriangleAlert,
+  Video,
   X,
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
@@ -45,7 +44,6 @@ import { messagePreviewText } from '../lib/messagePreview.js'
 import { matchPercent } from '../lib/interests.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
-import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
@@ -374,9 +372,7 @@ function Chat() {
   const [replyTarget, setReplyTarget] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [showHeaderMenu, setShowHeaderMenu] = useState(false)
   const [showReport, setShowReport] = useState(false)
-  const [showBlock, setShowBlock] = useState(false)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
@@ -741,22 +737,6 @@ function Chat() {
     }
   }
 
-  async function handleBlockUser() {
-    if (!active) return
-    setIsSubmittingSafety(true)
-    try {
-      await blockUser(user.id, active.otherUid)
-      await refreshBlockedIds()
-      showToast(`Vous avez bloqué ${active.profile.firstName}.`, 'info')
-      setShowBlock(false)
-      navigate('/chat')
-    } catch {
-      showToast('Impossible de bloquer ce profil, réessayez.', 'error')
-    } finally {
-      setIsSubmittingSafety(false)
-    }
-  }
-
   // ProfileDetailModal already performs the actual block write itself before
   // calling this — just handle the chat-specific fallout (refresh the
   // blocked-ids cache, leave a conversation that no longer applies).
@@ -850,10 +830,19 @@ function Chat() {
                   key={c.id}
                   type="button"
                   onClick={() => navigate(`/chat/${c.id}`)}
-                  className={`flex w-full min-w-0 items-center gap-3 rounded-2xl border bg-white p-3 text-left shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint ${
+                  className={`relative flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-2xl border bg-white p-3 text-left shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint ${
                     isActive ? 'border-violet-400/60 ring-2 ring-violet-400/30' : 'border-ink/8'
                   }`}
                 >
+                  <div className="pointer-events-none absolute inset-0">
+                    <img
+                      src={c.profile.photoFull || c.profile.photo}
+                      onError={fallbackToFullPhoto(c.profile.photo)}
+                      alt=""
+                      className="h-full w-full object-cover opacity-[0.08] grayscale dark:opacity-[0.12]"
+                    />
+                    <div className="absolute inset-0 bg-white/85 dark:bg-surface-tint/85" />
+                  </div>
                   <div className="relative shrink-0">
                     <img
                       src={c.profile.photo}
@@ -865,7 +854,7 @@ function Chat() {
                       <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-mint-500 dark:border-surface-tint" />
                     )}
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="relative min-w-0 flex-1">
                     <p className="flex items-center gap-1 truncate text-sm font-semibold text-ink">
                       <span className="truncate">
                         {c.profile.firstName}
@@ -885,7 +874,7 @@ function Chat() {
                       )}
                     </p>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
+                  <div className="relative flex shrink-0 flex-col items-end gap-1">
                     {c.lastActivityAt && (
                       <span className="text-[11px] text-ink-soft/50">{formatListTime(c.lastActivityAt)}</span>
                     )}
@@ -1041,61 +1030,56 @@ function Chat() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink">{active.profile.firstName}</p>
-                    <p className="truncate text-xs text-ink-soft/50">
-                      {active.online ? '🟢 En ligne' : active.lastSeenLabel || active.profile.city}
+                    <p className="truncate text-xs">
+                      {active.online ? (
+                        <span className="text-mint-500">En ligne</span>
+                      ) : (
+                        <span className="text-ink-soft/50">{active.lastSeenLabel || active.profile.city}</span>
+                      )}
                     </p>
                   </div>
                 </button>
 
-                <div className="relative">
+                <div className="flex shrink-0 items-center gap-1.5">
                   <button
                     type="button"
-                    onClick={() => setShowHeaderMenu((v) => !v)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
-                    aria-label="Options de la conversation"
+                    onClick={() => showToast('Bientôt disponible.', 'info')}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/12 text-ink-soft/70 transition hover:bg-ink/5"
+                    aria-label="Télécharger la conversation"
                   >
-                    <MoreVertical size={16} strokeWidth={2.25} />
+                    <Download size={16} strokeWidth={2} />
                   </button>
-                  <AnimatePresence>
-                    {showHeaderMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-9 z-10 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowHeaderMenu(false)
-                            setShowReport(true)
-                          }}
-                          className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
-                        >
-                          <Flag size={14} strokeWidth={2.25} />
-                          Signaler
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowHeaderMenu(false)
-                            setShowBlock(true)
-                          }}
-                          className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
-                        >
-                          <ShieldOff size={14} strokeWidth={2.25} />
-                          Bloquer
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <button
+                    type="button"
+                    onClick={() => setShowReport(true)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/12 text-ink-soft/70 transition hover:bg-ink/5"
+                    aria-label="Signaler"
+                  >
+                    <Flag size={16} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => showToast('Bientôt disponible.', 'info')}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/12 text-ink-soft/70 transition hover:bg-ink/5"
+                    aria-label="Appel vidéo"
+                  >
+                    <Video size={16} strokeWidth={2} />
+                  </button>
                 </div>
               </div>
             )}
 
             <div className="relative min-w-0 flex-1 overflow-hidden">
-            <div ref={scrollRef} onScroll={handleThreadScroll} className="h-full space-y-2 overflow-y-auto px-4 py-4">
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <img
+                src={active.profile.photoFull || active.profile.photo}
+                onError={fallbackToFullPhoto(active.profile.photo)}
+                alt=""
+                className="h-full w-full object-cover opacity-[0.07] blur-[1px] grayscale dark:opacity-[0.1]"
+              />
+              <div className="absolute inset-0 bg-surface-soft/85" />
+            </div>
+            <div ref={scrollRef} onScroll={handleThreadScroll} className="relative h-full space-y-2 overflow-y-auto px-4 py-4">
               {active.messages.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                   <Hand size={32} strokeWidth={1.5} className="text-ink-soft/40" />
@@ -1518,14 +1502,6 @@ function Chat() {
           onClose={() => setShowReport(false)}
           onSubmit={handleReportUser}
           isSubmitting={isSubmittingSafety}
-        />
-      )}
-      {showBlock && active && (
-        <BlockConfirmModal
-          firstName={active.profile.firstName}
-          onCancel={() => setShowBlock(false)}
-          onConfirm={handleBlockUser}
-          isBlocking={isSubmittingSafety}
         />
       )}
 
