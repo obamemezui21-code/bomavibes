@@ -758,7 +758,6 @@ function Chat() {
     )
   }
 
-  const newMatches = conversations.filter((c) => c.isNewMatch)
   const query = listSearch.trim().toLowerCase()
   const visibleConversations = query
     ? conversations.filter((c) => c.profile.firstName.toLowerCase().includes(query))
@@ -790,33 +789,39 @@ function Chat() {
           onScroll={(e) => setShowScrollUp(e.currentTarget.scrollTop > 300)}
           className="flex-1 overflow-y-auto px-3 py-3"
         >
-          {newMatches.length > 0 && !query && (
+          {conversations.length > 0 && !query && (
             <div className="mb-4">
               <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">
-                Nouveaux matchs
+                Vos matchs
               </p>
               <div className="mt-2 flex gap-3 overflow-x-auto px-1 pb-1">
-                {newMatches.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => navigate(`/chat/${c.id}`)}
-                    className="flex shrink-0 flex-col items-center gap-1"
-                  >
-                    <span className="relative block rounded-full bg-gradient-to-br from-pink-500 to-violet-500 p-[2px]">
-                      <img
-                        src={c.profile.photo}
-                        onError={fallbackToFullPhoto(c.profile.photoFull)}
-                        alt={c.profile.firstName}
-                        className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
-                      />
-                      {c.online && (
-                        <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface-soft bg-mint-500" />
-                      )}
-                    </span>
-                    <span className="max-w-[4rem] truncate text-xs font-medium text-ink">{c.profile.firstName}</span>
-                  </button>
-                ))}
+                {[...conversations]
+                  .sort((a, b) => Number(b.online) - Number(a.online))
+                  .map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => navigate(`/chat/${c.id}`)}
+                      className="flex shrink-0 flex-col items-center gap-1"
+                    >
+                      <span
+                        className={`relative block rounded-full p-[2px] ${
+                          c.isNewMatch ? 'bg-gradient-to-br from-pink-500 to-violet-500' : 'bg-ink/10'
+                        }`}
+                      >
+                        <img
+                          src={c.profile.photo}
+                          onError={fallbackToFullPhoto(c.profile.photoFull)}
+                          alt={c.profile.firstName}
+                          className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                        />
+                        {c.online && (
+                          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface-soft bg-mint-500" />
+                        )}
+                      </span>
+                      <span className="max-w-[4rem] truncate text-xs font-medium text-ink">{c.profile.firstName}</span>
+                    </button>
+                  ))}
               </div>
             </div>
           )}
