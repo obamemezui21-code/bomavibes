@@ -839,9 +839,9 @@ function Chat() {
                       src={c.profile.photoFull || c.profile.photo}
                       onError={fallbackToFullPhoto(c.profile.photo)}
                       alt=""
-                      className="h-full w-full object-cover opacity-[0.08] grayscale dark:opacity-[0.12]"
+                      className="h-full w-full object-cover opacity-35"
                     />
-                    <div className="absolute inset-0 bg-white/85 dark:bg-surface-tint/85" />
+                    <div className="absolute inset-0 bg-white/70 dark:bg-surface-tint/75" />
                   </div>
                   <div className="relative shrink-0">
                     <img
@@ -1075,9 +1075,9 @@ function Chat() {
                 src={active.profile.photoFull || active.profile.photo}
                 onError={fallbackToFullPhoto(active.profile.photo)}
                 alt=""
-                className="h-full w-full object-cover opacity-[0.07] blur-[1px] grayscale dark:opacity-[0.1]"
+                className="h-full w-full object-cover opacity-40 dark:opacity-30"
               />
-              <div className="absolute inset-0 bg-surface-soft/85" />
+              <div className="absolute inset-0 bg-surface-soft/55 dark:bg-surface-soft/65" />
             </div>
             <div ref={scrollRef} onScroll={handleThreadScroll} className="relative h-full space-y-2 overflow-y-auto px-4 py-4">
               {active.messages.length === 0 && (
