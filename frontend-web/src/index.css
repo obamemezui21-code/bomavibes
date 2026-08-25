@@ -129,31 +129,16 @@ body {
   50.01%, 100% { opacity: 0; }
 }
 
-/* Scrollbars */
+/* Scrollbars — scrolling stays fully functional everywhere, the
+   scrollbar itself is just never rendered (Firefox, IE/Edge, WebKit). */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(31, 61, 43, 0.25) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(31, 61, 43, 0.2);
-  border-radius: 999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(31, 61, 43, 0.35);
-}
-
-.dark * {
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* Shared surfaces */
