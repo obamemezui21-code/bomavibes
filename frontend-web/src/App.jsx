@@ -1,5 +1,5 @@
-import { lazy, Suspense, useState } from 'react'
-import { Outlet, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import SplashScreen from './components/SplashScreen.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
@@ -39,6 +39,21 @@ const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
+  const navigate = useNavigate()
+
+  // Bridges the service worker's notificationclick handler (see
+  // firebase-messaging-sw.js): when a tab is already open, it focuses that
+  // tab and posts the destination here instead of forcing a full reload.
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return undefined
+    function handleMessage(event) {
+      if (event.data?.type === 'notification-click' && event.data.url) {
+        navigate(event.data.url)
+      }
+    }
+    navigator.serviceWorker.addEventListener('message', handleMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', handleMessage)
+  }, [navigate])
 
   return (
     <>

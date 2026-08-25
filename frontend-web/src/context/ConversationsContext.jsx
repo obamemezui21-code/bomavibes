@@ -25,6 +25,10 @@ const ConversationsContext = createContext(null)
 const ONLINE_THRESHOLD_MS = 150 * 1000
 const TYPING_THRESHOLD_MS = 6 * 1000
 const HEARTBEAT_INTERVAL_MS = 90 * 1000
+// Kept well under the backend's matching threshold (notifyController.js)
+// so a normal heartbeat cadence never races a message notification into
+// being wrongly suppressed.
+const ACTIVE_IN_HEARTBEAT_MS = 20 * 1000
 
 function formatTime(date) {
   if (!date) return ''
@@ -122,6 +126,24 @@ export function ConversationsProvider({ children }) {
     }, HEARTBEAT_INTERVAL_MS)
     return () => clearInterval(heartbeat)
   }, [uid])
+
+  // Marks this user "actively in" whichever match is currently open, so the
+  // backend can skip pushing a message notification they're already
+  // watching arrive live (see notifyController.js). A heartbeated
+  // timestamp rather than a one-time flag: if the tab crashes or is killed
+  // instead of cleanly closing, the field simply goes stale on its own
+  // instead of blocking that conversation's notifications forever.
+  useEffect(() => {
+    if (!uid || !openMatchId) return undefined
+    const ref = doc(db, 'matches', openMatchId)
+    const stamp = () => updateDoc(ref, { [`activeIn.${uid}`]: serverTimestamp() }).catch(() => {})
+    stamp()
+    const heartbeat = setInterval(stamp, ACTIVE_IN_HEARTBEAT_MS)
+    return () => {
+      clearInterval(heartbeat)
+      updateDoc(ref, { [`activeIn.${uid}`]: deleteField() }).catch(() => {})
+    }
+  }, [uid, openMatchId])
 
   useEffect(() => {
     if (!uid) {
@@ -288,7 +310,7 @@ export function ConversationsProvider({ children }) {
   }
 
   async function sendMessage(matchId, text, replyTo) {
-    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
       text,
       createdAt: serverTimestamp(),
@@ -311,12 +333,12 @@ export function ConversationsProvider({ children }) {
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text, matchId, messageId: messageRef.id })
     }
   }
 
   async function sendVoiceMessage(matchId, audioUrl, duration) {
-    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
       text: '',
       type: 'voice',
@@ -334,12 +356,12 @@ export function ConversationsProvider({ children }) {
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
     }
   }
 
   async function sendAttachmentMessage(matchId, attachment) {
-    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
       text: '',
       type: attachment.type,
@@ -358,12 +380,12 @@ export function ConversationsProvider({ children }) {
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
     }
   }
 
   async function sendStickerMessage(matchId, stickerId) {
-    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
       text: '',
       type: 'sticker',
@@ -380,12 +402,12 @@ export function ConversationsProvider({ children }) {
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
     }
   }
 
   async function sendPostMessage(matchId, post) {
-    await addDoc(collection(db, 'matches', matchId, 'messages'), {
+    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
       text: '',
       type: 'post',
@@ -402,7 +424,7 @@ export function ConversationsProvider({ children }) {
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
     }
   }
 
