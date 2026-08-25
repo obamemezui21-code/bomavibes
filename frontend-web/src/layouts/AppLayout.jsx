@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Compass, Heart, MessageCircle, Newspaper, Ticket } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -125,7 +125,21 @@ function AppLayout() {
         </aside>
 
         <main className="min-h-[calc(100svh_-_3.5rem)] flex-1 pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
-          <Outlet />
+          {/* Keyed by the top-level segment only (not the full pathname) so
+              opening a chat thread (/chat -> /chat/:id) or a post
+              (/feed -> /feed/:postId) doesn't retrigger a full-page fade —
+              those are in-page detail views, not a nav-to-nav switch. */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname.split('/')[1] || 'root'}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16, ease: 'easeOut' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 
