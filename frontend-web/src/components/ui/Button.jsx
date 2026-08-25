@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 
 const VARIANTS = {
   primary:
-    'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25 hover:shadow-violet-500/35 disabled:cursor-not-allowed disabled:opacity-60',
+    'bg-gradient-brand text-white shadow-lg shadow-pink-500/25 hover:shadow-pink-500/35 disabled:cursor-not-allowed disabled:opacity-60',
   secondary:
     'border border-ink/12 text-ink/80 hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60',
   danger:
@@ -15,7 +15,7 @@ function Button({ variant = 'primary', type = 'button', className = '', children
     <motion.button
       type={type}
       whileTap={prefersReducedMotion ? undefined : { scale: 0.97 }}
-      className={`rounded-xl py-2.5 text-sm font-semibold transition ${VARIANTS[variant]} ${className}`}
+      className={`rounded-full py-2.5 text-sm font-semibold transition ${VARIANTS[variant]} ${className}`}
       {...props}
     >
       {children}

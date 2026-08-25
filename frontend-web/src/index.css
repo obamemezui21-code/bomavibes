@@ -39,8 +39,8 @@
 
   --color-pink-300: #fbcfe8;
   --color-pink-400: #f472b6;
-  --color-pink-500: #ec4899;
-  --color-pink-600: #db2777;
+  --color-pink-500: #ff3399;
+  --color-pink-600: #ff0080;
 
   --color-mint-400: #34d399;
   --color-mint-500: #10b981;
@@ -52,6 +52,11 @@
   --color-coral-400: #fb7185;
   --color-coral-500: #f43f5e;
   --color-coral-600: #e11d48;
+
+  /* 3-stop diagonal reads richer than a flat 2-color gradient while staying
+     inside the existing violet/pink identity; shared by text and background
+     treatments so both stay in sync instead of drifting independently. */
+  --gradient-brand: linear-gradient(135deg, var(--color-violet-600) 0%, var(--color-pink-500) 55%, var(--color-pink-600) 100%);
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
@@ -179,10 +184,14 @@ body {
 }
 
 .text-gradient-brand {
-  background: linear-gradient(90deg, var(--color-violet-950), var(--color-violet-500));
+  background: var(--gradient-brand);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.bg-gradient-brand {
+  background-image: var(--gradient-brand);
 }
 
 /* Hero overlay: layered vignette + directional gradient for premium contrast */
