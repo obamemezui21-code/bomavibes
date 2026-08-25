@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { sendPushNotification } from '../firebase/notify.js'
-import { enablePushForUser } from '../firebase/push.js'
+import { enablePushForUser, syncPushToken } from '../firebase/push.js'
 import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
 import { photoVariant } from '../lib/photoVariants.js'
@@ -64,6 +64,7 @@ export function ConversationsProvider({ children }) {
   const prevSeenRef = useRef({})
   const isFirstMatchesSnapshot = useRef(true)
   const hasTriedPushRef = useRef(false)
+  const syncedTokenForUidRef = useRef(null)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 15 * 1000)
@@ -85,6 +86,16 @@ export function ConversationsProvider({ children }) {
   }, [uid])
 
   const [showPushPrompt, setShowPushPrompt] = useState(false)
+
+  // Independent of the opt-in prompt below: if this user already granted
+  // notification permission (on this device, in a past session), silently
+  // re-check the FCM token on every load so a rotated token gets re-synced
+  // to Firestore instead of going stale.
+  useEffect(() => {
+    if (!uid || syncedTokenForUidRef.current === uid) return
+    syncedTokenForUidRef.current = uid
+    syncPushToken(uid)
+  }, [uid])
 
   useEffect(() => {
     if (!uid || !profile || hasTriedPushRef.current) return
