@@ -8,6 +8,7 @@ const newsRoutes = require("./routes/newsRoutes");
 const voiceRoutes = require("./routes/voiceRoutes");
 const chatAttachmentRoutes = require("./routes/chatAttachmentRoutes");
 const feedPhotoRoutes = require("./routes/feedPhotoRoutes");
+const musicRoutes = require("./routes/musicRoutes");
 const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 
 const app = express();
@@ -31,6 +32,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api/voice", voiceRoutes);
 app.use("/api/chat-attachments", chatAttachmentRoutes);
 app.use("/api/feed-photos", feedPhotoRoutes);
+app.use("/api/music", musicRoutes);
 
 startWwfNewsScheduler();
 

@@ -41,6 +41,7 @@ import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachment
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
+import { formatDuration } from '../lib/formatDuration.js'
 import { matchPercent } from '../lib/interests.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
@@ -60,13 +61,6 @@ function autoResizeTextarea(el) {
   if (!el) return
   el.style.height = 'auto'
   el.style.height = `${Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT)}px`
-}
-
-function formatDuration(totalSeconds) {
-  const s = Math.max(0, Math.round(totalSeconds || 0))
-  const m = Math.floor(s / 60)
-  const rem = s % 60
-  return `${m}:${String(rem).padStart(2, '0')}`
 }
 
 function VoiceMessage({ url, duration, fromMe }) {

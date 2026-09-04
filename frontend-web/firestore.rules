@@ -10,6 +10,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
     function isOptionalString(field, maxLen) {
       return !(field in request.resource.data)
         || request.resource.data[field] == null
@@ -29,7 +34,12 @@ service cloud.firestore {
           && data.onboarded is bool
           && isOptionalString('firstName', 50)
           && (!('prefGender' in data) || data.prefGender == null || (data.prefGender is string && data.prefGender.size() <= 20))
-          && (!('prefMaxDistance' in data) || data.prefMaxDistance == null || (data.prefMaxDistance is number && data.prefMaxDistance >= 1 && data.prefMaxDistance <= 500));
+          && (!('prefMaxDistance' in data) || data.prefMaxDistance == null || (data.prefMaxDistance is number && data.prefMaxDistance >= 1 && data.prefMaxDistance <= 500))
+          // isAdmin is granted only server-side via the Admin SDK — a client
+          // write may leave it untouched but never set or change it, so a
+          // user can't self-promote by writing to their own account doc.
+          // (resource is null on create, i.e. no prior isAdmin to defend.)
+          && (!('isAdmin' in data) || (resource != null && data.isAdmin == resource.data.get('isAdmin', false)));
       }
 
       allow read, delete: if isOwner(userId);
@@ -217,6 +227,23 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validStoryCreate();
       allow update: if isSignedIn() && isViewMark();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
+    }
+
+    match /musicTracks/{trackId} {
+      function validMusicTrack() {
+        let data = request.resource.data;
+        return data.title is string && data.title.size() > 0 && data.title.size() <= 200
+          && data.url is string && data.url.size() > 0
+          && data.uploadedBy == request.auth.uid;
+      }
+
+      // Admin-only module for now (upload and playback both) — not the
+      // general user-facing feed/chat trust model used elsewhere in this
+      // file.
+      allow read: if isAdmin();
+      allow create: if isAdmin() && validMusicTrack();
+      allow update: if isAdmin() && request.resource.data.uploadedBy == resource.data.uploadedBy;
+      allow delete: if isAdmin();
     }
   }
 }

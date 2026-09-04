@@ -434,6 +434,20 @@ function Settings() {
             </Row>
           </Section>
 
+          {profile?.isAdmin && (
+            <Section title="Administration">
+              <Row title="Musique" subtitle="Téléverser et écouter des pistes">
+                <button
+                  type="button"
+                  onClick={() => navigate('/admin/music')}
+                  className="text-xs font-semibold text-violet-600 hover:underline"
+                >
+                  Ouvrir
+                </button>
+              </Row>
+            </Section>
+          )}
+
           <Section title="Le projet">
             <Row title="Soutenir BomaVibes" subtitle="Construisons BomaVibes ensemble">
               <button

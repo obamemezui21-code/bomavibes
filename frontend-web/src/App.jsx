@@ -3,6 +3,7 @@ import { Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import SplashScreen from './components/SplashScreen.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
+import RequireAdmin from './components/RequireAdmin.jsx'
 import { FeedProvider } from './context/FeedContext.jsx'
 import { FullPageSpinner } from './components/ui/Spinner.jsx'
 
@@ -36,6 +37,7 @@ const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Support = lazy(() => import('./pages/Support.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
+const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -116,6 +118,14 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/soutenir" element={<Support />} />
+            <Route
+              path="/admin/music"
+              element={
+                <RequireAdmin>
+                  <AdminMusic />
+                </RequireAdmin>
+              }
+            />
           </Route>
         </Routes>
       </Suspense>
