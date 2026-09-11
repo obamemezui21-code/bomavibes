@@ -44,22 +44,22 @@ const SECTIONS = [
 
 function LegalNotice() {
   return (
-    <div className="relative min-h-svh bg-[#FAF6EF]">
+    <div className="relative min-h-svh bg-[#f7f1e6]">
       <SiteHeader />
 
       <div className="mx-auto max-w-3xl px-4 pb-24 pt-32 sm:px-8 sm:pt-40">
         <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">Légal</p>
-        <h1 className="mt-2 font-display text-3xl font-bold text-[#2B1D14] sm:text-4xl">
+        <h1 className="mt-2 font-display text-3xl font-bold text-[#261b28] sm:text-4xl">
           Mentions légales
         </h1>
 
         <div className="mt-12 space-y-10">
           {SECTIONS.map((s) => (
             <section key={s.title}>
-              <h2 className="font-display text-lg font-bold text-[#2B1D14]">{s.title}</h2>
+              <h2 className="font-display text-lg font-bold text-[#261b28]">{s.title}</h2>
               <ul className="mt-3 space-y-2">
                 {s.body.map((line, i) => (
-                  <li key={i} className="flex gap-2 text-sm leading-relaxed text-[#6b5d4f]">
+                  <li key={i} className="flex gap-2 text-sm leading-relaxed text-[#635a65]">
                     <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-pink-500" />
                     {line}
                   </li>

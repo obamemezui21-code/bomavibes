@@ -8,11 +8,11 @@ const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 const MAX_TEXT_LENGTH = 300
 
 const BACKGROUNDS = [
-  'linear-gradient(135deg,#a855f7,#ec4899)',
-  'linear-gradient(135deg,#0ea5e9,#34d399)',
-  'linear-gradient(135deg,#f43f5e,#f472b6)',
-  'linear-gradient(135deg,#f59e0b,#ec4899)',
-  'linear-gradient(135deg,#2b1d14,#6b5d4f)',
+  'linear-gradient(135deg,#a95dda,#e652a3)',
+  'linear-gradient(135deg,#67c7f5,#4dbf85)',
+  'linear-gradient(135deg,#ea3d38,#ef8fc7)',
+  'linear-gradient(135deg,#f2bf4e,#e652a3)',
+  'linear-gradient(135deg,#261b28,#635a65)',
 ]
 
 function StoryComposer({ userId, onClose, onCreated }) {

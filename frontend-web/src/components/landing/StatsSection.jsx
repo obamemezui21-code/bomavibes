@@ -16,11 +16,11 @@ const STATS = [
 
 function StatsSection() {
   return (
-    <section className="bg-[#FAF6EF] px-4 py-24 sm:px-10">
+    <section className="bg-[#f7f1e6] px-4 py-24 sm:px-10">
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
-          <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">BomaVibes en chiffres</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#6b5d4f]">
+          <h2 className="font-display text-4xl font-bold text-[#261b28] sm:text-5xl">BomaVibes en chiffres</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#635a65]">
             Une plateforme construite en profondeur, dès le premier jour.
           </p>
         </div>
@@ -36,7 +36,7 @@ function StatsSection() {
               className="rounded-3xl border border-violet-600/8 bg-white p-6 text-center shadow-sm"
             >
               <p className="font-display text-4xl font-extrabold text-pink-500 sm:text-5xl">{s.value}</p>
-              <p className="mt-2 text-sm leading-snug text-[#6b5d4f]">{s.label}</p>
+              <p className="mt-2 text-sm leading-snug text-[#635a65]">{s.label}</p>
             </motion.div>
           ))}
         </div>

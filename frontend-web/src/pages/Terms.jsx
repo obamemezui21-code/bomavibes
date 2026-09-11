@@ -65,16 +65,16 @@ const SECTIONS = [
 
 function Terms() {
   return (
-    <div className="relative min-h-svh bg-[#FAF6EF]">
+    <div className="relative min-h-svh bg-[#f7f1e6]">
       <SiteHeader />
 
       <div className="mx-auto max-w-3xl px-4 pb-24 pt-32 sm:px-8 sm:pt-40">
         <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">Légal</p>
-        <h1 className="mt-2 font-display text-3xl font-bold text-[#2B1D14] sm:text-4xl">
+        <h1 className="mt-2 font-display text-3xl font-bold text-[#261b28] sm:text-4xl">
           Conditions d'utilisation
         </h1>
-        <p className="mt-3 text-sm text-[#6b5d4f]">Dernière mise à jour : août 2026</p>
-        <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#6b5d4f]">
+        <p className="mt-3 text-sm text-[#635a65]">Dernière mise à jour : août 2026</p>
+        <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#635a65]">
           En utilisant BomaVibes, vous acceptez les règles ci-dessous. Nous les avons gardées
           aussi simples et honnêtes que possible.
         </p>
@@ -82,10 +82,10 @@ function Terms() {
         <div className="mt-12 space-y-10">
           {SECTIONS.map((s) => (
             <section key={s.title}>
-              <h2 className="font-display text-lg font-bold text-[#2B1D14]">{s.title}</h2>
+              <h2 className="font-display text-lg font-bold text-[#261b28]">{s.title}</h2>
               <ul className="mt-3 space-y-2">
                 {s.body.map((line) => (
-                  <li key={line} className="flex gap-2 text-sm leading-relaxed text-[#6b5d4f]">
+                  <li key={line} className="flex gap-2 text-sm leading-relaxed text-[#635a65]">
                     <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-pink-500" />
                     {line}
                   </li>
@@ -96,7 +96,7 @@ function Terms() {
         </div>
 
         <div className="mt-14 border-t border-violet-600/10 pt-8">
-          <p className="text-sm text-[#6b5d4f]">
+          <p className="text-sm text-[#635a65]">
             Une question sur ces conditions ?{' '}
             <a href="mailto:Bomavibes241@gmail.com" className="font-semibold text-violet-600 underline-offset-4 hover:underline">
               Bomavibes241@gmail.com

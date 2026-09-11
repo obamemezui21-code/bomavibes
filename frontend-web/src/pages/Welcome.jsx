@@ -108,7 +108,7 @@ function Welcome() {
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35"
+          className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-[#261b28] shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35"
         >
           <Mail size={18} strokeWidth={2} />
           Se connecter par email

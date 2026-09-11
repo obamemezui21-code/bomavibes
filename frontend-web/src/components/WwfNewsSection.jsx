@@ -51,8 +51,8 @@ function WwfNewsSection() {
           <Leaf size={14} strokeWidth={2.5} />
           En partenariat avec WWF Gabon
         </p>
-        <h2 className="mt-2 font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Notre engagement</h2>
-        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="mt-2 font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Notre engagement</h2>
+        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#635a65]">
           Les dernières nouvelles de WWF Gabon, pour une communauté qui célèbre aussi ses racines.
         </p>
       </div>
@@ -85,11 +85,11 @@ function WwfNewsSection() {
                     {publishedLabel && (
                       <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">{publishedLabel}</p>
                     )}
-                    <h3 className="mt-2 font-display text-lg font-bold leading-snug text-[#2B1D14]">
+                    <h3 className="mt-2 font-display text-lg font-bold leading-snug text-[#261b28]">
                       {article.title}
                     </h3>
                     {article.excerpt && (
-                      <p className="mt-3 flex-1 text-sm leading-relaxed text-[#6b5d4f]">{article.excerpt}</p>
+                      <p className="mt-3 flex-1 text-sm leading-relaxed text-[#635a65]">{article.excerpt}</p>
                     )}
                     <a
                       href={article.url}

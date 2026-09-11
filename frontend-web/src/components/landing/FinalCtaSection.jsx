@@ -23,7 +23,7 @@ function FinalCtaSection() {
         <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
           <Link
             to="/signup"
-            className="rounded-xl bg-pink-500 px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-pink-400 hover:shadow-xl active:translate-y-0"
+            className="rounded-xl bg-pink-500 px-8 py-3.5 text-base font-semibold text-[#261b28] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-pink-400 hover:shadow-xl active:translate-y-0"
           >
             Créer mon compte gratuitement
           </Link>

@@ -101,7 +101,7 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
           A plain black shadow-xl barely reads against the app's dark theme
           background, so this pairs a strong dark contact shadow with a
           soft violet glow that stays visible on both light and dark pages. */}
-      <div className="relative h-full w-full cursor-grab rounded-[28px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.55),0_10px_24px_-8px_rgba(168,85,247,0.35)] active:cursor-grabbing">
+      <div className="relative h-full w-full cursor-grab rounded-[28px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.55),0_10px_24px_-8px_rgba(169,93,218,0.35)] active:cursor-grabbing">
         <div className="relative h-full w-full overflow-hidden rounded-[28px]">
           <img
             src={avatarFor(profile, photoIndex)}

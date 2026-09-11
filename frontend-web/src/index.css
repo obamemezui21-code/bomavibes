@@ -19,61 +19,72 @@
   }
 }
 
+/*
+ * BomaVibes design system — "Midnight neon".
+ * Base: warm-black night surfaces, magenta-pink primary, violet accent.
+ * Values ported from the BomaVibes 2 reference (oklch) to sRGB hex so the
+ * existing violet/pink/mint/sky/coral utility families used across the app
+ * keep working unchanged — only the palette they resolve to has moved.
+ */
 @theme {
-  --color-surface: #ffffff;
-  --color-surface-soft: #faf6ef;
-  --color-surface-tint: #f3ecd9;
+  --color-surface: #fcfaf4;
+  --color-surface-soft: #f7f1e6;
+  --color-surface-tint: #f2ecf4;
 
-  --color-ink: #2b1d14;
-  --color-ink-soft: #6b5d4f;
+  --color-ink: #261b28;
+  --color-ink-soft: #635a65;
   /* Fixed (non theme-reactive) dark ink for text/fills that sit permanently
-     on the violet/pink/coral brand gradient — must NOT flip to light in dark
+     on the violet/pink brand gradient — must NOT flip to light in dark
      mode the way --color-ink does, since the gradient itself never changes. */
-  --color-ink-on-brand: #2b1d14;
+  --color-ink-on-brand: #1c1024;
 
-  --color-violet-300: #e9d5ff;
-  --color-violet-400: #c084fc;
-  --color-violet-500: #a855f7;
-  --color-violet-600: #9333ea;
-  --color-violet-950: #581c87;
+  --color-violet-300: #e4cffa;
+  --color-violet-400: #c9a0f0;
+  --color-violet-500: #7f5bb6;
+  --color-violet-600: #6a4693;
+  --color-violet-950: #2a1638;
 
-  --color-pink-300: #fbcfe8;
-  --color-pink-400: #f472b6;
-  --color-pink-500: #ff3399;
-  --color-pink-600: #ff0080;
+  --color-pink-300: #f7c9e3;
+  --color-pink-400: #ef8fc7;
+  --color-pink-500: #c63c8a;
+  --color-pink-600: #ad2f74;
 
-  --color-mint-400: #34d399;
-  --color-mint-500: #10b981;
-  --color-mint-600: #059669;
+  --color-mint-400: #4dbf85;
+  --color-mint-500: #349d62;
+  --color-mint-600: #237a4b;
 
-  --color-sky-400: #38bdf8;
-  --color-sky-500: #0ea5e9;
+  --color-sky-400: #67c7f5;
+  --color-sky-500: #38a9e0;
 
-  --color-coral-400: #fb7185;
-  --color-coral-500: #f43f5e;
-  --color-coral-600: #e11d48;
+  --color-coral-400: #f2726c;
+  --color-coral-500: #d73431;
+  --color-coral-600: #b82a27;
+
+  --color-gold: #f2bf4e;
+  --color-forest: #349d62;
+  --color-sun: #f4c947;
 
   /* 3-stop diagonal reads richer than a flat 2-color gradient while staying
      inside the existing violet/pink identity; shared by text and background
      treatments so both stay in sync instead of drifting independently. */
   --gradient-brand: linear-gradient(135deg, var(--color-violet-600) 0%, var(--color-pink-500) 55%, var(--color-pink-600) 100%);
 
-  --font-display: "Space Grotesk", system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
-  --font-hero: "Fraunces", serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 0.875rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
   --radius-2xl: 1.75rem;
   --radius-pill: 999px;
 
-  --shadow-sm: 0 1px 2px 0 rgba(31, 61, 43, 0.06);
-  --shadow-md: 0 8px 24px -8px rgba(31, 61, 43, 0.16);
-  --shadow-lg: 0 24px 48px -16px rgba(31, 61, 43, 0.2);
-  --shadow-glass: 0 24px 48px -16px rgba(31, 61, 43, 0.2);
-  --shadow-glass-solid: 0 24px 48px -16px rgba(31, 61, 43, 0.18);
+  --shadow-sm: 0 1px 2px 0 rgba(28, 16, 36, 0.08);
+  --shadow-md: 0 8px 24px -8px rgba(28, 16, 36, 0.2);
+  --shadow-lg: 0 24px 48px -16px rgba(28, 16, 36, 0.24);
+  --shadow-glass: 0 24px 48px -16px rgba(28, 16, 36, 0.24);
+  --shadow-glass-solid: 0 24px 48px -16px rgba(28, 16, 36, 0.18);
+  --shadow-glow: 0 12px 40px -12px color-mix(in oklab, var(--color-pink-500) 55%, transparent);
 }
 
 html {
@@ -82,12 +93,21 @@ html {
 }
 
 html.dark {
-  --color-surface: #0d0c12;
-  --color-surface-soft: #131219;
-  --color-surface-tint: #1c1a24;
+  --color-surface: #131019;
+  --color-surface-soft: #211d29;
+  --color-surface-tint: #302b39;
 
-  --color-ink: #f5f4f7;
-  --color-ink-soft: #b3aebd;
+  --color-ink: #f5f4f8;
+  --color-ink-soft: #aca8b6;
+
+  --color-violet-500: #a95dda;
+  --color-violet-600: #8f3fc4;
+
+  --color-pink-500: #e652a3;
+  --color-pink-600: #c93a86;
+
+  --color-coral-500: #ea3d38;
+  --color-coral-600: #c92a26;
 
   --shadow-glass: 0 24px 48px -16px rgba(0, 0, 0, 0.5);
   --shadow-glass-solid: 0 24px 48px -16px rgba(0, 0, 0, 0.45);
@@ -109,8 +129,15 @@ body {
   transition: background-color 0.2s ease;
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
 ::selection {
-  background: var(--color-violet-300);
+  background: var(--color-pink-300);
   color: var(--color-ink);
 }
 
@@ -143,27 +170,27 @@ body {
 
 /* Shared surfaces */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(31, 61, 43, 0.1);
+  border: 1px solid rgba(38, 27, 40, 0.1);
   box-shadow: var(--shadow-glass);
 }
 
 .glass-panel-solid {
   background: #ffffff;
-  border: 1px solid rgba(43, 29, 20, 0.06);
+  border: 1px solid rgba(38, 27, 40, 0.06);
   box-shadow: var(--shadow-glass-solid);
 }
 
 .dark .glass-panel {
-  background: rgba(28, 26, 36, 0.85);
+  background: rgba(33, 29, 41, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow-glass);
 }
 
 .dark .glass-panel-solid {
-  background: #1c1a24;
+  background: #211d29;
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: var(--shadow-glass-solid);
 }
@@ -177,6 +204,19 @@ body {
 
 .bg-gradient-brand {
   background-image: var(--gradient-brand);
+}
+
+@utility eyebrow {
+  font-size: 10px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--color-ink) 45%, transparent);
+}
+
+@utility glow-primary {
+  box-shadow: var(--shadow-glow);
 }
 
 /* Hero overlay: layered vignette + directional gradient for premium contrast */
@@ -214,5 +254,31 @@ body {
   .animate-float-slower,
   .typewriter-cursor {
     animation: none;
+  }
+}
+
+/* ---------- Protection anti-capture d'écran ---------- */
+
+.no-capture,
+.no-capture body {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.no-capture img,
+.no-capture video {
+  -webkit-user-drag: none;
+}
+
+.capture-shield body {
+  filter: blur(28px) saturate(0.2);
+  opacity: 0.15;
+  transition: filter 60ms linear;
+}
+
+@media print {
+  body {
+    display: none !important;
   }
 }

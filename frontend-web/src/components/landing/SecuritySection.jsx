@@ -69,7 +69,7 @@ function SecuritySection() {
         <div className="mt-12 text-center">
           <Link
             to="/securite"
-            className="inline-block rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
+            className="inline-block rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#261b28] shadow-lg transition hover:bg-pink-400"
           >
             En savoir plus sur la sécurité
           </Link>

@@ -38,8 +38,8 @@ function FeaturesGridSection() {
   return (
     <section id="fonctionnalites" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-24 sm:px-10">
       <div className="text-center">
-        <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Nos fonctionnalités</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Nos fonctionnalités</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#635a65]">
           Tout ce qu'il faut pour faire de vraies rencontres, sans fioritures inutiles.
         </p>
       </div>
@@ -57,8 +57,8 @@ function FeaturesGridSection() {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-pink-500/20 to-violet-600/10">
               <f.icon size={22} strokeWidth={1.75} className="text-violet-600" />
             </div>
-            <h3 className="mt-5 font-display text-lg font-bold text-[#2B1D14]">{f.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-[#6b5d4f]">{f.text}</p>
+            <h3 className="mt-5 font-display text-lg font-bold text-[#261b28]">{f.title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-[#635a65]">{f.text}</p>
           </motion.div>
         ))}
       </div>

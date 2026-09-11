@@ -4,7 +4,7 @@ import { useToast } from '../context/ToastContext.jsx'
 
 const CATEGORY_CARDS = [
   { icon: Heart, title: 'Salon des amoureux', subtitle: 'Couples & amour', tint: 'bg-pink-500/15 text-pink-600' },
-  { icon: Briefcase, title: 'Salon de métier', subtitle: 'Emploi & services', tint: 'bg-amber-500/15 text-amber-600' },
+  { icon: Briefcase, title: 'Salon de métier', subtitle: 'Emploi & services', tint: 'bg-gold/15 text-gold' },
   { icon: Music2, title: "Stories d'artistes", subtitle: 'Talents à suivre', tint: 'bg-violet-500/15 text-violet-600' },
 ]
 
@@ -15,8 +15,8 @@ const CATEGORY_STYLES = {
   Concert: 'bg-violet-500 text-white',
   Conférence: 'bg-sky-500 text-white',
   Sport: 'bg-mint-500 text-white',
-  Culture: 'bg-amber-500 text-white',
-  Networking: 'bg-teal-500 text-white',
+  Culture: 'bg-gold text-white',
+  Networking: 'bg-forest text-white',
 }
 
 // Exemples pour visualiser la mise en page — à remplacer par de vrais
@@ -145,8 +145,8 @@ function EventsHub() {
               <div className="relative h-36 w-full bg-ink/10">
                 {ev.image && <img src={ev.image} alt="" className="h-full w-full object-cover" loading="lazy" />}
                 <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-center leading-none shadow-sm">
-                  <p className="text-sm font-bold text-[#2B1D14]">{ev.day}</p>
-                  <p className="text-[9px] font-semibold uppercase text-[#6b5d4f]">{ev.month}</p>
+                  <p className="text-sm font-bold text-ink-on-brand">{ev.day}</p>
+                  <p className="text-[9px] font-semibold uppercase text-ink-on-brand/70">{ev.month}</p>
                 </div>
                 <span
                   className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold ${

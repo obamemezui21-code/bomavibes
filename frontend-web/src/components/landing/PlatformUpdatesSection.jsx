@@ -49,8 +49,8 @@ function PlatformUpdatesSection() {
           <Newspaper size={14} strokeWidth={2.5} />
           Nouveautés
         </p>
-        <h2 className="mt-2 font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Actualités BomaVibes</h2>
-        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="mt-2 font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Actualités BomaVibes</h2>
+        <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[#635a65]">
           Ce qui vient d'arriver sur la plateforme.
         </p>
       </div>
@@ -70,8 +70,8 @@ function PlatformUpdatesSection() {
                   className="flex flex-col rounded-3xl border border-violet-600/8 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
                   {dateLabel && <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">{dateLabel}</p>}
-                  <h3 className="mt-2 font-display text-base font-bold leading-snug text-[#2B1D14]">{u.title}</h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[#6b5d4f]">{u.description}</p>
+                  <h3 className="mt-2 font-display text-base font-bold leading-snug text-[#261b28]">{u.title}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[#635a65]">{u.description}</p>
                   {u.ctaLink && (
                     <a
                       href={u.ctaLink}
