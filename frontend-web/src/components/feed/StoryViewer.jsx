@@ -162,7 +162,7 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
           className="flex h-full w-full items-center justify-center"
-          style={{ background: story.type === 'text' ? story.background || 'linear-gradient(135deg,#a855f7,#ec4899)' : '#000' }}
+          style={{ background: story.type === 'text' ? story.background || 'linear-gradient(135deg,#a95dda,#e652a3)' : '#000' }}
         >
           {story.type === 'photo' ? (
             <img src={story.photoUrl} alt="" className="h-full w-full object-contain" />

@@ -284,6 +284,13 @@ export function ConversationsProvider({ children }) {
     () => conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0),
     [conversations],
   )
+  // Bell badge in the top bar: every conversation that has something the
+  // user hasn't seen yet, whether that's the match itself or an unread
+  // message in it (a conversation with both only counts once).
+  const notificationsCount = useMemo(
+    () => conversations.filter((c) => c.isNewMatch || (c.unreadCount || 0) > 0).length,
+    [conversations],
+  )
 
   async function openConversation(id) {
     setOpenMatchId(id)
@@ -463,6 +470,7 @@ export function ConversationsProvider({ children }) {
         setTyping,
         unreadMessagesCount,
         newMatchesCount,
+        notificationsCount,
         openConversation,
         closeConversation,
         markMatchesSeen,

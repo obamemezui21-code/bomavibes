@@ -158,7 +158,7 @@ function Landing() {
   }, [])
 
   return (
-    <div className="relative min-h-svh bg-[#FAF6EF]">
+    <div className="relative min-h-svh bg-[#f7f1e6]">
       <SiteHeader />
 
       {/* Hero */}
@@ -233,7 +233,7 @@ function Landing() {
             >
               <Link
                 to="/signup"
-                className="rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-pink-400 hover:shadow-xl hover:shadow-black/30 active:translate-y-0"
+                className="rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#261b28] shadow-lg shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-pink-400 hover:shadow-xl hover:shadow-black/30 active:translate-y-0"
               >
                 S'inscrire gratuitement
               </Link>
@@ -269,17 +269,17 @@ function Landing() {
 
       {/* How it works */}
       <section className="mx-auto max-w-7xl px-4 py-24 sm:px-10">
-        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Comment ça marche</h2>
+        <h2 className="text-center font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Comment ça marche</h2>
         <div className="mt-16 grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-10">
           {STEPS.map((s, i) => (
             <div key={s.title} className="relative text-center">
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-violet-600 shadow-md">
                 <s.icon size={34} strokeWidth={1.75} className="text-pink-400" />
               </div>
-              <p className="mt-6 font-display text-xl font-bold text-[#2B1D14] sm:text-2xl">
+              <p className="mt-6 font-display text-xl font-bold text-[#261b28] sm:text-2xl">
                 <span className="text-pink-500">{i + 1}.</span> {s.title}
               </p>
-              <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-[#6b5d4f]">{s.text}</p>
+              <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-[#635a65]">{s.text}</p>
             </div>
           ))}
         </div>
@@ -287,8 +287,8 @@ function Landing() {
 
       {/* About */}
       <section id="about" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 text-center sm:px-10">
-        <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">À propos de BomaVibes</h2>
-        <div className="mx-auto mt-6 max-w-3xl space-y-5 text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="font-display text-4xl font-bold text-[#261b28] sm:text-5xl">À propos de BomaVibes</h2>
+        <div className="mx-auto mt-6 max-w-3xl space-y-5 text-lg leading-relaxed text-[#635a65]">
           <p>
             Chez BomaVibes, nous croyons que l'amour naît lorsque deux personnes peuvent être
             pleinement elles-mêmes.
@@ -316,8 +316,8 @@ function Landing() {
 
       {/* Why BomaVibes */}
       <section className="mx-auto max-w-7xl px-4 py-24 sm:px-10">
-        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Pourquoi choisir BomaVibes</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-center text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="text-center font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Pourquoi choisir BomaVibes</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-center text-lg leading-relaxed text-[#635a65]">
           Trois principes qui guident tout ce qu'on construit.
         </p>
         <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-3">
@@ -326,8 +326,8 @@ function Landing() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-600 shadow-md">
                 <f.icon size={26} strokeWidth={1.75} className="text-pink-400" />
               </div>
-              <h3 className="mt-6 font-display text-xl font-bold text-[#2B1D14]">{f.title}</h3>
-              <p className="mt-3 text-base leading-relaxed text-[#6b5d4f]">{f.text}</p>
+              <h3 className="mt-6 font-display text-xl font-bold text-[#261b28]">{f.title}</h3>
+              <p className="mt-3 text-base leading-relaxed text-[#635a65]">{f.text}</p>
               {f.link && (
                 <Link
                   to={f.link.to}
@@ -350,7 +350,7 @@ function Landing() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 py-24 sm:px-8">
-        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Questions fréquentes</h2>
+        <h2 className="text-center font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Questions fréquentes</h2>
         <div className="mt-14">
           {FAQS.map((f, i) => {
             const isOpen = openFaq === i
@@ -362,7 +362,7 @@ function Landing() {
                   className="flex w-full items-center justify-between gap-4 text-left"
                   aria-expanded={isOpen}
                 >
-                  <span className="font-display text-lg font-bold text-[#2B1D14]">{f.question}</span>
+                  <span className="font-display text-lg font-bold text-[#261b28]">{f.question}</span>
                   <ChevronDown
                     size={20}
                     className={`shrink-0 text-pink-600 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
@@ -377,7 +377,7 @@ function Landing() {
                       transition={{ duration: 0.25, ease: 'easeInOut' }}
                       className="overflow-hidden"
                     >
-                      <p className="pt-3 text-base leading-relaxed text-[#6b5d4f]">{f.answer}</p>
+                      <p className="pt-3 text-base leading-relaxed text-[#635a65]">{f.answer}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -392,8 +392,8 @@ function Landing() {
 
       {/* Nos tarifs (teaser) */}
       <section id="tarifs" className="mx-auto max-w-5xl scroll-mt-20 px-4 py-24 sm:px-10">
-        <h2 className="text-center font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Nos tarifs</h2>
-        <p className="mx-auto mt-5 max-w-xl text-center text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="text-center font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Nos tarifs</h2>
+        <p className="mx-auto mt-5 max-w-xl text-center text-lg leading-relaxed text-[#635a65]">
           BomaVibes reste gratuit pour matcher et discuter. Choisissez le niveau qui vous correspond,
           sans engagement caché.
         </p>
@@ -408,11 +408,11 @@ function Landing() {
               }`}
             >
               <img src={tier.badge} alt="" className="mx-auto h-14 w-14 rounded-xl object-cover shadow" />
-              <p className="mt-4 font-display text-base font-bold text-[#2B1D14]">
+              <p className="mt-4 font-display text-base font-bold text-[#261b28]">
                 {tier.emoji} {tier.name}
               </p>
-              <p className="mt-1 text-sm text-[#6b5d4f]">
-                à partir de <span className="font-semibold text-[#2B1D14]">{tier.prices[0].amount}</span>
+              <p className="mt-1 text-sm text-[#635a65]">
+                à partir de <span className="font-semibold text-[#261b28]">{tier.prices[0].amount}</span>
                 <span className="text-ink-soft/60"> / {tier.prices[0].period.toLowerCase()}</span>
               </p>
             </Link>
@@ -441,7 +441,7 @@ function Landing() {
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <a
             href="mailto:Bomavibes241@gmail.com"
-            className="inline-block rounded-xl bg-pink-500 px-8 py-3.5 text-base font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
+            className="inline-block rounded-xl bg-pink-500 px-8 py-3.5 text-base font-semibold text-[#261b28] shadow-lg transition hover:bg-pink-400"
           >
             Bomavibes241@gmail.com
           </a>

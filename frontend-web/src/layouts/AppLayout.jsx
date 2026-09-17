@@ -61,7 +61,7 @@ function AppLayout() {
     <div className="min-h-svh bg-surface-soft">
       <AppTopBar />
       <div className="desktop:flex">
-        <aside className="hidden desktop:sticky desktop:top-14 desktop:flex desktop:h-[calc(100svh-3.5rem)] desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-white/70 desktop:p-4 desktop:backdrop-blur-xl dark:desktop:bg-surface/70">
+        <aside className="hidden desktop:sticky desktop:top-14 desktop:flex desktop:h-[calc(100svh-3.5rem)] desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-surface/60 desktop:p-4 desktop:backdrop-blur-2xl">
           <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
             <span className="text-ink">Boma</span>
             <span className="text-gradient-brand italic">Vibes</span>
@@ -143,7 +143,7 @@ function AppLayout() {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-ink/8 bg-white/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl dark:bg-surface/85 desktop:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around gap-1 border-t border-ink/8 bg-surface/60 px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-2xl desktop:hidden">
         {navItems.map((item, i) => {
           const isActive = location.pathname === item.to
           const anim = iconAnimation(item, i, isActive, 1.15)
@@ -151,12 +151,12 @@ function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 px-0.5 py-2.5 text-xs font-medium"
+              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-medium"
             >
               {isActive && (
                 <motion.div
-                  layoutId="nav-active-dot"
-                  className="absolute top-0 h-0.5 w-8 rounded-full bg-violet-500"
+                  layoutId="nav-active-pill"
+                  className="absolute inset-0 rounded-xl bg-pink-500/15"
                   transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                 />
               )}
@@ -169,16 +169,16 @@ function AppLayout() {
                   style={{ transformOrigin: '50% 0%' }}
                 >
                   <item.icon
-                    size={22}
+                    size={19}
                     strokeWidth={2}
-                    className={item.ring ? '' : isActive ? 'text-violet-600' : 'text-ink-soft/60'}
+                    className={item.ring ? '' : isActive ? 'text-pink-500' : 'text-ink-soft/60'}
                     fill={item.ring ? 'currentColor' : 'none'}
                   />
                 </motion.span>
                 <NavBadge count={item.badge} />
               </span>
               <span
-                className={`w-full truncate px-0.5 text-center ${item.ring ? 'text-coral-500' : isActive ? 'text-violet-600' : 'text-ink-soft/60'}`}
+                className={`relative w-full truncate px-0.5 text-center ${item.ring ? 'text-coral-500' : isActive ? 'text-pink-500 font-bold' : 'text-ink-soft/60'}`}
               >
                 {item.label}
               </span>

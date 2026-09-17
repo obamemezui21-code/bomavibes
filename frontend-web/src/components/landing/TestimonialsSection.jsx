@@ -31,8 +31,8 @@ function TestimonialsSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-24 sm:px-10">
       <div className="text-center">
-        <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Ce qu'on en dit</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Ce qu'on en dit</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#635a65]">
           Des rencontres authentiques, racontées par la communauté.
         </p>
       </div>
@@ -48,11 +48,11 @@ function TestimonialsSection() {
             className="rounded-3xl border border-violet-600/8 bg-white p-7 shadow-sm"
           >
             <Quote size={24} strokeWidth={2} className="text-pink-500/40" />
-            <p className="mt-3 text-sm leading-relaxed text-[#2B1D14]">{t.quote}</p>
+            <p className="mt-3 text-sm leading-relaxed text-[#261b28]">{t.quote}</p>
             <div className="mt-5 flex items-center gap-3">
               <img src={t.photo} alt="" className="h-10 w-10 rounded-full object-cover" />
               <div>
-                <p className="text-sm font-semibold text-[#2B1D14]">{t.name}</p>
+                <p className="text-sm font-semibold text-[#261b28]">{t.name}</p>
                 <p className="text-xs text-ink-soft/60">{t.detail}</p>
               </div>
             </div>

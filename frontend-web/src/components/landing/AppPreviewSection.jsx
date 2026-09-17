@@ -18,19 +18,19 @@ function PhoneFrame({ children, label, delay, tilt }) {
       transition={{ duration: 0.5, delay, ease: 'easeOut' }}
       className="mx-auto w-full max-w-[240px]"
     >
-      <div className="overflow-hidden rounded-[2.25rem] border-[10px] border-[#2B1D14] bg-white shadow-2xl shadow-violet-600/20">
-        <div className="mx-auto -mt-1 h-4 w-24 rounded-b-2xl bg-[#2B1D14]" />
+      <div className="overflow-hidden rounded-[2.25rem] border-[10px] border-[#261b28] bg-white shadow-2xl shadow-violet-600/20">
+        <div className="mx-auto -mt-1 h-4 w-24 rounded-b-2xl bg-[#261b28]" />
         {children}
       </div>
-      <p className="mt-4 text-center text-sm font-semibold text-[#2B1D14]">{label}</p>
+      <p className="mt-4 text-center text-sm font-semibold text-[#261b28]">{label}</p>
     </motion.div>
   )
 }
 
 function DiscoverMock() {
   return (
-    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Découvrir</p>
+    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
+      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Découvrir</p>
       <div className="relative flex-1 overflow-hidden rounded-2xl">
         <img src={amaraPhoto} alt="Amara" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
@@ -55,16 +55,16 @@ function DiscoverMock() {
 
 function ChatMock() {
   return (
-    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Messages</p>
+    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
+      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Messages</p>
       <div className="flex-1 space-y-2 overflow-hidden">
         <div className="flex justify-start">
-          <div className="max-w-[75%] rounded-2xl rounded-bl-sm bg-black/6 px-3 py-2 text-[11px] text-[#2B1D14]">
+          <div className="max-w-[75%] rounded-2xl rounded-bl-sm bg-black/6 px-3 py-2 text-[11px] text-[#261b28]">
             Salut ! Ton profil me plaît beaucoup 😊
           </div>
         </div>
         <div className="flex justify-end">
-          <div className="max-w-[75%] rounded-2xl rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-2 text-[11px] text-[#2B1D14]">
+          <div className="max-w-[75%] rounded-2xl rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-2 text-[11px] text-[#261b28]">
             Merci ! Le tien aussi, on discute ?
           </div>
         </div>
@@ -74,13 +74,13 @@ function ChatMock() {
               <Mic size={11} strokeWidth={2.5} />
             </span>
             <div className="h-1 flex-1 rounded-full bg-black/15" />
-            <span className="text-[9px] text-[#6b5d4f]">0:12</span>
+            <span className="text-[9px] text-[#635a65]">0:12</span>
           </div>
         </div>
       </div>
       <div className="mt-2 flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2">
-        <span className="flex-1 text-[10px] text-[#6b5d4f]/60">Écrivez un message…</span>
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#2B1D14]">
+        <span className="flex-1 text-[10px] text-[#635a65]/60">Écrivez un message…</span>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#261b28]">
           <Send size={11} strokeWidth={2.5} />
         </span>
       </div>
@@ -91,12 +91,12 @@ function ChatMock() {
 function ProfileMock() {
   const chips = ['Voyages', 'Musique', 'Cuisine', 'Sport', 'Cinéma', 'Nature']
   return (
-    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Votre profil</p>
+    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
+      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Votre profil</p>
       <div className="flex flex-col items-center">
         <img src={juniorPhoto} alt="Junior" className="h-16 w-16 rounded-full object-cover shadow" />
-        <p className="mt-2 text-xs font-bold text-[#2B1D14]">Junior, 29</p>
-        <p className="text-[10px] text-[#6b5d4f]">Douala, Cameroun</p>
+        <p className="mt-2 text-xs font-bold text-[#261b28]">Junior, 29</p>
+        <p className="text-[10px] text-[#635a65]">Douala, Cameroun</p>
       </div>
       <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Centres d'intérêt</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -109,7 +109,7 @@ function ProfileMock() {
       <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Langues</p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
         {['Français', 'Anglais', 'Douala'].map((l) => (
-          <span key={l} className="rounded-full border border-black/10 px-2 py-1 text-[9px] font-medium text-[#6b5d4f]">
+          <span key={l} className="rounded-full border border-black/10 px-2 py-1 text-[9px] font-medium text-[#635a65]">
             {l}
           </span>
         ))}
@@ -120,8 +120,8 @@ function ProfileMock() {
 
 function LikesYouMock() {
   return (
-    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Qui vous a aimé·e</p>
+    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
+      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Qui vous a aimé·e</p>
       <div className="grid flex-1 grid-cols-2 gap-2">
         {[malikPhoto, ndeyePhoto, zolaPhoto, kwamePhoto].map((photo, i) => (
           <div key={i} className="relative overflow-hidden rounded-xl">
@@ -133,8 +133,8 @@ function LikesYouMock() {
         ))}
       </div>
       <div className="mt-3 flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2">
-        <Sparkles size={12} strokeWidth={2.5} className="text-[#2B1D14]" />
-        <span className="text-[10px] font-bold text-[#2B1D14]">12 personnes vous ont aimé·e</span>
+        <Sparkles size={12} strokeWidth={2.5} className="text-[#261b28]" />
+        <span className="text-[10px] font-bold text-[#261b28]">12 personnes vous ont aimé·e</span>
       </div>
     </div>
   )
@@ -142,14 +142,14 @@ function LikesYouMock() {
 
 function SecurityMock() {
   return (
-    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
+    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
       <div className="flex items-center gap-2 rounded-t-xl bg-white px-2 py-2 shadow-sm">
         <img src={kwamePhoto} alt="Kwame" className="h-7 w-7 rounded-full object-cover" />
-        <span className="flex-1 text-[11px] font-bold text-[#2B1D14]">Kwame</span>
+        <span className="flex-1 text-[11px] font-bold text-[#261b28]">Kwame</span>
       </div>
       <div className="relative flex-1 rounded-b-xl bg-white px-2 pb-2">
         <div className="ml-auto mt-2 w-40 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5">
-          <div className="flex items-center gap-2 px-3 py-2.5 text-[10px] font-semibold text-[#2B1D14]">
+          <div className="flex items-center gap-2 px-3 py-2.5 text-[10px] font-semibold text-[#261b28]">
             <Flag size={12} strokeWidth={2.25} />
             Signaler
           </div>
@@ -159,7 +159,7 @@ function SecurityMock() {
           </div>
         </div>
       </div>
-      <p className="mt-2 text-center text-[10px] font-medium text-[#6b5d4f]">
+      <p className="mt-2 text-center text-[10px] font-medium text-[#635a65]">
         Effet immédiat, des deux côtés
       </p>
     </div>
@@ -174,15 +174,15 @@ function OnboardingMock() {
   ]
   const regions = ['Estuaire', 'Haut-Ogooué', 'Ngounié']
   return (
-    <div className="flex h-[410px] flex-col bg-[#FAF6EF] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#2B1D14]">Où vous êtes</p>
+    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
+      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Où vous êtes</p>
       <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Pays</p>
       <div className="flex flex-wrap gap-1.5">
         {countries.map((c) => (
           <span
             key={c.name}
             className={`rounded-full border px-2 py-1 text-[9px] font-medium ${
-              c.active ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#6b5d4f]'
+              c.active ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#635a65]'
             }`}
           >
             <FlagIcon code={c.code} className="mr-1 !h-2.5 !w-3.5 rounded-sm align-[-1px]" />
@@ -196,14 +196,14 @@ function OnboardingMock() {
           <span
             key={r}
             className={`rounded-full border px-2 py-1 text-[9px] font-medium ${
-              i === 0 ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#6b5d4f]'
+              i === 0 ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#635a65]'
             }`}
           >
             {r}
           </span>
         ))}
       </div>
-      <div className="mt-auto rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-center text-[10px] font-bold text-[#2B1D14]">
+      <div className="mt-auto rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-center text-[10px] font-bold text-[#261b28]">
         Continuer
       </div>
     </div>
@@ -223,8 +223,8 @@ function AppPreviewSection() {
   return (
     <section id="apercu" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-24 sm:px-10">
       <div className="text-center">
-        <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Découvrez BomaVibes</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Découvrez BomaVibes</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#635a65]">
           Un aperçu de l'expérience qui vous attend, dès votre inscription.
         </p>
       </div>

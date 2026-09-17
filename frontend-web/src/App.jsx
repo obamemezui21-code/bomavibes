@@ -31,6 +31,7 @@ const PostDetail = lazy(() => import('./pages/PostDetail.jsx'))
 const Matches = lazy(() => import('./pages/Matches.jsx'))
 const LikesYou = lazy(() => import('./pages/LikesYou.jsx'))
 const Announcements = lazy(() => import('./pages/Announcements.jsx'))
+const Notifications = lazy(() => import('./pages/Notifications.jsx'))
 const Chat = lazy(() => import('./pages/Chat.jsx'))
 const Profile = lazy(() => import('./pages/Profile.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
@@ -113,6 +114,7 @@ function App() {
             <Route path="/events" element={<EventsHub />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/annonces" element={<Announcements />} />
+            <Route path="/notifications" element={<Notifications />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:conversationId" element={<Chat />} />
             <Route path="/profile" element={<Profile />} />

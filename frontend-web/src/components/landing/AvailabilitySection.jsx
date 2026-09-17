@@ -16,8 +16,8 @@ function AvailabilitySection() {
   return (
     <section id="disponibilite" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-24 sm:px-10">
       <div className="text-center">
-        <h2 className="font-display text-4xl font-bold text-[#2B1D14] sm:text-5xl">Disponibilité dans le monde</h2>
-        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#6b5d4f]">
+        <h2 className="font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Disponibilité dans le monde</h2>
+        <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#635a65]">
           BomaVibes démarre au Gabon, avec l'ambition claire de s'étendre à toute l'Afrique francophone, puis
           panafricaine — et, à terme, dans le monde entier.
         </p>
@@ -26,7 +26,7 @@ function AvailabilitySection() {
       <div className="mt-14 space-y-10">
         {GROUPS.map((group) => (
           <div key={group.continent}>
-            <h3 className="font-display text-lg font-bold text-[#2B1D14]">{group.continent}</h3>
+            <h3 className="font-display text-lg font-bold text-[#261b28]">{group.continent}</h3>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {group.countries.map((c, i) => {
                 const isLive = LIVE_COUNTRY_CODES.has(c.code)
@@ -43,7 +43,7 @@ function AvailabilitySection() {
                   >
                     <FlagIcon code={c.code} className="!h-5 !w-7 shrink-0 rounded-sm" />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[#2B1D14]">{c.name}</p>
+                      <p className="truncate text-sm font-semibold text-[#261b28]">{c.name}</p>
                       <p className={`text-[10px] font-semibold uppercase tracking-wide ${isLive ? 'text-pink-500' : 'text-ink-soft/60'}`}>
                         {isLive ? 'Disponible' : 'Bientôt'}
                       </p>

@@ -22,3 +22,6 @@ backend/uploads/
 # OS files
 .DS_Store
 Thumbs.db
+
+# BomaVibes 2 reference project (design source, not part of the app)
+bomavibes2/

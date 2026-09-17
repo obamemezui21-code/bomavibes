@@ -11,7 +11,7 @@ const SOCIALS = [
 
 function Events() {
   return (
-    <div className="relative min-h-svh bg-[#FAF6EF]">
+    <div className="relative min-h-svh bg-[#f7f1e6]">
       <SiteHeader />
 
       <div className="mx-auto max-w-3xl px-4 pb-24 pt-32 text-center sm:px-8 sm:pt-40">
@@ -27,7 +27,7 @@ function Events() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mt-5 font-display text-3xl font-bold text-[#2B1D14] sm:text-4xl"
+          className="mt-5 font-display text-3xl font-bold text-[#261b28] sm:text-4xl"
         >
           Des rencontres, en vrai.
         </motion.h1>
@@ -36,7 +36,7 @@ function Events() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#6b5d4f]"
+          className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#635a65]"
         >
           On prépare des afterworks et des rencontres organisées pour la communauté BomaVibes,
           pour prolonger les connexions au-delà de l'écran. Rejoignez l'app dès maintenant et nous
@@ -51,7 +51,7 @@ function Events() {
         >
           <Link
             to="/signup"
-            className="rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#2B1D14] shadow-lg transition hover:bg-pink-400"
+            className="rounded-xl bg-pink-500 px-7 py-3 text-sm font-semibold text-[#261b28] shadow-lg transition hover:bg-pink-400"
           >
             Rejoindre BomaVibes
           </Link>
@@ -69,7 +69,7 @@ function Events() {
           transition={{ delay: 0.4 }}
           className="mt-14 border-t border-violet-600/10 pt-8"
         >
-          <p className="text-sm text-[#6b5d4f]">Suis-nous pour ne rien manquer de l'annonce :</p>
+          <p className="text-sm text-[#635a65]">Suis-nous pour ne rien manquer de l'annonce :</p>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {SOCIALS.map((s) => (
               <a
