@@ -2,8 +2,10 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import SplashScreen from './components/SplashScreen.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
+import AdminLayout from './layouts/AdminLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import RequireAdmin from './components/RequireAdmin.jsx'
+import RequireSuperAdmin from './components/RequireSuperAdmin.jsx'
 import { FeedProvider } from './context/FeedContext.jsx'
 import { FullPageSpinner } from './components/ui/Spinner.jsx'
 
@@ -39,6 +41,9 @@ const Support = lazy(() => import('./pages/Support.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
 const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
+const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
+const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
+const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -121,13 +126,25 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/soutenir" element={<Support />} />
             <Route
-              path="/admin/music"
+              path="/admin"
               element={
                 <RequireAdmin>
-                  <AdminMusic />
+                  <AdminLayout />
                 </RequireAdmin>
               }
-            />
+            >
+              <Route index element={<AdminOverview />} />
+              <Route path="reports" element={<AdminReports />} />
+              <Route path="music" element={<AdminMusic />} />
+              <Route
+                path="users"
+                element={
+                  <RequireSuperAdmin>
+                    <AdminUsers />
+                  </RequireSuperAdmin>
+                }
+              />
+            </Route>
           </Route>
         </Routes>
       </Suspense>
