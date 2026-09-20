@@ -60,6 +60,7 @@ async function ensureUserDocument(firebaseUser) {
       email: firebaseUser.email,
       firstName: firebaseUser.displayName || '',
       onboarded: false,
+      role: 'user',
       createdAt: serverTimestamp(),
     })
   }
