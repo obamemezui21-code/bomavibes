@@ -9,6 +9,7 @@ import { useTheme } from '../context/ThemeContext.jsx'
 import { db } from '../firebase/config.js'
 import { enablePushForUser } from '../firebase/push.js'
 import { fetchMyBlockedIds, unblockUser } from '../firebase/safety.js'
+import { hasAdminAccess } from '../lib/roles.js'
 import PasswordInput from '../components/PasswordInput.jsx'
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx'
 import Modal from '../components/ui/Modal.jsx'
@@ -434,12 +435,12 @@ function Settings() {
             </Row>
           </Section>
 
-          {profile?.isAdmin && (
+          {hasAdminAccess(profile?.role) && (
             <Section title="Administration">
-              <Row title="Musique" subtitle="Téléverser et écouter des pistes">
+              <Row title="Tableau de bord admin" subtitle="Statistiques, signalements, musique">
                 <button
                   type="button"
-                  onClick={() => navigate('/admin/music')}
+                  onClick={() => navigate('/admin')}
                   className="text-xs font-semibold text-violet-600 hover:underline"
                 >
                   Ouvrir
