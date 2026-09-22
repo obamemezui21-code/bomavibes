@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { ArrowUp, Bell, LayoutGrid, Moon, Sun } from 'lucide-react'
+import { ArrowUp, Bell, LayoutGrid, Moon, ShieldCheck, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
-import logo from '../assets/bomavibes-icon.png'
+import { hasAdminAccess } from '../lib/roles.js'
+import logo from '../assets/bomavibes-icon.webp'
 
 const iconButtonClass =
   'flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink transition hover:bg-ink/8'
@@ -14,7 +15,7 @@ function scrollToTop() {
 }
 
 function AppTopBar() {
-  const { publicProfile } = useAuth()
+  const { profile, publicProfile } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { notificationsCount } = useConversations()
   const photoUrl = publicProfile?.photos?.[0]
@@ -31,6 +32,11 @@ function AppTopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {hasAdminAccess(profile?.role) && (
+          <NavLink to="/admin" className={iconButtonClass} aria-label="Administration">
+            <ShieldCheck size={16} strokeWidth={2} />
+          </NavLink>
+        )}
         <NavLink to="/events" className={iconButtonClass} aria-label="Événements">
           <LayoutGrid size={16} strokeWidth={2} />
         </NavLink>

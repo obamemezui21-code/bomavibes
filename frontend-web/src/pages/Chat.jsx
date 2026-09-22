@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -31,7 +31,11 @@ import {
   Video,
   X,
 } from 'lucide-react'
-import EmojiPicker, { Theme } from 'emoji-picker-react'
+// Loaded on demand (see EmojiPicker usage below) — emoji-picker-react ships
+// its entire emoji dataset in the module itself, so importing it eagerly
+// here would add that weight to every visit to the chat page even for
+// people who never open the picker.
+const EmojiPicker = lazy(() => import('emoji-picker-react'))
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -1379,14 +1383,16 @@ function Chat() {
                             transition={{ duration: 0.15 }}
                             className="absolute bottom-full left-0 z-20 mb-2 max-w-[calc(100vw_-_2rem)]"
                           >
-                            <EmojiPicker
-                              onEmojiClick={handleEmojiClick}
-                              theme={theme === 'dark' ? Theme.DARK : Theme.LIGHT}
-                              searchDisabled={false}
-                              skinTonesDisabled
-                              width="min(320px, calc(100vw - 2rem))"
-                              height="min(380px, 60vh)"
-                            />
+                            <Suspense fallback={null}>
+                              <EmojiPicker
+                                onEmojiClick={handleEmojiClick}
+                                theme={theme === 'dark' ? 'dark' : 'light'}
+                                searchDisabled={false}
+                                skinTonesDisabled
+                                width="min(320px, calc(100vw - 2rem))"
+                                height="min(380px, 60vh)"
+                              />
+                            </Suspense>
                           </motion.div>
                         </>
                       )}

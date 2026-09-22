@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import logo from '../assets/bomavibes-icon.png'
+import logo from '../assets/bomavibes-icon.webp'
 
 const HOLD_MS = 1600
 
