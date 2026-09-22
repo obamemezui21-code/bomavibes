@@ -7,8 +7,8 @@ import { db } from '../firebase/config.js'
 import { uploadProfilePhotos } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { CONTINENT_ORDER, COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
-import FlagIcon from '../components/FlagIcon.jsx'
+import { findCountry, findRegion } from '../lib/geography.js'
+import CountryPicker from '../components/CountryPicker.jsx'
 import {
   DATING_GOALS,
   LANGUAGES,
@@ -380,26 +380,11 @@ function Onboarding() {
                   <h2 className="font-display text-xl font-semibold text-ink">Où vous êtes</h2>
                   <p className="mt-1 text-sm text-ink-soft/60">Choisissez votre pays, puis votre région et votre ville.</p>
 
-                  <div className="mt-4 max-h-72 space-y-4 overflow-y-auto pr-1">
-                    {CONTINENT_ORDER.map((continent) => (
-                      <div key={continent}>
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft/50">{continent}</p>
-                        <div className="flex flex-wrap gap-2">
-                          {COUNTRIES.filter((c) => c.continent === continent).map((c) => (
-                            <button
-                              key={c.code}
-                              type="button"
-                              onClick={() => selectCountry(c.code)}
-                              className={chipClass(form.country === c.code)}
-                            >
-                              <FlagIcon code={c.code} className="mr-1.5 !h-3.5 !w-5 rounded-sm" />
-                              {c.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <CountryPicker
+                    value={form.country}
+                    onSelect={selectCountry}
+                    className="mt-4 max-h-72 overflow-y-auto pr-1"
+                  />
 
                   {form.country && findCountry(form.country)?.regions.length > 0 && (
                     <div className="mt-5">
