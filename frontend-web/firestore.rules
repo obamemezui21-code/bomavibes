@@ -99,6 +99,15 @@ service cloud.firestore {
       allow write: if false; // set only server-side via the Admin SDK
     }
 
+    match /settings/{settingsId} {
+      // Fully public (unlike announcements/campaign above) — maintenanceMode
+      // has to gate the app for a signed-out visitor too, checked before
+      // App.jsx even knows whether anyone is logged in. No secret ever lives
+      // here (see settingsController.js); write is Admin SDK only.
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /admin_logs/{logId} {
       // Written by adminLogService.js and read via GET /api/admin/logs —
       // both through the Admin SDK, which bypasses this. No client, admin

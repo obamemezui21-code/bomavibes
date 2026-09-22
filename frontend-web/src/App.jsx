@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Outlet, Route, Routes, useNavigate } from 'react-router-dom'
+import { Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { doc, onSnapshot } from 'firebase/firestore'
 import SplashScreen from './components/SplashScreen.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
@@ -7,8 +8,10 @@ import RequireAuth from './components/RequireAuth.jsx'
 import RequireAdmin from './components/RequireAdmin.jsx'
 import RequireSuperAdmin from './components/RequireSuperAdmin.jsx'
 import RequireRole from './components/RequireRole.jsx'
-import { hasContentAccess, hasFullAdminAccess, hasModerationAccess } from './lib/roles.js'
+import { hasAdminAccess, hasContentAccess, hasFullAdminAccess, hasModerationAccess } from './lib/roles.js'
 import { FeedProvider } from './context/FeedContext.jsx'
+import { useAuth } from './context/AuthContext.jsx'
+import { db } from './firebase/config.js'
 import { FullPageSpinner } from './components/ui/Spinner.jsx'
 
 // Every page used to be imported eagerly, so a single visitor downloaded
@@ -51,10 +54,15 @@ const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
 const AdminContent = lazy(() => import('./pages/AdminContent.jsx'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications.jsx'))
 const AdminMedia = lazy(() => import('./pages/AdminMedia.jsx'))
+const AdminSettings = lazy(() => import('./pages/AdminSettings.jsx'))
+const Maintenance = lazy(() => import('./pages/Maintenance.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
+  const [maintenanceMode, setMaintenanceMode] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+  const { profile } = useAuth()
 
   // Bridges the service worker's notificationclick handler (see
   // firebase-messaging-sw.js): when a tab is already open, it focuses that
@@ -70,10 +78,32 @@ function App() {
     return () => navigator.serviceWorker.removeEventListener('message', handleMessage)
   }, [navigate])
 
+  // Public read (see firestore.rules: settings/general is readable signed
+  // out too) so a maintenance visitor who isn't logged in yet still gets
+  // gated — this has to work before we know who, if anyone, is signed in.
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      doc(db, 'settings', 'general'),
+      (snap) => setMaintenanceMode(!!snap.data()?.maintenanceMode),
+      () => setMaintenanceMode(false),
+    )
+    return unsubscribe
+  }, [])
+
+  // An Admin/Super Admin/Moderator/Editor can still reach /login (to sign
+  // in) and everything under /admin (to turn maintenance back off) while
+  // it's active; everyone else — including already-authenticated regular
+  // users — sees the maintenance page for every other route.
+  const bypassesMaintenance = hasAdminAccess(profile?.role) || location.pathname === '/login' || location.pathname.startsWith('/admin')
+  const showMaintenance = maintenanceMode && !bypassesMaintenance
+
   return (
     <>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
       <Suspense fallback={<FullPageSpinner />}>
+        {showMaintenance ? (
+          <Maintenance />
+        ) : (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/evenements" element={<Events />} />
@@ -198,6 +228,14 @@ function App() {
                 }
               />
               <Route
+                path="settings"
+                element={
+                  <RequireRole check={hasFullAdminAccess}>
+                    <AdminSettings />
+                  </RequireRole>
+                }
+              />
+              <Route
                 path="users"
                 element={
                   <RequireSuperAdmin>
@@ -208,6 +246,7 @@ function App() {
             </Route>
           </Route>
         </Routes>
+        )}
       </Suspense>
     </>
   )

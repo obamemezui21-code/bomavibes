@@ -138,3 +138,11 @@ export async function uploadCmsMedia(file) {
 export function deleteCmsMedia(name) {
   return authedFetch(`/api/admin/media/${encodeURIComponent(name)}`, { method: 'DELETE' })
 }
+
+export function fetchAdminSettings() {
+  return authedFetch('/api/admin/settings')
+}
+
+export function updateAdminSettings(data) {
+  return authedFetch('/api/admin/settings', { method: 'PATCH', body: JSON.stringify(data) })
+}
