@@ -18,6 +18,10 @@ export function fetchAdminStats() {
   return authedFetch('/api/admin/stats')
 }
 
+export function fetchAdminActivity() {
+  return authedFetch('/api/admin/activity')
+}
+
 export function fetchAdminReports(status = 'pending') {
   return authedFetch(`/api/admin/reports?status=${encodeURIComponent(status)}`)
 }
@@ -38,4 +42,15 @@ export function updateAdminUserRole(uid, role) {
     method: 'PATCH',
     body: JSON.stringify({ role }),
   })
+}
+
+export function setAdminUserBanned(uid, banned) {
+  return authedFetch(`/api/admin/users/${uid}/ban`, {
+    method: 'PATCH',
+    body: JSON.stringify({ banned }),
+  })
+}
+
+export function deleteAdminPost(postId) {
+  return authedFetch(`/api/admin/posts/${postId}`, { method: 'DELETE' })
 }

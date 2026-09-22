@@ -54,13 +54,32 @@ async function listReports(req, res) {
             : [];
         const usersById = new Map(userDocs.map((docSnap) => [docSnap.id, docSnap.data()]));
 
-        const enriched = reports.map((r) => ({
-            ...r,
-            createdAt: r.createdAt?.toDate?.().toISOString() ?? null,
-            reviewedAt: r.reviewedAt?.toDate?.().toISOString() ?? null,
-            reporterEmail: usersById.get(r.reporterId)?.email ?? null,
-            reportedUserEmail: usersById.get(r.reportedUserId)?.email ?? null,
-        }));
+        // A report against a post/comment carries contextRef.postId (see
+        // firebase/safety.js) — fetch those posts too so the admin can see
+        // and act on the actual content, not just the report metadata.
+        const postIds = [...new Set(reports.map((r) => r.contextRef?.postId).filter(Boolean))];
+        const postDocs = postIds.length
+            ? await db.getAll(...postIds.map((id) => db.collection("posts").doc(id)))
+            : [];
+        const postsById = new Map(postDocs.filter((docSnap) => docSnap.exists).map((docSnap) => [docSnap.id, docSnap.data()]));
+
+        const enriched = reports.map((r) => {
+            const postId = r.contextRef?.postId;
+            const postData = postId ? postsById.get(postId) : null;
+            return {
+                ...r,
+                createdAt: r.createdAt?.toDate?.().toISOString() ?? null,
+                reviewedAt: r.reviewedAt?.toDate?.().toISOString() ?? null,
+                reporterEmail: usersById.get(r.reporterId)?.email ?? null,
+                reportedUserEmail: usersById.get(r.reportedUserId)?.email ?? null,
+                reportedUserBanned: !!usersById.get(r.reportedUserId)?.banned,
+                post: postId
+                    ? postData
+                        ? { id: postId, type: postData.type, text: postData.text ?? null, photoUrl: postData.photoUrl ?? null }
+                        : { id: postId, deleted: true }
+                    : null,
+            };
+        });
 
         res.json({ reports: enriched });
     } catch (err) {
@@ -97,4 +116,86 @@ async function updateReportStatus(req, res) {
     }
 }
 
-module.exports = { getStats, listReports, updateReportStatus };
+async function deletePost(req, res) {
+    const { postId } = req.params;
+
+    try {
+        const ref = db.collection("posts").doc(postId);
+        const snap = await ref.get();
+        if (!snap.exists) {
+            return res.status(404).json({ message: "Publication introuvable" });
+        }
+
+        // Removes the post plus its comments/likes subcollections in one
+        // call — Firestore never cascade-deletes those on its own.
+        await db.recursiveDelete(ref);
+
+        res.json({ message: "Publication supprimée", postId });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Une erreur interne est survenue" });
+    }
+}
+
+const ACTIVITY_DAYS = 14;
+
+function dayKey(date) {
+    return date.toISOString().slice(0, 10);
+}
+
+// Buckets each collection's docs (already filtered to the last
+// ACTIVITY_DAYS) into one count per calendar day, so the admin overview can
+// chart signups/matches/posts over time without a scheduled aggregation job.
+function buildDailySeries(buckets) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const days = [];
+    const countsByDay = new Map();
+    for (let i = ACTIVITY_DAYS - 1; i >= 0; i--) {
+        const d = new Date(today);
+        d.setUTCDate(d.getUTCDate() - i);
+        const key = dayKey(d);
+        days.push(key);
+        countsByDay.set(key, { date: key, signups: 0, matches: 0, posts: 0 });
+    }
+
+    for (const [field, docs] of Object.entries(buckets)) {
+        for (const docSnap of docs) {
+            const createdAt = docSnap.data().createdAt?.toDate?.();
+            if (!createdAt) continue;
+            const bucket = countsByDay.get(dayKey(createdAt));
+            if (bucket) bucket[field] += 1;
+        }
+    }
+
+    return days.map((key) => countsByDay.get(key));
+}
+
+async function getActivitySeries(req, res) {
+    try {
+        const since = new Date();
+        since.setUTCHours(0, 0, 0, 0);
+        since.setUTCDate(since.getUTCDate() - (ACTIVITY_DAYS - 1));
+        const sinceTs = admin.firestore.Timestamp.fromDate(since);
+
+        const [usersSnap, matchesSnap, postsSnap] = await Promise.all([
+            db.collection("users").where("createdAt", ">=", sinceTs).get(),
+            db.collection("matches").where("createdAt", ">=", sinceTs).get(),
+            db.collection("posts").where("createdAt", ">=", sinceTs).get(),
+        ]);
+
+        const series = buildDailySeries({
+            signups: usersSnap.docs,
+            matches: matchesSnap.docs,
+            posts: postsSnap.docs,
+        });
+
+        res.json({ days: ACTIVITY_DAYS, series });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Une erreur interne est survenue" });
+    }
+}
+
+module.exports = { getStats, listReports, updateReportStatus, deletePost, getActivitySeries };
