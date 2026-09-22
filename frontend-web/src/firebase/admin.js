@@ -111,3 +111,30 @@ export function sendAdminNotificationBroadcast(payload) {
     body: JSON.stringify(payload),
   })
 }
+
+export function fetchCmsMedia() {
+  return authedFetch('/api/admin/media')
+}
+
+// Not authedFetch: a multipart upload must let the browser set its own
+// Content-Type (with the multipart boundary) — authedFetch always forces
+// application/json.
+export async function uploadCmsMedia(file) {
+  const idToken = await auth.currentUser?.getIdToken()
+  const formData = new FormData()
+  formData.append('image', file, file.name)
+  const res = await fetch('/api/admin/media', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: formData,
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.message || 'upload failed')
+  }
+  return res.json()
+}
+
+export function deleteCmsMedia(name) {
+  return authedFetch(`/api/admin/media/${encodeURIComponent(name)}`, { method: 'DELETE' })
+}

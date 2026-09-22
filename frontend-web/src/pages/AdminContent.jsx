@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { FileText, HelpCircle, Image as ImageIcon, Newspaper, Pencil, Plus, Trash2 } from 'lucide-react'
+import { FileText, HelpCircle, Image as ImageIcon, Newspaper, Pencil, Plus, Trash2, Upload } from 'lucide-react'
 import {
   createAdminContentItem,
   deleteAdminContentItem,
   fetchAdminContentList,
   updateAdminContentItem,
+  uploadCmsMedia,
 } from '../firebase/admin.js'
 import { useToast } from '../context/ToastContext.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
@@ -25,7 +26,7 @@ const CONTENT_TYPE_CONFIG = {
       { key: 'title', label: 'Titre', kind: 'text', required: true },
       { key: 'summary', label: 'Résumé', kind: 'textarea' },
       { key: 'content', label: 'Contenu', kind: 'textarea', rows: 10 },
-      { key: 'image', label: 'Image (URL)', kind: 'text' },
+      { key: 'image', label: 'Image', kind: 'image' },
     ],
   },
   articles: {
@@ -37,7 +38,7 @@ const CONTENT_TYPE_CONFIG = {
       { key: 'title', label: 'Titre', kind: 'text', required: true },
       { key: 'summary', label: 'Résumé', kind: 'textarea' },
       { key: 'content', label: 'Contenu', kind: 'textarea', rows: 10 },
-      { key: 'image', label: 'Image (URL)', kind: 'text' },
+      { key: 'image', label: 'Image', kind: 'image' },
       { key: 'category', label: 'Catégorie', kind: 'text' },
       { key: 'tags', label: 'Tags (séparés par une virgule)', kind: 'tags' },
       { key: 'seoTitle', label: 'Titre SEO', kind: 'text' },
@@ -64,7 +65,7 @@ const CONTENT_TYPE_CONFIG = {
     fields: [
       { key: 'title', label: 'Titre', kind: 'text', required: true },
       { key: 'description', label: 'Description', kind: 'textarea' },
-      { key: 'image', label: 'Image (URL)', kind: 'text' },
+      { key: 'image', label: 'Image', kind: 'image' },
       { key: 'buttonLabel', label: 'Texte du bouton', kind: 'text' },
       { key: 'buttonUrl', label: 'Lien du bouton', kind: 'text' },
       { key: 'position', label: 'Emplacement', kind: 'text' },
@@ -144,6 +145,8 @@ function AdminContent() {
   const [isSaving, setIsSaving] = useState(false)
   const [deletingItem, setDeletingItem] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [uploadingField, setUploadingField] = useState(null)
+  const imageInputRef = useRef(null)
 
   const load = useCallback(() => {
     if (!config) return
@@ -192,6 +195,27 @@ function AdminContent() {
       showToast(err.message || 'Impossible d’enregistrer.', 'error')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  function triggerImageUpload(fieldKey) {
+    setUploadingField(fieldKey)
+    imageInputRef.current?.click()
+  }
+
+  async function handleImageFileChange(e) {
+    const picked = e.target.files?.[0]
+    e.target.value = ''
+    const fieldKey = uploadingField
+    if (!picked || !fieldKey) return
+    try {
+      const { file } = await uploadCmsMedia(picked)
+      setForm((prev) => ({ ...prev, [fieldKey]: file.url }))
+      showToast('Image envoyée.', 'success')
+    } catch (err) {
+      showToast(err.message || "Impossible d'envoyer cette image.", 'error')
+    } finally {
+      setUploadingField(null)
     }
   }
 
@@ -299,6 +323,35 @@ function AdminContent() {
                     required={field.required}
                     className={inputClass}
                   />
+                ) : field.kind === 'image' ? (
+                  <div className="flex items-start gap-2">
+                    {form[field.key] ? (
+                      <img src={form[field.key]} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-ink/6 text-ink-soft/30">
+                        <ImageIcon size={20} />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-1.5">
+                      <input
+                        id={field.key}
+                        type="text"
+                        placeholder="URL de l'image, ou téléverse un fichier"
+                        value={form[field.key]}
+                        onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => triggerImageUpload(field.key)}
+                        disabled={uploadingField === field.key}
+                        className="flex items-center gap-1.5 rounded-full bg-ink/6 px-3 py-1.5 text-xs font-semibold text-ink-soft/70 transition hover:bg-ink/10 disabled:opacity-50"
+                      >
+                        <Upload size={13} strokeWidth={2.25} />
+                        {uploadingField === field.key ? 'Envoi…' : 'Téléverser une image'}
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <input
                     id={field.key}
@@ -311,6 +364,7 @@ function AdminContent() {
                 )}
               </div>
             ))}
+            <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageFileChange} className="hidden" />
             <div>
               <label className={labelClass} htmlFor="status">
                 Statut

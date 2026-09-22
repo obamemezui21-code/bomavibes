@@ -14,6 +14,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const contentRoutes = require("./routes/contentRoutes");
 const userDirectoryRoutes = require("./routes/userDirectoryRoutes");
 const adminNotificationsRoutes = require("./routes/notificationsRoutes");
+const cmsMediaRoutes = require("./routes/cmsMediaRoutes");
 const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 
 const app = express();
@@ -43,6 +44,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin/content", contentRoutes);
 app.use("/api/admin/directory", userDirectoryRoutes);
 app.use("/api/admin/notifications", adminNotificationsRoutes);
+app.use("/api/admin/media", cmsMediaRoutes);
 
 startWwfNewsScheduler();
 

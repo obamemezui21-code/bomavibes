@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { Bell, ClipboardList, FileText, HelpCircle, Image as ImageIcon, LayoutDashboard, Music, Newspaper, ShieldAlert, Users, UsersRound } from 'lucide-react'
+import { Bell, ClipboardList, FileText, HelpCircle, Image as ImageIcon, Images, LayoutDashboard, Music, Newspaper, ShieldAlert, Users, UsersRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { ROLES, hasContentAccess, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
 
@@ -21,6 +21,7 @@ function buildTabs(role) {
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/articles', label: 'Articles', icon: Newspaper })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/faqs', label: 'FAQ', icon: HelpCircle })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/banners', label: 'Bannières', icon: ImageIcon })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/media', label: 'Médiathèque', icon: Images })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/logs', label: "Journal d'activité", icon: ClipboardList })
   if (isSuperAdmin(role)) tabs.push({ to: '/admin/users', label: 'Administrateurs', icon: Users })
   return tabs
