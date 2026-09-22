@@ -88,3 +88,16 @@ export function updateAdminContentItem(type, id, data) {
 export function deleteAdminContentItem(type, id) {
   return authedFetch(`/api/admin/content/${type}/${id}`, { method: 'DELETE' })
 }
+
+export function fetchUserDirectory(filter = 'all', search = '') {
+  const params = new URLSearchParams({ filter, search })
+  return authedFetch(`/api/admin/directory?${params}`)
+}
+
+export function fetchUserDirectoryDetail(uid) {
+  return authedFetch(`/api/admin/directory/${uid}`)
+}
+
+export function deleteDirectoryUser(uid) {
+  return authedFetch(`/api/admin/directory/${uid}`, { method: 'DELETE' })
+}

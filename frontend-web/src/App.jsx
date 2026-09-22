@@ -46,6 +46,7 @@ const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
+const AdminUsersDirectory = lazy(() => import('./pages/AdminUsersDirectory.jsx'))
 const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
 const AdminContent = lazy(() => import('./pages/AdminContent.jsx'))
 
@@ -138,6 +139,14 @@ function App() {
               }
             >
               <Route index element={<AdminOverview />} />
+              <Route
+                path="directory"
+                element={
+                  <RequireRole check={hasFullAdminAccess}>
+                    <AdminUsersDirectory />
+                  </RequireRole>
+                }
+              />
               <Route
                 path="reports"
                 element={
