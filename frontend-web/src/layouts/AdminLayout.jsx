@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { ClipboardList, LayoutDashboard, Music, ShieldAlert, Users } from 'lucide-react'
+import { ClipboardList, FileText, HelpCircle, Image as ImageIcon, LayoutDashboard, Music, Newspaper, ShieldAlert, Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { ROLES, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
+import { ROLES, hasContentAccess, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
 
 const ROLE_LABELS = {
   [ROLES.SUPER_ADMIN]: 'Super Admin',
@@ -15,6 +15,10 @@ function buildTabs(role) {
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true })
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/pages', label: 'Pages', icon: FileText })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/articles', label: 'Articles', icon: Newspaper })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/faqs', label: 'FAQ', icon: HelpCircle })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/banners', label: 'Bannières', icon: ImageIcon })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/logs', label: "Journal d'activité", icon: ClipboardList })
   if (isSuperAdmin(role)) tabs.push({ to: '/admin/users', label: 'Administrateurs', icon: Users })
   return tabs

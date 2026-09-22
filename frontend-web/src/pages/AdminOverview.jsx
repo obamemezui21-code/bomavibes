@@ -4,7 +4,7 @@ import { Heart, MessageSquareWarning, Newspaper, Users } from 'lucide-react'
 import { fetchAdminActivity, fetchAdminStats } from '../firebase/admin.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { hasFullAdminAccess, hasModerationAccess } from '../lib/roles.js'
+import { hasContentAccess, hasFullAdminAccess, hasModerationAccess } from '../lib/roles.js'
 import Sparkline from '../components/Sparkline.jsx'
 
 const CARDS = [
@@ -67,19 +67,12 @@ function AdminOverview() {
   }, [canViewDashboard, showToast])
 
   // The dashboard is Admin/Super Admin only — a Moderator's whole scope is
-  // Signalements, so send them straight there; an Editor has no section of
-  // their own yet (the CMS content phase hasn't landed), so they get a
-  // holding message instead of a 403 wall.
+  // Signalements and an Editor's is the content sections, so send each
+  // straight to their own landing spot instead of a 403 wall.
   if (!canViewDashboard) {
     if (hasModerationAccess(profile?.role)) return <Navigate to="/admin/reports" replace />
-    return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
-        <p className="text-sm text-ink-soft/60">
-          Aucune section n'est encore disponible pour votre rôle. La gestion de contenu (Pages, Articles, FAQ,
-          Bannières) arrive dans une prochaine mise à jour.
-        </p>
-      </div>
-    )
+    if (hasContentAccess(profile?.role)) return <Navigate to="/admin/content/pages" replace />
+    return <Navigate to="/discover" replace />
   }
 
   return (

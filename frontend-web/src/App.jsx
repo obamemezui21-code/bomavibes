@@ -7,7 +7,7 @@ import RequireAuth from './components/RequireAuth.jsx'
 import RequireAdmin from './components/RequireAdmin.jsx'
 import RequireSuperAdmin from './components/RequireSuperAdmin.jsx'
 import RequireRole from './components/RequireRole.jsx'
-import { hasFullAdminAccess, hasModerationAccess } from './lib/roles.js'
+import { hasContentAccess, hasFullAdminAccess, hasModerationAccess } from './lib/roles.js'
 import { FeedProvider } from './context/FeedContext.jsx'
 import { FullPageSpinner } from './components/ui/Spinner.jsx'
 
@@ -47,6 +47,7 @@ const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
 const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
+const AdminContent = lazy(() => import('./pages/AdminContent.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -158,6 +159,14 @@ function App() {
                 element={
                   <RequireRole check={hasFullAdminAccess}>
                     <AdminLogs />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="content/:type"
+                element={
+                  <RequireRole check={hasContentAccess}>
+                    <AdminContent />
                   </RequireRole>
                 }
               />

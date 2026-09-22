@@ -10,7 +10,14 @@ async function authedFetch(path, options = {}) {
       ...options.headers,
     },
   })
-  if (!res.ok) throw new Error('request failed')
+  if (!res.ok) {
+    // The content endpoints (pages/articles/faqs/banners) return a specific
+    // validation message ("Ce slug est déjà utilisé"...) that's worth
+    // surfacing — existing callers that just .catch() a generic error are
+    // unaffected since Error still stringifies to something sensible.
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.message || 'request failed')
+  }
   return res.json()
 }
 
@@ -58,4 +65,26 @@ export function deleteAdminPost(postId) {
 export function fetchAdminLogs(cursor) {
   const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
   return authedFetch(`/api/admin/logs${query}`)
+}
+
+// type is one of 'pages' | 'articles' | 'faqs' | 'banners' — see
+// backend/src/services/contentService.js for the shared shape.
+export function fetchAdminContentList(type, status = 'all') {
+  return authedFetch(`/api/admin/content/${type}?status=${encodeURIComponent(status)}`)
+}
+
+export function fetchAdminContentItem(type, id) {
+  return authedFetch(`/api/admin/content/${type}/${id}`)
+}
+
+export function createAdminContentItem(type, data) {
+  return authedFetch(`/api/admin/content/${type}`, { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateAdminContentItem(type, id, data) {
+  return authedFetch(`/api/admin/content/${type}/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export function deleteAdminContentItem(type, id) {
+  return authedFetch(`/api/admin/content/${type}/${id}`, { method: 'DELETE' })
 }

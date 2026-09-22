@@ -11,6 +11,7 @@ const feedPhotoRoutes = require("./routes/feedPhotoRoutes");
 const musicRoutes = require("./routes/musicRoutes");
 const captchaRoutes = require("./routes/captchaRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const contentRoutes = require("./routes/contentRoutes");
 const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/api/feed-photos", feedPhotoRoutes);
 app.use("/api/music", musicRoutes);
 app.use("/api/captcha", captchaRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/content", contentRoutes);
 
 startWwfNewsScheduler();
 
