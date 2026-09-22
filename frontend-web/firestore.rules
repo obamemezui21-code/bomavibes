@@ -142,6 +142,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /events/{eventId} {
+      allow read: if resource.data.status == 'published' || isContentEditor();
+      allow write: if false;
+    }
+
+    match /tickets/{ticketId} {
+      // A user can read their own reservations directly (e.g. a live "Mes
+      // billets" listener) but never write one — reserving/cancelling has to
+      // go through eventTicketController.js's transaction so the
+      // ticketsReserved counter on the event and the one-ticket-per-user
+      // guard stay correct. No admin override needed here: event capacity is
+      // managed via the event doc, not by editing individual tickets.
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
     match /contributionInterest/{interestId} {
       allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
       allow read: if isSignedIn() && resource.data.uid == request.auth.uid;

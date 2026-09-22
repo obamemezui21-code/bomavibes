@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { FileText, HelpCircle, Image as ImageIcon, Newspaper, Pencil, Plus, Trash2, Upload } from 'lucide-react'
+import { Calendar, FileText, HelpCircle, Image as ImageIcon, Newspaper, Pencil, Plus, Trash2, Upload } from 'lucide-react'
 import {
   createAdminContentItem,
   deleteAdminContentItem,
@@ -71,6 +71,28 @@ const CONTENT_TYPE_CONFIG = {
       { key: 'position', label: 'Emplacement', kind: 'text' },
       { key: 'startDate', label: 'Date de début', kind: 'date' },
       { key: 'endDate', label: 'Date de fin', kind: 'date' },
+    ],
+  },
+  events: {
+    label: 'Événements',
+    singular: 'un événement',
+    icon: Calendar,
+    hasSlug: false,
+    fields: [
+      { key: 'title', label: 'Titre', kind: 'text', required: true },
+      { key: 'description', label: 'Description', kind: 'textarea', rows: 6 },
+      {
+        key: 'category',
+        label: 'Catégorie',
+        kind: 'select',
+        options: ['Soirée', 'Concert', 'Conférence', 'Sport', 'Culture', 'Networking'],
+      },
+      { key: 'date', label: 'Date', kind: 'date', required: true },
+      { key: 'location', label: 'Lieu', kind: 'text' },
+      { key: 'organizer', label: 'Organisateur', kind: 'text' },
+      { key: 'image', label: 'Image', kind: 'image' },
+      { key: 'price', label: 'Prix affiché (ex : Gratuit, 2 000 FCFA)', kind: 'text' },
+      { key: 'capacity', label: 'Capacité (0 = illimitée)', kind: 'number' },
     ],
   },
 }
@@ -352,6 +374,21 @@ function AdminContent() {
                       </button>
                     </div>
                   </div>
+                ) : field.kind === 'select' ? (
+                  <select
+                    id={field.key}
+                    value={form[field.key]}
+                    onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                    required={field.required}
+                    className={inputClass}
+                  >
+                    <option value="">—</option>
+                    {field.options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
                   <input
                     id={field.key}

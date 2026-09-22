@@ -73,6 +73,29 @@ const CONTENT_TYPES = {
             endDate: { type: "string", maxLen: 40 },
         },
     },
+    events: {
+        collection: "events",
+        sortField: "date",
+        sortDir: "asc",
+        hasSlug: false,
+        fields: {
+            title: { type: "string", required: true, maxLen: 200 },
+            description: { type: "string", maxLen: 2000 },
+            category: { type: "string", maxLen: 50 },
+            date: { type: "string", required: true, maxLen: 20 },
+            location: { type: "string", maxLen: 200 },
+            image: { type: "string", maxLen: 500 },
+            organizer: { type: "string", maxLen: 100 },
+            // Informational only — no payment gateway is integrated, so this
+            // is displayed text ("Gratuit", "2 000 FCFA"...), never charged.
+            price: { type: "string", maxLen: 60 },
+            // 0 = unlimited. ticketsReserved (not declared here, so a plain
+            // admin edit here can never touch it) is maintained separately by
+            // eventTicketController.js's transaction, incremented/decremented
+            // alongside each reservation/cancellation.
+            capacity: { type: "number", default: 0 },
+        },
+    },
 };
 
 function badRequest(message) {

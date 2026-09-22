@@ -45,6 +45,7 @@ const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Support = lazy(() => import('./pages/Support.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
+const MyTickets = lazy(() => import('./pages/MyTickets.jsx'))
 const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
@@ -154,6 +155,7 @@ function App() {
             </Route>
             <Route path="/matches" element={<Matches />} />
             <Route path="/events" element={<EventsHub />} />
+            <Route path="/events/mine" element={<MyTickets />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/annonces" element={<Announcements />} />
             <Route path="/notifications" element={<Notifications />} />

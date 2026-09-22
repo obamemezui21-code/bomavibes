@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Briefcase, Heart, MapPin, Music2, Search, Ticket } from 'lucide-react'
+import { cancelEventTicket, fetchMyTickets, fetchPublishedEvents, reserveEventTicket } from '../firebase/events.js'
 import { useToast } from '../context/ToastContext.jsx'
 
 const CATEGORY_CARDS = [
@@ -19,58 +21,71 @@ const CATEGORY_STYLES = {
   Networking: 'bg-forest text-white',
 }
 
-// Exemples pour visualiser la mise en page — à remplacer par de vrais
-// événements avant mise en production. Il n'existe aucun système
-// d'événements/billetterie côté backend pour l'instant.
-const SAMPLE_EVENTS = [
-  {
-    id: '1',
-    title: 'Conférence Tech Gabon 2026',
-    org: 'Tech Gabon',
-    category: 'Conférence',
-    day: '20',
-    month: 'SEPT.',
-    location: 'Paradox Hotel · Libreville',
-    price: '10 000 FCFA',
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=60',
-  },
-  {
-    id: '2',
-    title: 'Festival Culturel Punu',
-    org: 'Ministère de la Culture',
-    category: 'Culture',
-    day: '12',
-    month: 'SEPT.',
-    location: "Place de l'Indépendance · Libreville",
-    price: null,
-    image: null,
-  },
-  {
-    id: '3',
-    title: 'Networking Business Boma',
-    org: 'Boma Business',
-    category: 'Networking',
-    day: '8',
-    month: 'SEPT.',
-    location: 'Radisson Blu · Libreville',
-    price: '7 500 FCFA',
-    image: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=800&q=60',
-  },
-]
+function formatEventDayMonth(dateStr) {
+  const d = new Date(`${dateStr}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return { day: '?', month: '' }
+  return {
+    day: d.toLocaleDateString('fr-FR', { day: 'numeric' }),
+    month: d.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase(),
+  }
+}
 
 function EventsHub() {
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('Tout')
+  const [events, setEvents] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [myEventIds, setMyEventIds] = useState(new Set())
+  const [pendingId, setPendingId] = useState(null)
+
+  const load = useCallback(() => {
+    setIsLoading(true)
+    Promise.all([fetchPublishedEvents(), fetchMyTickets().catch(() => ({ tickets: [] }))])
+      .then(([publishedEvents, myTickets]) => {
+        setEvents(publishedEvents)
+        setMyEventIds(new Set(myTickets.tickets.map((t) => t.eventId)))
+      })
+      .catch(() => showToast('Impossible de charger les événements.', 'error'))
+      .finally(() => setIsLoading(false))
+  }, [showToast])
+
+  useEffect(() => {
+    load()
+  }, [load])
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return SAMPLE_EVENTS.filter((ev) => {
+    const q = search.trim().toLowerCase()
+    return events.filter((ev) => {
       if (activeFilter !== 'Tout' && ev.category !== activeFilter) return false
-      if (query && !ev.title.toLowerCase().includes(query)) return false
+      if (q && !ev.title?.toLowerCase().includes(q)) return false
       return true
     })
-  }, [search, activeFilter])
+  }, [events, search, activeFilter])
+
+  async function handleToggleReservation(ev) {
+    setPendingId(ev.id)
+    try {
+      if (myEventIds.has(ev.id)) {
+        await cancelEventTicket(ev.id)
+        setMyEventIds((prev) => {
+          const next = new Set(prev)
+          next.delete(ev.id)
+          return next
+        })
+        showToast('Réservation annulée.', 'success')
+      } else {
+        await reserveEventTicket(ev.id)
+        setMyEventIds((prev) => new Set(prev).add(ev.id))
+        showToast('Place réservée — retrouve ton billet dans "Mes billets".', 'success')
+      }
+    } catch (err) {
+      showToast(err.message || 'Impossible de mettre à jour ta réservation.', 'error')
+    } finally {
+      setPendingId(null)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
@@ -81,7 +96,7 @@ function EventsHub() {
         </div>
         <button
           type="button"
-          onClick={() => showToast('Billetterie bientôt disponible.')}
+          onClick={() => navigate('/events/mine')}
           className="flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-pink-600 transition hover:bg-pink-500/10"
         >
           <Ticket size={15} strokeWidth={2.25} />
@@ -130,49 +145,74 @@ function EventsHub() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {isLoading && <p className="mt-10 py-10 text-center text-sm text-ink-soft/50">Chargement…</p>}
+
+      {!isLoading && filtered.length === 0 ? (
         <div className="mt-10 flex flex-col items-center gap-2 py-10 text-center">
           <Ticket size={32} strokeWidth={1.5} className="text-ink-soft/30" />
           <p className="text-sm font-medium text-ink-soft/60">Aucun événement pour le moment.</p>
         </div>
       ) : (
         <div className="mt-4 space-y-4">
-          {filtered.map((ev) => (
-            <div
-              key={ev.id}
-              className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-ink/8 bg-white shadow-sm dark:bg-surface-tint"
-            >
-              <div className="relative h-36 w-full bg-ink/10">
-                {ev.image && <img src={ev.image} alt="" className="h-full w-full object-cover" loading="lazy" />}
-                <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-center leading-none shadow-sm">
-                  <p className="text-sm font-bold text-ink-on-brand">{ev.day}</p>
-                  <p className="text-[9px] font-semibold uppercase text-ink-on-brand/70">{ev.month}</p>
+          {filtered.map((ev) => {
+            const { day, month } = formatEventDayMonth(ev.date)
+            const isReserved = myEventIds.has(ev.id)
+            const isFull = ev.capacity > 0 && (ev.ticketsReserved || 0) >= ev.capacity && !isReserved
+            return (
+              <div
+                key={ev.id}
+                className="min-w-0 max-w-full overflow-hidden rounded-2xl border border-ink/8 bg-white shadow-sm dark:bg-surface-tint"
+              >
+                <div className="relative h-36 w-full bg-ink/10">
+                  {ev.image && <img src={ev.image} alt="" className="h-full w-full object-cover" loading="lazy" />}
+                  <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-center leading-none shadow-sm">
+                    <p className="text-sm font-bold text-ink-on-brand">{day}</p>
+                    <p className="text-[9px] font-semibold uppercase text-ink-on-brand/70">{month}</p>
+                  </div>
+                  <span
+                    className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      CATEGORY_STYLES[ev.category] || 'bg-ink/60 text-white'
+                    }`}
+                  >
+                    {ev.category}
+                  </span>
                 </div>
-                <span
-                  className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                    CATEGORY_STYLES[ev.category] || 'bg-ink/60 text-white'
-                  }`}
-                >
-                  {ev.category}
-                </span>
-              </div>
-              <div className="min-w-0 p-3.5">
-                <p className="truncate text-sm font-semibold text-ink">{ev.title}</p>
-                <p className="truncate text-xs text-ink-soft/60">par {ev.org}</p>
-                <div className="mt-2.5 flex min-w-0 items-center justify-between gap-2 border-t border-ink/6 pt-2.5">
-                  <p className="flex min-w-0 items-center gap-1 truncate text-xs text-ink-soft/60">
-                    <MapPin size={12} strokeWidth={2.25} />
-                    {ev.location}
-                  </p>
-                  {ev.price ? (
-                    <p className="shrink-0 text-sm font-bold text-ink">{ev.price}</p>
-                  ) : (
-                    <p className="shrink-0 text-sm font-bold text-mint-600">Gratuit</p>
-                  )}
+                <div className="min-w-0 p-3.5">
+                  <p className="truncate text-sm font-semibold text-ink">{ev.title}</p>
+                  {ev.organizer && <p className="truncate text-xs text-ink-soft/60">par {ev.organizer}</p>}
+                  <div className="mt-2.5 flex min-w-0 items-center justify-between gap-2 border-t border-ink/6 pt-2.5">
+                    <p className="flex min-w-0 items-center gap-1 truncate text-xs text-ink-soft/60">
+                      <MapPin size={12} strokeWidth={2.25} />
+                      {ev.location}
+                    </p>
+                    {ev.price ? (
+                      <p className="shrink-0 text-sm font-bold text-ink">{ev.price}</p>
+                    ) : (
+                      <p className="shrink-0 text-sm font-bold text-mint-600">Gratuit</p>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleReservation(ev)}
+                    disabled={pendingId === ev.id || isFull}
+                    className={`mt-3 w-full rounded-full py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      isReserved
+                        ? 'bg-ink/6 text-ink-soft/70 hover:bg-coral-500/10 hover:text-coral-600'
+                        : 'bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25'
+                    }`}
+                  >
+                    {pendingId === ev.id
+                      ? 'Un instant…'
+                      : isReserved
+                        ? 'Réservé ✓ — Annuler'
+                        : isFull
+                          ? 'Complet'
+                          : 'Réserver ma place'}
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
