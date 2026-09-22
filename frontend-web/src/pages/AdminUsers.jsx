@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Search, ShieldMinus, ShieldPlus, UserCheck, UserX } from 'lucide-react'
+import { Search, UserCheck, UserX } from 'lucide-react'
 import { fetchAdminUsers, setAdminUserBanned, updateAdminUserRole } from '../firebase/admin.js'
 import { useToast } from '../context/ToastContext.jsx'
 import { ROLES } from '../lib/roles.js'
@@ -8,14 +8,22 @@ import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 const ROLE_BADGES = {
   [ROLES.SUPER_ADMIN]: 'bg-gradient-to-r from-violet-500 to-pink-500 text-white',
   [ROLES.ADMIN]: 'bg-sky-500/15 text-sky-600',
+  [ROLES.MODERATOR]: 'bg-amber-500/15 text-amber-600',
+  [ROLES.EDITOR]: 'bg-mint-500/15 text-mint-600',
   [ROLES.USER]: 'bg-ink/8 text-ink-soft/60',
 }
 
 const ROLE_LABELS = {
   [ROLES.SUPER_ADMIN]: 'Super Admin',
   [ROLES.ADMIN]: 'Admin',
+  [ROLES.MODERATOR]: 'Modérateur',
+  [ROLES.EDITOR]: 'Éditeur',
   [ROLES.USER]: 'Utilisateur',
 }
+
+// Every role a Super Admin can hand out from this page — SUPER_ADMIN itself
+// is deliberately absent, see scripts/setAdmin.js.
+const ASSIGNABLE_ROLES = [ROLES.USER, ROLES.MODERATOR, ROLES.EDITOR, ROLES.ADMIN]
 
 function AdminUsers() {
   const { showToast } = useToast()
@@ -77,8 +85,8 @@ function AdminUsers() {
     <div className="mx-auto max-w-3xl px-4 py-6 desktop:py-8">
       <h2 className="mb-1 font-display text-lg font-semibold text-ink">Administrateurs</h2>
       <p className="mb-4 text-xs text-ink-soft/60">
-        Nommer ou retirer des administrateurs. Réservé au Super Admin — le rôle Super Admin lui-même ne se change pas
-        ici.
+        Attribuer les rôles Admin, Modérateur et Éditeur. Réservé au Super Admin — le rôle Super Admin lui-même ne se
+        change pas ici.
       </p>
 
       <div className="relative mb-4">
@@ -141,28 +149,18 @@ function AdminUsers() {
                 </button>
               )}
               {!isProtected && (
-                <button
-                  type="button"
-                  onClick={() => handleRoleChange(user, role === ROLES.ADMIN ? ROLES.USER : ROLES.ADMIN)}
+                <select
+                  value={role}
+                  onChange={(e) => handleRoleChange(user, e.target.value)}
                   disabled={updatingUid === user.uid}
-                  className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
-                    role === ROLES.ADMIN
-                      ? 'bg-ink/6 text-ink-soft/70 hover:bg-ink/10'
-                      : 'bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25'
-                  }`}
+                  className="shrink-0 rounded-full border border-ink/12 bg-ink/[0.04] px-3 py-1.5 text-xs font-semibold text-ink outline-none transition focus:border-violet-400 disabled:opacity-50"
                 >
-                  {role === ROLES.ADMIN ? (
-                    <>
-                      <ShieldMinus size={13} strokeWidth={2.25} />
-                      Retirer
-                    </>
-                  ) : (
-                    <>
-                      <ShieldPlus size={13} strokeWidth={2.25} />
-                      Nommer admin
-                    </>
-                  )}
-                </button>
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {ROLE_LABELS[r]}
+                    </option>
+                  ))}
+                </select>
               )}
             </div>
           )

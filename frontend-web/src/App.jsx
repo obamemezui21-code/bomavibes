@@ -6,6 +6,8 @@ import AdminLayout from './layouts/AdminLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
 import RequireAdmin from './components/RequireAdmin.jsx'
 import RequireSuperAdmin from './components/RequireSuperAdmin.jsx'
+import RequireRole from './components/RequireRole.jsx'
+import { hasFullAdminAccess, hasModerationAccess } from './lib/roles.js'
 import { FeedProvider } from './context/FeedContext.jsx'
 import { FullPageSpinner } from './components/ui/Spinner.jsx'
 
@@ -44,6 +46,7 @@ const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
+const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -134,8 +137,30 @@ function App() {
               }
             >
               <Route index element={<AdminOverview />} />
-              <Route path="reports" element={<AdminReports />} />
-              <Route path="music" element={<AdminMusic />} />
+              <Route
+                path="reports"
+                element={
+                  <RequireRole check={hasModerationAccess}>
+                    <AdminReports />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="music"
+                element={
+                  <RequireRole check={hasFullAdminAccess}>
+                    <AdminMusic />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="logs"
+                element={
+                  <RequireRole check={hasFullAdminAccess}>
+                    <AdminLogs />
+                  </RequireRole>
+                }
+              />
               <Route
                 path="users"
                 element={

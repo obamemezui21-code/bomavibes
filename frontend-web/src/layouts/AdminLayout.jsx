@@ -1,23 +1,28 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Music, ShieldAlert, Users } from 'lucide-react'
+import { ClipboardList, LayoutDashboard, Music, ShieldAlert, Users } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { ROLES, isSuperAdmin } from '../lib/roles.js'
-
-const BASE_TABS = [
-  { to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true },
-  { to: '/admin/reports', label: 'Signalements', icon: ShieldAlert },
-  { to: '/admin/music', label: 'Musique', icon: Music },
-]
+import { ROLES, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
 
 const ROLE_LABELS = {
   [ROLES.SUPER_ADMIN]: 'Super Admin',
   [ROLES.ADMIN]: 'Admin',
+  [ROLES.MODERATOR]: 'Modérateur',
+  [ROLES.EDITOR]: 'Éditeur',
+}
+
+function buildTabs(role) {
+  const tabs = []
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true })
+  if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/logs', label: "Journal d'activité", icon: ClipboardList })
+  if (isSuperAdmin(role)) tabs.push({ to: '/admin/users', label: 'Administrateurs', icon: Users })
+  return tabs
 }
 
 function AdminLayout() {
   const { profile } = useAuth()
-  const isSuper = isSuperAdmin(profile?.role)
-  const tabs = isSuper ? [...BASE_TABS, { to: '/admin/users', label: 'Administrateurs', icon: Users }] : BASE_TABS
+  const tabs = buildTabs(profile?.role)
 
   return (
     <div className="min-h-full">

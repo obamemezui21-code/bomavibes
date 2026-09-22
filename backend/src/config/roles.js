@@ -11,15 +11,44 @@ const SUPER_ADMIN_EMAIL = "obamemezui21@gmail.com";
 const ROLES = Object.freeze({
     SUPER_ADMIN: "super_admin",
     ADMIN: "admin",
+    MODERATOR: "moderator",
+    EDITOR: "editor",
     USER: "user",
 });
 
+// Can enter the /admin space at all — the entry gate. Each section inside
+// then narrows further with the capability checks below, so a Moderator or
+// Editor only sees (and can only call the API for) their own scope.
 function hasAdminAccess(role) {
+    return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN || role === ROLES.MODERATOR || role === ROLES.EDITOR;
+}
+
+// Full admin surface: dashboard/stats, user management, everything a
+// Moderator/Editor doesn't get.
+function hasFullAdminAccess(role) {
     return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
+}
+
+// Reports, banning users, removing reported content.
+function hasModerationAccess(role) {
+    return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN || role === ROLES.MODERATOR;
+}
+
+// Pages/Articles/FAQ/Banners/media library.
+function hasContentAccess(role) {
+    return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN || role === ROLES.EDITOR;
 }
 
 function isSuperAdminRole(role) {
     return role === ROLES.SUPER_ADMIN;
 }
 
-module.exports = { SUPER_ADMIN_EMAIL, ROLES, hasAdminAccess, isSuperAdminRole };
+module.exports = {
+    SUPER_ADMIN_EMAIL,
+    ROLES,
+    hasAdminAccess,
+    hasFullAdminAccess,
+    hasModerationAccess,
+    hasContentAccess,
+    isSuperAdminRole,
+};

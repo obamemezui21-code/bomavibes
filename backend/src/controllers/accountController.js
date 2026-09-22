@@ -39,7 +39,20 @@ async function deleteAccount(req, res) {
     await batchDeleteAll([...asSwiper.docs, ...asTarget.docs].map((doc) => doc.ref));
 
     await db.collection("profiles").doc(uid).delete().catch(() => {});
-    await db.collection("users").doc(uid).delete().catch(() => {});
+
+    // Overwritten (not merged) into a bare tombstone — every other field
+    // (name, prefs, role, fcmTokens...) is dropped, so this is a real
+    // erasure of that account's data. The email + timestamp survive only so
+    // "Utilisateurs supprimés" in the admin CMS has something to show; the
+    // Auth account itself is still fully deleted below, so the email is
+    // free to sign up again immediately.
+    const userSnap = await db.collection("users").doc(uid).get();
+    const email = userSnap.data()?.email ?? null;
+    await db.collection("users").doc(uid).set({
+      deleted: true,
+      deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+      email,
+    });
 
     fs.rmSync(path.join(UPLOAD_ROOT, uid), { recursive: true, force: true });
 

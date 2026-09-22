@@ -1,4 +1,5 @@
 const admin = require("../config/firebaseAdmin");
+const { logAdminAction, listAdminLogs } = require("../services/adminLogService");
 
 const db = admin.firestore();
 
@@ -109,6 +110,8 @@ async function updateReportStatus(req, res) {
             reviewedBy: req.firebaseUser.uid,
         });
 
+        await logAdminAction(req, { action: "UPDATE_REPORT_STATUS", targetType: "report", targetId: id, metadata: { status } });
+
         res.json({ message: "Signalement mis à jour" });
     } catch (err) {
         console.error(err);
@@ -129,6 +132,8 @@ async function deletePost(req, res) {
         // Removes the post plus its comments/likes subcollections in one
         // call — Firestore never cascade-deletes those on its own.
         await db.recursiveDelete(ref);
+
+        await logAdminAction(req, { action: "DELETE_POST", targetType: "post", targetId: postId, metadata: { authorId: snap.data().authorId } });
 
         res.json({ message: "Publication supprimée", postId });
     } catch (err) {
@@ -198,4 +203,14 @@ async function getActivitySeries(req, res) {
     }
 }
 
-module.exports = { getStats, listReports, updateReportStatus, deletePost, getActivitySeries };
+async function getLogs(req, res) {
+    try {
+        const logs = await listAdminLogs({ cursor: req.query.cursor });
+        res.json({ logs, nextCursor: logs.length === 200 ? logs[logs.length - 1].id : null });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Une erreur interne est survenue" });
+    }
+}
+
+module.exports = { getStats, listReports, updateReportStatus, deletePost, getActivitySeries, getLogs };

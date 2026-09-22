@@ -42,10 +42,20 @@ service cloud.firestore {
           // themselves super_admin this way either.
           // (resource is null on create, i.e. no prior role to defend.)
           && (!('role' in data) || (resource != null && data.role == resource.data.get('role', 'user')))
-          && (!('isAdmin' in data) || (resource != null && data.isAdmin == resource.data.get('isAdmin', false)));
+          && (!('isAdmin' in data) || (resource != null && data.isAdmin == resource.data.get('isAdmin', false)))
+          // Same reasoning as role: only the Admin SDK (account deletion,
+          // see accountController.js) may ever set these, so a user can't
+          // fake or clear their own "deleted" tombstone.
+          && (!('deleted' in data) || (resource != null && data.deleted == resource.data.get('deleted', false)))
+          && (!('deletedAt' in data) || (resource != null && data.deletedAt == resource.data.get('deletedAt', null)));
       }
 
-      allow read, delete: if isOwner(userId);
+      // Account deletion is a full erasure (see accountController.deleteAccount:
+      // most fields are dropped, not just flagged) done via the Admin SDK,
+      // which bypasses these rules — a client can never delete or directly
+      // erase its own doc, only ask the backend to do it.
+      allow read: if isOwner(userId);
+      allow delete: if false;
       allow create, update: if isOwner(userId) && validAccountShape();
     }
 
@@ -82,6 +92,13 @@ service cloud.firestore {
     match /campaign/{campaignId} {
       allow read: if isSignedIn();
       allow write: if false; // set only server-side via the Admin SDK
+    }
+
+    match /admin_logs/{logId} {
+      // Written by adminLogService.js and read via GET /api/admin/logs —
+      // both through the Admin SDK, which bypasses this. No client, admin
+      // included, ever reads or writes this collection directly.
+      allow read, write: if false;
     }
 
     match /contributionInterest/{interestId} {

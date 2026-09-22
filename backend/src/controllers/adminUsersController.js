@@ -1,23 +1,27 @@
 const admin = require("../config/firebaseAdmin");
 const { SUPER_ADMIN_EMAIL, ROLES, isSuperAdminRole } = require("../config/roles");
+const { logAdminAction } = require("../services/adminLogService");
 
 const db = admin.firestore();
 const USERS_LIMIT = 200;
+const ASSIGNABLE_ROLES = [ROLES.ADMIN, ROLES.MODERATOR, ROLES.EDITOR, ROLES.USER];
 
 async function listUsers(req, res) {
     try {
         const snap = await db.collection("users").limit(USERS_LIMIT).get();
-        const users = snap.docs.map((docSnap) => {
-            const data = docSnap.data();
-            return {
-                uid: docSnap.id,
-                email: data.email ?? null,
-                firstName: data.firstName ?? null,
-                role: data.role || ROLES.USER,
-                onboarded: !!data.onboarded,
-                banned: !!data.banned,
-            };
-        });
+        const users = snap.docs
+            .filter((docSnap) => !docSnap.data().deleted)
+            .map((docSnap) => {
+                const data = docSnap.data();
+                return {
+                    uid: docSnap.id,
+                    email: data.email ?? null,
+                    firstName: data.firstName ?? null,
+                    role: data.role || ROLES.USER,
+                    onboarded: !!data.onboarded,
+                    banned: !!data.banned,
+                };
+            });
         res.json({ users });
     } catch (err) {
         console.error(err);
@@ -30,8 +34,8 @@ async function updateUserRole(req, res) {
     const { role } = req.body;
 
     // ROLES.SUPER_ADMIN is never assignable through this endpoint — see
-    // roles.js. Only promote to ADMIN or demote back to USER here.
-    if (role !== ROLES.ADMIN && role !== ROLES.USER) {
+    // roles.js.
+    if (!ASSIGNABLE_ROLES.includes(role)) {
         return res.status(400).json({ message: "Rôle invalide" });
     }
 
@@ -48,6 +52,9 @@ async function updateUserRole(req, res) {
         }
 
         await ref.update({ role });
+
+        await logAdminAction(req, { action: "UPDATE_USER_ROLE", targetType: "user", targetId: uid, metadata: { role, previousRole: targetData.role || ROLES.USER } });
+
         res.json({ message: "Rôle mis à jour", uid, role });
     } catch (err) {
         console.error(err);
@@ -93,6 +100,8 @@ async function setUserBanned(req, res) {
             bannedAt: banned ? admin.firestore.FieldValue.serverTimestamp() : admin.firestore.FieldValue.delete(),
             bannedBy: banned ? req.firebaseUser.uid : admin.firestore.FieldValue.delete(),
         });
+
+        await logAdminAction(req, { action: banned ? "BAN_USER" : "UNBAN_USER", targetType: "user", targetId: uid });
 
         res.json({ message: banned ? "Utilisateur banni" : "Utilisateur réactivé", uid, banned });
     } catch (err) {

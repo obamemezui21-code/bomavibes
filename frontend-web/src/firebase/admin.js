@@ -54,3 +54,8 @@ export function setAdminUserBanned(uid, banned) {
 export function deleteAdminPost(postId) {
   return authedFetch(`/api/admin/posts/${postId}`, { method: 'DELETE' })
 }
+
+export function fetchAdminLogs(cursor) {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
+  return authedFetch(`/api/admin/logs${query}`)
+}

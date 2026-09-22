@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { Heart, MessageSquareWarning, Newspaper, Users } from 'lucide-react'
 import { fetchAdminActivity, fetchAdminStats } from '../firebase/admin.js'
+import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { hasFullAdminAccess, hasModerationAccess } from '../lib/roles.js'
 import Sparkline from '../components/Sparkline.jsx'
 
 const CARDS = [
@@ -36,12 +39,15 @@ const CARDS = [
 ]
 
 function AdminOverview() {
+  const { profile } = useAuth()
   const { showToast } = useToast()
   const [stats, setStats] = useState(null)
   const [activity, setActivity] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const canViewDashboard = hasFullAdminAccess(profile?.role)
 
   useEffect(() => {
+    if (!canViewDashboard) return undefined
     let cancelled = false
     Promise.all([fetchAdminStats(), fetchAdminActivity()])
       .then(([statsData, activityData]) => {
@@ -58,7 +64,23 @@ function AdminOverview() {
     return () => {
       cancelled = true
     }
-  }, [showToast])
+  }, [canViewDashboard, showToast])
+
+  // The dashboard is Admin/Super Admin only — a Moderator's whole scope is
+  // Signalements, so send them straight there; an Editor has no section of
+  // their own yet (the CMS content phase hasn't landed), so they get a
+  // holding message instead of a 403 wall.
+  if (!canViewDashboard) {
+    if (hasModerationAccess(profile?.role)) return <Navigate to="/admin/reports" replace />
+    return (
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="text-sm text-ink-soft/60">
+          Aucune section n'est encore disponible pour votre rôle. La gestion de contenu (Pages, Articles, FAQ,
+          Bannières) arrive dans une prochaine mise à jour.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 desktop:py-8">

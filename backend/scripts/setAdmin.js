@@ -9,7 +9,7 @@
 //
 // Usage:
 //   node scripts/setAdmin.js <email> [role]
-//   role: super_admin | admin | user   (defaults to "admin")
+//   role: super_admin | admin | moderator | editor | user   (defaults to "admin")
 
 require("dotenv").config({ quiet: true });
 const admin = require("../src/config/firebaseAdmin");
