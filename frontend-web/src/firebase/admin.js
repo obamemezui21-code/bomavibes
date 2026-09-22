@@ -62,9 +62,12 @@ export function deleteAdminPost(postId) {
   return authedFetch(`/api/admin/posts/${postId}`, { method: 'DELETE' })
 }
 
-export function fetchAdminLogs(cursor) {
-  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
-  return authedFetch(`/api/admin/logs${query}`)
+export function fetchAdminLogs({ cursor, action } = {}) {
+  const params = new URLSearchParams()
+  if (cursor) params.set('cursor', cursor)
+  if (action) params.set('action', action)
+  const query = params.toString()
+  return authedFetch(`/api/admin/logs${query ? `?${query}` : ''}`)
 }
 
 // type is one of 'pages' | 'articles' | 'faqs' | 'banners' — see
@@ -100,4 +103,11 @@ export function fetchUserDirectoryDetail(uid) {
 
 export function deleteDirectoryUser(uid) {
   return authedFetch(`/api/admin/directory/${uid}`, { method: 'DELETE' })
+}
+
+export function sendAdminNotificationBroadcast(payload) {
+  return authedFetch('/api/admin/notifications/broadcast', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }

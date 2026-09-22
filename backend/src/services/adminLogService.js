@@ -25,17 +25,28 @@ async function logAdminAction(req, { action, targetType = null, targetId = null,
     }
 }
 
-async function listAdminLogs({ cursor } = {}) {
+async function listAdminLogs({ cursor, action } = {}) {
     let query = db.collection("admin_logs").orderBy("createdAt", "desc").limit(LOGS_LIMIT);
     if (cursor) {
         const cursorSnap = await db.collection("admin_logs").doc(cursor).get();
         if (cursorSnap.exists) query = query.startAfter(cursorSnap);
     }
     const snap = await query.get();
-    return snap.docs.map((docSnap) => {
+    const rawLogs = snap.docs.map((docSnap) => {
         const data = docSnap.data();
         return { id: docSnap.id, ...data, createdAt: data.createdAt?.toDate?.().toISOString() ?? null };
     });
+
+    // Filtered in memory (same trade-off as elsewhere in this codebase), so
+    // a narrow action filter can come back sparse or empty on a given page.
+    // hasMore/nextCursor are about the RAW page, not the filtered count —
+    // otherwise pagination would wrongly stop as soon as a filtered page
+    // happened to have fewer than LOGS_LIMIT matches.
+    const logs = action ? rawLogs.filter((log) => log.action === action) : rawLogs;
+    const hasMore = snap.docs.length === LOGS_LIMIT;
+    const nextCursor = hasMore ? rawLogs[rawLogs.length - 1].id : null;
+
+    return { logs, nextCursor };
 }
 
 module.exports = { logAdminAction, listAdminLogs };

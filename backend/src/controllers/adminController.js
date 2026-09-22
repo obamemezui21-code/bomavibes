@@ -205,8 +205,8 @@ async function getActivitySeries(req, res) {
 
 async function getLogs(req, res) {
     try {
-        const logs = await listAdminLogs({ cursor: req.query.cursor });
-        res.json({ logs, nextCursor: logs.length === 200 ? logs[logs.length - 1].id : null });
+        const { logs, nextCursor } = await listAdminLogs({ cursor: req.query.cursor, action: req.query.action });
+        res.json({ logs, nextCursor });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Une erreur interne est survenue" });

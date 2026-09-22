@@ -49,6 +49,7 @@ const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
 const AdminUsersDirectory = lazy(() => import('./pages/AdminUsersDirectory.jsx'))
 const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
 const AdminContent = lazy(() => import('./pages/AdminContent.jsx'))
+const AdminNotifications = lazy(() => import('./pages/AdminNotifications.jsx'))
 
 function App() {
   const [showSplash, setShowSplash] = useState(true)
@@ -168,6 +169,14 @@ function App() {
                 element={
                   <RequireRole check={hasFullAdminAccess}>
                     <AdminLogs />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="notifications"
+                element={
+                  <RequireRole check={hasFullAdminAccess}>
+                    <AdminNotifications />
                   </RequireRole>
                 }
               />

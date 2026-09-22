@@ -9,6 +9,11 @@ const ACTION_LABELS = {
   BAN_USER: 'Utilisateur banni',
   UNBAN_USER: 'Utilisateur réactivé',
   UPDATE_USER_ROLE: 'Rôle modifié',
+  DELETE_USER_ACCOUNT: 'Compte supprimé',
+  CREATE_CONTENT: 'Contenu créé',
+  UPDATE_CONTENT: 'Contenu modifié',
+  DELETE_CONTENT: 'Contenu supprimé',
+  SEND_NOTIFICATION: 'Notification envoyée',
 }
 
 function formatDate(iso) {
@@ -75,7 +80,7 @@ function AdminLogs() {
   async function handleLoadMore() {
     setIsLoadingMore(true)
     try {
-      const data = await fetchAdminLogs(nextCursor)
+      const data = await fetchAdminLogs({ cursor: nextCursor })
       setLogs((prev) => [...prev, ...data.logs])
       setNextCursor(data.nextCursor)
     } catch {
