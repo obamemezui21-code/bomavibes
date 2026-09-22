@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import ReCAPTCHA from 'react-google-recaptcha'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import GoogleIcon from '../components/GoogleIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY
 
 function Signup() {
   const { register, loginWithGoogle, token } = useAuth()
@@ -18,6 +21,8 @@ function Signup() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState(null)
+  const captchaRef = useRef(null)
 
   useEffect(() => {
     if (token) navigate('/discover', { replace: true })
@@ -40,13 +45,28 @@ function Signup() {
       setError("Merci d'accepter les conditions d'utilisation pour continuer")
       return
     }
+    if (RECAPTCHA_SITE_KEY && !captchaToken) {
+      setError('Merci de cocher la case de vérification anti-robot')
+      return
+    }
 
     setIsSubmitting(true)
     try {
+      if (RECAPTCHA_SITE_KEY) {
+        const captchaRes = await fetch('/api/captcha/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: captchaToken }),
+        })
+        if (!captchaRes.ok) throw new Error('Vérification anti-robot invalide, réessayez')
+      }
+
       await register(firstName, email, password)
       navigate('/onboarding', { replace: true })
     } catch (err) {
       setError(err.message)
+      captchaRef.current?.reset()
+      setCaptchaToken(null)
     } finally {
       setIsSubmitting(false)
     }
@@ -181,9 +201,15 @@ function Signup() {
           </span>
         </label>
 
+        {RECAPTCHA_SITE_KEY && (
+          <div className="flex justify-center">
+            <ReCAPTCHA ref={captchaRef} sitekey={RECAPTCHA_SITE_KEY} onChange={setCaptchaToken} onExpired={() => setCaptchaToken(null)} />
+          </div>
+        )}
+
         <motion.button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || (!!RECAPTCHA_SITE_KEY && !captchaToken)}
           whileTap={{ scale: 0.97 }}
           className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35 disabled:cursor-not-allowed disabled:opacity-60"
         >
