@@ -81,6 +81,8 @@ function LikesYou() {
                       e.currentTarget.src = p.photos?.[0] || avatarFor(p)
                     }}
                     alt=""
+                    loading="lazy"
+                    decoding="async"
                     className="h-full w-full scale-110 object-cover blur-xl"
                   />
                   <div className="absolute inset-0 bg-black/35" />

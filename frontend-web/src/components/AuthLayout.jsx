@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import logo from '../assets/bomavibes-logo.jpeg'
-import brandPhoto from '../assets/loginpic.jpg'
+import logo from '../assets/bomavibes-logo.webp'
+import brandPhoto from '../assets/loginpic.webp'
 
 function AuthLayout({ title, subtitle, children, footer }) {
   return (

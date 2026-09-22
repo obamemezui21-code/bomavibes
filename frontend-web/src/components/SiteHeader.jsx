@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext.jsx'
-import logo from '../assets/bomavibes-icon.png'
+import logo from '../assets/bomavibes-icon.webp'
 
 const NAV_LINKS = [
   { label: 'Accueil', href: '/#top' },

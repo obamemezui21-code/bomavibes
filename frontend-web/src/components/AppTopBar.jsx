@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
-import logo from '../assets/bomavibes-icon.png'
+import logo from '../assets/bomavibes-icon.webp'
 
 const iconButtonClass =
   'flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink transition hover:bg-ink/8'

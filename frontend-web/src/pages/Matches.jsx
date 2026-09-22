@@ -114,6 +114,8 @@ function Matches() {
                       src={conversation.profile.photoMedium}
                       onError={fallbackToFullPhoto(conversation.profile.photoFull)}
                       alt={conversation.profile.firstName}
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />

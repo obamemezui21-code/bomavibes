@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { Check } from 'lucide-react'
-import badgeVip from '../assets/hbdo.jpeg'
-import badgeDiamant from '../assets/mensuel.jpeg'
-import badgeJade from '../assets/annuel.jpeg'
+import badgeVip from '../assets/hbdo.webp'
+import badgeDiamant from '../assets/mensuel.webp'
+import badgeJade from '../assets/annuel.webp'
 
 export const TIERS = [
   {
