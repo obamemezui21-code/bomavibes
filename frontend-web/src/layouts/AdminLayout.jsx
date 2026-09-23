@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { Bell, Calendar, ClipboardList, FileText, HelpCircle, Image as ImageIcon, Images, LayoutDashboard, Music, Newspaper, Settings as SettingsIcon, ShieldAlert, Users, UsersRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
-import { ROLES, hasContentAccess, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
+import { ROLES, hasAdminAccess, hasContentAccess, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
 
 const ROLE_LABELS = {
   [ROLES.SUPER_ADMIN]: 'Super Admin',
@@ -12,7 +12,7 @@ const ROLE_LABELS = {
 
 function buildTabs(role) {
   const tabs = []
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true })
+  if (hasAdminAccess(role)) tabs.push({ to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/directory', label: 'Utilisateurs', icon: UsersRound })
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music })

@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
 import { Heart, MessageSquareWarning, Newspaper, Users } from 'lucide-react'
 import { fetchAdminActivity, fetchAdminStats } from '../firebase/admin.js'
-import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { hasContentAccess, hasFullAdminAccess, hasModerationAccess } from '../lib/roles.js'
 import Sparkline from '../components/Sparkline.jsx'
 
 const CARDS = [
@@ -38,16 +35,17 @@ const CARDS = [
   { key: 'pendingReports', label: 'Signalements en attente', icon: MessageSquareWarning, color: 'from-amber-500 to-orange-500' },
 ]
 
+// Read-only, so every elevated role that can enter /admin (Admin, Super
+// Admin, Moderator, Editor) sees it — RequireAdmin already gated entry
+// with the same check (hasAdminAccess), so there's no narrower case to
+// redirect away here, unlike the other admin sections.
 function AdminOverview() {
-  const { profile } = useAuth()
   const { showToast } = useToast()
   const [stats, setStats] = useState(null)
   const [activity, setActivity] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
-  const canViewDashboard = hasFullAdminAccess(profile?.role)
 
   useEffect(() => {
-    if (!canViewDashboard) return undefined
     let cancelled = false
     Promise.all([fetchAdminStats(), fetchAdminActivity()])
       .then(([statsData, activityData]) => {
@@ -64,16 +62,7 @@ function AdminOverview() {
     return () => {
       cancelled = true
     }
-  }, [canViewDashboard, showToast])
-
-  // The dashboard is Admin/Super Admin only — a Moderator's whole scope is
-  // Signalements and an Editor's is the content sections, so send each
-  // straight to their own landing spot instead of a 403 wall.
-  if (!canViewDashboard) {
-    if (hasModerationAccess(profile?.role)) return <Navigate to="/admin/reports" replace />
-    if (hasContentAccess(profile?.role)) return <Navigate to="/admin/content/pages" replace />
-    return <Navigate to="/discover" replace />
-  }
+  }, [showToast])
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 desktop:py-8">

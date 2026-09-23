@@ -18,13 +18,15 @@ const ROLES = Object.freeze({
 
 // Can enter the /admin space at all — the entry gate. Each section inside
 // then narrows further with the capability checks below, so a Moderator or
-// Editor only sees (and can only call the API for) their own scope.
+// Editor only sees (and can only call the API for) their own scope. Also
+// doubles as "can view the read-only Dashboard" — every elevated role gets
+// that as a baseline, see requireDashboardMiddleware.js.
 function hasAdminAccess(role) {
     return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN || role === ROLES.MODERATOR || role === ROLES.EDITOR;
 }
 
-// Full admin surface: dashboard/stats, user management, everything a
-// Moderator/Editor doesn't get.
+// Full admin surface: user management, settings, everything a
+// Moderator/Editor doesn't get. NOT the Dashboard — that's hasAdminAccess.
 function hasFullAdminAccess(role) {
     return role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN;
 }

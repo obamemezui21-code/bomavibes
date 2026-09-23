@@ -1,6 +1,7 @@
 const express = require("express");
 const requireFirebaseAuth = require("../middleware/firebaseAuthMiddleware");
 const requireAdmin = require("../middleware/requireAdminMiddleware");
+const requireDashboard = require("../middleware/requireDashboardMiddleware");
 const requireModeration = require("../middleware/requireModerationMiddleware");
 const requireSuperAdmin = require("../middleware/requireSuperAdminMiddleware");
 const { getStats, listReports, updateReportStatus, deletePost, getActivitySeries, getLogs } = require("../controllers/adminController");
@@ -8,8 +9,11 @@ const { listUsers, updateUserRole, setUserBanned } = require("../controllers/adm
 
 const router = express.Router();
 
-router.get("/stats", requireFirebaseAuth, requireAdmin, getStats);
-router.get("/activity", requireFirebaseAuth, requireAdmin, getActivitySeries);
+// The Dashboard is read-only, so every elevated role (including Moderator
+// and Editor) gets it — unlike the Journal d'activité below, which stays
+// Admin/Super Admin only.
+router.get("/stats", requireFirebaseAuth, requireDashboard, getStats);
+router.get("/activity", requireFirebaseAuth, requireDashboard, getActivitySeries);
 router.get("/logs", requireFirebaseAuth, requireAdmin, getLogs);
 
 // Reports, post removal, and banning are the Moderator's whole job — ADMIN
