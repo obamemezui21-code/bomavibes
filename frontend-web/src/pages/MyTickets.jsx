@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, MapPin, Ticket } from 'lucide-react'
+import { ArrowLeft, Download, MapPin, Ticket } from 'lucide-react'
 import { cancelEventTicket, fetchMyTickets } from '../firebase/events.js'
 import { useToast } from '../context/ToastContext.jsx'
+import { downloadTicketPdf } from '../lib/ticketPdf.js'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 
 function formatEventDate(dateStr) {
@@ -18,6 +19,7 @@ function MyTickets() {
   const [isLoading, setIsLoading] = useState(true)
   const [cancellingTicket, setCancellingTicket] = useState(null)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [downloadingId, setDownloadingId] = useState(null)
 
   const load = useCallback(() => {
     setIsLoading(true)
@@ -30,6 +32,17 @@ function MyTickets() {
   useEffect(() => {
     load()
   }, [load])
+
+  async function handleDownload(ticket) {
+    setDownloadingId(ticket.id)
+    try {
+      await downloadTicketPdf(ticket)
+    } catch {
+      showToast('Impossible de générer le PDF.', 'error')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
 
   async function handleCancel() {
     if (!cancellingTicket) return
@@ -88,19 +101,33 @@ function MyTickets() {
                   )}
                 </>
               )}
+              {ticket.attendeeName && (
+                <p className="mt-2 text-xs text-ink-soft/60">Participant : {ticket.attendeeName}</p>
+              )}
               <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-ink/[0.04] px-3 py-2">
                 <span className="text-[11px] font-semibold uppercase text-ink-soft/50">Code billet</span>
                 <span className="font-mono text-sm font-bold tracking-wider text-ink">{ticket.code}</span>
               </div>
-              {ticket.event && (
+              <div className="mt-3 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setCancellingTicket(ticket)}
-                  className="mt-3 w-full rounded-full bg-ink/6 py-2 text-xs font-semibold text-coral-600 transition hover:bg-coral-500/10"
+                  onClick={() => handleDownload(ticket)}
+                  disabled={downloadingId === ticket.id}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-xs font-semibold text-white shadow-md shadow-violet-500/25 transition disabled:opacity-50"
                 >
-                  Annuler ma réservation
+                  <Download size={13} strokeWidth={2.25} />
+                  {downloadingId === ticket.id ? 'Génération…' : 'Télécharger (PDF)'}
                 </button>
-              )}
+                {ticket.event && (
+                  <button
+                    type="button"
+                    onClick={() => setCancellingTicket(ticket)}
+                    className="rounded-full bg-ink/6 px-4 py-2 text-xs font-semibold text-coral-600 transition hover:bg-coral-500/10"
+                  >
+                    Annuler
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}

@@ -24,8 +24,8 @@ async function authedFetch(path, options = {}) {
   return res.json()
 }
 
-export function reserveEventTicket(eventId) {
-  return authedFetch(`/api/events/${eventId}/tickets`, { method: 'POST' })
+export function reserveEventTicket(eventId, attendee) {
+  return authedFetch(`/api/events/${eventId}/tickets`, { method: 'POST', body: JSON.stringify(attendee) })
 }
 
 export function cancelEventTicket(eventId) {

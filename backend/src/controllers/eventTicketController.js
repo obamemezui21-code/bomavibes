@@ -18,6 +18,23 @@ function generateTicketCode() {
     return crypto.randomBytes(5).toString("hex").toUpperCase();
 }
 
+// The reservation form's fields — kept simple (name/email/phone), attached
+// to the ticket so an organizer checking attendees at the door (or the
+// downloaded PDF) shows who's actually coming, not just the account uid.
+function readAttendeeInfo(body) {
+    const attendeeName = typeof body.attendeeName === "string" ? body.attendeeName.trim() : "";
+    if (!attendeeName) throw fail(400, "Le nom est requis");
+    if (attendeeName.length > 100) throw fail(400, "Nom trop long");
+
+    const attendeeEmail = typeof body.attendeeEmail === "string" ? body.attendeeEmail.trim() : "";
+    if (attendeeEmail.length > 200) throw fail(400, "Email trop long");
+
+    const attendeePhone = typeof body.attendeePhone === "string" ? body.attendeePhone.trim() : "";
+    if (attendeePhone.length > 40) throw fail(400, "Téléphone trop long");
+
+    return { attendeeName, attendeeEmail: attendeeEmail || null, attendeePhone: attendeePhone || null };
+}
+
 async function reserveTicket(req, res) {
     const { eventId } = req.params;
     const uid = req.firebaseUser.uid;
@@ -25,6 +42,8 @@ async function reserveTicket(req, res) {
     const ticketRef = db.collection("tickets").doc(`${eventId}_${uid}`);
 
     try {
+        const attendee = readAttendeeInfo(req.body || {});
+
         const code = await db.runTransaction(async (tx) => {
             const [eventSnap, ticketSnap] = await Promise.all([tx.get(eventRef), tx.get(ticketRef)]);
 
@@ -46,6 +65,7 @@ async function reserveTicket(req, res) {
                 userId: uid,
                 code: ticketCode,
                 status: "confirmed",
+                ...attendee,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
             tx.update(eventRef, { ticketsReserved: admin.firestore.FieldValue.increment(1) });
@@ -108,6 +128,9 @@ async function listMyTickets(req, res) {
                 id: t.id,
                 code: t.code,
                 status: t.status,
+                attendeeName: t.attendeeName ?? null,
+                attendeeEmail: t.attendeeEmail ?? null,
+                attendeePhone: t.attendeePhone ?? null,
                 createdAt: t.createdAt?.toDate?.().toISOString() ?? null,
                 event: event
                     ? {

@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Briefcase, Heart, MapPin, Music2, Search, Ticket } from 'lucide-react'
 import { cancelEventTicket, fetchMyTickets, fetchPublishedEvents, reserveEventTicket } from '../firebase/events.js'
+import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { inputClass, labelClass } from '../lib/formStyles.js'
+import Modal from '../components/ui/Modal.jsx'
+import Button from '../components/ui/Button.jsx'
 
 const CATEGORY_CARDS = [
   { icon: Heart, title: 'Salon des amoureux', subtitle: 'Couples & amour', tint: 'bg-pink-500/15 text-pink-600' },
@@ -31,6 +35,7 @@ function formatEventDayMonth(dateStr) {
 }
 
 function EventsHub() {
+  const { user, profile } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
@@ -39,6 +44,9 @@ function EventsHub() {
   const [isLoading, setIsLoading] = useState(true)
   const [myEventIds, setMyEventIds] = useState(new Set())
   const [pendingId, setPendingId] = useState(null)
+  const [reservingEvent, setReservingEvent] = useState(null)
+  const [form, setForm] = useState({ name: '', email: '', phone: '' })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const load = useCallback(() => {
     setIsLoading(true)
@@ -64,26 +72,45 @@ function EventsHub() {
     })
   }, [events, search, activeFilter])
 
-  async function handleToggleReservation(ev) {
+  function openReservationForm(ev) {
+    setForm({ name: profile?.firstName || user?.firstName || '', email: user?.email || '', phone: '' })
+    setReservingEvent(ev)
+  }
+
+  async function handleCancel(ev) {
     setPendingId(ev.id)
     try {
-      if (myEventIds.has(ev.id)) {
-        await cancelEventTicket(ev.id)
-        setMyEventIds((prev) => {
-          const next = new Set(prev)
-          next.delete(ev.id)
-          return next
-        })
-        showToast('Réservation annulée.', 'success')
-      } else {
-        await reserveEventTicket(ev.id)
-        setMyEventIds((prev) => new Set(prev).add(ev.id))
-        showToast('Place réservée — retrouve ton billet dans "Mes billets".', 'success')
-      }
+      await cancelEventTicket(ev.id)
+      setMyEventIds((prev) => {
+        const next = new Set(prev)
+        next.delete(ev.id)
+        return next
+      })
+      showToast('Réservation annulée.', 'success')
     } catch (err) {
-      showToast(err.message || 'Impossible de mettre à jour ta réservation.', 'error')
+      showToast(err.message || 'Impossible d’annuler ta réservation.', 'error')
     } finally {
       setPendingId(null)
+    }
+  }
+
+  async function handleSubmitReservation(e) {
+    e.preventDefault()
+    if (!reservingEvent || !form.name.trim()) return
+    setIsSubmitting(true)
+    try {
+      await reserveEventTicket(reservingEvent.id, {
+        attendeeName: form.name.trim(),
+        attendeeEmail: form.email.trim(),
+        attendeePhone: form.phone.trim(),
+      })
+      setMyEventIds((prev) => new Set(prev).add(reservingEvent.id))
+      showToast('Place réservée — retrouve ton billet dans "Mes billets".', 'success')
+      setReservingEvent(null)
+    } catch (err) {
+      showToast(err.message || 'Impossible de réserver cette place.', 'error')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -193,7 +220,7 @@ function EventsHub() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleToggleReservation(ev)}
+                    onClick={() => (isReserved ? handleCancel(ev) : openReservationForm(ev))}
                     disabled={pendingId === ev.id || isFull}
                     className={`mt-3 w-full rounded-full py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                       isReserved
@@ -214,6 +241,60 @@ function EventsHub() {
             )
           })}
         </div>
+      )}
+
+      {reservingEvent && (
+        <Modal onClose={() => setReservingEvent(null)} className="max-w-sm text-left">
+          <h2 className="mb-1 font-display text-lg font-semibold text-ink">Réserver ma place</h2>
+          <p className="mb-4 text-sm text-ink-soft/60">{reservingEvent.title}</p>
+          <form onSubmit={handleSubmitReservation} className="space-y-3">
+            <div>
+              <label className={labelClass} htmlFor="attendeeName">
+                Nom complet *
+              </label>
+              <input
+                id="attendeeName"
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                required
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="attendeeEmail">
+                Email
+              </label>
+              <input
+                id="attendeeEmail"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="attendeePhone">
+                Téléphone
+              </label>
+              <input
+                id="attendeePhone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+                className={inputClass}
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="secondary" className="flex-1" onClick={() => setReservingEvent(null)}>
+                Annuler
+              </Button>
+              <Button type="submit" className="flex-1" disabled={isSubmitting || !form.name.trim()}>
+                {isSubmitting ? 'Réservation…' : 'Confirmer'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   )
