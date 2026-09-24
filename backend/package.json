@@ -9,7 +9,8 @@
     "dev": "nodemon src/server.js",
     "broadcast": "node scripts/broadcastAnnouncement.js",
     "announce": "node scripts/announceFeature.js",
-    "grant-admin": "node scripts/setAdmin.js"
+    "grant-admin": "node scripts/setAdmin.js",
+    "notify-user": "node scripts/notifyUser.js"
   },
   "keywords": [],
   "author": "",
