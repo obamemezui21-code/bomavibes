@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import ReCAPTCHA from 'react-google-recaptcha'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import GoogleIcon from '../components/GoogleIcon.jsx'
+import ImageGridCaptcha from '../components/ImageGridCaptcha.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_V2_SITE_KEY
+// Anti-bot: no external service, no keys. `website` is a hidden field real
+// visitors never see or fill — form-filling bots do, since they fill every
+// input. `formLoadedAt` catches the other common bot pattern, submitting
+// within a second of the page loading, faster than a human can type.
+const MIN_SUBMIT_DELAY_MS = 1500
 
 function Signup() {
   const { register, loginWithGoogle, token } = useAuth()
@@ -17,11 +21,13 @@ function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [website, setWebsite] = useState('')
   const [error, setError] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [captchaToken, setCaptchaToken] = useState(null)
+  const [captcha, setCaptcha] = useState({ token: '', indices: [] })
+  const formLoadedAt = useRef(Date.now())
   const captchaRef = useRef(null)
 
   useEffect(() => {
@@ -45,28 +51,34 @@ function Signup() {
       setError("Merci d'accepter les conditions d'utilisation pour continuer")
       return
     }
-    if (RECAPTCHA_SITE_KEY && !captchaToken) {
-      setError('Merci de cocher la case de vérification anti-robot')
+    if (website.trim() || Date.now() - formLoadedAt.current < MIN_SUBMIT_DELAY_MS) {
+      // Bot caught by the honeypot or the time trap — same generic error as
+      // a real failure, so nothing tells it which check it tripped.
+      setError('Une erreur est survenue, réessayez')
+      return
+    }
+    if (captcha.indices.length === 0) {
+      setError('Merci de sélectionner les images demandées')
       return
     }
 
     setIsSubmitting(true)
     try {
-      if (RECAPTCHA_SITE_KEY) {
-        const captchaRes = await fetch('/api/captcha/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: captchaToken }),
-        })
-        if (!captchaRes.ok) throw new Error('Vérification anti-robot invalide, réessayez')
+      const captchaRes = await fetch('/api/captcha/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: captcha.token, indices: captcha.indices }),
+      })
+      if (!captchaRes.ok) {
+        const body = await captchaRes.json().catch(() => null)
+        throw new Error(body?.message || 'Vérification anti-robot invalide, réessayez')
       }
 
       await register(firstName, email, password)
       navigate('/onboarding', { replace: true })
     } catch (err) {
       setError(err.message)
-      captchaRef.current?.reset()
-      setCaptchaToken(null)
+      captchaRef.current?.refresh()
     } finally {
       setIsSubmitting(false)
     }
@@ -201,15 +213,22 @@ function Signup() {
           </span>
         </label>
 
-        {RECAPTCHA_SITE_KEY && (
-          <div className="flex justify-center">
-            <ReCAPTCHA ref={captchaRef} sitekey={RECAPTCHA_SITE_KEY} onChange={setCaptchaToken} onExpired={() => setCaptchaToken(null)} />
-          </div>
-        )}
+        <input
+          type="text"
+          name="website"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          className="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+        />
+
+        <ImageGridCaptcha ref={captchaRef} onChange={setCaptcha} />
 
         <motion.button
           type="submit"
-          disabled={isSubmitting || (!!RECAPTCHA_SITE_KEY && !captchaToken)}
+          disabled={isSubmitting}
           whileTap={{ scale: 0.97 }}
           className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35 disabled:cursor-not-allowed disabled:opacity-60"
         >
