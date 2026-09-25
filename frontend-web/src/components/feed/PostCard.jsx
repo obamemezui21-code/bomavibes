@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Flag, Heart, MessageCircle, MoreVertical, Pencil, Send, Sparkles, Trash2 } from 'lucide-react'
+import { BadgeCheck, Flag, Heart, MessageCircle, MoreVertical, Pencil, Send, Sparkles, Trash2 } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
 import { useToast } from '../../context/ToastContext.jsx'
@@ -116,9 +116,10 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
               e.stopPropagation()
               onAuthorClick?.()
             }}
-            className="truncate text-left text-sm font-semibold text-ink hover:underline"
+            className="flex items-center gap-1 truncate text-left text-sm font-semibold text-ink hover:underline"
           >
             {author?.firstName || 'Quelqu’un'}
+            {author?.isOfficial && <BadgeCheck size={14} strokeWidth={2.5} className="shrink-0 text-violet-500" />}
           </button>
           <p className="truncate text-xs text-ink-soft/50">
             {formatRelativeTime(post.createdAt)}

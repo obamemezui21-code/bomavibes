@@ -1,6 +1,7 @@
 const admin = require("../config/firebaseAdmin");
 const { AUDIENCES, collectAudienceTokens, sendBroadcastPush } = require("../services/notificationBroadcastService");
 const { logAdminAction } = require("../services/adminLogService");
+const { postAnnouncementToFeed } = require("../services/systemFeedPostService");
 
 const db = admin.firestore();
 
@@ -20,14 +21,25 @@ async function sendBroadcast(req, res) {
             ? await sendBroadcastPush(tokens, { title, body: message, link: ctaLink || null })
             : { successCount: 0, failureCount: 0 };
 
+        let announcementId = null;
         if (publishAnnouncement) {
-            await db.collection("announcements").add({
+            const announcementRef = await db.collection("announcements").add({
                 title,
                 description: message,
                 ctaLabel: ctaLabel || null,
                 ctaLink: ctaLink || null,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
             });
+            announcementId = announcementRef.id;
+
+            // Fire-and-forget: never let the Feed card generation fail the
+            // notification send itself. Links the post back onto the
+            // announcement doc once it exists, so editing/deleting the
+            // announcement later (see announcementController.js) can also
+            // update/remove this post.
+            postAnnouncementToFeed({ title, message })
+                .then((feedPostId) => announcementRef.update({ feedPostId }))
+                .catch((err) => console.error("Feed announcement for broadcast failed:", err));
         }
 
         await logAdminAction(req, {
@@ -37,6 +49,7 @@ async function sendBroadcast(req, res) {
                 message,
                 audience,
                 publishAnnouncement: !!publishAnnouncement,
+                announcementId,
                 pushSent: pushResult.successCount,
                 pushFailed: pushResult.failureCount,
             },
