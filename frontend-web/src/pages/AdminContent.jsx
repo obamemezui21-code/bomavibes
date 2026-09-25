@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { Calendar, FileText, HelpCircle, Image as ImageIcon, MapPin, Newspaper, Pencil, Plus, Trash2, Upload } from 'lucide-react'
+import { Calendar, FileText, HelpCircle, Image as ImageIcon, LocateFixed, MapPin, Newspaper, Pencil, Plus, Trash2, Upload } from 'lucide-react'
 import {
   createAdminContentItem,
   deleteAdminContentItem,
@@ -210,6 +210,7 @@ function AdminContent() {
   const [deletingItem, setDeletingItem] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [uploadingField, setUploadingField] = useState(null)
+  const [locatingField, setLocatingField] = useState(null)
   const imageInputRef = useRef(null)
 
   const load = useCallback(() => {
@@ -301,6 +302,37 @@ function AdminContent() {
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  // Scouting a place in person (e.g. adding a Coin Chic while standing at
+  // the venue) beats clicking a precise pixel on a small map — the phone's
+  // own GPS is faster and more accurate.
+  function handleUseCurrentLocation(field) {
+    if (!navigator.geolocation) {
+      showToast("Ton navigateur ne permet pas la géolocalisation.", 'error')
+      return
+    }
+    setLocatingField(field.key)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setForm((prev) => ({
+          ...prev,
+          [field.key]: position.coords.latitude,
+          [field.lngKey]: position.coords.longitude,
+        }))
+        setLocatingField(null)
+      },
+      (err) => {
+        showToast(
+          err.code === err.PERMISSION_DENIED
+            ? 'Autorise la géolocalisation pour utiliser ta position.'
+            : 'Impossible de récupérer ta position.',
+          'error',
+        )
+        setLocatingField(null)
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    )
   }
 
   return (
@@ -423,6 +455,15 @@ function AdminContent() {
                   </div>
                 ) : field.kind === 'geopoint' ? (
                   <>
+                    <button
+                      type="button"
+                      onClick={() => handleUseCurrentLocation(field)}
+                      disabled={locatingField === field.key}
+                      className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-violet-500/10 py-2 text-xs font-semibold text-violet-600 transition hover:bg-violet-500/15 disabled:opacity-50"
+                    >
+                      <LocateFixed size={14} strokeWidth={2.25} />
+                      {locatingField === field.key ? 'Localisation…' : 'Utiliser ma position actuelle'}
+                    </button>
                     <LeafletMap
                       height="220px"
                       zoom={form[field.key] != null ? 14 : 12}
@@ -433,7 +474,7 @@ function AdminContent() {
                     <p className="mt-1 text-xs text-ink-soft/50">
                       {form[field.key] != null
                         ? `Repère placé — ${form[field.key].toFixed(5)}, ${form[field.lngKey].toFixed(5)} (cliquez ou faites glisser pour ajuster)`
-                        : 'Cliquez sur la carte pour placer un repère.'}
+                        : 'Utilise ta position ou clique sur la carte pour placer un repère.'}
                     </p>
                   </>
                 ) : field.kind === 'select' ? (
