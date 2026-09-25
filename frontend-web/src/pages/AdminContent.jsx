@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
-import { Calendar, FileText, HelpCircle, Image as ImageIcon, Newspaper, Pencil, Plus, Trash2, Upload } from 'lucide-react'
+import { Calendar, FileText, HelpCircle, Image as ImageIcon, MapPin, Newspaper, Pencil, Plus, Trash2, Upload } from 'lucide-react'
 import {
   createAdminContentItem,
   deleteAdminContentItem,
@@ -13,6 +13,7 @@ import { inputClass, labelClass } from '../lib/formStyles.js'
 import Modal from '../components/ui/Modal.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
+import LeafletMap from '../components/map/LeafletMap.jsx'
 
 // Mirrors backend/src/services/contentService.js's CONTENT_TYPES — the
 // backend is the source of truth for validation, this only drives the form.
@@ -93,6 +94,24 @@ const CONTENT_TYPE_CONFIG = {
       { key: 'image', label: 'Image', kind: 'image' },
       { key: 'price', label: 'Prix affiché (ex : Gratuit, 2 000 FCFA)', kind: 'text' },
       { key: 'capacity', label: 'Capacité (0 = illimitée)', kind: 'number' },
+      { key: 'lat', label: 'Repère sur la carte (optionnel)', kind: 'geopoint', lngKey: 'lng' },
+    ],
+  },
+  venues: {
+    label: 'Coins Chics',
+    singular: 'un lieu',
+    icon: MapPin,
+    hasSlug: false,
+    fields: [
+      { key: 'name', label: 'Nom du lieu', kind: 'text', required: true },
+      { key: 'category', label: 'Catégorie', kind: 'select', options: ['Restaurant', 'Bar', 'Lounge'], required: true },
+      { key: 'description', label: 'Description', kind: 'textarea', rows: 4 },
+      { key: 'address', label: 'Adresse', kind: 'text' },
+      { key: 'city', label: 'Ville', kind: 'text' },
+      { key: 'lat', label: 'Position sur la carte', kind: 'geopoint', lngKey: 'lng', required: true },
+      { key: 'image', label: 'Photo', kind: 'image' },
+      { key: 'phone', label: 'Téléphone', kind: 'text' },
+      { key: 'instagramUrl', label: 'Lien Instagram', kind: 'text' },
     ],
   },
 }
@@ -115,7 +134,12 @@ const STATUS_LABELS = { draft: 'Brouillon', published: 'Publié', archived: 'Arc
 function emptyForm(config) {
   const form = { status: 'draft' }
   for (const field of config.fields) {
-    form[field.key] = field.kind === 'number' ? 0 : ''
+    if (field.kind === 'geopoint') {
+      form[field.key] = null
+      form[field.lngKey] = null
+    } else {
+      form[field.key] = field.kind === 'number' ? 0 : ''
+    }
   }
   return form
 }
@@ -125,10 +149,20 @@ function toFormValues(config, item) {
   for (const field of config.fields) {
     const value = item[field.key]
     if (field.kind === 'tags') form[field.key] = Array.isArray(value) ? value.join(', ') : ''
-    else if (field.kind === 'number') form[field.key] = value ?? 0
+    else if (field.kind === 'geopoint') {
+      form[field.key] = item[field.key] ?? null
+      form[field.lngKey] = item[field.lngKey] ?? null
+    } else if (field.kind === 'number') form[field.key] = value ?? 0
     else form[field.key] = value ?? ''
   }
   return form
+}
+
+// A `geopoint` field is required if its own spec says so, checked before
+// this ever reaches the backend — there's no native HTML `required`
+// attribute for a map widget the way there is for a text input.
+function missingRequiredGeopoint(config, form) {
+  return config.fields.find((f) => f.kind === 'geopoint' && f.required && form[f.key] == null)
 }
 
 function toPayload(config, form) {
@@ -140,6 +174,14 @@ function toPayload(config, form) {
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean)
+    } else if (field.kind === 'geopoint') {
+      // Omitted entirely (both keys) when no pin was dropped — an optional
+      // geopoint (events) then simply has no lat/lng on the doc, instead of
+      // silently writing 0,0 ("Null Island").
+      if (form[field.key] != null) {
+        payload[field.key] = form[field.key]
+        payload[field.lngKey] = form[field.lngKey]
+      }
     } else if (field.kind === 'number') {
       payload[field.key] = Number(raw) || 0
     } else {
@@ -199,6 +241,11 @@ function AdminContent() {
 
   async function handleSave(e) {
     e.preventDefault()
+    const missing = missingRequiredGeopoint(config, form)
+    if (missing) {
+      showToast('Placez un repère sur la carte.', 'error')
+      return
+    }
     setIsSaving(true)
     try {
       const payload = toPayload(config, form)
@@ -374,6 +421,21 @@ function AdminContent() {
                       </button>
                     </div>
                   </div>
+                ) : field.kind === 'geopoint' ? (
+                  <>
+                    <LeafletMap
+                      height="220px"
+                      zoom={form[field.key] != null ? 14 : 12}
+                      center={form[field.key] != null ? [form[field.key], form[field.lngKey]] : undefined}
+                      draggableMarker={form[field.key] != null ? { lat: form[field.key], lng: form[field.lngKey] } : null}
+                      onMapClick={({ lat, lng }) => setForm((prev) => ({ ...prev, [field.key]: lat, [field.lngKey]: lng }))}
+                    />
+                    <p className="mt-1 text-xs text-ink-soft/50">
+                      {form[field.key] != null
+                        ? `Repère placé — ${form[field.key].toFixed(5)}, ${form[field.lngKey].toFixed(5)} (cliquez ou faites glisser pour ajuster)`
+                        : 'Cliquez sur la carte pour placer un repère.'}
+                    </p>
+                  </>
                 ) : field.kind === 'select' ? (
                   <select
                     id={field.key}

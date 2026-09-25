@@ -4,8 +4,18 @@ import { Check, Search, Send } from 'lucide-react'
 import { useConversations } from '../../context/ConversationsContext.jsx'
 import { fallbackToFullPhoto } from '../../lib/photoVariants.js'
 
-function SendToModal({ post, onClose }) {
-  const { conversations, sendPostMessage } = useConversations()
+// Generic "pick a match to send to" picker — originally Feed's "Envoyer en
+// message" only, generalized so other features (e.g. venue invites) can
+// reuse the same match search/pick/sent-state UI via the `onSend` callback
+// instead of duplicating it.
+function SendToModal({
+  title = 'Envoyer à',
+  sendLabel = 'Envoyer',
+  emptyText = 'Faites un match pour pouvoir partager ici.',
+  onSend,
+  onClose,
+}) {
+  const { conversations } = useConversations()
   const [query, setQuery] = useState('')
   const [sentIds, setSentIds] = useState(new Set())
   const [sendingId, setSendingId] = useState(null)
@@ -18,7 +28,7 @@ function SendToModal({ post, onClose }) {
     if (sendingId || sentIds.has(matchId)) return
     setSendingId(matchId)
     try {
-      await sendPostMessage(matchId, post)
+      await onSend(matchId)
       setSentIds((prev) => new Set(prev).add(matchId))
     } finally {
       setSendingId(null)
@@ -43,7 +53,7 @@ function SendToModal({ post, onClose }) {
       >
         <div className="flex items-center gap-2">
           <Send size={18} strokeWidth={2.25} className="text-violet-600" />
-          <h2 className="font-display text-lg font-semibold text-ink">Envoyer à</h2>
+          <h2 className="font-display text-lg font-semibold text-ink">{title}</h2>
         </div>
 
         {conversations.length > 0 && (
@@ -61,9 +71,7 @@ function SendToModal({ post, onClose }) {
 
         <div className="mt-3 max-h-72 space-y-1 overflow-y-auto">
           {conversations.length === 0 ? (
-            <p className="py-6 text-center text-sm text-ink-soft/60">
-              Faites un match pour pouvoir partager ici.
-            </p>
+            <p className="py-6 text-center text-sm text-ink-soft/60">{emptyText}</p>
           ) : filtered.length === 0 ? (
             <p className="py-6 text-center text-sm text-ink-soft/60">Aucun résultat.</p>
           ) : (
@@ -101,7 +109,7 @@ function SendToModal({ post, onClose }) {
                     ) : sendingId === c.id ? (
                       '…'
                     ) : (
-                      'Envoyer'
+                      sendLabel
                     )}
                   </span>
                 </button>

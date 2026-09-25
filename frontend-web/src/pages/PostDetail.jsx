@@ -26,14 +26,14 @@ import CommentComposer from '../components/feed/CommentComposer.jsx'
 import EditPostModal from '../components/feed/EditPostModal.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
-import SendToModal from '../components/feed/SendToModal.jsx'
+import SendToModal from '../components/shared/SendToModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 
 function PostDetail() {
   const { postId } = useParams()
   const navigate = useNavigate()
   const { user, publicProfile } = useAuth()
-  const { conversations } = useConversations()
+  const { conversations, sendPostMessage } = useConversations()
   const { deletePost, updatePost, toggleLikePost, likedPostIds, authorsById: feedAuthorsById } = useFeed()
   const { showToast } = useToast()
 
@@ -345,13 +345,15 @@ function PostDetail() {
 
       {isSharing && (
         <SendToModal
-          post={{
-            postId,
-            authorId: post.authorId,
-            authorName: author?.firstName || '',
-            text: (post.text || '').slice(0, 300),
-            photoUrl: post.photoThumbUrl || post.photoUrl || null,
-          }}
+          onSend={(matchId) =>
+            sendPostMessage(matchId, {
+              postId,
+              authorId: post.authorId,
+              authorName: author?.firstName || '',
+              text: (post.text || '').slice(0, 300),
+              photoUrl: post.photoThumbUrl || post.photoUrl || null,
+            })
+          }
           onClose={() => setIsSharing(false)}
         />
       )}

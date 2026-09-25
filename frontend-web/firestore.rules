@@ -147,6 +147,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /venues/{venueId} {
+      allow read: if resource.data.status == 'published' || isContentEditor();
+      allow write: if false;
+    }
+
     match /tickets/{ticketId} {
       // A user can read their own reservations directly (e.g. a live "Mes
       // billets" listener) but never write one — reserving/cancelling has to

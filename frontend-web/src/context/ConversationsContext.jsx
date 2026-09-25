@@ -435,6 +435,35 @@ export function ConversationsProvider({ children }) {
     }
   }
 
+  async function sendVenueInviteMessage(matchId, venue) {
+    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
+      senderId: uid,
+      text: '',
+      type: 'venue-invite',
+      venue: {
+        id: venue.id,
+        name: venue.name,
+        image: venue.image || null,
+        address: venue.address || null,
+        city: venue.city || null,
+        category: venue.category || null,
+      },
+      createdAt: serverTimestamp(),
+    })
+    const match = matches.find((m) => m.id === matchId)
+    const otherUid = match?.users.find((u) => u !== uid)
+    const preview = messagePreviewText({ type: 'venue-invite' })
+    await updateDoc(doc(db, 'matches', matchId), {
+      lastMessage: preview,
+      lastMessageAt: serverTimestamp(),
+      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
+    })
+
+    if (otherUid) {
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+    }
+  }
+
   async function editMessage(matchId, messageId, text) {
     await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
       text,
@@ -479,6 +508,7 @@ export function ConversationsProvider({ children }) {
         sendAttachmentMessage,
         sendStickerMessage,
         sendPostMessage,
+        sendVenueInviteMessage,
         editMessage,
         deleteMessage,
         toggleMessageReaction,

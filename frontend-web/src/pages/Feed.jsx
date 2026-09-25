@@ -18,7 +18,7 @@ import PostComposer from '../components/feed/PostComposer.jsx'
 import StoryComposer from '../components/feed/StoryComposer.jsx'
 import StoryViewer from '../components/feed/StoryViewer.jsx'
 import EditPostModal from '../components/feed/EditPostModal.jsx'
-import SendToModal from '../components/feed/SendToModal.jsx'
+import SendToModal from '../components/shared/SendToModal.jsx'
 import FeedEmptyState from '../components/feed/FeedEmptyState.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
@@ -42,7 +42,7 @@ function Feed() {
     refresh,
   } = useFeed()
   const { user, publicProfile } = useAuth()
-  const { conversations } = useConversations()
+  const { conversations, sendPostMessage } = useConversations()
   const { showToast } = useToast()
   const navigate = useNavigate()
 
@@ -462,7 +462,9 @@ function Feed() {
         />
       )}
 
-      {shareTarget && <SendToModal post={shareTarget} onClose={() => setShareTarget(null)} />}
+      {shareTarget && (
+        <SendToModal onSend={(matchId) => sendPostMessage(matchId, shareTarget)} onClose={() => setShareTarget(null)} />
+      )}
 
       <AnimatePresence>
         {deleteTarget && (

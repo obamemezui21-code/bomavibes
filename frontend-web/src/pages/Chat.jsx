@@ -14,6 +14,7 @@ import {
   Flag,
   Hand,
   Info,
+  MapPin,
   Mic,
   MessageCircle,
   Paperclip,
@@ -1097,7 +1098,8 @@ function Chat() {
                   const showDaySeparator = !isSameDay(m.date, active.messages[i - 1]?.date)
                   const isSticker = m.type === 'sticker'
                   const isPost = m.type === 'post'
-                  const bubbleClass = isSticker || isPost
+                  const isVenueInvite = m.type === 'venue-invite'
+                  const bubbleClass = isSticker || isPost || isVenueInvite
                     ? 'cursor-pointer select-none'
                     : `min-w-0 max-w-full cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
                         m.fromMe
@@ -1190,12 +1192,37 @@ function Chat() {
                                 )}
                               </div>
                             </button>
+                          ) : isVenueInvite ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/coins-chics?venue=${m.venue.id}`)
+                              }}
+                              className="block min-w-0 max-w-full overflow-hidden rounded-xl border border-ink/10 bg-white text-left shadow-sm dark:bg-surface-tint"
+                              style={{ maxWidth: 'clamp(200px, 100%, 224px)' }}
+                            >
+                              {m.venue.image && (
+                                <img src={m.venue.image} alt="" className="h-32 w-full object-cover" />
+                              )}
+                              <div className="p-2.5">
+                                <p className="flex items-center gap-1 text-[11px] font-semibold text-violet-600">
+                                  <MapPin size={11} strokeWidth={2.5} />
+                                  Invitation — {m.venue.name}
+                                </p>
+                                {(m.venue.address || m.venue.city) && (
+                                  <p className="mt-1 line-clamp-2 text-xs text-ink-soft/70">
+                                    {[m.venue.address, m.venue.city].filter(Boolean).join(', ')}
+                                  </p>
+                                )}
+                              </div>
+                            </button>
                           ) : (
                             <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{m.text}</p>
                           )}
                           <p
                             className={`mt-0.5 flex items-center gap-1 text-[10px] ${
-                              isSticker || isPost ? 'text-ink-soft/50' : m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
+                              isSticker || isPost || isVenueInvite ? 'text-ink-soft/50' : m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
                             }`}
                           >
                             {m.time}

@@ -26,7 +26,10 @@ const CONTENT_TYPES = {
             title: { type: "string", required: true, maxLen: 200 },
             summary: { type: "string", maxLen: 500 },
             content: { type: "string", maxLen: 50000 },
-            image: { type: "string", maxLen: 500 },
+            // Generous on purpose — pasted image links (CDN/hosting URLs
+            // with long signed tokens) routinely run past a few hundred
+            // characters.
+            image: { type: "string", maxLen: 2000 },
         },
     },
     articles: {
@@ -38,7 +41,7 @@ const CONTENT_TYPES = {
             title: { type: "string", required: true, maxLen: 200 },
             summary: { type: "string", maxLen: 500 },
             content: { type: "string", maxLen: 50000 },
-            image: { type: "string", maxLen: 500 },
+            image: { type: "string", maxLen: 2000 },
             category: { type: "string", maxLen: 100 },
             tags: { type: "array", maxLen: 20 },
             seoTitle: { type: "string", maxLen: 70 },
@@ -65,7 +68,7 @@ const CONTENT_TYPES = {
         fields: {
             title: { type: "string", required: true, maxLen: 200 },
             description: { type: "string", maxLen: 500 },
-            image: { type: "string", maxLen: 500 },
+            image: { type: "string", maxLen: 2000 },
             buttonLabel: { type: "string", maxLen: 60 },
             buttonUrl: { type: "string", maxLen: 500 },
             position: { type: "string", maxLen: 60 },
@@ -84,7 +87,7 @@ const CONTENT_TYPES = {
             category: { type: "string", maxLen: 50 },
             date: { type: "string", required: true, maxLen: 20 },
             location: { type: "string", maxLen: 200 },
-            image: { type: "string", maxLen: 500 },
+            image: { type: "string", maxLen: 2000 },
             organizer: { type: "string", maxLen: 100 },
             // Informational only — no payment gateway is integrated, so this
             // is displayed text ("Gratuit", "2 000 FCFA"...), never charged.
@@ -94,12 +97,47 @@ const CONTENT_TYPES = {
             // eventTicketController.js's transaction, incremented/decremented
             // alongside each reservation/cancellation.
             capacity: { type: "number", default: 0 },
+            // Optional pin for the Coins Chics map view — no `default`, so an
+            // event without a pin simply has no lat/lng keys on its doc at
+            // all (see AdminContent.jsx's `geopoint` field kind: it omits
+            // both keys from the payload entirely when no pin was dropped).
+            lat: { type: "number" },
+            lng: { type: "number" },
+        },
+    },
+    venues: {
+        collection: "venues",
+        sortField: "createdAt",
+        sortDir: "desc",
+        hasSlug: false,
+        fields: {
+            name: { type: "string", required: true, maxLen: 150 },
+            // Plain display string, same convention as events.category —
+            // no separate value/label mapping.
+            category: { type: "string", required: true, maxLen: 30 },
+            description: { type: "string", maxLen: 1000 },
+            address: { type: "string", maxLen: 300 },
+            city: { type: "string", maxLen: 100 },
+            lat: { type: "number", required: true },
+            lng: { type: "number", required: true },
+            image: { type: "string", maxLen: 2000 },
+            phone: { type: "string", maxLen: 40 },
+            instagramUrl: { type: "string", maxLen: 300 },
         },
     },
 };
 
 function badRequest(message) {
     return Object.assign(new Error(message), { status: 400 });
+}
+
+// Fire-and-forget: a newly published event gets announced in the social
+// Feed as a branded post. Required lazily (rather than at module load) to
+// avoid a require cycle, and never allowed to fail the content API call.
+function notifyEventPublished(eventData, eventId) {
+    require("./systemFeedPostService")
+        .postNewEventToFeed({ id: eventId, ...eventData })
+        .catch((err) => console.error("Feed announcement for new event failed:", err));
 }
 
 function getTypeConfig(type) {
@@ -223,6 +261,7 @@ async function createContent(type, body, author) {
     };
 
     const ref = await db.collection(config.collection).add(payload);
+    if (type === "events" && data.status === "published") notifyEventPublished(payload, ref.id);
     return getContent(type, ref.id);
 }
 
@@ -242,6 +281,9 @@ async function updateContent(type, id, body) {
     }
 
     await ref.update(payload);
+    if (type === "events" && data.status === "published" && !wasPublished) {
+        notifyEventPublished({ ...existing.data(), ...data }, id);
+    }
     return getContent(type, id);
 }
 

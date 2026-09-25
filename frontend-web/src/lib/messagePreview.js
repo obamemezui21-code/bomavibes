@@ -8,5 +8,6 @@ export function messagePreviewText(message) {
   if (message.type === 'file') return `📄 ${message.fileName || 'Document'}`
   if (message.type === 'sticker') return '😊 Sticker'
   if (message.type === 'post') return '📌 Publication partagée'
+  if (message.type === 'venue-invite') return '📍 Invitation à un rendez-vous'
   return message.text || ''
 }
