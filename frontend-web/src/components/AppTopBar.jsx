@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { ArrowUp, Bell, LayoutGrid, Moon, ShieldCheck, Sun } from 'lucide-react'
+import { Bell, LayoutGrid, MapPin, Moon, ShieldCheck, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -9,10 +9,6 @@ import logo from '../assets/bomavibes-icon.webp'
 
 const iconButtonClass =
   'flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink transition hover:bg-ink/8'
-
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
 
 function AppTopBar() {
   const { profile, publicProfile } = useAuth()
@@ -40,6 +36,9 @@ function AppTopBar() {
         <NavLink to="/events" className={iconButtonClass} aria-label="Événements">
           <LayoutGrid size={16} strokeWidth={2} />
         </NavLink>
+        <NavLink to="/coins-chics" className={iconButtonClass} aria-label="Coins Chics">
+          <MapPin size={16} strokeWidth={2} />
+        </NavLink>
         <button
           type="button"
           onClick={toggleTheme}
@@ -47,14 +46,6 @@ function AppTopBar() {
           aria-label="Changer le thème"
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <button
-          type="button"
-          onClick={scrollToTop}
-          className={iconButtonClass}
-          aria-label="Remonter en haut de la page"
-        >
-          <ArrowUp size={16} strokeWidth={2.5} />
         </button>
         <NavLink to="/notifications" className={`relative ${iconButtonClass}`} aria-label="Notifications">
           <Bell size={16} strokeWidth={2} className="text-sun" />

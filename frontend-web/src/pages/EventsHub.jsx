@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Heart, MapPin, Music2, Search, Ticket } from 'lucide-react'
+import { Briefcase, Globe, Heart, MapPin, Search, Ticket } from 'lucide-react'
 import { cancelEventTicket, fetchMyTickets, fetchPublishedEvents, reserveEventTicket } from '../firebase/events.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -9,9 +9,24 @@ import Modal from '../components/ui/Modal.jsx'
 import Button from '../components/ui/Button.jsx'
 
 const CATEGORY_CARDS = [
-  { icon: Heart, title: 'Salon des amoureux', subtitle: 'Couples & amour', tint: 'bg-pink-500/15 text-pink-600' },
-  { icon: Briefcase, title: 'Salon de métier', subtitle: 'Emploi & services', tint: 'bg-gold/15 text-gold' },
-  { icon: Music2, title: "Stories d'artistes", subtitle: 'Talents à suivre', tint: 'bg-violet-500/15 text-violet-600' },
+  {
+    icon: Heart,
+    title: 'Salon des amoureux',
+    subtitle: 'Dating & relations sérieuses ou éphémères',
+    tint: 'bg-pink-500/15 text-pink-600',
+  },
+  {
+    icon: Briefcase,
+    title: 'Salon de métier',
+    subtitle: 'Networking, partenaires & mentors',
+    tint: 'bg-gold/15 text-gold',
+  },
+  {
+    icon: Globe,
+    title: 'Salon Diaspora',
+    subtitle: 'Gabonais de l’étranger, près de chez vous',
+    tint: 'bg-mint-500/15 text-mint-600',
+  },
 ]
 
 const FILTERS = ['Tout', 'Soirée', 'Concert', 'Conférence', 'Sport', 'Culture', 'Networking']

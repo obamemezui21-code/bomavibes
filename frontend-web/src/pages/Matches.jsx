@@ -94,7 +94,7 @@ function Matches() {
             <p className="text-sm text-ink-soft/60">Aucune conversation pour l'instant.</p>
           </div>
         ) : (
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
             {visible.map((conversation, i) => {
               const percent = matchPercent(publicProfile?.interests, conversation.profile.interests)
               return (
@@ -107,7 +107,7 @@ function Matches() {
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigate(`/chat/${conversation.id}`)}
-                  className="glass-panel group relative overflow-hidden rounded-2xl text-left shadow-lg"
+                  className="glass-panel group relative w-28 shrink-0 overflow-hidden rounded-2xl text-left shadow-lg"
                 >
                   <div className="relative aspect-[3/4] w-full overflow-hidden">
                     <img
@@ -121,23 +121,23 @@ function Matches() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />
 
                     {percent != null && (
-                      <span className="absolute left-2 top-2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2 py-0.5 text-[10px] font-bold text-ink-on-brand shadow">
-                        {percent}% Match
+                      <span className="absolute left-1.5 top-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-ink-on-brand shadow">
+                        {percent}%
                       </span>
                     )}
                     {conversation.isNewMatch && (
-                      <span className="absolute right-2 top-2 rounded-full bg-mint-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow">
-                        Nouveau
+                      <span className="absolute right-1.5 top-1.5 rounded-full bg-mint-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow">
+                        New
                       </span>
                     )}
 
-                    <div className="absolute inset-x-0 bottom-0 p-3">
-                      <p className="font-display text-base font-semibold text-white">
+                    <div className="absolute inset-x-0 bottom-0 p-2">
+                      <p className="truncate font-display text-xs font-semibold text-white">
                         {conversation.profile.firstName}
                         {conversation.profile.age ? `, ${conversation.profile.age}` : ''}
                       </p>
                       {conversation.profile.city && (
-                        <p className="truncate text-xs uppercase tracking-wide text-white/70">
+                        <p className="truncate text-[10px] uppercase tracking-wide text-white/70">
                           {conversation.profile.city}
                         </p>
                       )}

@@ -13,11 +13,7 @@ export const TIERS = [
     highlight: false,
     headerClass: 'bg-gradient-to-br from-pink-500/25 to-pink-500/5',
     checkClass: 'bg-pink-500 text-white',
-    prices: [
-      { period: 'Hebdomadaire', amount: '1 000 FCFA', note: "prix d'entrée" },
-      { period: 'Mensuel', amount: '3 500 FCFA', note: '≈ 12,5 % d\'économie vs 4 semaines' },
-      { period: 'Annuel', amount: '35 000 FCFA', note: '≈ 2 mois offerts' },
-    ],
+    prices: [{ period: 'Mensuel', amount: '2 000 FCFA', note: null }],
     intro: null,
     features: [
       'Likes illimités',
@@ -37,10 +33,7 @@ export const TIERS = [
     highlight: true,
     headerClass: 'bg-gradient-to-br from-coral-600/20 to-coral-600/5',
     checkClass: 'bg-coral-600 text-white',
-    prices: [
-      { period: 'Mensuel', amount: '7 500 FCFA', note: null },
-      { period: 'Annuel', amount: '75 000 FCFA', note: '≈ 2 mois offerts' },
-    ],
+    prices: [{ period: 'Mensuel', amount: '3 500 FCFA', note: null }],
     intro: 'Tout VIP, plus :',
     features: [
       'Boost 3×/semaine',
@@ -57,7 +50,7 @@ export const TIERS = [
     highlight: false,
     headerClass: 'bg-gradient-to-br from-violet-600/20 to-violet-600/5',
     checkClass: 'bg-violet-600 text-white',
-    prices: [{ period: 'Annuel', amount: '125 000 FCFA', note: 'engagement longue durée' }],
+    prices: [{ period: 'Mensuel', amount: '5 500 FCFA', note: null }],
     intro: 'Tout Diamant Rouge, plus :',
     features: [
       'Boost 1×/jour',

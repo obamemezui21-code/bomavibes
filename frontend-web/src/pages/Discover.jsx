@@ -208,14 +208,9 @@ function Discover() {
       <div className="px-4 pt-6 sm:px-6">
         <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
-                <MapPin size={13} strokeWidth={2.25} />
-                {publicProfile?.country || 'Autour de vous'}
-              </div>
-              <h1 className="font-display text-2xl font-semibold text-ink">
-                Salut {user?.firstName} 👋
-              </h1>
+            <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
+              <MapPin size={13} strokeWidth={2.25} />
+              {publicProfile?.country || 'Autour de vous'}
             </div>
             <button
               type="button"
