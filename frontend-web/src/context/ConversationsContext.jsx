@@ -8,6 +8,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   updateDoc,
   where,
@@ -477,11 +478,19 @@ export function ConversationsProvider({ children }) {
 
   // One reaction per user per message — tapping the same emoji again clears
   // it, tapping a different one replaces it (matches WhatsApp's behavior).
+  // Reads the current value inside a transaction (server-fresh, not the
+  // possibly-stale local `activeMessages` cache) — deciding "is this my
+  // existing reaction?" from a stale read is exactly what caused the
+  // reaction to flicker on and back off on a slower connection: a second
+  // tap (or a retry) could read the pre-update value and toggle it straight
+  // back off.
   async function toggleMessageReaction(matchId, messageId, emoji) {
-    const current = activeMessages[matchId]?.find((m) => m.id === messageId)
-    const mine = current?.reactions?.[uid]
-    await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
-      [`reactions.${uid}`]: mine === emoji ? deleteField() : emoji,
+    const messageRef = doc(db, 'matches', matchId, 'messages', messageId)
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(messageRef)
+      if (!snap.exists()) return
+      const mine = snap.data().reactions?.[uid]
+      tx.update(messageRef, { [`reactions.${uid}`]: mine === emoji ? deleteField() : emoji })
     })
   }
 
