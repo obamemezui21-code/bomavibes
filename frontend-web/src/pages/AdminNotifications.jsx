@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Bell, Send } from 'lucide-react'
-import { fetchAdminLogs, sendAdminNotificationBroadcast } from '../firebase/admin.js'
+import { Bell, Pencil, Send, Trash2 } from 'lucide-react'
+import {
+  deleteAdminAnnouncement,
+  fetchAdminAnnouncement,
+  fetchAdminLogs,
+  sendAdminNotificationBroadcast,
+  updateAdminAnnouncement,
+} from '../firebase/admin.js'
 import { useToast } from '../context/ToastContext.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
+import Modal from '../components/ui/Modal.jsx'
 import Button from '../components/ui/Button.jsx'
 
 const AUDIENCES = [
@@ -26,7 +33,7 @@ function formatDate(iso) {
   })
 }
 
-function HistoryRow({ log }) {
+function HistoryRow({ log, isDeleted, onEdit, onDelete }) {
   const meta = log.metadata || {}
   return (
     <div className="glass-panel rounded-2xl p-4">
@@ -42,9 +49,34 @@ function HistoryRow({ log }) {
         {meta.pushFailed ? ` (${meta.pushFailed} échec${meta.pushFailed > 1 ? 's' : ''})` : ''}
         {meta.publishAnnouncement ? ' · annonce publiée' : ''}
       </p>
+      {meta.announcementId && isDeleted && (
+        <p className="mt-2.5 border-t border-ink/6 pt-2.5 text-xs italic text-ink-soft/50">Annonce supprimée</p>
+      )}
+      {meta.announcementId && !isDeleted && (
+        <div className="mt-2.5 flex gap-2 border-t border-ink/6 pt-2.5">
+          <button
+            type="button"
+            onClick={() => onEdit(meta.announcementId)}
+            className="flex items-center gap-1 rounded-full bg-ink/6 px-2.5 py-1 text-xs font-semibold text-ink-soft/70 transition hover:bg-violet-500/10 hover:text-violet-600"
+          >
+            <Pencil size={12} strokeWidth={2.25} />
+            Modifier l’annonce
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(meta.announcementId)}
+            className="flex items-center gap-1 rounded-full bg-ink/6 px-2.5 py-1 text-xs font-semibold text-coral-600 transition hover:bg-coral-500/10"
+          >
+            <Trash2 size={12} strokeWidth={2.25} />
+            Supprimer l’annonce
+          </button>
+        </div>
+      )}
     </div>
   )
 }
+
+const EMPTY_EDIT_FORM = { title: '', description: '', ctaLabel: '', ctaLink: '' }
 
 function AdminNotifications() {
   const { showToast } = useToast()
@@ -53,6 +85,13 @@ function AdminNotifications() {
   const [isSending, setIsSending] = useState(false)
   const [history, setHistory] = useState([])
   const [isHistoryLoading, setIsHistoryLoading] = useState(true)
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM)
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false)
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deletedIds, setDeletedIds] = useState(new Set())
 
   const loadHistory = useCallback(() => {
     setIsHistoryLoading(true)
@@ -91,6 +130,59 @@ function AdminNotifications() {
       showToast(err.message || "Impossible d'envoyer la notification.", 'error')
     } finally {
       setIsSending(false)
+    }
+  }
+
+  async function openEdit(announcementId) {
+    setEditingId(announcementId)
+    setIsLoadingEdit(true)
+    try {
+      const { item } = await fetchAdminAnnouncement(announcementId)
+      setEditForm({
+        title: item.title || '',
+        description: item.description || '',
+        ctaLabel: item.ctaLabel || '',
+        ctaLink: item.ctaLink || '',
+      })
+    } catch (err) {
+      showToast(err.message || "Impossible de charger l'annonce.", 'error')
+      setEditingId(null)
+    } finally {
+      setIsLoadingEdit(false)
+    }
+  }
+
+  async function handleSaveEdit(e) {
+    e.preventDefault()
+    if (!editForm.title.trim() || !editForm.description.trim()) return
+    setIsSavingEdit(true)
+    try {
+      await updateAdminAnnouncement(editingId, {
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        ctaLabel: editForm.ctaLabel.trim() || undefined,
+        ctaLink: editForm.ctaLink.trim() || undefined,
+      })
+      showToast('Annonce mise à jour.', 'success')
+      setEditingId(null)
+    } catch (err) {
+      showToast(err.message || "Impossible de mettre à jour l'annonce.", 'error')
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+
+  async function handleConfirmDelete() {
+    setIsDeleting(true)
+    try {
+      await deleteAdminAnnouncement(deletingId)
+      showToast('Annonce supprimée.', 'success')
+      setDeletedIds((prev) => new Set(prev).add(deletingId))
+      setDeletingId(null)
+    } catch (err) {
+      showToast(err.message || "Impossible de supprimer l'annonce.", 'error')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -187,7 +279,7 @@ function AdminNotifications() {
             onChange={(e) => setForm((prev) => ({ ...prev, publishAnnouncement: e.target.checked }))}
             className="h-4 w-4 rounded border-ink/20"
           />
-          Publier aussi comme annonce interne (onglet Annonces)
+          Publier aussi comme annonce interne (onglet Annonces) + une publication dans le Feed
         </label>
         <Button type="submit" className="flex w-full items-center justify-center gap-2">
           <Send size={15} strokeWidth={2.25} />
@@ -202,7 +294,13 @@ function AdminNotifications() {
       )}
       <div className="space-y-2">
         {history.map((log) => (
-          <HistoryRow key={log.id} log={log} />
+          <HistoryRow
+            key={log.id}
+            log={log}
+            isDeleted={deletedIds.has(log.metadata?.announcementId)}
+            onEdit={openEdit}
+            onDelete={setDeletingId}
+          />
         ))}
       </div>
 
@@ -216,6 +314,95 @@ function AdminNotifications() {
           isConfirming={isSending}
           onCancel={() => setIsConfirming(false)}
           onConfirm={handleConfirmSend}
+        />
+      )}
+
+      {editingId && (
+        <Modal onClose={() => setEditingId(null)} className="max-w-sm text-left">
+          <h2 className="mb-4 font-display text-lg font-semibold text-ink">Modifier l’annonce</h2>
+          {isLoadingEdit ? (
+            <p className="py-6 text-center text-sm text-ink-soft/50">Chargement…</p>
+          ) : (
+            <form onSubmit={handleSaveEdit} className="space-y-3">
+              <div>
+                <label className={labelClass} htmlFor="edit-title">
+                  Titre
+                </label>
+                <input
+                  id="edit-title"
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                  required
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="edit-description">
+                  Message
+                </label>
+                <textarea
+                  id="edit-description"
+                  rows={4}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                  required
+                  className={inputClass}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass} htmlFor="edit-cta-label">
+                    Bouton (optionnel)
+                  </label>
+                  <input
+                    id="edit-cta-label"
+                    type="text"
+                    value={editForm.ctaLabel}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, ctaLabel: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass} htmlFor="edit-cta-link">
+                    Lien du bouton
+                  </label>
+                  <input
+                    id="edit-cta-link"
+                    type="text"
+                    value={editForm.ctaLink}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, ctaLink: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-ink-soft/50">
+                Le push déjà envoyé ne peut pas être modifié — ceci met à jour l’annonce dans l’onglet Annonces et le
+                post correspondant dans le Feed.
+              </p>
+              <div className="flex gap-3 pt-2">
+                <Button type="button" variant="secondary" className="flex-1" onClick={() => setEditingId(null)}>
+                  Annuler
+                </Button>
+                <Button type="submit" className="flex-1" disabled={isSavingEdit}>
+                  {isSavingEdit ? 'Enregistrement…' : 'Enregistrer'}
+                </Button>
+              </div>
+            </form>
+          )}
+        </Modal>
+      )}
+
+      {deletingId && (
+        <ConfirmModal
+          title="Supprimer cette annonce ?"
+          description="Elle disparaîtra de l'onglet Annonces et du Feed. Le push déjà envoyé ne peut pas être rappelé."
+          confirmLabel="Supprimer"
+          confirmingLabel="Suppression…"
+          danger
+          isConfirming={isDeleting}
+          onCancel={() => setDeletingId(null)}
+          onConfirm={handleConfirmDelete}
         />
       )}
     </div>

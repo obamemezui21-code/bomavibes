@@ -112,6 +112,21 @@ export function sendAdminNotificationBroadcast(payload) {
   })
 }
 
+export function fetchAdminAnnouncement(id) {
+  return authedFetch(`/api/admin/notifications/announcements/${id}`)
+}
+
+export function updateAdminAnnouncement(id, data) {
+  return authedFetch(`/api/admin/notifications/announcements/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  })
+}
+
+export function deleteAdminAnnouncement(id) {
+  return authedFetch(`/api/admin/notifications/announcements/${id}`, { method: 'DELETE' })
+}
+
 export function fetchCmsMedia() {
   return authedFetch('/api/admin/media')
 }
