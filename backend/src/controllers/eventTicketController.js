@@ -113,8 +113,16 @@ async function listMyTickets(req, res) {
     const uid = req.firebaseUser.uid;
 
     try {
-        const snap = await db.collection("tickets").where("userId", "==", uid).orderBy("createdAt", "desc").get();
-        const rawTickets = snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+        // No `.orderBy("createdAt")` here on purpose: chained onto the
+        // `where("userId", ...)` equality filter, it'd need a composite
+        // index that nothing in this repo deploys (no firestore.indexes.json,
+        // no index step in deploy.sh) — the query throws and this endpoint
+        // 500s, which is why "Mes billets" was showing up empty. Sorting the
+        // (per-user, small) result in JS sidesteps that.
+        const snap = await db.collection("tickets").where("userId", "==", uid).get();
+        const rawTickets = snap.docs
+            .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+            .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
 
         const eventIds = [...new Set(rawTickets.map((t) => t.eventId))];
         const eventDocs = eventIds.length

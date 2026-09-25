@@ -104,9 +104,9 @@ function EventsHub() {
         attendeeEmail: form.email.trim(),
         attendeePhone: form.phone.trim(),
       })
-      setMyEventIds((prev) => new Set(prev).add(reservingEvent.id))
-      showToast('Place réservée — retrouve ton billet dans "Mes billets".', 'success')
+      showToast('Place réservée !', 'success')
       setReservingEvent(null)
+      navigate('/events/mine')
     } catch (err) {
       showToast(err.message || 'Impossible de réserver cette place.', 'error')
     } finally {
