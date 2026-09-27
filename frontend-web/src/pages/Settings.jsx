@@ -15,6 +15,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher.jsx'
 import Modal from '../components/ui/Modal.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
+import SupportModal from '../components/SupportModal.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 
 function Toggle({ checked, onChange, disabled }) {
@@ -293,6 +294,7 @@ function Settings() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showBlockedModal, setShowBlockedModal] = useState(false)
+  const [showSupport, setShowSupport] = useState(false)
 
   async function handleNotifyToggle(field, value) {
     setIsTogglingPush(true)
@@ -453,7 +455,7 @@ function Settings() {
             <Row title="Soutenir BomaVibes" subtitle="Construisons BomaVibes ensemble">
               <button
                 type="button"
-                onClick={() => navigate('/soutenir')}
+                onClick={() => setShowSupport(true)}
                 className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
               >
                 <Heart size={13} strokeWidth={2.25} />
@@ -490,6 +492,7 @@ function Settings() {
       {showEmailModal && <ChangeEmailModal onClose={() => setShowEmailModal(false)} />}
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
       {showBlockedModal && <BlockedUsersModal onClose={() => setShowBlockedModal(false)} />}
+      {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
 
       {confirmDelete && (
         <ConfirmModal

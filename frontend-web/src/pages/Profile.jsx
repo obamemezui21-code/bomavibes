@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
 import CountryPicker from '../components/CountryPicker.jsx'
+import SupportModal from '../components/SupportModal.jsx'
 import {
   DATING_GOALS,
   LANGUAGES,
@@ -47,6 +48,7 @@ function Profile() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [showSupport, setShowSupport] = useState(false)
   const fileInputRefs = [useRef(null), useRef(null), useRef(null)]
 
   useEffect(() => {
@@ -565,7 +567,7 @@ function Profile() {
 
             <button
               type="button"
-              onClick={() => navigate('/soutenir')}
+              onClick={() => setShowSupport(true)}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
             >
               <Heart size={16} strokeWidth={2} />
@@ -585,6 +587,8 @@ function Profile() {
           </div>
         </form>
       </div>
+
+      {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </div>
   )
 }

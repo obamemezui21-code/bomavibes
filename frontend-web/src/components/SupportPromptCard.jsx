@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Heart, X } from 'lucide-react'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
+import SupportModal from './SupportModal.jsx'
 
 const MIN_DAYS_ACTIVE = 3
 const MIN_CONVERSATIONS = 3
@@ -26,8 +26,8 @@ function isEligible(profile, conversations) {
 function SupportPromptCard() {
   const { user, profile } = useAuth()
   const { conversations } = useConversations()
-  const navigate = useNavigate()
   const [dismissedLocally, setDismissedLocally] = useState(false)
+  const [showSupport, setShowSupport] = useState(false)
 
   if (dismissedLocally || !isEligible(profile, conversations)) return null
 
@@ -56,7 +56,7 @@ function SupportPromptCard() {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/soutenir')}
+            onClick={() => setShowSupport(true)}
             className="mt-2 text-xs font-semibold text-violet-600 underline-offset-2 hover:underline"
           >
             Soutenir BomaVibes →
@@ -71,6 +71,8 @@ function SupportPromptCard() {
           <X size={14} strokeWidth={2.25} />
         </button>
       </div>
+
+      {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
     </motion.div>
   )
 }

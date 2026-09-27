@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import GoogleIcon from '../components/GoogleIcon.jsx'
+import ForgotPasswordModal from '../components/ForgotPasswordModal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 
@@ -18,6 +19,7 @@ function Login() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   useEffect(() => {
     if (token) navigate(location.state?.from?.pathname || '/discover', { replace: true })
@@ -99,9 +101,13 @@ function Login() {
             <label htmlFor="password" className="block text-sm font-medium text-ink/80">
               Mot de passe
             </label>
-            <Link to="/forgot-password" className="text-xs font-medium text-violet-600/80 hover:text-violet-600">
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-xs font-medium text-violet-600/80 hover:text-violet-600"
+            >
               Mot de passe oublié ?
-            </Link>
+            </button>
           </div>
           <PasswordInput
             id="password"
@@ -139,6 +145,8 @@ function Login() {
           {isGoogleLoading ? 'Connexion…' : 'Continuer avec Google'}
         </motion.button>
       </form>
+
+      {showForgotPassword && <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />}
     </AuthLayout>
   )
 }
