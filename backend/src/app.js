@@ -17,6 +17,7 @@ const adminNotificationsRoutes = require("./routes/notificationsRoutes");
 const cmsMediaRoutes = require("./routes/cmsMediaRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const eventTicketsRoutes = require("./routes/eventTicketsRoutes");
+const aiPartnersRoutes = require("./routes/aiPartnersRoutes");
 const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 
 const app = express();
@@ -49,6 +50,7 @@ app.use("/api/admin/notifications", adminNotificationsRoutes);
 app.use("/api/admin/media", cmsMediaRoutes);
 app.use("/api/admin/settings", settingsRoutes);
 app.use("/api/events", eventTicketsRoutes);
+app.use("/api/admin/ai-partners", aiPartnersRoutes);
 
 startWwfNewsScheduler();
 

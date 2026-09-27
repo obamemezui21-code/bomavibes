@@ -30,7 +30,6 @@ const Welcome = lazy(() => import('./pages/Welcome.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
 const Signup = lazy(() => import('./pages/Signup.jsx'))
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'))
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
 const AuthAction = lazy(() => import('./pages/AuthAction.jsx'))
 const Discover = lazy(() => import('./pages/Discover.jsx'))
 const Feed = lazy(() => import('./pages/Feed.jsx'))
@@ -47,6 +46,7 @@ const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
 const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
 const MyTickets = lazy(() => import('./pages/MyTickets.jsx'))
 const Venues = lazy(() => import('./pages/Venues.jsx'))
+const StudioIA = lazy(() => import('./pages/StudioIA.jsx'))
 const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
@@ -55,6 +55,7 @@ const AdminUsersDirectory = lazy(() => import('./pages/AdminUsersDirectory.jsx')
 const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
 const AdminContent = lazy(() => import('./pages/AdminContent.jsx'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications.jsx'))
+const AdminAiPartners = lazy(() => import('./pages/AdminAiPartners.jsx'))
 const AdminMedia = lazy(() => import('./pages/AdminMedia.jsx'))
 const AdminSettings = lazy(() => import('./pages/AdminSettings.jsx'))
 const Maintenance = lazy(() => import('./pages/Maintenance.jsx'))
@@ -117,7 +118,6 @@ function App() {
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/action" element={<AuthAction />} />
           <Route
             path="/verify-email"
@@ -158,6 +158,7 @@ function App() {
             <Route path="/events" element={<EventsHub />} />
             <Route path="/events/mine" element={<MyTickets />} />
             <Route path="/coins-chics" element={<Venues />} />
+            <Route path="/studio-ia" element={<StudioIA />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/annonces" element={<Announcements />} />
             <Route path="/notifications" element={<Notifications />} />
@@ -212,6 +213,14 @@ function App() {
                 element={
                   <RequireRole check={hasFullAdminAccess}>
                     <AdminNotifications />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="ai-partners"
+                element={
+                  <RequireRole check={hasFullAdminAccess}>
+                    <AdminAiPartners />
                   </RequireRole>
                 }
               />

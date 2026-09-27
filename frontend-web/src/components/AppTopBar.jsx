@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Bell, LayoutGrid, MapPin, Moon, ShieldCheck, Sun } from 'lucide-react'
+import { Bell, LayoutGrid, MapPin, Moon, ShieldCheck, Sparkles, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -38,6 +38,9 @@ function AppTopBar() {
         </NavLink>
         <NavLink to="/coins-chics" className={iconButtonClass} aria-label="Coins Chics">
           <MapPin size={16} strokeWidth={2} />
+        </NavLink>
+        <NavLink to="/studio-ia" className={iconButtonClass} aria-label="Studio IA">
+          <Sparkles size={16} strokeWidth={2} />
         </NavLink>
         <button
           type="button"

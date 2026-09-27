@@ -161,3 +161,23 @@ export function fetchAdminSettings() {
 export function updateAdminSettings(data) {
   return authedFetch('/api/admin/settings', { method: 'PATCH', body: JSON.stringify(data) })
 }
+
+export function fetchAiPartners() {
+  return authedFetch('/api/admin/ai-partners')
+}
+
+export function fetchAiPartnersStats() {
+  return authedFetch('/api/admin/ai-partners/stats')
+}
+
+export function createAiPartner(data) {
+  return authedFetch('/api/admin/ai-partners', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateAiPartner(id, data) {
+  return authedFetch(`/api/admin/ai-partners/${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export function deleteAiPartner(id) {
+  return authedFetch(`/api/admin/ai-partners/${id}`, { method: 'DELETE' })
+}

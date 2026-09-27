@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { Bell, Calendar, ClipboardList, FileText, HelpCircle, Image as ImageIcon, Images, LayoutDashboard, MapPin, Music, Newspaper, Settings as SettingsIcon, ShieldAlert, Users, UsersRound } from 'lucide-react'
+import { Bell, Calendar, ClipboardList, FileText, HelpCircle, Image as ImageIcon, Images, LayoutDashboard, MapPin, Music, Newspaper, Settings as SettingsIcon, ShieldAlert, Sparkles, Users, UsersRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { ROLES, hasAdminAccess, hasContentAccess, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
 
@@ -17,6 +17,7 @@ function buildTabs(role) {
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/notifications', label: 'Notifications', icon: Bell })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/ai-partners', label: 'Studio IA', icon: Sparkles })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/pages', label: 'Pages', icon: FileText })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/articles', label: 'Articles', icon: Newspaper })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/faqs', label: 'FAQ', icon: HelpCircle })

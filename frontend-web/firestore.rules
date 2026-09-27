@@ -152,6 +152,30 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Studio IA — affiliate directory. No draft/published lifecycle like the
+    // content types above (a simple `actif` boolean instead), and unlike
+    // them writes go through aiPartnersController.js with an Admin/Super
+    // Admin check (narrower than isContentEditor()'s Editor-inclusive
+    // access — commission links are more sensitive than CMS copy).
+    match /aiPartners/{partnerId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Click tracking for the affiliate links above. Any visitor (signed in
+    // or not) can log a click, but only ever their own uid (or none), and
+    // only the three fields the click actually needs — never edited or
+    // deleted once written, and only admins can read the log back (used for
+    // the per-partner stats in the admin Studio IA section).
+    match /aiClicks/{clickId} {
+      allow create: if request.resource.data.keys().hasOnly(['partnerId', 'userId', 'date'])
+        && request.resource.data.partnerId is string
+        && (request.resource.data.userId == null || (isSignedIn() && request.resource.data.userId == request.auth.uid))
+        && request.resource.data.date == request.time;
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
     match /tickets/{ticketId} {
       // A user can read their own reservations directly (e.g. a live "Mes
       // billets" listener) but never write one — reserving/cancelling has to
