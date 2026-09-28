@@ -56,11 +56,13 @@ async function ensureUserDocument(firebaseUser) {
   const ref = doc(db, 'users', firebaseUser.uid)
   const snap = await getDoc(ref)
   if (!snap.exists()) {
+    // No `role` here: firestore.rules only lets the Admin SDK set it, so
+    // including it made this create fail for every new account. A missing
+    // role is already read as 'user' everywhere.
     await setDoc(ref, {
       email: firebaseUser.email,
       firstName: firebaseUser.displayName || '',
       onboarded: false,
-      role: 'user',
       createdAt: serverTimestamp(),
     })
   }

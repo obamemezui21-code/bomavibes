@@ -150,6 +150,9 @@ function Onboarding() {
       await setDoc(
         doc(db, 'users', user.id),
         {
+          // email is required by the users rule: if the account doc was
+          // never created, this merge is a create and must carry it.
+          email: user?.email || '',
           firstName: user?.firstName || '',
           prefGender: form.prefGender,
           prefMaxDistance: form.prefMaxDistance,
