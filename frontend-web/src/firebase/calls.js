@@ -17,7 +17,7 @@ import { auth, db } from './config.js'
 //   status: 'ringing' → 'accepted' → 'ended'
 //           'ringing' → 'declined' | 'missed' | 'busy' | 'cancelled'
 //   offer / answer ({ type, sdp }), caller/callee display info,
-//   createdAt, answeredAt, endedAt,
+//   createdAt, deliveredAt (callee's device is ringing), answeredAt, endedAt,
 //   restart / restartAnswer ({ version, offer | answer }) for ICE restarts
 // calls/{callId}/callerCandidates, calls/{callId}/calleeCandidates
 //   ICE candidates each side publishes for the other.
@@ -73,6 +73,12 @@ export function answerIceRestart(callId, version, answer) {
   return updateDoc(doc(db, 'calls', callId), {
     restartAnswer: { version, answer: { type: answer.type, sdp: answer.sdp } },
   })
+}
+
+// The callee's device has received the call and is ringing — lets the caller
+// show "Ça sonne…" instead of "Appel…".
+export function markCallDelivered(callId) {
+  return updateDoc(doc(db, 'calls', callId), { deliveredAt: serverTimestamp() })
 }
 
 export function setCallStatus(callId, status) {

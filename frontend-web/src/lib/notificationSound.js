@@ -1,10 +1,62 @@
 let audioCtx = null
 
+function getAudioContext() {
+  audioCtx ||= new (window.AudioContext || window.webkitAudioContext)()
+  if (audioCtx.state === 'suspended') audioCtx.resume()
+  return audioCtx
+}
+
+// Ringback tone the caller hears while the other phone rings: the classic
+// French "tuut" (440 Hz, 1.5 s on / 3.5 s off), looped until stopped.
+// Returns a function that stops it.
+export function startRingback() {
+  let stopped = false
+  let timer = null
+  const playing = new Set()
+
+  function beep() {
+    if (stopped) return
+    try {
+      const ctx = getAudioContext()
+      const now = ctx.currentTime
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.frequency.value = 440
+      gain.gain.setValueAtTime(0, now)
+      gain.gain.linearRampToValueAtTime(0.12, now + 0.03)
+      gain.gain.setValueAtTime(0.12, now + 1.47)
+      gain.gain.linearRampToValueAtTime(0, now + 1.5)
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start(now)
+      osc.stop(now + 1.5)
+      playing.add(osc)
+      osc.onended = () => playing.delete(osc)
+    } catch {
+      // Audio isn't critical; the call still works silently.
+    }
+    timer = setTimeout(beep, 5000)
+  }
+
+  beep()
+  return () => {
+    stopped = true
+    clearTimeout(timer)
+    playing.forEach((osc) => {
+      try {
+        osc.stop()
+      } catch {
+        // already stopped
+      }
+    })
+    playing.clear()
+  }
+}
+
 export function playNotificationSound() {
   try {
-    audioCtx ||= new (window.AudioContext || window.webkitAudioContext)()
-    if (audioCtx.state === 'suspended') audioCtx.resume()
-
+    getAudioContext()
     const now = audioCtx.currentTime
     const notes = [880, 1175]
     notes.forEach((freq, i) => {

@@ -1,6 +1,7 @@
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useAuth } from './AuthContext.jsx'
 import { useToast } from './ToastContext.jsx'
+import { useConversations } from './ConversationsContext.jsx'
 import {
   RING_TIMEOUT_MS,
   addCandidate,
@@ -8,6 +9,7 @@ import {
   answerIceRestart,
   createCall,
   fetchIceServers,
+  markCallDelivered,
   requestIceRestart,
   setCallStatus,
   subscribeToCall,
@@ -15,7 +17,7 @@ import {
   subscribeToRemoteCandidates,
 } from '../firebase/calls.js'
 import { sendPushNotification } from '../firebase/notify.js'
-import { playNotificationSound } from '../lib/notificationSound.js'
+import { playNotificationSound, startRingback } from '../lib/notificationSound.js'
 import { photoVariant } from '../lib/photoVariants.js'
 
 const CallScreen = lazy(() => import('../components/CallScreen.jsx'))
@@ -90,6 +92,7 @@ function mediaConstraints(type, facingMode = 'user') {
 export function CallProvider({ children }) {
   const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
+  const { conversations } = useConversations()
 
   // What the call screen renders. `phase`: incoming | outgoing | connecting | active | ended
   const [call, setCall] = useState(null)
@@ -334,6 +337,11 @@ export function CallProvider({ children }) {
         }
       }
 
+      // Caller: the other phone has received the call and is ringing.
+      if (role === 'caller' && data.deliveredAt && !callRef.current?.delivered) {
+        updateCall({ delivered: true })
+      }
+
       if (FINAL_STATUSES.includes(data.status)) finish(data.status)
     })
     unsubsRef.current.push(unsub)
@@ -552,13 +560,22 @@ export function CallProvider({ children }) {
         }
         setCall(callRef.current)
         watchCall(incoming.id)
+        // Tell the caller this device is ringing.
+        markCallDelivered(incoming.id).catch(() => {})
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
-  // Ringtone + vibration while a call is ringing on this device.
   const phase = call?.phase
+
+  // Ringback tone for the caller while the other side hasn't picked up.
+  useEffect(() => {
+    if (phase !== 'outgoing') return undefined
+    return startRingback()
+  }, [phase])
+
+  // Ringtone + vibration while a call is ringing on this device.
   useEffect(() => {
     if (phase !== 'incoming') return undefined
     const ring = () => {
@@ -594,6 +611,13 @@ export function CallProvider({ children }) {
     }
   }, [user?.id, teardown])
 
+  // Live presence of the person on the other end (same source as the chat:
+  // their profile's lastActive heartbeat), shown while calling them.
+  const otherConversation = call ? conversations.find((c) => c.id === call.matchId) : null
+  const otherPresence = otherConversation
+    ? { online: !!otherConversation.online, lastSeen: otherConversation.lastSeenLabel || null }
+    : null
+
   const value = {
     call,
     localStream,
@@ -602,6 +626,7 @@ export function CallProvider({ children }) {
     isCameraOff,
     facingMode,
     connectionStatus,
+    otherPresence,
     startCall,
     acceptCall,
     declineCall,

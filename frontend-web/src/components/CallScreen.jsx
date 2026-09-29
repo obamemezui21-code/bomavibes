@@ -85,6 +85,7 @@ function CallScreen() {
     flipCamera,
     facingMode,
     connectionStatus,
+    otherPresence,
   } = useCall()
 
   if (!call) return null
@@ -98,7 +99,9 @@ function CallScreen() {
 
   let statusText = ''
   if (call.phase === 'incoming') statusText = isVideo ? 'Appel vidéo entrant…' : 'Appel audio entrant…'
-  else if (call.phase === 'outgoing') statusText = 'Ça sonne…'
+  // "Appel…" until the other phone confirms it received the call, then
+  // "Ça sonne…" (like WhatsApp's Calling / Ringing).
+  else if (call.phase === 'outgoing') statusText = call.delivered ? 'Ça sonne…' : 'Appel…'
   else if (call.phase === 'connecting') statusText = 'Connexion…'
   else if (call.phase === 'ended') statusText = call.endReason
   else if (connectionStatus === 'reconnecting') statusText = 'Reconnexion…'
@@ -174,6 +177,25 @@ function CallScreen() {
           {statusText ?? <CallTimer startedAt={call.startedAt} />}
           {call.phase === 'active' && !showRemoteVideo && ` · ${isVideo ? 'Vidéo' : 'Audio'}`}
         </p>
+
+        {/* While calling: is the other person online right now? */}
+        {call.role === 'caller' && call.phase === 'outgoing' && otherPresence && (
+          <div className="mt-4 flex flex-col items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm font-medium text-white backdrop-blur-md">
+              <span
+                className={`h-2.5 w-2.5 rounded-full ${otherPresence.online ? 'bg-mint-400' : 'bg-white/40'}`}
+              />
+              {otherPresence.online
+                ? 'En ligne'
+                : `Hors ligne${otherPresence.lastSeen ? ` · ${otherPresence.lastSeen}` : ''}`}
+            </span>
+            {!otherPresence.online && !call.delivered && (
+              <span className="max-w-xs text-xs text-white/60">
+                {other.firstName || 'Cette personne'} recevra une notification de votre appel.
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Controls */}
