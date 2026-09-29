@@ -143,7 +143,9 @@ function AppLayout() {
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around gap-1 border-t border-ink/8 bg-surface/60 px-2 pb-[max(0.35rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur-2xl desktop:hidden">
+      {/* Floating pill, lifted off the bottom edge (Friendzy-style). The gap
+          below it grows to clear the iPhone home indicator when there is one. */}
+      <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 flex items-stretch justify-around gap-1 rounded-full border border-ink/8 bg-surface/80 px-2 py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.35),0_4px_12px_-4px_rgba(169,93,218,0.25)] backdrop-blur-2xl desktop:hidden">
         {navItems.map((item, i) => {
           const isActive = location.pathname === item.to
           const anim = iconAnimation(item, i, isActive, 1.15)
@@ -151,12 +153,12 @@ function AppLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-medium"
+              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] font-medium"
             >
               {isActive && (
                 <motion.div
                   layoutId="nav-active-pill"
-                  className="absolute inset-0 rounded-xl bg-pink-500/15"
+                  className="absolute inset-0 rounded-full bg-pink-500/15"
                   transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                 />
               )}
