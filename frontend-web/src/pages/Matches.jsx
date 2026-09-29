@@ -47,46 +47,76 @@ function Matches() {
     )
   }
 
-  return (
-    <div className="min-h-svh bg-surface-soft p-6 pb-24 desktop:min-h-full desktop:pb-6">
-      <div className="mx-auto max-w-3xl">
-        <h1 className="font-display text-2xl font-semibold text-ink">Vos matchs</h1>
+  // Photo for the "Discussions" circle: the most recent conversation that
+  // actually has messages (conversations are already sorted by activity).
+  const latestTalked = conversations.find((c) => c.lastMessage)
 
-        <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/likes')}
-            className="flex flex-1 items-center gap-3 rounded-2xl border border-ink/10 bg-white/60 dark:bg-surface-tint/60 px-4 py-3 text-left transition hover:bg-white/80"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-coral-500/15 text-coral-500">
-              <Heart size={17} strokeWidth={2.25} />
+  return (
+    <div className="min-h-svh bg-surface-soft px-4 pb-28 pt-6 sm:px-6 desktop:min-h-full desktop:pb-6">
+      <div className="mx-auto max-w-3xl">
+        <h1 className="text-center font-display text-2xl font-bold text-ink">Matchs</h1>
+
+        {/* Two story-style circles, as at the top of the Friendzy Matches screen */}
+        <div className="mt-5 flex justify-center gap-8">
+          <button type="button" onClick={() => navigate('/likes')} className="flex flex-col items-center gap-1.5">
+            <span className="relative block rounded-full bg-gradient-to-br from-pink-500 to-violet-500 p-[3px] shadow-lg shadow-pink-500/25">
+              <span className="flex h-[68px] w-[68px] items-center justify-center rounded-full border-[3px] border-surface-soft bg-gradient-to-br from-pink-400 to-violet-500 text-white">
+                <Heart size={26} strokeWidth={2.25} fill="currentColor" />
+              </span>
             </span>
-            <div>
-              <p className="font-display text-lg font-semibold text-ink">{likesCount ?? '–'}</p>
-              <p className="text-xs text-ink-soft/60">Vous ont aimé·e</p>
-            </div>
+            <span className="text-sm font-semibold text-ink">
+              Likes <span className="text-pink-500">{likesCount ?? '–'}</span>
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => setConnectFilter((v) => !v)}
-            className={`flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 text-left transition ${
-              connectFilter ? 'border-violet-400 bg-violet-500/10' : 'border-ink/10 bg-white/60 dark:bg-surface-tint/60 hover:bg-white/80'
-            }`}
+            className="flex flex-col items-center gap-1.5"
+            aria-pressed={connectFilter}
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-600">
-              <MessageCircle size={17} strokeWidth={2.25} />
+            <span
+              className={`relative block rounded-full p-[3px] transition ${
+                connectFilter ? 'bg-gradient-to-br from-violet-500 to-pink-500 shadow-lg shadow-violet-500/25' : 'bg-ink/12'
+              }`}
+            >
+              {latestTalked ? (
+                <img
+                  src={latestTalked.profile.photo}
+                  onError={fallbackToFullPhoto(latestTalked.profile.photoFull)}
+                  alt=""
+                  className="h-[68px] w-[68px] rounded-full border-[3px] border-surface-soft object-cover"
+                />
+              ) : (
+                <span className="flex h-[68px] w-[68px] items-center justify-center rounded-full border-[3px] border-surface-soft bg-violet-500/15 text-violet-600">
+                  <MessageCircle size={26} strokeWidth={2.25} />
+                </span>
+              )}
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white ring-2 ring-surface-soft">
+                <MessageCircle size={12} strokeWidth={2.5} />
+              </span>
             </span>
-            <div>
-              <p className="font-display text-lg font-semibold text-ink">{connectedCount}</p>
-              <p className="text-xs text-ink-soft/60">En discussion</p>
-            </div>
+            <span className="text-sm font-semibold text-ink">
+              Discussions <span className="text-violet-600">{connectedCount}</span>
+            </span>
           </button>
         </div>
 
-        <p className="mt-6 text-sm font-semibold text-ink">
-          {connectFilter ? 'Vos discussions' : 'Vos matchs'} ({visible.length})
-        </p>
+        <div className="mt-7 flex items-baseline justify-between px-1">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            {connectFilter ? 'Vos discussions' : 'Vos matchs'}{' '}
+            <span className="text-pink-500">{visible.length}</span>
+          </h2>
+          {connectFilter && (
+            <button
+              type="button"
+              onClick={() => setConnectFilter(false)}
+              className="text-xs font-semibold text-violet-600 hover:underline"
+            >
+              Voir tous les matchs
+            </button>
+          )}
+        </div>
 
         {visible.length === 0 ? (
           <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl border border-dashed border-ink/12 py-10 text-center">
@@ -94,7 +124,7 @@ function Matches() {
             <p className="text-sm text-ink-soft/60">Aucune conversation pour l'instant.</p>
           </div>
         ) : (
-          <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {visible.map((conversation, i) => {
               const percent = matchPercent(publicProfile?.interests, conversation.profile.interests)
               return (
@@ -103,13 +133,15 @@ function Matches() {
                   type="button"
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ delay: Math.min(i, 8) * 0.04, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigate(`/chat/${conversation.id}`)}
-                  className="glass-panel group relative w-28 shrink-0 overflow-hidden rounded-2xl text-left shadow-lg"
+                  className={`group relative rounded-[26px] p-[2px] text-left shadow-[0_14px_30px_-12px_rgba(0,0,0,0.4)] ${
+                    conversation.isNewMatch ? 'bg-gradient-to-br from-pink-500 to-violet-500' : 'bg-transparent'
+                  }`}
                 >
-                  <div className="relative aspect-[3/4] w-full overflow-hidden">
+                  <div className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl">
                     <img
                       src={conversation.profile.photoMedium}
                       onError={fallbackToFullPhoto(conversation.profile.photoFull)}
@@ -118,26 +150,26 @@ function Matches() {
                       decoding="async"
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/5 to-black/20" />
 
-                    {percent != null && (
-                      <span className="absolute left-1.5 top-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1.5 py-0.5 text-[9px] font-bold text-ink-on-brand shadow">
-                        {percent}%
+                    {percent > 0 && (
+                      <span className="absolute left-1/2 top-2.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-md">
+                        {percent}% Match
                       </span>
                     )}
                     {conversation.isNewMatch && (
-                      <span className="absolute right-1.5 top-1.5 rounded-full bg-mint-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow">
-                        New
+                      <span className="absolute right-2.5 top-10 rounded-full bg-mint-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow">
+                        Nouveau
                       </span>
                     )}
 
-                    <div className="absolute inset-x-0 bottom-0 p-2">
-                      <p className="truncate font-display text-xs font-semibold text-white">
+                    <div className="absolute inset-x-0 bottom-0 p-3 text-center">
+                      <p className="truncate font-display text-base font-semibold text-white">
                         {conversation.profile.firstName}
                         {conversation.profile.age ? `, ${conversation.profile.age}` : ''}
                       </p>
                       {conversation.profile.city && (
-                        <p className="truncate text-[10px] uppercase tracking-wide text-white/70">
+                        <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-wider text-white/70">
                           {conversation.profile.city}
                         </p>
                       )}
