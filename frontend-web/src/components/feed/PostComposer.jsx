@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { HelpCircle, Image as ImageIcon, MessageSquareText, X } from 'lucide-react'
+import { Ban, HelpCircle, Image as ImageIcon, MessageSquareText, X } from 'lucide-react'
 import { useFeed } from '../../context/FeedContext.jsx'
 import { useToast } from '../../context/ToastContext.jsx'
 import { uploadFeedPhoto } from '../../firebase/feed.js'
+import { MAX_BACKGROUND_TEXT, POST_BACKGROUNDS, POST_FONTS, loadPostFonts, postBackground, postFont } from '../../lib/postStyles.js'
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024
 const MAX_TEXT_LENGTH = 1000
@@ -23,6 +24,18 @@ function PostComposer({ onClose, initialType = 'text' }) {
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Text posts only: coloured background + font (preset ids, see postStyles.js)
+  const [background, setBackground] = useState(null)
+  const [font, setFont] = useState('normal')
+
+  const isTextPost = type === 'text'
+  const tooLongForBackground = text.length > MAX_BACKGROUND_TEXT
+  const activeBackground = isTextPost && !tooLongForBackground ? postBackground(background) : null
+  const activeFont = isTextPost ? postFont(font) : null
+
+  useEffect(() => {
+    if (isTextPost) loadPostFonts()
+  }, [isTextPost])
 
   function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
@@ -50,7 +63,14 @@ function PostComposer({ onClose, initialType = 'text' }) {
         photoUrl = uploaded.url
         photoThumbUrl = uploaded.thumbUrl
       }
-      await createPost({ type, text: text.trim() || null, photoUrl, photoThumbUrl })
+      await createPost({
+        type,
+        text: text.trim() || null,
+        photoUrl,
+        photoThumbUrl,
+        background: activeBackground ? activeBackground.id : null,
+        font: activeFont && activeFont.id !== 'normal' ? activeFont.id : null,
+      })
       showToast('Publication envoyée.', 'success')
       onClose()
     } catch {
@@ -111,8 +131,90 @@ function PostComposer({ onClose, initialType = 'text' }) {
                   ? 'Ajoutez une légende (facultatif)…'
                   : 'Partagez quelque chose avec la communauté…'
             }
-            className="w-full resize-none rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06]"
+            style={
+              activeBackground
+                ? {
+                    background: activeBackground.css,
+                    color: activeBackground.text,
+                    fontFamily: activeFont?.family,
+                    fontWeight: activeFont?.weight ?? 700,
+                  }
+                : activeFont
+                  ? { fontFamily: activeFont.family, fontWeight: activeFont.weight }
+                  : undefined
+            }
+            className={
+              activeBackground
+                ? `min-h-[200px] w-full resize-none rounded-2xl border-0 px-6 py-8 text-center outline-none placeholder:text-current placeholder:opacity-60 focus:ring-4 focus:ring-violet-400/25 ${
+                    text.length <= 60 ? 'text-[26px] leading-tight' : text.length <= 120 ? 'text-[22px] leading-snug' : 'text-lg leading-snug'
+                  }`
+                : `w-full resize-none rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06] ${
+                    activeFont && activeFont.id !== 'normal' ? 'text-[17px]' : 'text-sm'
+                  }`
+            }
           />
+
+          {isTextPost && (
+            <div className="space-y-2.5">
+              <div>
+                <p className="text-xs font-semibold text-ink-soft/70">Fond</p>
+                <div className="mt-1.5 flex gap-2 overflow-x-auto pb-1">
+                  <button
+                    type="button"
+                    onClick={() => setBackground(null)}
+                    aria-label="Sans fond"
+                    aria-pressed={!background}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-white text-ink-soft/60 transition dark:bg-surface-tint ${
+                      !background ? 'border-violet-600 ring-2 ring-violet-400/50' : 'border-ink/15'
+                    }`}
+                  >
+                    <Ban size={16} strokeWidth={2} />
+                  </button>
+                  {POST_BACKGROUNDS.map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setBackground(b.id)}
+                      disabled={tooLongForBackground}
+                      aria-label={`Fond ${b.label}`}
+                      aria-pressed={background === b.id}
+                      title={b.label}
+                      style={{ background: b.css }}
+                      className={`h-9 w-9 shrink-0 rounded-full border border-black/10 transition disabled:cursor-not-allowed disabled:opacity-35 ${
+                        background === b.id && !tooLongForBackground ? 'ring-2 ring-violet-600 ring-offset-2 ring-offset-surface' : ''
+                      }`}
+                    />
+                  ))}
+                </div>
+                {tooLongForBackground && (
+                  <p className="mt-1 text-[11px] text-ink-soft/60">
+                    Les fonds de couleur sont disponibles jusqu'à {MAX_BACKGROUND_TEXT} caractères.
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-ink-soft/70">Police</p>
+                <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
+                  {POST_FONTS.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFont(f.id)}
+                      aria-pressed={font === f.id}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-sm transition ${
+                        font === f.id
+                          ? 'border-violet-600 bg-violet-950 text-white'
+                          : 'border-ink/12 text-ink hover:bg-ink/5'
+                      }`}
+                      style={{ fontFamily: f.family, fontWeight: f.weight }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {type === 'photo' && (
             <div>

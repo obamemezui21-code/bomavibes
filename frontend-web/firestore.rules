@@ -328,6 +328,9 @@ service cloud.firestore {
         return data.authorId is string
           && data.type in ['text', 'photo', 'question']
           && isOptionalString('text', 1000)
+          // Text-post style preset ids (lib/postStyles.js)
+          && isOptionalString('background', 30)
+          && isOptionalString('font', 30)
           && (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500))
           && (data.type != 'photo' || (data.photoUrl is string && data.photoUrl.size() > 0))
           && (data.type == 'photo' || (data.text is string && data.text.size() > 0))
@@ -350,6 +353,8 @@ service cloud.firestore {
           && request.resource.data.photoUrl == resource.data.photoUrl
           && request.resource.data.likeCount == resource.data.likeCount
           && request.resource.data.commentCount == resource.data.commentCount
+          && request.resource.data.get('background', null) == resource.data.get('background', null)
+          && request.resource.data.get('font', null) == resource.data.get('font', null)
           && isOptionalString('text', 1000))
         || isCounterOnlyBump('likeCount')
         || isCounterOnlyBump('commentCount')

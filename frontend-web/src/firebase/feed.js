@@ -120,13 +120,16 @@ function subscribeToPost(postId, cb) {
   })
 }
 
-async function createPost(authorId, { type, text, photoUrl, photoThumbUrl }) {
+async function createPost(authorId, { type, text, photoUrl, photoThumbUrl, background, font }) {
   const ref = await addDoc(collection(db, 'posts'), {
     authorId,
     type,
     text: text || null,
     photoUrl: photoUrl || null,
     photoThumbUrl: photoThumbUrl || null,
+    // Text posts only: style preset ids (see lib/postStyles.js)
+    ...(background ? { background } : {}),
+    ...(font ? { font } : {}),
     likeCount: 0,
     commentCount: 0,
     createdAt: serverTimestamp(),

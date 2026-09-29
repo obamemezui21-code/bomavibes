@@ -24,6 +24,7 @@ import { formatRelativeTime } from '../lib/relativeTime.js'
 import CommentItem from '../components/feed/CommentItem.jsx'
 import CommentComposer from '../components/feed/CommentComposer.jsx'
 import EditPostModal from '../components/feed/EditPostModal.jsx'
+import PostText from '../components/feed/PostText.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
 import SendToModal from '../components/shared/SendToModal.jsx'
@@ -275,9 +276,12 @@ function PostDetail() {
             </div>
           </div>
 
-          {post.text && (
-            <p className="mt-3 min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-ink [overflow-wrap:anywhere]">{post.text}</p>
-          )}
+          {post.text &&
+            (post.photoUrl || post.type === 'question' ? (
+              <p className="mt-3 min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-ink [overflow-wrap:anywhere]">{post.text}</p>
+            ) : (
+              <PostText text={post.text} background={post.background} font={post.font} className="mt-3" />
+            ))}
 
           {post.photoUrl && (
             <div className="mt-3 max-h-[32rem] w-full overflow-hidden rounded-xl bg-ink/5">

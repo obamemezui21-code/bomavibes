@@ -4,6 +4,7 @@ import { BadgeCheck, Flag, Heart, MessageCircle, MoreVertical, Pencil, Send, Spa
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
 import { useToast } from '../../context/ToastContext.jsx'
+import PostText from './PostText.jsx'
 
 const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
@@ -334,11 +335,14 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
         </p>
       )}
 
-      {post.text && (
-        <p className={`min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-ink [overflow-wrap:anywhere] ${post.type === 'question' ? 'mt-1 font-medium' : 'mt-2'}`}>
-          {post.text}
-        </p>
-      )}
+      {post.text &&
+        (post.type === 'question' ? (
+          <p className="mt-1 min-w-0 whitespace-pre-wrap text-sm font-medium leading-relaxed text-ink [overflow-wrap:anywhere]">
+            {post.text}
+          </p>
+        ) : (
+          <PostText text={post.text} background={post.background} font={post.font} clamp className="mt-2" />
+        ))}
 
       <div className="mt-1.5 -mb-1 flex items-center gap-1">
         <motion.button
