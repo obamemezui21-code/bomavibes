@@ -10,6 +10,7 @@ import {
   createCall,
   fetchIceServers,
   markCallDelivered,
+  recordCallInChat,
   requestIceRestart,
   setCallStatus,
   subscribeToCall,
@@ -54,6 +55,24 @@ const ROUTE_LABELS = {
   srflx: 'direct (via STUN)',
   prflx: 'direct',
   relay: 'relais TURN',
+}
+
+// Call history: the caller (the only side that always knows how the call
+// went) leaves a 'call' message in the conversation when it ends.
+function logCallInChat(call, reason) {
+  if (call?.role !== 'caller' || !call.id || !call.matchId || !call.selfId) return
+  const answered = !!call.startedAt
+  const outcome = answered
+    ? 'completed'
+    : { missed: 'missed', declined: 'declined', busy: 'busy', failed: 'failed' }[reason] || 'cancelled'
+  recordCallInChat({
+    matchId: call.matchId,
+    callerId: call.selfId,
+    calleeId: call.otherUid,
+    type: call.type,
+    outcome,
+    duration: answered ? (Date.now() - call.startedAt) / 1000 : 0,
+  }).catch(() => {})
 }
 
 function remoteUfrag(pc) {
@@ -156,6 +175,7 @@ export function CallProvider({ children }) {
   const finish = useCallback(
     (reason) => {
       if (!callRef.current || callRef.current.phase === 'ended') return
+      logCallInChat(callRef.current, reason)
       teardown()
       updateCall({ phase: 'ended', endReason: END_MESSAGES[reason] || END_MESSAGES.ended })
       setTimeout(() => {
@@ -371,7 +391,7 @@ export function CallProvider({ children }) {
         firstName: publicProfile?.firstName || user.firstName || '',
         photo: photoVariant(publicProfile?.photos?.[0], 'thumb') || null,
       }
-      callRef.current = { id: null, role: 'caller', phase: 'outgoing', type, matchId, otherUid, other }
+      callRef.current = { id: null, role: 'caller', phase: 'outgoing', type, matchId, otherUid, other, selfId: user.id }
       setCall(callRef.current)
 
       let stream

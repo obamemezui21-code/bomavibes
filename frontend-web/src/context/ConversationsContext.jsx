@@ -215,6 +215,7 @@ export function ConversationsProvider({ children }) {
             fileName: data.fileName || null,
             fileSize: data.fileSize || 0,
             stickerId: data.stickerId || null,
+            call: data.call || null,
             post: data.post || null,
             reactions: data.reactions || null,
             time: formatTime(date),

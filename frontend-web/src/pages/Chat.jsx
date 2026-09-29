@@ -22,6 +22,9 @@ import {
   Pause,
   Pencil,
   Phone,
+  PhoneIncoming,
+  PhoneMissed,
+  PhoneOutgoing,
   Play,
   Reply,
   Search,
@@ -50,6 +53,7 @@ import { blockUser, reportUser } from '../firebase/safety.js'
 import { countIncomingLikes } from '../firebase/swipes.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
+import { callLabel, formatCallDuration, isMissedCall } from '../lib/callSummary.js'
 import { formatDuration } from '../lib/formatDuration.js'
 import { matchPercent } from '../lib/interests.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
@@ -1139,7 +1143,10 @@ function Chat() {
                   const isSticker = m.type === 'sticker'
                   const isPost = m.type === 'post'
                   const isVenueInvite = m.type === 'venue-invite'
-                  const bubbleClass = isSticker || isPost || isVenueInvite
+                  const isCall = m.type === 'call'
+                  const isCard = isSticker || isPost || isVenueInvite || isCall
+                  const callMissed = isCall && isMissedCall(m.call, m.fromMe)
+                  const bubbleClass = isCard
                     ? 'cursor-pointer select-none'
                     : `min-w-0 max-w-full cursor-pointer select-none rounded-[20px] px-4 py-2.5 text-sm shadow-sm transition ${
                         m.fromMe
@@ -1232,6 +1239,48 @@ function Chat() {
                                 )}
                               </div>
                             </button>
+                          ) : isCall ? (
+                            <div
+                              className={`flex min-w-0 items-center gap-3 rounded-2xl border px-3.5 py-3 shadow-sm ${
+                                callMissed
+                                  ? 'border-coral-500/25 bg-white dark:bg-surface-tint'
+                                  : 'border-ink/8 bg-white dark:bg-surface-tint'
+                              }`}
+                            >
+                              <span
+                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                                  callMissed ? 'bg-coral-500/12 text-coral-500' : 'bg-violet-950 text-white'
+                                }`}
+                              >
+                                {callMissed ? (
+                                  <PhoneMissed size={18} strokeWidth={2.25} />
+                                ) : m.call?.type === 'video' ? (
+                                  <Video size={18} strokeWidth={2.25} />
+                                ) : m.fromMe ? (
+                                  <PhoneOutgoing size={18} strokeWidth={2.25} />
+                                ) : (
+                                  <PhoneIncoming size={18} strokeWidth={2.25} />
+                                )}
+                              </span>
+                              <div className="min-w-0">
+                                <p className={`truncate text-sm font-semibold ${callMissed ? 'text-coral-500' : 'text-ink'}`}>
+                                  {callLabel(m.call, m.fromMe)}
+                                </p>
+                                {m.call?.outcome === 'completed' && (
+                                  <p className="text-xs text-ink-soft/60">{formatCallDuration(m.call.duration)}</p>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleStartCall(m.call?.type === 'video' ? 'video' : 'audio')
+                                }}
+                                className="ml-1 shrink-0 rounded-full bg-violet-950/8 px-3 py-1.5 text-xs font-semibold text-violet-950 transition hover:bg-violet-950/15 dark:bg-white/10 dark:text-white"
+                              >
+                                Rappeler
+                              </button>
+                            </div>
                           ) : isVenueInvite ? (
                             <button
                               type="button"
@@ -1262,7 +1311,7 @@ function Chat() {
                           )}
                           <p
                             className={`mt-0.5 flex items-center gap-1 text-[10px] ${
-                              isSticker || isPost || isVenueInvite ? 'text-ink-soft/50' : m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
+                              isCard ? 'text-ink-soft/50' : m.fromMe ? 'text-white/70' : 'text-ink-soft/50'
                             }`}
                           >
                             {m.time}

@@ -9,6 +9,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { auth, db } from './config.js'
+import { callPreview } from '../lib/callSummary.js'
 
 // Audio/video calls: WebRTC media, with Firestore as the signaling channel.
 //
@@ -79,6 +80,25 @@ export function answerIceRestart(callId, version, answer) {
 // show "Ça sonne…" instead of "Appel…".
 export function markCallDelivered(callId) {
   return updateDoc(doc(db, 'calls', callId), { deliveredAt: serverTimestamp() })
+}
+
+// Call history: a 'call' message in the conversation, written by the caller
+// once the call is over, plus the conversation's last-message preview so it
+// surfaces in the Messages list (unread for the other person).
+export async function recordCallInChat({ matchId, callerId, calleeId, type, outcome, duration }) {
+  const call = { type, outcome, duration: Math.max(0, Math.round(duration || 0)) }
+  await addDoc(collection(db, 'matches', matchId, 'messages'), {
+    senderId: callerId,
+    text: '',
+    type: 'call',
+    call,
+    createdAt: serverTimestamp(),
+  })
+  await updateDoc(doc(db, 'matches', matchId), {
+    lastMessage: callPreview(call),
+    lastMessageAt: serverTimestamp(),
+    [`seen.${calleeId}`]: false,
+  })
 }
 
 export function setCallStatus(callId, status) {
