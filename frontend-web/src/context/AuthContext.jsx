@@ -96,36 +96,38 @@ export function AuthProvider({ children }) {
     return unsubscribe
   }, [])
 
+  const uid = user?.id
+
   useEffect(() => {
-    if (!user) {
+    if (!uid) {
       setProfile(null)
       return
     }
     setIsProfileLoading(true)
-    const ref = doc(db, 'users', user.id)
+    const ref = doc(db, 'users', uid)
     const unsubscribe = onSnapshot(ref, (snap) => {
       setProfile(snap.exists() ? snap.data() : null)
       setIsProfileLoading(false)
     })
     return unsubscribe
-  }, [user?.id])
+  }, [uid])
 
   useEffect(() => {
-    if (!user) {
+    if (!uid) {
       setPublicProfile(null)
       return
     }
     setIsPublicProfileLoading(true)
-    const ref = doc(db, 'profiles', user.id)
+    const ref = doc(db, 'profiles', uid)
     const unsubscribe = onSnapshot(ref, (snap) => {
       setPublicProfile(snap.exists() ? snap.data() : null)
       setIsPublicProfileLoading(false)
     })
     return unsubscribe
-  }, [user?.id])
+  }, [uid])
 
   useEffect(() => {
-    if (!user) {
+    if (!uid) {
       setLatestAnnouncement(null)
       return
     }
@@ -140,7 +142,7 @@ export function AuthProvider({ children }) {
       setLatestAnnouncement({ id: docSnap.id, ...data, createdAt: data.createdAt?.toDate?.() ?? null })
     })
     return unsubscribe
-  }, [user?.id])
+  }, [uid])
 
   const lastSeenAnnouncementAt = profile?.lastSeenAnnouncementAt?.toDate?.() ?? null
   const hasUnseenAnnouncement =
@@ -156,7 +158,7 @@ export function AuthProvider({ children }) {
       await signInWithEmailAndPassword(auth, email, password)
     } catch (error) {
       const message = mapAuthError(error)
-      if (message) throw new Error(message)
+      if (message) throw new Error(message, { cause: error })
     }
   }
 
@@ -177,7 +179,7 @@ export function AuthProvider({ children }) {
       setUser(toAppUser(credential.user))
     } catch (error) {
       const message = mapAuthError(error)
-      if (message) throw new Error(message)
+      if (message) throw new Error(message, { cause: error })
     }
   }
 
@@ -206,8 +208,8 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email }),
       })
       if (!res.ok) throw new Error()
-    } catch {
-      throw new Error('Une erreur est survenue, réessaie.')
+    } catch (error) {
+      throw new Error('Une erreur est survenue, réessaie.', { cause: error })
     }
   }
 
@@ -218,7 +220,7 @@ export function AuthProvider({ children }) {
       navigate(isNewUser ? '/onboarding' : '/discover', { replace: true })
     } catch (error) {
       const message = mapAuthError(error)
-      if (message) throw new Error(message)
+      if (message) throw new Error(message, { cause: error })
     }
   }
 
@@ -237,8 +239,8 @@ export function AuthProvider({ children }) {
       })
       if (!res.ok) throw new Error()
       await signOut(auth)
-    } catch {
-      throw new Error('Impossible de supprimer votre compte, réessayez.')
+    } catch (error) {
+      throw new Error('Impossible de supprimer votre compte, réessayez.', { cause: error })
     }
   }
 
@@ -255,7 +257,7 @@ export function AuthProvider({ children }) {
       await reauthenticateWithCredential(currentUser, credential)
     } catch (error) {
       const message = mapAuthError(error)
-      throw new Error(message)
+      throw new Error(message, { cause: error })
     }
   }
 
@@ -265,7 +267,7 @@ export function AuthProvider({ children }) {
       await verifyBeforeUpdateEmail(auth.currentUser, newEmail)
     } catch (error) {
       const message = mapAuthError(error)
-      throw new Error(message)
+      throw new Error(message, { cause: error })
     }
   }
 
@@ -275,7 +277,7 @@ export function AuthProvider({ children }) {
       await updatePassword(auth.currentUser, newPassword)
     } catch (error) {
       const message = mapAuthError(error)
-      throw new Error(message)
+      throw new Error(message, { cause: error })
     }
   }
 

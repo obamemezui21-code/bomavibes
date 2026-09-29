@@ -65,7 +65,7 @@ export function ConversationsProvider({ children }) {
   const [blockedIds, setBlockedIds] = useState(new Set())
   const [activeMessages, setActiveMessages] = useState({})
   const [openMatchId, setOpenMatchId] = useState(null)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const prevSeenRef = useRef({})
   const isFirstMatchesSnapshot = useRef(true)
   const hasTriedPushRef = useRef(false)

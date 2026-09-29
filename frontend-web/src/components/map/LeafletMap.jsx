@@ -45,8 +45,12 @@ function LeafletMap({
   const onMarkerClickRef = useRef(onMarkerClick)
   const onMapClickRef = useRef(onMapClick)
 
-  onMarkerClickRef.current = onMarkerClick
-  onMapClickRef.current = onMapClick
+  // Keep the latest callbacks for Leaflet's own event handlers, which are
+  // bound once when the map is created.
+  useEffect(() => {
+    onMarkerClickRef.current = onMarkerClick
+    onMapClickRef.current = onMapClick
+  })
 
   useEffect(() => {
     const map = L.map(containerRef.current, { attributionControl: true }).setView(center, zoom)

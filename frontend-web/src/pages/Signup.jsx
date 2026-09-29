@@ -27,7 +27,7 @@ function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [captcha, setCaptcha] = useState({ token: '', indices: [] })
-  const formLoadedAt = useRef(Date.now())
+  const [formLoadedAt] = useState(() => Date.now())
   const captchaRef = useRef(null)
 
   useEffect(() => {
@@ -51,7 +51,7 @@ function Signup() {
       setError("Merci d'accepter les conditions d'utilisation pour continuer")
       return
     }
-    if (website.trim() || Date.now() - formLoadedAt.current < MIN_SUBMIT_DELAY_MS) {
+    if (website.trim() || Date.now() - formLoadedAt < MIN_SUBMIT_DELAY_MS) {
       // Bot caught by the honeypot or the time trap — same generic error as
       // a real failure, so nothing tells it which check it tripped.
       setError('Une erreur est survenue, réessayez')
