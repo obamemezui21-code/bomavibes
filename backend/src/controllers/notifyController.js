@@ -58,23 +58,84 @@ const NOTIFICATIONS = {
   },
 };
 
+async function hasCommentBy(postId, uid) {
+  const snap = await db.collection("posts").doc(postId).collection("comments")
+    .where("authorId", "==", uid).limit(1).get();
+  return !snap.empty;
+}
+
+// The client asks for a push, but the server decides whether the sender is
+// actually allowed to notify this person: without this any signed-in user
+// could push "new message / match / call" notifications to anyone.
+// Returns the match doc data for match-based types (reused below).
+async function checkRelationship(type, senderId, targetUid, payload) {
+  if (senderId === targetUid) return { ok: false };
+
+  if (type === "message" || type === "call") {
+    if (typeof payload?.matchId !== "string" || !payload.matchId) return { ok: false };
+    const matchSnap = await db.collection("matches").doc(payload.matchId).get();
+    const users = matchSnap.data()?.users || [];
+    return { ok: users.includes(senderId) && users.includes(targetUid), match: matchSnap.data() };
+  }
+
+  if (type === "match") {
+    const matchId = [senderId, targetUid].sort().join("_");
+    const matchSnap = await db.collection("matches").doc(matchId).get();
+    return { ok: matchSnap.exists };
+  }
+
+  if (typeof payload?.postId !== "string" || !payload.postId) return { ok: false };
+  const postSnap = await db.collection("posts").doc(payload.postId).get();
+  if (!postSnap.exists) return { ok: false };
+  const authorId = postSnap.data().authorId;
+
+  if (type === "post_like") {
+    const likeSnap = await postSnap.ref.collection("likes").doc(senderId).get();
+    return { ok: authorId === targetUid && likeSnap.exists };
+  }
+  if (type === "post_comment") {
+    return { ok: authorId === targetUid && (await hasCommentBy(payload.postId, senderId)) };
+  }
+  if (type === "comment_reply") {
+    const [targetCommented, senderCommented] = await Promise.all([
+      hasCommentBy(payload.postId, targetUid),
+      hasCommentBy(payload.postId, senderId),
+    ]);
+    return { ok: targetCommented && senderCommented };
+  }
+  return { ok: false };
+}
+
 async function notify(req, res) {
-  const { targetUid, type, payload } = req.body;
+  const { targetUid, type } = req.body;
   const config = NOTIFICATIONS[type];
   const senderId = req.firebaseUser.uid;
 
-  if (!targetUid || !config) {
+  if (typeof targetUid !== "string" || !targetUid || !config) {
     return res.status(400).json({ message: "Requête de notification invalide" });
   }
 
   try {
+    const relationship = await checkRelationship(type, senderId, targetUid, req.body.payload);
+    if (!relationship.ok) {
+      return res.status(403).json({ message: "Notification non autorisée" });
+    }
+
+    // Someone who blocked the sender never hears from them.
+    const blockSnap = await db.collection("blocks").doc(`${targetUid}_${senderId}`).get();
+    if (blockSnap.exists) {
+      return res.json({ sent: 0, skipped: "blocked" });
+    }
+
+    // The name shown in the notification comes from the sender's real
+    // profile, not from whatever the client sent.
+    const senderProfile = await db.collection("profiles").doc(senderId).get();
+    const payload = { ...req.body.payload, firstName: senderProfile.data()?.firstName || "" };
+
     // A new chat message shouldn't push if the recipient already has that
     // exact conversation open — they're watching it arrive live.
-    if (type === "message" && payload?.matchId) {
-      const matchSnap = await db.collection("matches").doc(payload.matchId).get();
-      if (isRecentTimestamp(matchSnap.data()?.activeIn?.[targetUid])) {
-        return res.json({ sent: 0, skipped: "recipient_active_in_conversation" });
-      }
+    if (type === "message" && isRecentTimestamp(relationship.match?.activeIn?.[targetUid])) {
+      return res.json({ sent: 0, skipped: "recipient_active_in_conversation" });
     }
 
     const targetSnap = await db.collection("users").doc(targetUid).get();

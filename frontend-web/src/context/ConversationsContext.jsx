@@ -335,7 +335,9 @@ export function ConversationsProvider({ children }) {
     const match = matches.find((m) => m.id === matchId)
     const otherUid = match?.users.find((u) => u !== uid)
     await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: text,
+      // Only a preview lives on the match (rules cap it at 2000 chars); the
+      // full text stays in the message itself.
+      lastMessage: text.slice(0, 500),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })

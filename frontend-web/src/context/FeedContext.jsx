@@ -132,7 +132,11 @@ function FeedProvider({ children }) {
     try {
       await toggleLikeDoc(post.id, user.id, wasLiked)
       if (!wasLiked && post.authorId !== user.id) {
-        sendPushNotification(post.authorId, 'post_like', { firstName: user.firstName, preview: post.text?.slice(0, 80) })
+        sendPushNotification(post.authorId, 'post_like', {
+          postId: post.id,
+          firstName: user.firstName,
+          preview: post.text?.slice(0, 80),
+        })
       }
     } catch {
       setLikedPostIds((prev) => {

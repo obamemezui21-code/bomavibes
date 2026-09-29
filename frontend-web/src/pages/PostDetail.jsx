@@ -117,6 +117,7 @@ function PostDetail() {
     const notifyTargetId = replyTarget ? replyTarget.authorId : post.authorId
     if (notifyTargetId !== user.id) {
       sendPushNotification(notifyTargetId, replyTarget ? 'comment_reply' : 'post_comment', {
+        postId,
         firstName: user.firstName,
         text: text.slice(0, 120),
       })

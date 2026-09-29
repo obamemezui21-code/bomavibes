@@ -20,6 +20,7 @@ const eventTicketsRoutes = require("./routes/eventTicketsRoutes");
 const aiPartnersRoutes = require("./routes/aiPartnersRoutes");
 const callRoutes = require("./routes/callRoutes");
 const { startWwfNewsScheduler } = require("./services/wwfNewsService");
+const { startCallCleanupScheduler } = require("./services/callCleanupService");
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use("/api/admin/ai-partners", aiPartnersRoutes);
 app.use("/api/calls", callRoutes);
 
 startWwfNewsScheduler();
+startCallCleanupScheduler();
 
 // Error handler
 app.use((err, req, res, next) => {
