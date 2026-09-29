@@ -42,6 +42,13 @@ const NOTIFICATIONS = {
       body: payload?.text || "Vous avez reçu un nouveau commentaire.",
     }),
   },
+  call: {
+    prefField: "notifyMessages",
+    build: (payload) => ({
+      title: `${payload?.callType === "video" ? "Appel vidéo" : "Appel audio"}${payload?.firstName ? ` de ${payload.firstName}` : ""}`,
+      body: "Touchez pour répondre.",
+    }),
+  },
   comment_reply: {
     prefField: "notifyFeed",
     build: (payload) => ({
@@ -97,6 +104,21 @@ async function notify(req, res) {
         messageId: String(payload.messageId || ""),
       };
       message.webpush = {
+        fcmOptions: { link: `${process.env.FRONTEND_URL || "https://bomavibes.tech"}/chat/${payload.matchId}` },
+      };
+    }
+
+    // Incoming call: opening the notification lands on the conversation,
+    // where the app picks up the still-ringing call and shows it.
+    if (type === "call" && payload?.matchId) {
+      message.data = {
+        type: "call",
+        conversationId: String(payload.matchId),
+        callId: String(payload.callId || ""),
+        senderId: String(senderId),
+      };
+      message.webpush = {
+        headers: { Urgency: "high", TTL: "45" },
         fcmOptions: { link: `${process.env.FRONTEND_URL || "https://bomavibes.tech"}/chat/${payload.matchId}` },
       };
     }

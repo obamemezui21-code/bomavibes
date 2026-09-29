@@ -9,6 +9,7 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
 import { ConversationsProvider } from './context/ConversationsContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
+import { CallProvider } from './context/CallContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -17,7 +18,9 @@ createRoot(document.getElementById('root')).render(
         <ToastProvider>
           <AuthProvider>
             <ConversationsProvider>
-              <App />
+              <CallProvider>
+                <App />
+              </CallProvider>
             </ConversationsProvider>
           </AuthProvider>
         </ToastProvider>

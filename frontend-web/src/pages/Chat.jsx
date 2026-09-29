@@ -21,6 +21,7 @@ import {
   Paperclip,
   Pause,
   Pencil,
+  Phone,
   Play,
   Reply,
   Search,
@@ -42,6 +43,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
+import { useCall } from '../context/CallContext.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachments.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
@@ -362,6 +364,7 @@ function Chat() {
   const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
   const { theme } = useTheme()
+  const { startCall } = useCall()
   const [draft, setDraft] = useState('')
   const [listSearch, setListSearch] = useState('')
   const [likesCount, setLikesCount] = useState(null)
@@ -725,6 +728,16 @@ function Chat() {
     }
   }
 
+  function handleStartCall(type) {
+    if (!active?.otherUid) return
+    startCall({
+      matchId: active.id,
+      otherUid: active.otherUid,
+      other: { firstName: active.profile.firstName, photo: active.profile.photo },
+      type,
+    })
+  }
+
   async function handleReportUser(reason, description, alsoBlock) {
     if (!active) return
     setIsSubmittingSafety(true)
@@ -1082,7 +1095,15 @@ function Chat() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => showToast('Bientôt disponible.', 'info')}
+                    onClick={() => handleStartCall('audio')}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
+                    aria-label="Appel audio"
+                  >
+                    <Phone size={16} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleStartCall('video')}
                     className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
                     aria-label="Appel vidéo"
                   >
