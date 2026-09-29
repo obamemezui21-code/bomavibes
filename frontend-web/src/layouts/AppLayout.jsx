@@ -148,41 +148,39 @@ function AppLayout() {
       <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 flex items-stretch justify-around gap-1 rounded-full border border-ink/8 bg-surface/80 px-2 py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.35),0_4px_12px_-4px_rgba(169,93,218,0.25)] backdrop-blur-2xl desktop:hidden">
         {navItems.map((item, i) => {
           const isActive = location.pathname === item.to
-          const anim = iconAnimation(item, i, isActive, 1.15)
+          const anim = iconAnimation(item, i, isActive, 1)
           return (
+            // Icons only (Friendzy-style): the active tab sits in a filled
+            // pink circle; the label stays available to screen readers.
             <NavLink
               key={item.to}
               to={item.to}
-              className="relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] font-medium"
+              aria-label={item.label}
+              className="relative flex min-w-0 flex-1 items-center justify-center py-0.5"
             >
-              {isActive && (
-                <motion.div
-                  layoutId="nav-active-pill"
-                  className="absolute inset-0 rounded-full bg-pink-500/15"
-                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                />
-              )}
-              <span className="relative">
+              <span className="relative flex h-11 w-11 items-center justify-center">
+                {isActive && (
+                  <motion.span
+                    layoutId="nav-active-pill"
+                    className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 to-pink-500 shadow-md shadow-pink-500/40"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  />
+                )}
                 <motion.span
-                  className={`inline-flex ${item.ring ? 'text-coral-500' : ''}`}
+                  className={`relative inline-flex ${item.ring ? 'text-coral-500' : ''}`}
                   animate={anim.animate}
                   whileTap={{ scale: 0.8 }}
                   transition={anim.transition}
                   style={{ transformOrigin: '50% 0%' }}
                 >
                   <item.icon
-                    size={19}
+                    size={21}
                     strokeWidth={2}
-                    className={item.ring ? '' : isActive ? 'text-pink-500' : 'text-ink-soft/60'}
+                    className={item.ring ? '' : isActive ? 'text-white' : 'text-ink-soft/60'}
                     fill={item.ring ? 'currentColor' : 'none'}
                   />
                 </motion.span>
                 <NavBadge count={item.badge} />
-              </span>
-              <span
-                className={`relative w-full truncate px-0.5 text-center ${item.ring ? 'text-coral-500' : isActive ? 'text-pink-500 font-bold' : 'text-ink-soft/60'}`}
-              >
-                {item.label}
               </span>
             </NavLink>
           )
