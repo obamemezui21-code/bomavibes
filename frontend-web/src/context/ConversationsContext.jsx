@@ -6,6 +6,7 @@ import {
   deleteField,
   doc,
   onSnapshot,
+  limitToLast,
   orderBy,
   query,
   runTransaction,
@@ -20,6 +21,7 @@ import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
 import { photoVariant } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
+import { usePageVisible } from '../lib/usePageVisible.js'
 import { useAuth } from './AuthContext.jsx'
 
 const ConversationsContext = createContext(null)
@@ -30,6 +32,7 @@ const HEARTBEAT_INTERVAL_MS = 90 * 1000
 // so a normal heartbeat cadence never races a message notification into
 // being wrongly suppressed.
 const ACTIVE_IN_HEARTBEAT_MS = 20 * 1000
+const MESSAGES_PAGE_SIZE = 50
 
 function formatTime(date) {
   if (!date) return ''
@@ -64,8 +67,11 @@ export function ConversationsProvider({ children }) {
   const [profilesById, setProfilesById] = useState({})
   const [blockedIds, setBlockedIds] = useState(new Set())
   const [activeMessages, setActiveMessages] = useState({})
+  const [messageLimits, setMessageLimits] = useState({})
+  const [hasOlderMessages, setHasOlderMessages] = useState({})
   const [openMatchId, setOpenMatchId] = useState(null)
   const [now, setNow] = useState(() => Date.now())
+  const isPageVisible = usePageVisible()
   const prevSeenRef = useRef({})
   const isFirstMatchesSnapshot = useRef(true)
   const hasTriedPushRef = useRef(false)
@@ -119,14 +125,17 @@ export function ConversationsProvider({ children }) {
     setShowPushPrompt(false)
   }
 
+  // Presence heartbeat — only while the app is on screen. A background tab or
+  // a locked phone stops writing (and stops pushing the profile to every
+  // match); coming back stamps immediately, so "En ligne" returns at once.
   useEffect(() => {
-    if (!uid) return undefined
+    if (!uid || !isPageVisible) return undefined
     updateDoc(doc(db, 'profiles', uid), { lastActive: serverTimestamp() }).catch(() => {})
     const heartbeat = setInterval(() => {
       updateDoc(doc(db, 'profiles', uid), { lastActive: serverTimestamp() }).catch(() => {})
     }, HEARTBEAT_INTERVAL_MS)
     return () => clearInterval(heartbeat)
-  }, [uid])
+  }, [uid, isPageVisible])
 
   // Marks this user "actively in" whichever match is currently open, so the
   // backend can skip pushing a message notification they're already
@@ -134,8 +143,10 @@ export function ConversationsProvider({ children }) {
   // timestamp rather than a one-time flag: if the tab crashes or is killed
   // instead of cleanly closing, the field simply goes stale on its own
   // instead of blocking that conversation's notifications forever.
+  // Paused while the app is hidden: nobody is watching the conversation
+  // then, so message notifications should get through anyway.
   useEffect(() => {
-    if (!uid || !openMatchId) return undefined
+    if (!uid || !openMatchId || !isPageVisible) return undefined
     const ref = doc(db, 'matches', openMatchId)
     const stamp = () => updateDoc(ref, { [`activeIn.${uid}`]: serverTimestamp() }).catch(() => {})
     stamp()
@@ -144,7 +155,7 @@ export function ConversationsProvider({ children }) {
       clearInterval(heartbeat)
       updateDoc(ref, { [`activeIn.${uid}`]: deleteField() }).catch(() => {})
     }
-  }, [uid, openMatchId])
+  }, [uid, openMatchId, isPageVisible])
 
   useEffect(() => {
     if (!uid) {
@@ -194,10 +205,20 @@ export function ConversationsProvider({ children }) {
     return () => unsubscribes.forEach((unsub) => unsub())
   }, [uid, matchedOtherUidsKey])
 
+  // Only the most recent messages of the open conversation are listened to
+  // (MESSAGES_PAGE_SIZE, more on demand via loadOlderMessages) — a long
+  // conversation used to re-read its whole history on every open.
+  const openMessageLimit = openMatchId ? messageLimits[openMatchId] || MESSAGES_PAGE_SIZE : MESSAGES_PAGE_SIZE
+
   useEffect(() => {
     if (!openMatchId) return
-    const q = query(collection(db, 'matches', openMatchId, 'messages'), orderBy('createdAt', 'asc'))
+    const q = query(
+      collection(db, 'matches', openMatchId, 'messages'),
+      orderBy('createdAt', 'asc'),
+      limitToLast(openMessageLimit),
+    )
     const unsubscribe = onSnapshot(q, (snap) => {
+      setHasOlderMessages((prev) => ({ ...prev, [openMatchId]: snap.size >= openMessageLimit }))
       setActiveMessages((prev) => ({
         ...prev,
         [openMatchId]: snap.docs.map((d) => {
@@ -217,6 +238,7 @@ export function ConversationsProvider({ children }) {
             stickerId: data.stickerId || null,
             call: data.call || null,
             post: data.post || null,
+            venue: data.venue || null,
             reactions: data.reactions || null,
             time: formatTime(date),
             date,
@@ -228,7 +250,11 @@ export function ConversationsProvider({ children }) {
       }))
     })
     return unsubscribe
-  }, [openMatchId, uid])
+  }, [openMatchId, uid, openMessageLimit])
+
+  function loadOlderMessages(matchId) {
+    setMessageLimits((prev) => ({ ...prev, [matchId]: (prev[matchId] || MESSAGES_PAGE_SIZE) + MESSAGES_PAGE_SIZE }))
+  }
 
   const conversations = useMemo(() => {
     return matches
@@ -274,11 +300,12 @@ export function ConversationsProvider({ children }) {
           online,
           lastSeenLabel: online ? 'En ligne' : formatLastSeen(profile.lastActive, now),
           isTyping: isRecent(match.typing?.[otherUid], TYPING_THRESHOLD_MS, now),
+          hasOlderMessages: !!hasOlderMessages[match.id],
         }
       })
       .filter(Boolean)
       .sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
-  }, [matches, profilesById, activeMessages, uid, now, blockedIds])
+  }, [matches, profilesById, activeMessages, hasOlderMessages, uid, now, blockedIds])
 
   const typingId = conversations.find((c) => c.isTyping)?.id ?? null
   const newMatchesCount = useMemo(() => conversations.filter((c) => c.isNewMatch).length, [conversations])
@@ -509,6 +536,7 @@ export function ConversationsProvider({ children }) {
         conversations,
         typingId,
         setTyping,
+        loadOlderMessages,
         unreadMessagesCount,
         newMatchesCount,
         notificationsCount,

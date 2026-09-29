@@ -1,4 +1,4 @@
-import { Fragment, Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Fragment, Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -364,6 +364,7 @@ function Chat() {
     closeConversation,
     setTyping,
     refreshBlockedIds,
+    loadOlderMessages,
   } = useConversations()
   const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
@@ -394,7 +395,8 @@ function Chat() {
   const listScrollRef = useRef(null)
   const [showScrollUp, setShowScrollUp] = useState(false)
   const isNearBottomRef = useRef(true)
-  const prevMessageCountRef = useRef(0)
+  const prevLastMessageIdRef = useRef(null)
+  const pendingPrependRef = useRef(null)
   const [showNewMessagesPill, setShowNewMessagesPill] = useState(false)
   const typingTimeoutRef = useRef(null)
   const isTypingRef = useRef(false)
@@ -428,13 +430,35 @@ function Chat() {
     countIncomingLikes(user.id).then(setLikesCount).catch(() => setLikesCount(null))
   }, [user?.id])
 
+  const threadMessages = active?.messages || []
+  const lastMessageId = threadMessages[threadMessages.length - 1]?.id ?? null
+  const firstMessageId = threadMessages[0]?.id ?? null
+
+  // Older messages were just prepended ("Voir les messages précédents"):
+  // keep the reader on the same message instead of jumping.
+  useLayoutEffect(() => {
+    const pending = pendingPrependRef.current
+    const el = scrollRef.current
+    if (!pending || !el || firstMessageId === pending.firstId) return
+    el.scrollTop = el.scrollHeight - pending.height + pending.top
+    pendingPrependRef.current = null
+  }, [firstMessageId])
+
+  function handleLoadOlder() {
+    const el = scrollRef.current
+    if (el) pendingPrependRef.current = { height: el.scrollHeight, top: el.scrollTop, firstId: firstMessageId }
+    loadOlderMessages(activeId)
+  }
+
   useEffect(() => {
     const isConversationSwitch = prevActiveIdRef.current !== activeId
     prevActiveIdRef.current = activeId
-    const messages = active?.messages || []
-    const grew = messages.length > prevMessageCountRef.current
+    const messages = threadMessages
+    // A new message is one at the END of the thread — the count alone can't
+    // tell (older messages get prepended, and the window is capped).
+    const grew = !!lastMessageId && lastMessageId !== prevLastMessageIdRef.current
     const lastMine = messages[messages.length - 1]?.fromMe
-    prevMessageCountRef.current = messages.length
+    prevLastMessageIdRef.current = lastMessageId
 
     if (isConversationSwitch) {
       isNearBottomRef.current = true
@@ -462,7 +486,7 @@ function Chat() {
     }
     return undefined
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId, active?.messages.length, typingId])
+  }, [activeId, lastMessageId, typingId])
 
   useEffect(() => {
     if (conversationId) openConversation(conversationId)
@@ -1128,6 +1152,17 @@ function Chat() {
               <div className="absolute inset-0 bg-surface-soft/55 dark:bg-surface-soft/65" />
             </div>
             <div ref={scrollRef} onScroll={handleThreadScroll} className="relative h-full space-y-2 overflow-y-auto px-4 py-4">
+              {active.hasOlderMessages && (
+                <div className="flex justify-center pb-1">
+                  <button
+                    type="button"
+                    onClick={handleLoadOlder}
+                    className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-violet-950 shadow-sm ring-1 ring-ink/8 transition hover:bg-ink/5 dark:bg-surface-tint dark:text-white"
+                  >
+                    Voir les messages précédents
+                  </button>
+                </div>
+              )}
               {active.messages.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                   <Hand size={32} strokeWidth={1.5} className="text-ink-soft/40" />
@@ -1141,8 +1176,10 @@ function Chat() {
                 {active.messages.map((m, i) => {
                   const showDaySeparator = !isSameDay(m.date, active.messages[i - 1]?.date)
                   const isSticker = m.type === 'sticker'
-                  const isPost = m.type === 'post'
-                  const isVenueInvite = m.type === 'venue-invite'
+                  // Card types without their payload fall back to plain text
+                  // instead of crashing the whole conversation.
+                  const isPost = m.type === 'post' && !!m.post
+                  const isVenueInvite = m.type === 'venue-invite' && !!m.venue
                   const isCall = m.type === 'call'
                   const isCard = isSticker || isPost || isVenueInvite || isCall
                   const callMissed = isCall && isMissedCall(m.call, m.fromMe)

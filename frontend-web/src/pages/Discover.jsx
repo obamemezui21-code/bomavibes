@@ -27,7 +27,7 @@ import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
 import SupportPromptCard from '../components/SupportPromptCard.jsx'
 import { TIERS } from '../lib/pricingTiers.js'
-import { fetchDiscoverCandidates } from '../firebase/discovery.js'
+import { fetchDiscoverCandidates, getCachedCandidates, setCachedCandidates } from '../firebase/discovery.js'
 import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -101,9 +101,22 @@ function Discover() {
   const [exitDirection, setExitDirection] = useState(null)
   const [isReviewing, setIsReviewing] = useState(false)
   const seenIdsRef = useRef(new Set())
+  const cacheKeyRef = useRef(null)
 
-  async function loadCandidates(currentFilters, { includeRefused = false } = {}) {
+  async function loadCandidates(currentFilters, { includeRefused = false, allowCache = false } = {}) {
     if (!user?.id) return
+    const key = JSON.stringify(currentFilters) + (includeRefused ? ':revoir' : '')
+    // Coming back to Discover within a few minutes: reuse the list instead
+    // of re-reading every profile (see getCachedCandidates).
+    if (allowCache) {
+      const cached = getCachedCandidates(user.id, key)
+      if (cached) {
+        cacheKeyRef.current = key
+        setProfiles(cached)
+        setIsLoading(false)
+        return
+      }
+    }
     setIsLoading(true)
     try {
       const candidates = await fetchDiscoverCandidates(user.id, currentFilters, {
@@ -111,6 +124,8 @@ function Discover() {
         includeRefused,
         myInterests: publicProfile?.interests || [],
       })
+      cacheKeyRef.current = key
+      setCachedCandidates(user.id, key, candidates, { refreshTime: true })
       setProfiles(candidates)
     } catch {
       showToast('Impossible de charger les profils, réessayez.', 'error')
@@ -121,9 +136,15 @@ function Discover() {
   }
 
   useEffect(() => {
-    loadCandidates(filters)
+    loadCandidates(filters, { allowCache: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
+
+  // Keep the cached list in step with swipes / blocks made on this visit, so
+  // coming back never shows someone already swiped.
+  useEffect(() => {
+    if (user?.id && cacheKeyRef.current) setCachedCandidates(user.id, cacheKeyRef.current, profiles)
+  }, [profiles, user?.id])
 
   const searched = useMemo(() => {
     let list = profiles

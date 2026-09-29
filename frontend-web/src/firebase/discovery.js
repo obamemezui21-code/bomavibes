@@ -27,14 +27,44 @@ function toMillis(value) {
   return value?.toMillis?.() ?? null
 }
 
+// The user's own swipes, read from Firestore once per session and then kept
+// up to date locally (rememberSwipe) — re-reading every past swipe on each
+// Discover visit grew without bound as people kept swiping.
+let swipeCache = { uid: null, map: null }
+
 async function getMySwipes(uid) {
+  if (swipeCache.uid === uid && swipeCache.map) return swipeCache.map
   const snap = await getDocs(query(collection(db, 'swipes'), where('swiperId', '==', uid)))
   const map = new Map()
   snap.docs.forEach((d) => {
     const data = d.data()
     map.set(data.targetId, { direction: data.direction, at: toMillis(data.createdAt) })
   })
+  swipeCache = { uid, map }
   return map
+}
+
+// Called right after a swipe is saved (see recordSwipeAndMatch).
+export function rememberSwipe(uid, targetId, direction) {
+  if (swipeCache.uid !== uid || !swipeCache.map) return
+  swipeCache.map.set(targetId, { direction, at: Date.now() })
+}
+
+// Discover's candidate list, kept for a few minutes so leaving Discover and
+// coming back doesn't re-read dozens of profiles. Only reused for the exact
+// same filters; changing them, "Revoir les profils" or a sign-out reloads.
+const CANDIDATES_CACHE_MS = 5 * 60 * 1000
+let candidatesCache = null
+
+export function getCachedCandidates(uid, filtersKey) {
+  const c = candidatesCache
+  if (!c || c.uid !== uid || c.filtersKey !== filtersKey || Date.now() - c.at > CANDIDATES_CACHE_MS) return null
+  return c.profiles
+}
+
+export function setCachedCandidates(uid, filtersKey, profiles, { refreshTime = false } = {}) {
+  const at = refreshTime || !candidatesCache || candidatesCache.uid !== uid ? Date.now() : candidatesCache.at
+  candidatesCache = { uid, filtersKey, profiles, at }
 }
 
 // Higher score = shown first. Returns null when a candidate isn't eligible

@@ -1,13 +1,27 @@
-import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, setDoc, where } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+  getCountFromServer,
+  getDoc,
+  getDocs,
+  query,
+  runTransaction,
+  serverTimestamp,
+  setDoc,
+  where,
+} from 'firebase/firestore'
 import { db } from './config.js'
 import { sendPushNotification } from './notify.js'
 import { fetchBlockedIds } from './safety.js'
+import { rememberSwipe } from './discovery.js'
 
+// Server-side count (billed per 1000 matching docs) instead of downloading
+// every incoming like just to read its length.
 export async function countIncomingLikes(uid) {
-  const snap = await getDocs(
+  const snap = await getCountFromServer(
     query(collection(db, 'swipes'), where('targetId', '==', uid), where('direction', 'in', ['like', 'superlike'])),
   )
-  return snap.size
+  return snap.data().count
 }
 
 export async function getIncomingLikers(uid) {
@@ -34,6 +48,7 @@ export async function recordSwipeAndMatch(uid, targetId, direction, firstName) {
     direction,
     createdAt: serverTimestamp(),
   })
+  rememberSwipe(uid, targetId, direction)
 
   if (direction === 'pass') return null
 
