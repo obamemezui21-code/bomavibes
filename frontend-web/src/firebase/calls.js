@@ -17,7 +17,8 @@ import { auth, db } from './config.js'
 //   status: 'ringing' → 'accepted' → 'ended'
 //           'ringing' → 'declined' | 'missed' | 'busy' | 'cancelled'
 //   offer / answer ({ type, sdp }), caller/callee display info,
-//   createdAt, answeredAt, endedAt
+//   createdAt, answeredAt, endedAt,
+//   restart / restartAnswer ({ version, offer | answer }) for ICE restarts
 // calls/{callId}/callerCandidates, calls/{callId}/calleeCandidates
 //   ICE candidates each side publishes for the other.
 
@@ -59,6 +60,19 @@ export async function createCall({ callerId, calleeId, matchId, type, offer, cal
 
 export function answerCall(callId, answer) {
   return updateDoc(doc(db, 'calls', callId), { answer, status: 'accepted', answeredAt: serverTimestamp() })
+}
+
+// ICE restart (connection lost mid-call, e.g. Wi-Fi → 4G): the caller
+// publishes a fresh offer under a new version number, the callee answers it.
+// Same call doc and candidate subcollections — no parallel signaling path.
+export function requestIceRestart(callId, version, offer) {
+  return updateDoc(doc(db, 'calls', callId), { restart: { version, offer: { type: offer.type, sdp: offer.sdp } } })
+}
+
+export function answerIceRestart(callId, version, answer) {
+  return updateDoc(doc(db, 'calls', callId), {
+    restartAnswer: { version, answer: { type: answer.type, sdp: answer.sdp } },
+  })
 }
 
 export function setCallStatus(callId, status) {

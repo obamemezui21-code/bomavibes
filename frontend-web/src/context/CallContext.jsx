@@ -5,8 +5,10 @@ import {
   RING_TIMEOUT_MS,
   addCandidate,
   answerCall,
+  answerIceRestart,
   createCall,
   fetchIceServers,
+  requestIceRestart,
   setCallStatus,
   subscribeToCall,
   subscribeToIncomingCalls,
@@ -34,8 +36,49 @@ const END_MESSAGES = {
 
 // How long the "Appel terminé" state stays on screen before closing.
 const END_SCREEN_MS = 1600
-// A connection that stays "disconnected" this long is treated as dropped.
-const DISCONNECT_GRACE_MS = 10 * 1000
+
+// Recovery when the connection drops (network switch, TURN fallback needed…):
+// the caller renegotiates with an ICE restart instead of hanging up.
+// A brief "disconnected" often heals by itself — wait a little first.
+const DISCONNECT_BEFORE_RESTART_MS = 3 * 1000
+// Time given to each restart attempt before trying again.
+const RESTART_RETRY_MS = 8 * 1000
+const MAX_ICE_RESTARTS = 2
+// Give up if the call hasn't recovered this long after the drop.
+const RECOVERY_TIMEOUT_MS = 25 * 1000
+
+const ROUTE_LABELS = {
+  host: 'direct (même réseau)',
+  srflx: 'direct (via STUN)',
+  prflx: 'direct',
+  relay: 'relais TURN',
+}
+
+function remoteUfrag(pc) {
+  return pc.remoteDescription?.sdp?.match(/a=ice-ufrag:(\S+)/)?.[1] || null
+}
+
+// Which path the call ended up on — logged for diagnosing TURN (no
+// credentials in there, only the candidate type and protocol).
+async function logSelectedRoute(pc) {
+  try {
+    const stats = await pc.getStats()
+    let pairId = null
+    stats.forEach((r) => {
+      if (r.type === 'transport' && r.selectedCandidatePairId) pairId = r.selectedCandidatePairId
+    })
+    let pair = null
+    stats.forEach((r) => {
+      if (pairId ? r.id === pairId : r.type === 'candidate-pair' && r.nominated && r.state === 'succeeded') pair = r
+    })
+    const local = pair && stats.get(pair.localCandidateId)
+    if (!local) return
+    const label = ROUTE_LABELS[local.candidateType] || local.candidateType
+    console.info(`[appel] connecté — ${label}${local.protocol ? ` / ${local.protocol}` : ''}`)
+  } catch {
+    // Stats are diagnostic only.
+  }
+}
 
 function mediaConstraints(type, facingMode = 'user') {
   return {
@@ -55,6 +98,8 @@ export function CallProvider({ children }) {
   const [isMuted, setIsMuted] = useState(false)
   const [isCameraOff, setIsCameraOff] = useState(false)
   const [facingMode, setFacingMode] = useState('user')
+  // Media connection health: idle | connecting | connected | reconnecting
+  const [connectionStatus, setConnectionStatus] = useState('idle')
 
   const callRef = useRef(null)
   const pcRef = useRef(null)
@@ -62,6 +107,12 @@ export function CallProvider({ children }) {
   const unsubsRef = useRef([])
   const timersRef = useRef([])
   const pendingRemoteCandidatesRef = useRef([])
+  // ICE restart bookkeeping
+  const restartVersionRef = useRef(0) // caller: latest restart sent
+  const handledRestartRef = useRef(0) // callee: latest restart answered
+  const restartAttemptsRef = useRef(0)
+  const recoveryTimerRef = useRef(null)
+  const retryTimerRef = useRef(null)
 
   const updateCall = useCallback((patch) => {
     callRef.current = callRef.current ? { ...callRef.current, ...patch } : null
@@ -73,6 +124,13 @@ export function CallProvider({ children }) {
     unsubsRef.current = []
     timersRef.current.forEach((t) => clearTimeout(t))
     timersRef.current = []
+    clearTimeout(recoveryTimerRef.current)
+    clearTimeout(retryTimerRef.current)
+    recoveryTimerRef.current = null
+    retryTimerRef.current = null
+    restartVersionRef.current = 0
+    handledRestartRef.current = 0
+    restartAttemptsRef.current = 0
     pendingRemoteCandidatesRef.current = []
     localStreamRef.current?.getTracks().forEach((t) => t.stop())
     localStreamRef.current = null
@@ -88,6 +146,7 @@ export function CallProvider({ children }) {
     setIsMuted(false)
     setIsCameraOff(false)
     setFacingMode('user')
+    setConnectionStatus('idle')
   }, [])
 
   // Stop media, show the end reason briefly, then close the call screen.
@@ -114,8 +173,12 @@ export function CallProvider({ children }) {
   }
 
   function createPeerConnection(iceServers, stream) {
-    const pc = new RTCPeerConnection({ iceServers })
+    // iceServers = STUN + our TURN relay (from the backend). ICE tries direct
+    // paths first and falls back to the relay candidates on its own when
+    // direct ones fail; a small candidate pool speeds up call setup.
+    const pc = new RTCPeerConnection({ iceServers, iceCandidatePoolSize: 4 })
     stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+    setConnectionStatus('connecting')
 
     const remote = new MediaStream()
     setRemoteStream(remote)
@@ -127,21 +190,22 @@ export function CallProvider({ children }) {
       setRemoteStream(new MediaStream(remote.getTracks()))
     }
 
-    let disconnectTimer = null
     pc.onconnectionstatechange = () => {
+      if (pcRef.current !== pc) return
       const state = pc.connectionState
       if (state === 'connected') {
-        clearTimeout(disconnectTimer)
+        clearTimeout(recoveryTimerRef.current)
+        clearTimeout(retryTimerRef.current)
+        recoveryTimerRef.current = null
+        retryTimerRef.current = null
+        restartAttemptsRef.current = 0
+        setConnectionStatus('connected')
         if (callRef.current && callRef.current.phase !== 'active') {
-          updateCall({ phase: 'active', startedAt: Date.now() })
+          updateCall({ phase: 'active', startedAt: callRef.current.startedAt || Date.now() })
         }
-      } else if (state === 'disconnected') {
-        disconnectTimer = setTimeout(() => {
-          if (pc.connectionState !== 'connected') hangUpWith('failed')
-        }, DISCONNECT_GRACE_MS)
-        timersRef.current.push(disconnectTimer)
-      } else if (state === 'failed') {
-        hangUpWith('failed')
+        logSelectedRoute(pc)
+      } else if (state === 'disconnected' || state === 'failed') {
+        startRecovery(state)
       }
     }
 
@@ -149,11 +213,68 @@ export function CallProvider({ children }) {
     return pc
   }
 
+  // Connection lost: show "Reconnexion…", let the caller renegotiate (ICE
+  // restart → may switch to the TURN relay), hang up only if nothing works.
+  function startRecovery(state) {
+    const current = callRef.current
+    if (!current || current.phase === 'ended') return
+    setConnectionStatus('reconnecting')
+
+    if (!recoveryTimerRef.current) {
+      recoveryTimerRef.current = setTimeout(() => {
+        recoveryTimerRef.current = null
+        if (pcRef.current?.connectionState !== 'connected') hangUpWith('failed')
+      }, RECOVERY_TIMEOUT_MS)
+    }
+
+    // Only the caller restarts, so both sides never send offers at once.
+    // The callee waits for that offer (handled in watchCall).
+    if (current.role !== 'caller') return
+    clearTimeout(retryTimerRef.current)
+    retryTimerRef.current = setTimeout(
+      () => attemptIceRestart(),
+      state === 'failed' ? 0 : DISCONNECT_BEFORE_RESTART_MS,
+    )
+  }
+
+  async function attemptIceRestart() {
+    const pc = pcRef.current
+    const current = callRef.current
+    retryTimerRef.current = null
+    if (!pc || !current?.id || pc.connectionState === 'connected') return
+    if (restartAttemptsRef.current >= MAX_ICE_RESTARTS) return
+    // A restart is already waiting for its answer.
+    if (pc.signalingState !== 'stable') return
+
+    restartAttemptsRef.current += 1
+    const version = restartVersionRef.current + 1
+    restartVersionRef.current = version
+    try {
+      const offer = await pc.createOffer({ iceRestart: true })
+      await pc.setLocalDescription(offer)
+      await requestIceRestart(current.id, version, offer)
+      console.info(`[appel] reconnexion (ICE restart ${version}/${MAX_ICE_RESTARTS})`)
+    } catch {
+      // Falls through to the retry below / the recovery timeout.
+    }
+    // Still not back after a while → one more attempt.
+    retryTimerRef.current = setTimeout(() => {
+      if (pcRef.current?.connectionState !== 'connected') {
+        if (pcRef.current?.signalingState === 'have-local-offer') {
+          pcRef.current.setLocalDescription({ type: 'rollback' }).catch(() => {})
+        }
+        attemptIceRestart()
+      }
+    }, RESTART_RETRY_MS)
+  }
+
   function addRemoteCandidate(candidate) {
     const pc = pcRef.current
     if (!pc) return
-    // Candidates can arrive before the remote description is set — queue them.
-    if (!pc.remoteDescription) {
+    // Queue candidates that arrive before the matching remote description:
+    // none set yet, or they belong to a newer ICE restart (different ufrag).
+    const ufrag = remoteUfrag(pc)
+    if (!pc.remoteDescription || (candidate.usernameFragment && ufrag && candidate.usernameFragment !== ufrag)) {
       pendingRemoteCandidatesRef.current.push(candidate)
       return
     }
@@ -161,17 +282,18 @@ export function CallProvider({ children }) {
   }
 
   function flushRemoteCandidates() {
-    const pc = pcRef.current
     const queued = pendingRemoteCandidatesRef.current
     pendingRemoteCandidatesRef.current = []
-    queued.forEach((c) => pc?.addIceCandidate(c).catch(() => {}))
+    queued.forEach(addRemoteCandidate)
   }
 
-  // Watch the call doc: the other side answering, declining or hanging up.
+  // Watch the call doc: the other side answering, declining or hanging up,
+  // and ICE restarts in both directions.
   function watchCall(callId) {
     const unsub = subscribeToCall(callId, async (data) => {
       const pc = pcRef.current
-      if (data.answer && pc && !pc.currentRemoteDescription && callRef.current?.role === 'caller') {
+      const role = callRef.current?.role
+      if (data.answer && pc && !pc.currentRemoteDescription && role === 'caller') {
         try {
           await pc.setRemoteDescription(data.answer)
           flushRemoteCandidates()
@@ -180,6 +302,38 @@ export function CallProvider({ children }) {
           hangUpWith('failed')
         }
       }
+
+      // Callee: answer the caller's restart offer.
+      if (pc && role === 'callee' && data.restart?.version > handledRestartRef.current) {
+        const { version, offer } = data.restart
+        handledRestartRef.current = version
+        setConnectionStatus('reconnecting')
+        try {
+          await pc.setRemoteDescription(offer)
+          flushRemoteCandidates()
+          const answer = await pc.createAnswer()
+          await pc.setLocalDescription(answer)
+          await answerIceRestart(callId, version, answer)
+        } catch {
+          // The caller will retry or the recovery timeout ends the call.
+        }
+      }
+
+      // Caller: apply the callee's answer to our latest restart.
+      if (
+        pc &&
+        role === 'caller' &&
+        data.restartAnswer?.version === restartVersionRef.current &&
+        pc.signalingState === 'have-local-offer'
+      ) {
+        try {
+          await pc.setRemoteDescription(data.restartAnswer.answer)
+          flushRemoteCandidates()
+        } catch {
+          // Retry timer handles it.
+        }
+      }
+
       if (FINAL_STATUSES.includes(data.status)) finish(data.status)
     })
     unsubsRef.current.push(unsub)
@@ -447,6 +601,7 @@ export function CallProvider({ children }) {
     isMuted,
     isCameraOff,
     facingMode,
+    connectionStatus,
     startCall,
     acceptCall,
     declineCall,

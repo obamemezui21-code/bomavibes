@@ -84,6 +84,7 @@ function CallScreen() {
     toggleCamera,
     flipCamera,
     facingMode,
+    connectionStatus,
   } = useCall()
 
   if (!call) return null
@@ -100,7 +101,9 @@ function CallScreen() {
   else if (call.phase === 'outgoing') statusText = 'Ça sonne…'
   else if (call.phase === 'connecting') statusText = 'Connexion…'
   else if (call.phase === 'ended') statusText = call.endReason
+  else if (connectionStatus === 'reconnecting') statusText = 'Reconnexion…'
   else if (call.phase === 'active' && call.startedAt) statusText = null
+  const isReconnecting = call.phase !== 'ended' && connectionStatus === 'reconnecting'
 
   return (
     <motion.div
@@ -116,6 +119,16 @@ function CallScreen() {
         <div className="pointer-events-none absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-heart-500/15 blur-[120px]" />
       )}
       {showRemoteVideo && <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60" />}
+
+      {/* Connection dropped: keep the call up while it recovers */}
+      {isReconnecting && (
+        <div className="absolute inset-x-0 top-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] z-20 flex justify-center">
+          <span className="inline-flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md">
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            Connexion instable, reconnexion…
+          </span>
+        </div>
+      )}
 
       {/* Own camera preview */}
       {isVideo && localStream && call.phase !== 'ended' && !isCameraOff && (
