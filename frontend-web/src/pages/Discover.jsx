@@ -613,7 +613,7 @@ function Discover() {
               </>
             ) : (
               <>
-                <div className="relative h-[520px] w-full max-w-sm">
+                <div className="relative h-[440px] w-full max-w-[20rem]">
                   {deck.map((p, i) => (
                     <SwipeCard
                       key={p.id}

@@ -190,7 +190,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && onOpen?.()}
-        className="relative aspect-[4/5] min-w-0 max-w-full cursor-pointer overflow-hidden rounded-[28px] bg-ink/10 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.45)]"
+        className="relative aspect-[4/3] min-w-0 max-w-full cursor-pointer overflow-hidden rounded-[28px] bg-ink/10 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.45)]"
       >
         <img
           src={post.photoThumbUrl || post.photoUrl}
@@ -212,7 +212,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
 
         <div className="absolute inset-x-0 bottom-0 p-4">
           {post.text && (
-            <p className="line-clamp-4 min-w-0 whitespace-pre-wrap font-display text-lg font-semibold leading-snug text-white [overflow-wrap:anywhere] [text-shadow:0_2px_10px_rgba(0,0,0,0.35)]">
+            <p className="line-clamp-3 min-w-0 whitespace-pre-wrap font-display text-base font-semibold leading-snug text-white [overflow-wrap:anywhere] [text-shadow:0_2px_10px_rgba(0,0,0,0.35)]">
               {post.text}
             </p>
           )}
