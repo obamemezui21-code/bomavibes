@@ -27,12 +27,14 @@
  * keep working unchanged — only the palette they resolve to has moved.
  */
 @theme {
-  --color-surface: #fcfaf4;
-  --color-surface-soft: #f7f1e6;
-  --color-surface-tint: #f2ecf4;
+  /* Light mode: cool white with a faint lilac cast (Friendzy-style) rather
+     than the earlier warm cream. */
+  --color-surface: #ffffff;
+  --color-surface-soft: #faf7fd;
+  --color-surface-tint: #f3edf9;
 
-  --color-ink: #261b28;
-  --color-ink-soft: #635a65;
+  --color-ink: #221630;
+  --color-ink-soft: #6c6478;
   /* Fixed (non theme-reactive) dark ink for text/fills that sit permanently
      on the violet/pink brand gradient — must NOT flip to light in dark
      mode the way --color-ink does, since the gradient itself never changes. */
@@ -42,7 +44,7 @@
   --color-violet-400: #c9a0f0;
   --color-violet-500: #7f5bb6;
   --color-violet-600: #6a4693;
-  --color-violet-950: #2a1638;
+  --color-violet-950: #32154a;
 
   --color-pink-300: #f7c9e3;
   --color-pink-400: #ef8fc7;
