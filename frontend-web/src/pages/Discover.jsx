@@ -765,103 +765,120 @@ function Discover() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex flex-col items-center overflow-hidden bg-violet-950 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] text-center text-white"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-              className="glass-panel relative w-full max-w-sm overflow-hidden rounded-[28px] p-8 text-center"
+            {/* Full-screen "You connected with…" (Friendzy screen 7) */}
+            <div className="pointer-events-none absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-500/20 blur-[120px]" />
+            <Confetti />
+
+            <button
+              type="button"
+              onClick={() => setMatchedProfile(null)}
+              className="relative flex h-10 w-10 items-center justify-center self-start rounded-full bg-white/10 text-white transition hover:bg-white/20"
+              aria-label="Fermer"
             >
-              <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-pink-400/25 blur-[60px]" />
-              <div className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-coral-500/20 blur-[60px]" />
-              <Confetti />
+              <X size={18} strokeWidth={2.25} />
+            </button>
 
-              <motion.p
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, type: 'spring', stiffness: 260 }}
-                className="relative font-display text-3xl font-bold text-gradient-brand"
-              >
-                C'est un match !
-              </motion.p>
-              <p className="relative mt-2 text-sm text-ink-soft/80">
-                Vous et {matchedProfile.firstName} vous êtes plu mutuellement.
-              </p>
+            <motion.h2
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="relative mt-4 font-display text-2xl font-bold"
+            >
+              Vous avez matché avec {matchedProfile.firstName} !
+            </motion.h2>
+            <p className="relative mt-1 text-sm text-white/60">à l'instant</p>
 
-              <div className="relative mt-6 flex items-center justify-center py-4">
-                {/* Pulsing rings radiating from behind the two photos */}
-                {[0, 1, 2].map((ring) => (
-                  <motion.span
-                    key={ring}
-                    initial={{ scale: 0.6, opacity: 0 }}
-                    animate={{ scale: [0.6, 1.6], opacity: [0.45, 0] }}
-                    transition={{ duration: 2.4, delay: 0.4 + ring * 0.8, repeat: Infinity, ease: 'easeOut' }}
-                    className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pink-400/60"
-                  />
-                ))}
-                <motion.img
-                  initial={{ x: -30, rotate: -8, opacity: 0 }}
-                  animate={{ x: -14, rotate: -6, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  src={avatarFor(matchedProfile)}
-                  onError={fallbackToFullPhoto(fullPhotoFor(matchedProfile))}
-                  alt={matchedProfile.firstName}
-                  className="relative h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
+            {/* Their photo in the middle of concentric rings, yours tucked at its side */}
+            <div className="relative flex flex-1 items-center justify-center">
+              {[18, 26, 34].map((size) => (
+                <span
+                  key={size}
+                  style={{ width: `${size}rem`, height: `${size}rem` }}
+                  className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10"
                 />
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.35, type: 'spring', stiffness: 400 }}
-                  className="relative z-10 -mx-3 flex h-9 w-9 items-center justify-center rounded-full bg-coral-500 text-white shadow-lg"
-                >
-                  <Heart size={18} strokeWidth={2.5} fill="currentColor" />
-                </motion.div>
+              ))}
+              {[0, 1, 2].map((ring) => (
+                <motion.span
+                  key={ring}
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: [0.6, 1.9], opacity: [0.5, 0] }}
+                  transition={{ duration: 2.8, delay: 0.4 + ring * 0.9, repeat: Infinity, ease: 'easeOut' }}
+                  className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pink-400/60"
+                />
+              ))}
+
+              <motion.div
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.15, type: 'spring', stiffness: 220, damping: 16 }}
+                className="relative"
+              >
+                <span className="block rounded-full bg-gradient-to-br from-pink-400 to-violet-500 p-1 shadow-2xl shadow-pink-500/40">
+                  <img
+                    src={fullPhotoFor(matchedProfile)}
+                    alt={matchedProfile.firstName}
+                    className="h-40 w-40 rounded-full border-4 border-violet-950 object-cover"
+                  />
+                </span>
                 <motion.img
-                  initial={{ x: 30, rotate: 8, opacity: 0 }}
-                  animate={{ x: 14, rotate: 6, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.45, type: 'spring', stiffness: 300 }}
                   src={avatarFor(publicProfile || { id: user?.id, firstName: user?.firstName })}
                   onError={fallbackToFullPhoto(fullPhotoFor(publicProfile || { id: user?.id, firstName: user?.firstName }))}
                   alt="Vous"
-                  className="relative h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
+                  className="absolute -bottom-1 -right-3 h-16 w-16 rounded-full border-4 border-violet-950 object-cover shadow-xl"
                 />
-              </div>
-
-              {(() => {
-                const percent = matchPercent(publicProfile?.interests, matchedProfile.interests)
-                return percent > 0 ? (
-                  <motion.span
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="relative mt-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-1 text-xs font-bold text-ink-on-brand shadow-lg"
-                  >
-                    <Heart size={12} strokeWidth={2.75} fill="currentColor" />
-                    {percent}% de compatibilité
-                  </motion.span>
-                ) : null
-              })()}
-
-              <div className="relative mt-8 flex flex-col gap-2">
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => navigate(`/chat/${matchConversationId}`)}
-                  className="rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.6, type: 'spring', stiffness: 400 }}
+                  className="absolute -left-2 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-lg"
                 >
-                  Envoyer un message
-                </motion.button>
-                <button
-                  type="button"
-                  onClick={() => setMatchedProfile(null)}
-                  className="rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+                  <Heart size={18} strokeWidth={2.5} fill="currentColor" />
+                </motion.span>
+              </motion.div>
+            </div>
+
+            {(() => {
+              const percent = matchPercent(publicProfile?.interests, matchedProfile.interests)
+              return percent > 0 ? (
+                <motion.span
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="relative inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm"
                 >
-                  Continuer à découvrir
-                </button>
-              </div>
-            </motion.div>
+                  <Heart size={14} strokeWidth={2.75} fill="currentColor" className="text-pink-400" />
+                  {percent}% de compatibilité
+                </motion.span>
+              ) : null
+            })()}
+
+            <p className="relative mt-3 max-w-xs text-sm text-white/60">
+              Faites le premier pas : {matchedProfile.firstName} attend peut-être votre message.
+            </p>
+
+            <div className="relative mt-6 flex w-full max-w-sm flex-col gap-2.5">
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => navigate(`/chat/${matchConversationId}`)}
+                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-400 to-pink-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/40"
+              >
+                <MessageCircle size={18} strokeWidth={2.25} />
+                Envoyer un message
+              </motion.button>
+              <button
+                type="button"
+                onClick={() => setMatchedProfile(null)}
+                className="rounded-full py-3 text-sm font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
+              >
+                Continuer à découvrir
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
