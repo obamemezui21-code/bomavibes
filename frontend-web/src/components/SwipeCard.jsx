@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
-import { Check, Info, MapPin, Target } from 'lucide-react'
+import { Check, Heart, Info, MapPin, Target } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 
 const SWIPE_THRESHOLD = 100
@@ -37,7 +37,7 @@ function fullPhotoFor(profile, index) {
   return profile.photos?.[index] || FALLBACK_AVATAR_SEED(profile)
 }
 
-function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExited, onOpenDetail }) {
+function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, onSwipe, onExited, onOpenDetail }) {
   const [photoIndex, setPhotoIndex] = useState(0)
   const photoCount = profile.photos?.length || 1
   const x = useMotionValue(0)
@@ -148,13 +148,20 @@ function SwipeCard({ profile, isTop, stackIndex, exitDirection, onSwipe, onExite
             </>
           )}
 
+          {matchPercent > 0 && (
+            <span className="pointer-events-none absolute left-3 top-6 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-lg">
+              <Heart size={11} strokeWidth={2.75} fill="currentColor" />
+              {matchPercent}% Match
+            </span>
+          )}
+
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation()
               onOpenDetail()
             }}
-            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
+            className="absolute right-3 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
             aria-label="Voir le profil complet"
           >
             <Info size={16} />

@@ -414,6 +414,7 @@ function Discover() {
                 <SwipeCard
                   key={p.id}
                   profile={p}
+                  matchPercent={matchPercent(publicProfile?.interests, p.interests)}
                   isTop={i === 0}
                   stackIndex={i}
                   exitDirection={exitingId === p.id ? exitDirection : null}
@@ -580,7 +581,17 @@ function Discover() {
                 Vous et {matchedProfile.firstName} vous êtes plu mutuellement.
               </p>
 
-              <div className="relative mt-6 flex items-center justify-center">
+              <div className="relative mt-6 flex items-center justify-center py-4">
+                {/* Pulsing rings radiating from behind the two photos */}
+                {[0, 1, 2].map((ring) => (
+                  <motion.span
+                    key={ring}
+                    initial={{ scale: 0.6, opacity: 0 }}
+                    animate={{ scale: [0.6, 1.6], opacity: [0.45, 0] }}
+                    transition={{ duration: 2.4, delay: 0.4 + ring * 0.8, repeat: Infinity, ease: 'easeOut' }}
+                    className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pink-400/60"
+                  />
+                ))}
                 <motion.img
                   initial={{ x: -30, rotate: -8, opacity: 0 }}
                   animate={{ x: -14, rotate: -6, opacity: 1 }}
@@ -588,13 +599,13 @@ function Discover() {
                   src={avatarFor(matchedProfile)}
                   onError={fallbackToFullPhoto(fullPhotoFor(matchedProfile))}
                   alt={matchedProfile.firstName}
-                  className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
+                  className="relative h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
                 />
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.35, type: 'spring', stiffness: 400 }}
-                  className="z-10 -mx-3 flex h-9 w-9 items-center justify-center rounded-full bg-coral-500 text-white shadow-lg"
+                  className="relative z-10 -mx-3 flex h-9 w-9 items-center justify-center rounded-full bg-coral-500 text-white shadow-lg"
                 >
                   <Heart size={18} strokeWidth={2.5} fill="currentColor" />
                 </motion.div>
@@ -602,11 +613,27 @@ function Discover() {
                   initial={{ x: 30, rotate: 8, opacity: 0 }}
                   animate={{ x: 14, rotate: 6, opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  src="https://api.dicebear.com/9.x/personas/svg?seed=You&backgroundColor=8b5cf6"
+                  src={avatarFor(publicProfile || { id: user?.id, firstName: user?.firstName })}
+                  onError={fallbackToFullPhoto(fullPhotoFor(publicProfile || { id: user?.id, firstName: user?.firstName }))}
                   alt="Vous"
-                  className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
+                  className="relative h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
                 />
               </div>
+
+              {(() => {
+                const percent = matchPercent(publicProfile?.interests, matchedProfile.interests)
+                return percent > 0 ? (
+                  <motion.span
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="relative mt-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-1 text-xs font-bold text-ink-on-brand shadow-lg"
+                  >
+                    <Heart size={12} strokeWidth={2.75} fill="currentColor" />
+                    {percent}% de compatibilité
+                  </motion.span>
+                ) : null
+              })()}
 
               <div className="relative mt-8 flex flex-col gap-2">
                 <motion.button

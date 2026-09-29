@@ -13,6 +13,7 @@ import {
   FileText,
   Flag,
   Hand,
+  Heart,
   Info,
   MapPin,
   Mic,
@@ -44,6 +45,7 @@ import { useTheme } from '../context/ThemeContext.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachments.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
+import { countIncomingLikes } from '../firebase/swipes.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { formatDuration } from '../lib/formatDuration.js'
@@ -362,6 +364,7 @@ function Chat() {
   const { theme } = useTheme()
   const [draft, setDraft] = useState('')
   const [listSearch, setListSearch] = useState('')
+  const [likesCount, setLikesCount] = useState(null)
   const [expandedProfile, setExpandedProfile] = useState(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showStickerPicker, setShowStickerPicker] = useState(false)
@@ -412,6 +415,11 @@ function Chat() {
     isNearBottomRef.current = nearBottom
     if (nearBottom) setShowNewMessagesPill(false)
   }
+
+  useEffect(() => {
+    if (!user?.id) return
+    countIncomingLikes(user.id).then(setLikesCount).catch(() => setLikesCount(null))
+  }, [user?.id])
 
   useEffect(() => {
     const isConversationSwitch = prevActiveIdRef.current !== activeId
@@ -791,11 +799,31 @@ function Chat() {
           {conversations.length > 0 && !query && (
             <div className="mb-4">
               <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">
-                Vos matchs
+                Matchs récents
               </p>
               <div className="mt-2 flex gap-3 overflow-x-auto px-1 pb-1">
+                {likesCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/likes')}
+                    className="flex shrink-0 flex-col items-center gap-1"
+                  >
+                    <span className="relative flex h-[60px] w-[60px] flex-col items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-ink-on-brand shadow-md">
+                      <Heart size={18} strokeWidth={2.5} fill="currentColor" />
+                      <span className="text-[11px] font-bold leading-none">{likesCount > 99 ? '99+' : likesCount}</span>
+                    </span>
+                    <span className="text-xs font-medium text-ink">Likes</span>
+                  </button>
+                )}
+                {/* New matches first, then people you haven't talked to yet
+                    (the ones most likely to go cold), then who's online. */}
                 {[...conversations]
-                  .sort((a, b) => Number(b.online) - Number(a.online))
+                  .sort(
+                    (a, b) =>
+                      Number(b.isNewMatch) - Number(a.isNewMatch) ||
+                      Number(!b.lastMessage) - Number(!a.lastMessage) ||
+                      Number(b.online) - Number(a.online),
+                  )
                   .map((c) => (
                     <button
                       key={c.id}
