@@ -2,7 +2,6 @@ import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
-  Bell,
   Check,
   ChevronDown,
   Globe2,
@@ -331,25 +330,6 @@ function Discover() {
                 aria-label="Rechercher"
               >
                 <Search size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowFilters(true)}
-                className={HEADER_ICON_BUTTON}
-                aria-label="Filtres"
-              >
-                <SlidersHorizontal size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/annonces')}
-                className={HEADER_ICON_BUTTON}
-                aria-label="Annonces"
-              >
-                <Bell size={17} />
-                {hasUnseenAnnouncement && (
-                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral-500" />
-                )}
               </button>
             </div>
           </div>
