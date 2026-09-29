@@ -27,37 +27,38 @@
  * keep working unchanged — only the palette they resolve to has moved.
  */
 @theme {
-  /* Light mode: cool white with a faint lilac cast (Friendzy-style) rather
-     than the earlier warm cream. */
+  /* Theme = the Friendzy kit's plum violet #4B164C + white (values sampled
+     from the kit's screens). Light mode surfaces are white with a faint
+     plum cast. */
   --color-surface: #ffffff;
-  --color-surface-soft: #faf7fd;
-  --color-surface-tint: #f3edf9;
+  --color-surface-soft: #fbf7fb;
+  --color-surface-tint: #f4ecf4;
 
-  --color-ink: #221630;
-  --color-ink-soft: #6c6478;
+  --color-ink: #2b1a2c;
+  --color-ink-soft: #6f6270;
   /* Fixed (non theme-reactive) ink for text/fills that sit permanently on
-     the brand gradient. The brand is now deep violet, so this is white. */
+     the brand fill. The brand is deep plum, so this is white. */
   --color-ink-on-brand: #ffffff;
 
-  --color-violet-300: #e4cffa;
-  --color-violet-400: #c9a0f0;
-  --color-violet-500: #7f5bb6;
-  --color-violet-600: #6a4693;
-  --color-violet-950: #32154a;
+  --color-violet-300: #ead5ea;
+  --color-violet-400: #c79ac7;
+  --color-violet-500: #7e3a7f;
+  --color-violet-600: #62265f;
+  --color-violet-950: #4b164c;
 
-  /* Theme = deep violet (the Messages header) + white. The `pink-*`
-     utilities used across the app now resolve to violets, so every former
-     pink accent follows the theme without renaming classes in 40 files. */
-  --color-pink-300: #e4d6f5;
-  --color-pink-400: #9a72cf;
-  --color-pink-500: #4b2268;
-  --color-pink-600: #32154a;
+  /* The `pink-*` utilities used across the app resolve to the same plum
+     family, so every former pink accent follows the theme without renaming
+     classes in 40 files. */
+  --color-pink-300: #ead5ea;
+  --color-pink-400: #8a4d8b;
+  --color-pink-500: #5c1f5d;
+  --color-pink-600: #4b164c;
 
-  /* The only real pink left: hearts and likes, so they stand out. */
-  --color-heart-300: #f7c9e3;
-  --color-heart-400: #ef6fae;
-  --color-heart-500: #d9408c;
-  --color-heart-600: #b52f73;
+  /* The only real pink left: hearts and likes — the kit's #DD88CF. */
+  --color-heart-300: #f3d3ed;
+  --color-heart-400: #e6a3db;
+  --color-heart-500: #dd88cf;
+  --color-heart-600: #c96bb9;
 
   --color-mint-400: #4dbf85;
   --color-mint-500: #349d62;
@@ -110,15 +111,13 @@ html.dark {
   --color-ink: #f5f4f8;
   --color-ink-soft: #aca8b6;
 
-  --color-violet-500: #a95dda;
-  --color-violet-600: #8f3fc4;
+  /* Lighter plums so accents stay visible on the dark background. */
+  --color-violet-500: #b06fb1;
+  --color-violet-600: #93508f;
 
-  --color-pink-400: #b894e8;
-  --color-pink-500: #9b5fd6;
-  --color-pink-600: #7f45bd;
-
-  --color-heart-500: #e652a3;
-  --color-heart-600: #c93a86;
+  --color-pink-400: #d0a2d1;
+  --color-pink-500: #a85ea9;
+  --color-pink-600: #8a468b;
 
   --color-coral-500: #ea3d38;
   --color-coral-600: #c92a26;

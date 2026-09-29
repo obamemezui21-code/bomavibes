@@ -8,7 +8,7 @@ import 'leaflet/dist/leaflet.css'
 // imports), and matches the app's own flat/rounded visual style better than
 // Leaflet's default red teardrop.
 const VARIANT_COLORS = {
-  venue: '#6a4693', // violet-600
+  venue: '#62265f', // violet-600
   event: '#237a4b', // mint-600
   draft: '#c23b3b', // coral-600 — the pin an admin is currently placing
 }
