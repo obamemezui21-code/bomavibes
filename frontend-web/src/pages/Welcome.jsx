@@ -45,7 +45,7 @@ function Welcome() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-surface-soft px-6 py-10">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-surface px-6 py-10">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -53,9 +53,9 @@ function Welcome() {
         className="relative mx-auto h-64 w-64 shrink-0"
       >
         {[
-          { inset: 'inset-0', bg: 'bg-violet-500/10' },
-          { inset: 'inset-7', bg: 'bg-violet-500/15' },
-          { inset: 'inset-[3.75rem]', bg: 'bg-violet-500/25' },
+          { inset: 'inset-0', bg: 'bg-pink-400/10' },
+          { inset: 'inset-7', bg: 'bg-pink-400/15' },
+          { inset: 'inset-[3.75rem]', bg: 'bg-pink-400/25' },
         ].map((ring, i) => (
           <motion.div
             key={ring.inset}
@@ -92,7 +92,7 @@ function Welcome() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="mt-8 max-w-xs text-center font-display text-2xl font-bold text-ink"
+        className="mt-10 max-w-xs text-center font-display text-[1.75rem] font-bold leading-tight text-ink"
       >
         Rencontrez de nouvelles personnes près de chez vous
       </motion.h1>
@@ -108,7 +108,7 @@ function Welcome() {
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-[#261b28] shadow-lg shadow-violet-500/25 transition hover:shadow-violet-500/35"
+          className="flex w-full items-center justify-center gap-2.5 rounded-full bg-violet-950 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-950/30 transition hover:bg-violet-950/90 dark:bg-pink-500"
         >
           <Mail size={18} strokeWidth={2} />
           Se connecter par email
@@ -118,7 +118,7 @@ function Welcome() {
           type="button"
           onClick={handleGoogle}
           disabled={isGoogleLoading}
-          className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-ink/12 bg-white dark:bg-surface-tint py-3 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2.5 rounded-full border border-ink/12 bg-white py-3.5 text-sm font-semibold text-ink transition hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-surface-tint"
         >
           <GoogleIcon />
           {isGoogleLoading ? 'Connexion…' : 'Continuer avec Google'}
@@ -127,7 +127,7 @@ function Welcome() {
 
       <p className="mt-6 text-sm text-ink-soft/70">
         Pas encore de compte ?{' '}
-        <Link to="/signup" className="font-semibold text-violet-600 underline-offset-2 hover:underline">
+        <Link to="/signup" className="font-semibold text-pink-500 underline-offset-2 hover:underline">
           Inscrivez-vous
         </Link>
       </p>
