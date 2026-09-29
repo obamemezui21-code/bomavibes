@@ -265,16 +265,37 @@ service cloud.firestore {
       allow delete: if false;
 
       match /messages/{messageId} {
-        allow read: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users;
-        allow create: if isSignedIn()
-          && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users
+        function isMatchParticipant() {
+          return isSignedIn()
+            && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.users;
+        }
+
+        // The sender edits the text of their own text message — nothing
+        // else (no turning a message into a fake call / invite / post).
+        function isOwnTextEdit() {
+          return resource.data.senderId == request.auth.uid
+            && resource.data.get('type', 'text') == 'text'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'editedAt'])
+            && request.resource.data.text is string
+            && request.resource.data.text.size() <= 2000;
+        }
+
+        // Either participant sets or clears their own reaction, on any
+        // message (the other person's included) — only their own entry.
+        function isOwnReaction() {
+          let after = request.resource.data.get('reactions', {});
+          return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+            && after.diff(resource.data.get('reactions', {})).affectedKeys().hasOnly([request.auth.uid])
+            && (!(request.auth.uid in after) || (after[request.auth.uid] is string && after[request.auth.uid].size() <= 16));
+        }
+
+        allow read: if isMatchParticipant();
+        allow create: if isMatchParticipant()
           && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.get('type', 'text')
+            in ['text', 'voice', 'image', 'file', 'sticker', 'post', 'venue-invite', 'call']
           && !isBlockedByRecipient(matchId);
-        allow update: if isSignedIn()
-          && resource.data.senderId == request.auth.uid
-          && request.resource.data.senderId == resource.data.senderId
-          && request.resource.data.text is string && request.resource.data.text.size() <= 2000;
+        allow update: if isMatchParticipant() && (isOwnTextEdit() || isOwnReaction());
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
       }
     }
