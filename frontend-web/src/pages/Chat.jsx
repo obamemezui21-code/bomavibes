@@ -1031,11 +1031,11 @@ function Chat() {
                 </div>
               </div>
             ) : (
-              <div className="flex shrink-0 items-center gap-3 border-b border-ink/8 px-4 py-3">
+              <div className="flex shrink-0 items-center gap-3 bg-violet-950 px-4 py-3 text-white">
                 <button
                   type="button"
                   onClick={() => navigate('/chat')}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-ink/80 transition hover:bg-ink/5 desktop:hidden"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 desktop:hidden"
                   aria-label="Retour"
                 >
                   <ArrowLeft size={18} strokeWidth={2} />
@@ -1049,15 +1049,15 @@ function Chat() {
                     src={active.profile.photo}
                     onError={fallbackToFullPhoto(active.profile.photoFull)}
                     alt={active.profile.firstName}
-                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                    className="h-10 w-10 shrink-0 rounded-full border-2 border-white/20 object-cover"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-ink">{active.profile.firstName}</p>
+                    <p className="truncate font-display text-base font-semibold text-white">{active.profile.firstName}</p>
                     <p className="truncate text-xs">
                       {active.online ? (
-                        <span className="text-mint-500">En ligne</span>
+                        <span className="text-mint-400">En ligne</span>
                       ) : (
-                        <span className="text-ink-soft/50">{active.lastSeenLabel || active.profile.city}</span>
+                        <span className="text-white/55">{active.lastSeenLabel || active.profile.city}</span>
                       )}
                     </p>
                   </div>
@@ -1067,7 +1067,7 @@ function Chat() {
                   <button
                     type="button"
                     onClick={() => showToast('Bientôt disponible.', 'info')}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/12 text-ink-soft/70 transition hover:bg-ink/5"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
                     aria-label="Télécharger la conversation"
                   >
                     <Download size={16} strokeWidth={2} />
@@ -1075,7 +1075,7 @@ function Chat() {
                   <button
                     type="button"
                     onClick={() => setShowReport(true)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/12 text-ink-soft/70 transition hover:bg-ink/5"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
                     aria-label="Signaler"
                   >
                     <Flag size={16} strokeWidth={2} />
@@ -1083,7 +1083,7 @@ function Chat() {
                   <button
                     type="button"
                     onClick={() => showToast('Bientôt disponible.', 'info')}
-                    className="flex h-9 w-9 items-center justify-center rounded-full border border-ink/12 text-ink-soft/70 transition hover:bg-ink/5"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
                     aria-label="Appel vidéo"
                   >
                     <Video size={16} strokeWidth={2} />
@@ -1120,10 +1120,10 @@ function Chat() {
                   const isVenueInvite = m.type === 'venue-invite'
                   const bubbleClass = isSticker || isPost || isVenueInvite
                     ? 'cursor-pointer select-none'
-                    : `min-w-0 max-w-full cursor-pointer select-none rounded-2xl px-3.5 py-2 text-sm transition ${
+                    : `min-w-0 max-w-full cursor-pointer select-none rounded-[20px] px-4 py-2.5 text-sm shadow-sm transition ${
                         m.fromMe
-                          ? 'rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand'
-                          : 'rounded-bl-sm bg-ink/6 text-ink'
+                          ? 'rounded-br-md bg-gradient-to-br from-pink-500 to-pink-600 text-white'
+                          : 'rounded-bl-md bg-white text-ink dark:bg-surface-tint'
                       }`
                   return (
                     <Fragment key={m.id}>
@@ -1283,7 +1283,7 @@ function Chat() {
 
               {typingId === active.id && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                  <div className="flex gap-1 rounded-2xl rounded-bl-sm bg-ink/6 px-4 py-3">
+                  <div className="flex gap-1 rounded-[20px] rounded-bl-md bg-white px-4 py-3 shadow-sm dark:bg-surface-tint">
                     {[0, 1, 2].map((i) => (
                       <motion.span
                         key={i}
@@ -1382,7 +1382,7 @@ function Chat() {
             ) : (
               <form
                 onSubmit={handleSend}
-                className={`flex shrink-0 items-end gap-2 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}
+                className="flex shrink-0 items-end gap-2 p-3"
               >
                 <input
                   ref={fileInputRef}
@@ -1404,7 +1404,7 @@ function Chat() {
                     onKeyDown={handleTextareaKeyDown}
                     placeholder="Écrivez un message…"
                     disabled={isSendingVoice}
-                    className="max-h-[140px] min-h-[48px] w-full resize-none overflow-y-auto rounded-2xl border border-ink/12 bg-ink/[0.03] py-3.5 pl-11 pr-20 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
+                    className="max-h-[140px] min-h-[48px] w-full resize-none overflow-y-auto rounded-[24px] border border-ink/8 bg-white py-3.5 shadow-sm dark:bg-surface-tint pl-11 pr-20 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
                   />
 
                   <div className="absolute bottom-1.5 left-1.5">
@@ -1510,7 +1510,7 @@ function Chat() {
                   <motion.button
                     type="submit"
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/35"
                     aria-label={editingMessageId ? 'Enregistrer' : 'Envoyer'}
                   >
                     <Send size={18} strokeWidth={2.25} />
@@ -1521,7 +1521,7 @@ function Chat() {
                     onClick={startRecording}
                     disabled={isSendingVoice || !!editingMessageId}
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/35 disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Enregistrer une note vocale"
                   >
                     {isSendingVoice ? (
