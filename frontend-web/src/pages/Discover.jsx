@@ -28,7 +28,7 @@ import { fetchDiscoverCandidates } from '../firebase/discovery.js'
 import { recordSwipeAndMatch } from '../firebase/swipes.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { matchPercent } from '../lib/interests.js'
+import { INTEREST_ICONS, iconForInterest, matchPercent } from '../lib/interests.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
 import { RELIGIONS } from '../lib/onboardingOptions.js'
@@ -67,6 +67,7 @@ function Discover() {
   const [countryFilter, setCountryFilter] = useState('')
   const [religionFilter, setReligionFilter] = useState('')
   const [travelingOnly, setTravelingOnly] = useState(false)
+  const [interestFilter, setInterestFilter] = useState('')
   const [matchedProfile, setMatchedProfile] = useState(null)
   const [matchConversationId, setMatchConversationId] = useState(null)
   const [exitingId, setExitingId] = useState(null)
@@ -107,12 +108,20 @@ function Discover() {
     if (countryFilter) list = list.filter((p) => p.country === countryFilter)
     if (religionFilter) list = list.filter((p) => p.religion === religionFilter)
     if (travelingOnly) list = list.filter((p) => p.isTraveling)
+    if (interestFilter) list = list.filter((p) => p.interests?.includes(interestFilter))
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((p) => p.firstName?.toLowerCase().includes(q))
     }
     return list
-  }, [profiles, search, activeChip, countryFilter, religionFilter, travelingOnly, publicProfile])
+  }, [profiles, search, activeChip, countryFilter, religionFilter, travelingOnly, interestFilter, publicProfile])
+
+  // The user's own interests first (the ones they're most likely to filter
+  // by), then the rest of the catalogue.
+  const interestChips = useMemo(() => {
+    const mine = (publicProfile?.interests || []).filter((i) => INTEREST_ICONS[i])
+    return [...mine, ...Object.keys(INTEREST_ICONS).filter((i) => !mine.includes(i))]
+  }, [publicProfile])
 
   const deck = searched.slice(0, DECK_SIZE)
   const topProfile = deck[0] || null
@@ -208,9 +217,12 @@ function Discover() {
       <div className="px-4 pt-6 sm:px-6">
         <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
-              <MapPin size={13} strokeWidth={2.25} />
-              {publicProfile?.country || 'Autour de vous'}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
+                <MapPin size={13} strokeWidth={2.25} />
+                {publicProfile?.country || 'Autour de vous'}
+              </div>
+              <h1 className="font-display text-2xl font-bold text-ink">Découvrir</h1>
             </div>
             <button
               type="button"
@@ -319,6 +331,29 @@ function Discover() {
                 <option value="traveling">En voyage</option>
               </select>
             </div>
+          </div>
+
+          <p className="mt-3 text-sm font-semibold text-ink">Centres d'intérêt</p>
+          <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1">
+            {interestChips.map((interest) => {
+              const Icon = iconForInterest(interest)
+              const isActive = interestFilter === interest
+              return (
+                <button
+                  key={interest}
+                  type="button"
+                  onClick={() => setInterestFilter((prev) => (prev === interest ? '' : interest))}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    isActive
+                      ? 'border-transparent bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
+                      : 'border-ink/12 bg-white text-ink-soft/80 hover:border-violet-400/50 dark:bg-surface-tint'
+                  }`}
+                >
+                  <Icon size={13} strokeWidth={2.25} className={isActive ? '' : 'text-violet-500'} />
+                  {interest}
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
