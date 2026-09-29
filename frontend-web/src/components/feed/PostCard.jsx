@@ -289,7 +289,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onOpen?.()}
-      className="min-w-0 max-w-full cursor-pointer rounded-[24px] border border-ink/8 bg-white p-4 shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint"
+      className="min-w-0 max-w-full cursor-pointer rounded-[22px] border border-ink/8 bg-white px-3.5 py-3 shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint"
     >
       <div className="flex items-center gap-2.5">
         <button
@@ -304,7 +304,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
             src={avatarUrl}
             onError={fullPhoto ? fallbackToFullPhoto(fullPhoto) : undefined}
             alt={author?.firstName || ''}
-            className="h-10 w-10 rounded-full object-cover"
+            className="h-9 w-9 rounded-full object-cover"
           />
         </button>
         <div className="min-w-0 flex-1">
@@ -328,19 +328,19 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
       </div>
 
       {post.type === 'question' && (
-        <p className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600">
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-violet-600">
           <Sparkles size={12} strokeWidth={2.25} />
           Question du jour
         </p>
       )}
 
       {post.text && (
-        <p className={`min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-ink [overflow-wrap:anywhere] ${post.type === 'question' ? 'mt-1.5 font-medium' : 'mt-3'}`}>
+        <p className={`min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-ink [overflow-wrap:anywhere] ${post.type === 'question' ? 'mt-1 font-medium' : 'mt-2'}`}>
           {post.text}
         </p>
       )}
 
-      <div className="mt-3 flex items-center gap-1.5">
+      <div className="mt-1.5 -mb-1 flex items-center gap-1">
         <motion.button
           type="button"
           onClick={handleToggleLike}
