@@ -65,6 +65,18 @@ Google Cloud Console › IAM, donner le rôle **Firebase Rules Admin** au
 compte `firebase-adminsdk-…@bomavibes-cd139.iam.gserviceaccount.com`, ou
 publier à la main dans la console Firebase (Firestore Database › Règles).
 
+### Tester les règles avant de les publier
+
+`frontend-web/rules-tests/` vérifie les règles dans l'émulateur Firestore
+(matchs, messages et réactions, appels, publications). Nécessite Java 21+.
+
+```bash
+cd frontend-web && npm run test:rules
+```
+
+À lancer après chaque modification de `firestore.rules`, avant de les
+recopier dans la console.
+
 ## Appels audio / vidéo
 
 Serveur relais TURN (coturn) : voir `coturn-setup.md`.

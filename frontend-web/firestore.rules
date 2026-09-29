@@ -371,7 +371,7 @@ service cloud.firestore {
         (isOwner(resource.data.authorId)
           && request.resource.data.authorId == resource.data.authorId
           && request.resource.data.type == resource.data.type
-          && request.resource.data.photoUrl == resource.data.photoUrl
+          && request.resource.data.get('photoUrl', null) == resource.data.get('photoUrl', null)
           && request.resource.data.likeCount == resource.data.likeCount
           && request.resource.data.commentCount == resource.data.commentCount
           && request.resource.data.get('background', null) == resource.data.get('background', null)

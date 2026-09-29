@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:rules": "npx -y firebase-tools@15 emulators:exec --only firestore --project demo-bomavibes \"vitest run --config vitest.rules.config.js\""
   },
   "dependencies": {
     "emoji-picker-react": "^4.19.1",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
