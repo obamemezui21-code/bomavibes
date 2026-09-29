@@ -4,8 +4,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import {
   Bell,
   Check,
+  ChevronDown,
   Globe2,
   Heart,
+  Layers,
+  LayoutGrid,
   MapPin,
   Megaphone,
   MessageCircle,
@@ -20,6 +23,7 @@ import {
 } from 'lucide-react'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import SwipeCard from '../components/SwipeCard.jsx'
+import DiscoverProfileCard from '../components/DiscoverProfileCard.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
 import SupportPromptCard from '../components/SupportPromptCard.jsx'
@@ -36,7 +40,24 @@ import { RELIGIONS } from '../lib/onboardingOptions.js'
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
 
-const DEFAULT_FILTERS ={ minAge: 18, maxAge: 60, gender: 'TOUS' }
+const VIEW_MODES = [
+  { id: 'cards', label: 'Cartes', icon: LayoutGrid },
+  { id: 'swipe', label: 'Swipe', icon: Layers },
+]
+const VIEW_MODE_KEY = 'bv:discoverViewMode'
+const INTERESTS_PREVIEW = 6
+const HEADER_ICON_BUTTON =
+  'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600'
+
+function readViewMode() {
+  try {
+    return localStorage.getItem(VIEW_MODE_KEY) === 'swipe' ? 'swipe' : 'cards'
+  } catch {
+    return 'cards'
+  }
+}
+
+const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
 const DECK_SIZE = 5
 const NEARBY_CHIP = 'À proximité'
 const GOAL_CHIPS = [NEARBY_CHIP, 'Relation sérieuse', 'Amitié', 'Sortie', 'Discussion']
@@ -71,6 +92,10 @@ function Discover() {
   const [religionFilter, setReligionFilter] = useState('')
   const [travelingOnly, setTravelingOnly] = useState(false)
   const [interestFilter, setInterestFilter] = useState('')
+  const [viewMode, setViewMode] = useState(readViewMode)
+  const [showSearch, setShowSearch] = useState(false)
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
+  const [showAllInterests, setShowAllInterests] = useState(false)
   const [matchedProfile, setMatchedProfile] = useState(null)
   const [matchConversationId, setMatchConversationId] = useState(null)
   const [exitingId, setExitingId] = useState(null)
@@ -130,8 +155,72 @@ function Discover() {
   const topProfile = deck[0] || null
 
   useEffect(() => {
-    if (topProfile?.id) seenIdsRef.current.add(topProfile.id)
-  }, [topProfile?.id])
+    if (viewMode === 'swipe' && topProfile?.id) seenIdsRef.current.add(topProfile.id)
+  }, [viewMode, topProfile?.id])
+
+  const extraFiltersCount = [countryFilter, religionFilter, travelingOnly].filter(Boolean).length
+
+  function changeViewMode(mode) {
+    setViewMode(mode)
+    try {
+      localStorage.setItem(VIEW_MODE_KEY, mode)
+    } catch {
+      // storage unavailable (private mode etc.) — the choice just won't persist
+    }
+  }
+
+  function openProfile(profile) {
+    seenIdsRef.current.add(profile.id)
+    setExpandedProfile(profile)
+  }
+
+  const visibleInterests = showAllInterests ? interestChips : interestChips.slice(0, INTERESTS_PREVIEW)
+  const interestsSection = (
+    <div>
+      <div className="flex items-baseline justify-between px-1">
+        <h2 className="font-display text-base font-semibold text-ink">Centres d'intérêt</h2>
+        <button
+          type="button"
+          onClick={() => setShowAllInterests((v) => !v)}
+          className="text-xs font-semibold text-violet-600 hover:underline"
+        >
+          {showAllInterests ? 'Voir moins' : 'Voir tout'}
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {visibleInterests.map((interest) => {
+          const Icon = iconForInterest(interest)
+          const isActive = interestFilter === interest
+          return (
+            <button
+              key={interest}
+              type="button"
+              onClick={() => setInterestFilter((prev) => (prev === interest ? '' : interest))}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                isActive
+                  ? 'border-transparent bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
+                  : 'border-ink/12 bg-white text-ink-soft/80 hover:border-violet-400/50 dark:bg-surface-tint'
+              }`}
+            >
+              <Icon size={13} strokeWidth={2.25} className={isActive ? '' : 'text-violet-500'} />
+              {interest}
+            </button>
+          )
+        })}
+        {/* Keep an active filter visible even when it's outside the preview */}
+        {!showAllInterests && interestFilter && !visibleInterests.includes(interestFilter) && (
+          <button
+            type="button"
+            onClick={() => setInterestFilter('')}
+            className="flex items-center gap-1.5 rounded-full border border-transparent bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-ink-on-brand shadow-md shadow-violet-500/25"
+          >
+            {interestFilter}
+            <X size={12} strokeWidth={2.5} />
+          </button>
+        )}
+      </div>
+    </div>
+  )
 
   function handleReviewProfiles() {
     setIsReviewing(true)
@@ -176,6 +265,13 @@ function Discover() {
   }
 
   function triggerSwipe(profile, direction) {
+    // Only a card rendered in the swipe deck can play the exit animation that
+    // ends in handleSwipe — anything else (cards mode, a profile opened from
+    // the map) is recorded straight away, or the deck would stay locked.
+    if (viewMode !== 'swipe' || !deck.some((p) => p.id === profile.id)) {
+      handleSwipe(profile, direction)
+      return
+    }
     if (exitingId) return
     setExitDirection(direction)
     setExitingId(profile.id)
@@ -227,38 +323,86 @@ function Discover() {
               </div>
               <h1 className="font-display text-2xl font-bold text-ink">Découvrir</h1>
             </div>
-            <button
-              type="button"
-              onClick={() => navigate('/annonces')}
-              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
-              aria-label="Annonces"
-            >
-              <Bell size={17} />
-              {hasUnseenAnnouncement && (
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral-500" />
-              )}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSearch((v) => !v)}
+                className={`${HEADER_ICON_BUTTON} ${showSearch || search ? 'border-violet-400/60 text-violet-600' : ''}`}
+                aria-label="Rechercher"
+              >
+                <Search size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowFilters(true)}
+                className={HEADER_ICON_BUTTON}
+                aria-label="Filtres"
+              >
+                <SlidersHorizontal size={17} />
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/annonces')}
+                className={HEADER_ICON_BUTTON}
+                aria-label="Annonces"
+              >
+                <Bell size={17} />
+                {hasUnseenAnnouncement && (
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-coral-500" />
+                )}
+              </button>
+            </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-2">
-            <div className="relative min-w-0 flex-1">
-              <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher des gens…"
-                className="w-full rounded-full border border-ink/12 bg-white dark:bg-surface-tint py-2.5 pl-10 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowFilters(true)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600"
-              aria-label="Filtres"
-            >
-              <SlidersHorizontal size={17} />
-            </button>
+          <AnimatePresence initial={false}>
+            {(showSearch || search) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="relative mt-4">
+                  <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+                  <input
+                    type="text"
+                    autoFocus
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Rechercher des gens…"
+                    className="w-full rounded-full border border-ink/12 bg-white dark:bg-surface-tint py-2.5 pl-10 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div className="mt-4 flex rounded-full bg-ink/[0.05] p-1">
+            {VIEW_MODES.map((mode) => {
+              const isActive = viewMode === mode.id
+              const Icon = mode.icon
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  onClick={() => changeViewMode(mode.id)}
+                  className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-medium transition-colors ${
+                    isActive ? 'text-ink' : 'text-ink-soft/60 hover:text-ink'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="discover-view-highlight"
+                      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                      className="absolute inset-0 rounded-full bg-white shadow-sm dark:bg-surface-tint"
+                    />
+                  )}
+                  <Icon size={15} strokeWidth={2.25} className="relative" />
+                  <span className="relative">{mode.label}</span>
+                </button>
+              )
+            })}
           </div>
 
           <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
@@ -287,77 +431,70 @@ function Discover() {
                 {goal}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setShowMoreFilters((v) => !v)}
+              className={`flex shrink-0 items-center gap-1 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                showMoreFilters || extraFiltersCount > 0
+                  ? 'border-violet-400/60 text-violet-600'
+                  : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+              }`}
+            >
+              Plus{extraFiltersCount > 0 ? ` (${extraFiltersCount})` : ''}
+              <ChevronDown size={14} strokeWidth={2.25} className={`transition ${showMoreFilters ? 'rotate-180' : ''}`} />
+            </button>
           </div>
 
-          <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1">
-            <div className="relative shrink-0">
-              <Globe2 size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
-              <select
-                value={countryFilter}
-                onChange={(e) => setCountryFilter(e.target.value)}
-                className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
-              >
-                <option value="">Tous pays</option>
-                {CONTINENT_ORDER.map((continent) => (
-                  <optgroup key={continent} label={continent}>
-                    {COUNTRIES.filter((c) => c.continent === continent).map((c) => (
-                      <option key={c.code} value={c.name}>
-                        {c.flag} {c.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-            <div className="relative shrink-0">
-              <select
-                value={religionFilter}
-                onChange={(e) => setReligionFilter(e.target.value)}
-                className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 px-3 text-xs font-medium text-ink-soft/80 outline-none"
-              >
-                <option value="">Toutes religions</option>
-                {RELIGIONS.map((religion) => (
-                  <option key={religion} value={religion}>
-                    {religion}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="relative shrink-0">
-              <Plane size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
-              <select
-                value={travelingOnly ? 'traveling' : ''}
-                onChange={(e) => setTravelingOnly(e.target.value === 'traveling')}
-                className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
-              >
-                <option value="">Tous</option>
-                <option value="traveling">En voyage</option>
-              </select>
-            </div>
-          </div>
-
-          <p className="mt-3 text-sm font-semibold text-ink">Centres d'intérêt</p>
-          <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1">
-            {interestChips.map((interest) => {
-              const Icon = iconForInterest(interest)
-              const isActive = interestFilter === interest
-              return (
-                <button
-                  key={interest}
-                  type="button"
-                  onClick={() => setInterestFilter((prev) => (prev === interest ? '' : interest))}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    isActive
-                      ? 'border-transparent bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
-                      : 'border-ink/12 bg-white text-ink-soft/80 hover:border-violet-400/50 dark:bg-surface-tint'
-                  }`}
+          {showMoreFilters && (
+            <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1">
+              <div className="relative shrink-0">
+                <Globe2 size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+                <select
+                  value={countryFilter}
+                  onChange={(e) => setCountryFilter(e.target.value)}
+                  className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
                 >
-                  <Icon size={13} strokeWidth={2.25} className={isActive ? '' : 'text-violet-500'} />
-                  {interest}
-                </button>
-              )
-            })}
-          </div>
+                  <option value="">Tous pays</option>
+                  {CONTINENT_ORDER.map((continent) => (
+                    <optgroup key={continent} label={continent}>
+                      {COUNTRIES.filter((c) => c.continent === continent).map((c) => (
+                        <option key={c.code} value={c.name}>
+                          {c.flag} {c.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div className="relative shrink-0">
+                <select
+                  value={religionFilter}
+                  onChange={(e) => setReligionFilter(e.target.value)}
+                  className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 px-3 text-xs font-medium text-ink-soft/80 outline-none"
+                >
+                  <option value="">Toutes religions</option>
+                  {RELIGIONS.map((religion) => (
+                    <option key={religion} value={religion}>
+                      {religion}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="relative shrink-0">
+                <Plane size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+                <select
+                  value={travelingOnly ? 'traveling' : ''}
+                  onChange={(e) => setTravelingOnly(e.target.value === 'traveling')}
+                  className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
+                >
+                  <option value="">Tous</option>
+                  <option value="traveling">En voyage</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {viewMode === 'swipe' && <div className="mt-3">{interestsSection}</div>}
         </div>
       </div>
 
@@ -447,73 +584,103 @@ function Discover() {
           </div>
         ) : (
           <div className="flex flex-col items-center">
-            <div className="relative h-[520px] w-full max-w-sm">
-              {deck.map((p, i) => (
-                <SwipeCard
-                  key={p.id}
-                  profile={p}
-                  matchPercent={matchPercent(publicProfile?.interests, p.interests)}
-                  isTop={i === 0}
-                  stackIndex={i}
-                  exitDirection={exitingId === p.id ? exitDirection : null}
-                  onSwipe={(direction) => triggerSwipe(p, direction)}
-                  onExited={() => handleExited(p, exitDirection)}
-                  onOpenDetail={() => setExpandedProfile(p)}
-                />
-              ))}
-            </div>
+            {viewMode === 'cards' ? (
+              <>
+                <div className="w-full">
+                  <div className="flex items-baseline justify-between px-1">
+                    <h2 className="font-display text-base font-semibold text-ink">Pour vous</h2>
+                    <span className="text-xs text-ink-soft/50">
+                      {searched.length} profil{searched.length > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6">
+                    <AnimatePresence mode="popLayout">
+                      {searched.map((p, i) => (
+                        <DiscoverProfileCard
+                          key={p.id}
+                          profile={p}
+                          index={i}
+                          matchPercent={matchPercent(publicProfile?.interests, p.interests)}
+                          onOpen={() => openProfile(p)}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </div>
 
-            {/* Action row, its own row directly under the card — not overlapping it */}
-            <div className="mt-5 flex items-center justify-center gap-5">
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.85 }}
-                disabled={!topProfile}
-                onClick={() => topProfile && handlePass(topProfile)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-coral-500/20 ring-1 ring-coral-500/15 disabled:opacity-40 dark:bg-surface-tint"
-                aria-label="Passer"
-              >
-                <X size={24} strokeWidth={2.5} />
-              </motion.button>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.85 }}
-                disabled={!topProfile}
-                onClick={() => topProfile && handleSuperlike(topProfile)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-violet-500/20 ring-1 ring-violet-500/15 disabled:opacity-40 dark:bg-surface-tint"
-                aria-label="Super like"
-              >
-                <Star size={22} strokeWidth={2.5} fill="currentColor" />
-              </motion.button>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.85 }}
-                disabled={!topProfile}
-                onClick={() => topProfile && setExpandedProfile(topProfile)}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-ink/70 shadow-lg shadow-black/10 ring-1 ring-ink/10 disabled:opacity-40 dark:bg-surface-tint"
-                aria-label="Voir le profil"
-              >
-                <MessageCircle size={22} strokeWidth={2.5} />
-              </motion.button>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.85 }}
-                disabled={!topProfile}
-                onClick={() => topProfile && handleLike(topProfile)}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
-                aria-label="Aimer"
-              >
-                <Heart size={28} strokeWidth={2.5} fill="currentColor" />
-              </motion.button>
-            </div>
-
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft/50">
-              <RotateCcw size={12} strokeWidth={2.25} />
-              Glissez la carte, ou utilisez les boutons
-            </p>
+                <div className="mt-6 w-full">{interestsSection}</div>
+              </>
+            ) : (
+              <>
+                <div className="relative h-[520px] w-full max-w-sm">
+                  {deck.map((p, i) => (
+                    <SwipeCard
+                      key={p.id}
+                      profile={p}
+                      matchPercent={matchPercent(publicProfile?.interests, p.interests)}
+                      isTop={i === 0}
+                      stackIndex={i}
+                      exitDirection={exitingId === p.id ? exitDirection : null}
+                      onSwipe={(direction) => triggerSwipe(p, direction)}
+                      onExited={() => handleExited(p, exitDirection)}
+                      onOpenDetail={() => setExpandedProfile(p)}
+                    />
+                  ))}
+                </div>
+    
+                {/* Action row, its own row directly under the card — not overlapping it */}
+                <div className="mt-5 flex items-center justify-center gap-5">
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.85 }}
+                    disabled={!topProfile}
+                    onClick={() => topProfile && handlePass(topProfile)}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-coral-500 shadow-lg shadow-coral-500/20 ring-1 ring-coral-500/15 disabled:opacity-40 dark:bg-surface-tint"
+                    aria-label="Passer"
+                  >
+                    <X size={24} strokeWidth={2.5} />
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.85 }}
+                    disabled={!topProfile}
+                    onClick={() => topProfile && handleSuperlike(topProfile)}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg shadow-violet-500/20 ring-1 ring-violet-500/15 disabled:opacity-40 dark:bg-surface-tint"
+                    aria-label="Super like"
+                  >
+                    <Star size={22} strokeWidth={2.5} fill="currentColor" />
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.85 }}
+                    disabled={!topProfile}
+                    onClick={() => topProfile && setExpandedProfile(topProfile)}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-ink/70 shadow-lg shadow-black/10 ring-1 ring-ink/10 disabled:opacity-40 dark:bg-surface-tint"
+                    aria-label="Voir le profil"
+                  >
+                    <MessageCircle size={22} strokeWidth={2.5} />
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.85 }}
+                    disabled={!topProfile}
+                    onClick={() => topProfile && handleLike(topProfile)}
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
+                    aria-label="Aimer"
+                  >
+                    <Heart size={28} strokeWidth={2.5} fill="currentColor" />
+                  </motion.button>
+                </div>
+    
+                <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-soft/50">
+                  <RotateCcw size={12} strokeWidth={2.25} />
+                  Glissez la carte, ou utilisez les boutons
+                </p>
+              </>
+            )}
 
             <Suspense fallback={null}>
-              <NearbyMap profiles={searched} onOpenProfile={setExpandedProfile} />
+              <NearbyMap profiles={searched} onOpenProfile={openProfile} />
             </Suspense>
 
             <div className="mt-8 w-full">
