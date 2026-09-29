@@ -35,11 +35,13 @@ function LeafletMap({
   onMarkerClick,
   onMapClick,
   draggableMarker = null,
+  fitToMarkers = false,
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
   const draggableRef = useRef(null)
+  const hasFittedRef = useRef(false)
   const onMarkerClickRef = useRef(onMarkerClick)
   const onMapClickRef = useRef(onMapClick)
 
@@ -73,11 +75,24 @@ function LeafletMap({
     if (!layer) return
     layer.clearLayers()
     markers.forEach((m) => {
-      const marker = L.marker([m.lat, m.lng], { icon: pinIcon(VARIANT_COLORS[m.variant] || VARIANT_COLORS.venue) })
+      // A marker can bring its own HTML (e.g. an avatar pin) instead of a flat colored dot.
+      const icon = m.html
+        ? L.divIcon({ className: '', html: m.html, iconSize: m.iconSize, iconAnchor: m.iconSize?.map((s) => s / 2) })
+        : pinIcon(VARIANT_COLORS[m.variant] || VARIANT_COLORS.venue)
+      const marker = L.marker([m.lat, m.lng], { icon })
       marker.on('click', () => onMarkerClickRef.current?.(m.id))
       marker.addTo(layer)
     })
-  }, [markers])
+    // Frame the markers once — refitting on every update would make the map
+    // jump around while the user is exploring it.
+    if (fitToMarkers && markers.length > 0 && !hasFittedRef.current) {
+      hasFittedRef.current = true
+      mapRef.current?.fitBounds(
+        markers.map((m) => [m.lat, m.lng]),
+        { padding: [40, 40], maxZoom: 11 },
+      )
+    }
+  }, [markers, fitToMarkers])
 
   useEffect(() => {
     const map = mapRef.current

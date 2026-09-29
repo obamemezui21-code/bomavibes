@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -33,7 +33,10 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
 import { RELIGIONS } from '../lib/onboardingOptions.js'
 
-const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
+// Leaflet is heavy — load the map only once Discover has something to show.
+const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
+
+const DEFAULT_FILTERS ={ minAge: 18, maxAge: 60, gender: 'TOUS' }
 const DECK_SIZE = 5
 const NEARBY_CHIP = 'À proximité'
 const GOAL_CHIPS = [NEARBY_CHIP, 'Relation sérieuse', 'Amitié', 'Sortie', 'Discussion']
@@ -508,6 +511,10 @@ function Discover() {
               <RotateCcw size={12} strokeWidth={2.25} />
               Glissez la carte, ou utilisez les boutons
             </p>
+
+            <Suspense fallback={null}>
+              <NearbyMap profiles={searched} onOpenProfile={setExpandedProfile} />
+            </Suspense>
 
             <div className="mt-8 w-full">
               <div className="flex items-center justify-between px-1">

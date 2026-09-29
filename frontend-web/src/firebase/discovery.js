@@ -111,6 +111,7 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
         ...data,
         lastActiveAt: toMillis(data.lastActive),
         updatedAtMs: toMillis(data.updatedAt),
+        createdAtMs: toMillis(data.createdAt),
       }
 
       if (isRefused) {

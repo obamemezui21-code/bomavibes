@@ -7,6 +7,7 @@ const SWIPE_THRESHOLD = 100
 const EXIT_X = 600
 const EXIT_TRANSITION = { type: 'tween', duration: 0.22, ease: 'easeIn' }
 const STACK_TRANSITION = { type: 'spring', stiffness: 500, damping: 32 }
+const NEW_PROFILE_MS = 7 * 24 * 60 * 60 * 1000
 const FALLBACK_AVATAR_SEED = (profile) =>
   `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
 
@@ -39,6 +40,8 @@ function fullPhotoFor(profile, index) {
 
 function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, onSwipe, onExited, onOpenDetail }) {
   const [photoIndex, setPhotoIndex] = useState(0)
+  // Fixed at first render so the badge can't flip mid-swipe.
+  const [isNew] = useState(() => !!profile.createdAtMs && Date.now() - profile.createdAtMs < NEW_PROFILE_MS)
   const photoCount = profile.photos?.length || 1
   const x = useMotionValue(0)
   const rotate = useTransform(x, [-300, 300], [-20, 20])
@@ -148,11 +151,20 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
             </>
           )}
 
-          {matchPercent > 0 && (
-            <span className="pointer-events-none absolute left-3 top-6 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-lg">
-              <Heart size={11} strokeWidth={2.75} fill="currentColor" />
-              {matchPercent}% Match
-            </span>
+          {(matchPercent > 0 || isNew) && (
+            <div className="pointer-events-none absolute left-3 top-6 flex items-center gap-1.5">
+              {isNew && (
+                <span className="rounded-full bg-mint-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-lg">
+                  Nouveau
+                </span>
+              )}
+              {matchPercent > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-lg">
+                  <Heart size={11} strokeWidth={2.75} fill="currentColor" />
+                  {matchPercent}% Match
+                </span>
+              )}
+            </div>
           )}
 
           <button
