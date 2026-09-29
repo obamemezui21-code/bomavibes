@@ -32,12 +32,10 @@ function iconAnimation(item, i, isActive, activeScale) {
   return {
     animate: {
       scale: isActive ? activeScale : 1,
-      y: [0, -3, 0],
       ...(item.ring ? { rotate: [0, -18, 14, -10, 6, -3, 0] } : {}),
     },
     transition: {
       scale: { type: 'spring', stiffness: 500, damping: 15 },
-      y: { duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: i * 0.15 },
       ...(item.ring
         ? { rotate: { duration: 0.7, repeat: Infinity, repeatDelay: 2.2, ease: 'easeInOut' } }
         : {}),
