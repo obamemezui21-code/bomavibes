@@ -85,13 +85,211 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
     }
   }
 
+  // ⋮ menu, shared by both layouts; `onPhoto` switches the trigger to a
+  // translucent white button that reads on top of an image.
+  function renderMenu(onPhoto) {
+    return (
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowMenu((v) => !v)
+          }}
+          className={
+            onPhoto
+              ? 'flex h-9 w-9 items-center justify-center rounded-full bg-black/30 text-white backdrop-blur-md transition hover:bg-black/45'
+              : 'flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5'
+          }
+          aria-label="Plus d'options"
+        >
+          <MoreVertical size={16} strokeWidth={2.25} />
+        </button>
+        <AnimatePresence>
+          {showMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setShowMenu(false) }} />
+              <motion.div
+                initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-10 z-20 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
+              >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMenu(false)
+                    onShare?.()
+                  }}
+                  className="flex w-full items-center gap-2 border-b border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                >
+                  <Send size={14} strokeWidth={2.25} />
+                  Envoyer en message
+                </button>
+                {isOwn ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowMenu(false)
+                        onEdit?.()
+                      }}
+                      className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                    >
+                      <Pencil size={14} strokeWidth={2.25} />
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowMenu(false)
+                        onDelete?.()
+                      }}
+                      className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
+                    >
+                      <Trash2 size={14} strokeWidth={2.25} />
+                      Supprimer
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowMenu(false)
+                      onReport?.()
+                    }}
+                    className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+                  >
+                    <Flag size={14} strokeWidth={2.25} />
+                    Signaler
+                  </button>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      </div>
+    )
+  }
+
+  const authorName = author?.firstName || 'Quelqu’un'
+
+  // Photo posts: Friendzy-style full-bleed image card with the text, author
+  // chip and actions laid over it.
+  if (post.photoUrl) {
+    const glassButton =
+      'relative flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/25'
+    return (
+      <div
+        onClick={onOpen}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && onOpen?.()}
+        className="relative aspect-[4/5] min-w-0 max-w-full cursor-pointer overflow-hidden rounded-[28px] bg-ink/10 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.45)]"
+      >
+        <img
+          src={post.photoThumbUrl || post.photoUrl}
+          onError={post.photoThumbUrl ? fallbackToFullPhoto(post.photoUrl) : undefined}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30" />
+
+        <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+          <span className="inline-flex max-w-[70%] items-center gap-1 truncate rounded-full bg-black/30 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md">
+            {post.type === 'question' && <Sparkles size={11} strokeWidth={2.5} />}
+            {post.type === 'question' ? 'Question du jour' : formatRelativeTime(post.createdAt)}
+            {post.editedAt && ' · modifié'}
+          </span>
+          {renderMenu(true)}
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          {post.text && (
+            <p className="line-clamp-4 min-w-0 whitespace-pre-wrap font-display text-lg font-semibold leading-snug text-white [overflow-wrap:anywhere] [text-shadow:0_2px_10px_rgba(0,0,0,0.35)]">
+              {post.text}
+            </p>
+          )}
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onAuthorClick?.()
+              }}
+              className="flex min-w-0 items-center gap-2 rounded-full bg-white/15 py-1 pl-1 pr-3 backdrop-blur-md transition hover:bg-white/25"
+            >
+              <img
+                src={avatarUrl}
+                onError={fullPhoto ? fallbackToFullPhoto(fullPhoto) : undefined}
+                alt=""
+                className="h-7 w-7 shrink-0 rounded-full object-cover"
+              />
+              <span className="flex min-w-0 items-center gap-1 truncate text-xs font-semibold text-white">
+                {authorName}
+                {author?.isOfficial && <BadgeCheck size={13} strokeWidth={2.5} className="shrink-0 text-violet-300" />}
+              </span>
+            </button>
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
+              <motion.button
+                type="button"
+                onClick={handleToggleLike}
+                whileTap={{ scale: 0.85 }}
+                className={`${glassButton} ${isLiked ? 'text-pink-300' : ''}`}
+              >
+                <LikeBurst burstId={burstId} />
+                <motion.span
+                  key={isLiked ? 'liked' : 'unliked'}
+                  initial={{ scale: 0.6 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 12 }}
+                  className="inline-flex"
+                >
+                  <Heart size={16} strokeWidth={2.25} fill={isLiked ? 'currentColor' : 'none'} />
+                </motion.span>
+                {post.likeCount || 0}
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onOpen?.()
+                }}
+                whileTap={{ scale: 0.85 }}
+                className={glassButton}
+              >
+                <MessageCircle size={16} strokeWidth={2.25} />
+                {post.commentCount || 0}
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={handleShare}
+                whileTap={{ scale: 0.8, rotate: -15 }}
+                className={glassButton}
+                aria-label="Partager"
+              >
+                <Send size={15} strokeWidth={2.25} />
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       onClick={onOpen}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onOpen?.()}
-      className="min-w-0 max-w-full cursor-pointer rounded-2xl border border-ink/8 bg-white p-4 shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint"
+      className="min-w-0 max-w-full cursor-pointer rounded-[24px] border border-ink/8 bg-white p-4 shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint"
     >
       <div className="flex items-center gap-2.5">
         <button
@@ -118,7 +316,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
             }}
             className="flex items-center gap-1 truncate text-left text-sm font-semibold text-ink hover:underline"
           >
-            {author?.firstName || 'Quelqu’un'}
+            {authorName}
             {author?.isOfficial && <BadgeCheck size={14} strokeWidth={2.5} className="shrink-0 text-violet-500" />}
           </button>
           <p className="truncate text-xs text-ink-soft/50">
@@ -126,87 +324,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
             {post.editedAt && ' · modifié'}
           </p>
         </div>
-        <div className="relative shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu((v) => !v)
-            }}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/5"
-            aria-label="Plus d'options"
-          >
-            <MoreVertical size={16} strokeWidth={2.25} />
-          </button>
-          <AnimatePresence>
-            {showMenu && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setShowMenu(false) }} />
-                <motion.div
-                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-tint"
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowMenu(false)
-                      onShare?.()
-                    }}
-                    className="flex w-full items-center gap-2 border-b border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
-                  >
-                    <Send size={14} strokeWidth={2.25} />
-                    Envoyer en message
-                  </button>
-                  {isOwn ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setShowMenu(false)
-                          onEdit?.()
-                        }}
-                        className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
-                      >
-                        <Pencil size={14} strokeWidth={2.25} />
-                        Modifier
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setShowMenu(false)
-                          onDelete?.()
-                        }}
-                        className="flex w-full items-center gap-2 border-t border-ink/6 px-3.5 py-2.5 text-left text-sm font-medium text-coral-500 hover:bg-coral-500/5"
-                      >
-                        <Trash2 size={14} strokeWidth={2.25} />
-                        Supprimer
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setShowMenu(false)
-                        onReport?.()
-                      }}
-                      className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
-                    >
-                      <Flag size={14} strokeWidth={2.25} />
-                      Signaler
-                    </button>
-                  )}
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
+        {renderMenu(false)}
       </div>
 
       {post.type === 'question' && (
@@ -220,18 +338,6 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
         <p className={`min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-ink [overflow-wrap:anywhere] ${post.type === 'question' ? 'mt-1.5 font-medium' : 'mt-3'}`}>
           {post.text}
         </p>
-      )}
-
-      {post.photoUrl && (
-        <div className="mt-3 max-h-96 w-full overflow-hidden rounded-xl bg-ink/5">
-          <img
-            src={post.photoThumbUrl || post.photoUrl}
-            onError={post.photoThumbUrl ? fallbackToFullPhoto(post.photoUrl) : undefined}
-            alt=""
-            loading="lazy"
-            className="max-h-96 w-full object-cover"
-          />
-        </div>
       )}
 
       <div className="mt-3 flex items-center gap-1.5">
