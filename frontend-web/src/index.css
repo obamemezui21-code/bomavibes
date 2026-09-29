@@ -35,10 +35,9 @@
 
   --color-ink: #221630;
   --color-ink-soft: #6c6478;
-  /* Fixed (non theme-reactive) dark ink for text/fills that sit permanently
-     on the violet/pink brand gradient — must NOT flip to light in dark
-     mode the way --color-ink does, since the gradient itself never changes. */
-  --color-ink-on-brand: #1c1024;
+  /* Fixed (non theme-reactive) ink for text/fills that sit permanently on
+     the brand gradient. The brand is now deep violet, so this is white. */
+  --color-ink-on-brand: #ffffff;
 
   --color-violet-300: #e4cffa;
   --color-violet-400: #c9a0f0;
@@ -46,10 +45,19 @@
   --color-violet-600: #6a4693;
   --color-violet-950: #32154a;
 
-  --color-pink-300: #f7c9e3;
-  --color-pink-400: #ef8fc7;
-  --color-pink-500: #c63c8a;
-  --color-pink-600: #ad2f74;
+  /* Theme = deep violet (the Messages header) + white. The `pink-*`
+     utilities used across the app now resolve to violets, so every former
+     pink accent follows the theme without renaming classes in 40 files. */
+  --color-pink-300: #e4d6f5;
+  --color-pink-400: #9a72cf;
+  --color-pink-500: #4b2268;
+  --color-pink-600: #32154a;
+
+  /* The only real pink left: hearts and likes, so they stand out. */
+  --color-heart-300: #f7c9e3;
+  --color-heart-400: #ef6fae;
+  --color-heart-500: #d9408c;
+  --color-heart-600: #b52f73;
 
   --color-mint-400: #4dbf85;
   --color-mint-500: #349d62;
@@ -105,8 +113,12 @@ html.dark {
   --color-violet-500: #a95dda;
   --color-violet-600: #8f3fc4;
 
-  --color-pink-500: #e652a3;
-  --color-pink-600: #c93a86;
+  --color-pink-400: #b894e8;
+  --color-pink-500: #9b5fd6;
+  --color-pink-600: #7f45bd;
+
+  --color-heart-500: #e652a3;
+  --color-heart-600: #c93a86;
 
   --color-coral-500: #ea3d38;
   --color-coral-600: #c92a26;

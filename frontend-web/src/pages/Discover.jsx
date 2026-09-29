@@ -665,7 +665,7 @@ function Discover() {
                     whileTap={{ scale: 0.85 }}
                     disabled={!topProfile}
                     onClick={() => topProfile && handleLike(topProfile)}
-                    className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-500 text-white shadow-xl shadow-coral-500/40 disabled:opacity-40"
+                    className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-heart-400 to-heart-500 text-white shadow-xl shadow-heart-500/40 disabled:opacity-40"
                     aria-label="Aimer"
                   >
                     <Heart size={28} strokeWidth={2.5} fill="currentColor" />
@@ -835,7 +835,7 @@ function Discover() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.6, type: 'spring', stiffness: 400 }}
-                  className="absolute -left-2 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-lg"
+                  className="absolute -left-2 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-heart-400 to-heart-500 text-white shadow-lg"
                 >
                   <Heart size={18} strokeWidth={2.5} fill="currentColor" />
                 </motion.span>
@@ -851,7 +851,7 @@ function Discover() {
                   transition={{ delay: 0.5 }}
                   className="relative inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm"
                 >
-                  <Heart size={14} strokeWidth={2.75} fill="currentColor" className="text-pink-400" />
+                  <Heart size={14} strokeWidth={2.75} fill="currentColor" className="text-heart-400" />
                   {percent}% de compatibilité
                 </motion.span>
               ) : null
@@ -866,7 +866,7 @@ function Discover() {
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate(`/chat/${matchConversationId}`)}
-                className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-400 to-pink-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/40"
+                className="flex items-center justify-center gap-2 rounded-full bg-white py-3.5 text-sm font-semibold text-violet-950 shadow-lg shadow-black/20"
               >
                 <MessageCircle size={18} strokeWidth={2.25} />
                 Envoyer un message

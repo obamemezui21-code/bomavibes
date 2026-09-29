@@ -288,7 +288,7 @@ function PostDetail() {
             <button
               type="button"
               onClick={handleToggleLike}
-              className={`flex items-center gap-1.5 text-sm font-medium transition ${isLikedLocal ? 'text-coral-500' : 'text-ink-soft/60 hover:text-coral-500'}`}
+              className={`flex items-center gap-1.5 text-sm font-medium transition ${isLikedLocal ? 'text-heart-500' : 'text-ink-soft/60 hover:text-heart-500'}`}
             >
               <Heart size={17} strokeWidth={2.25} fill={isLikedLocal ? 'currentColor' : 'none'} />
               {post.likeCount || 0}

@@ -90,7 +90,7 @@ function LikesYou() {
                     <Lock size={20} strokeWidth={2} />
                     <span className="text-[11px] font-semibold uppercase tracking-wide">Premium</span>
                   </div>
-                  <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-coral-500 text-white shadow">
+                  <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-heart-500 text-white shadow">
                     <Heart size={12} strokeWidth={2.5} fill="currentColor" />
                   </span>
                 </motion.div>

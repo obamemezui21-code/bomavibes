@@ -79,7 +79,7 @@ function MatchRing({ percent }) {
           <defs>
             <linearGradient id="match-ring-gradient" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#c9a0f0" />
-              <stop offset="100%" stopColor="#ef8fc7" />
+              <stop offset="100%" stopColor="#ffffff" />
             </linearGradient>
           </defs>
         </svg>
@@ -371,7 +371,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                     onLike()
                     onClose()
                   }}
-                  className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-pink-400 to-pink-500 text-white shadow-lg shadow-pink-500/40"
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-heart-400 to-heart-500 text-white shadow-lg shadow-heart-500/40"
                   aria-label="Aimer"
                 >
                   <Heart size={24} strokeWidth={2.5} fill="currentColor" />

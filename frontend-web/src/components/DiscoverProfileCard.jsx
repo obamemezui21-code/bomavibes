@@ -50,7 +50,7 @@ function DiscoverProfileCard({ profile, matchPercent, index = 0, onOpen }) {
         )}
         {matchPercent > 0 && (
           <span className="inline-flex items-center gap-0.5 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-            <Heart size={9} strokeWidth={3} fill="currentColor" className="text-pink-400" />
+            <Heart size={9} strokeWidth={3} fill="currentColor" className="text-heart-400" />
             {matchPercent}%
           </span>
         )}

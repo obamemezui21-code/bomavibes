@@ -38,7 +38,7 @@ function Matches() {
   if (conversations.length === 0) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center desktop:min-h-full">
-        <Heart size={40} strokeWidth={1.5} className="text-coral-500" />
+        <Heart size={40} strokeWidth={1.5} className="text-heart-500" />
         <h1 className="font-display text-2xl font-semibold text-ink">Vos matchs</h1>
         <p className="max-w-xs text-sm text-ink-soft/70">
           Quand vous matchez avec quelqu'un, vous le retrouverez ici.
@@ -59,13 +59,13 @@ function Matches() {
         {/* Two story-style circles, as at the top of the Friendzy Matches screen */}
         <div className="mt-5 flex justify-center gap-8">
           <button type="button" onClick={() => navigate('/likes')} className="flex flex-col items-center gap-1.5">
-            <span className="relative block rounded-full bg-gradient-to-br from-pink-500 to-violet-500 p-[3px] shadow-lg shadow-pink-500/25">
-              <span className="flex h-[68px] w-[68px] items-center justify-center rounded-full border-[3px] border-surface-soft bg-gradient-to-br from-pink-400 to-violet-500 text-white">
+            <span className="relative block rounded-full bg-gradient-to-br from-heart-400 to-heart-600 p-[3px] shadow-lg shadow-heart-500/25">
+              <span className="flex h-[68px] w-[68px] items-center justify-center rounded-full border-[3px] border-surface-soft bg-gradient-to-br from-heart-400 to-heart-500 text-white">
                 <Heart size={26} strokeWidth={2.25} fill="currentColor" />
               </span>
             </span>
             <span className="text-sm font-semibold text-ink">
-              Likes <span className="text-pink-500">{likesCount ?? '–'}</span>
+              Likes <span className="text-heart-500">{likesCount ?? '–'}</span>
             </span>
           </button>
 

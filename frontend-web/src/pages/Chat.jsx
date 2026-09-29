@@ -808,7 +808,7 @@ function Chat() {
                     onClick={() => navigate('/likes')}
                     className="flex shrink-0 flex-col items-center gap-1"
                   >
-                    <span className="relative flex h-[76px] w-[60px] flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-pink-500 to-violet-500 text-white shadow-lg shadow-pink-500/30">
+                    <span className="relative flex h-[76px] w-[60px] flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-heart-400 to-heart-600 text-white shadow-lg shadow-heart-500/30">
                       <Heart size={20} strokeWidth={2.5} fill="currentColor" />
                       <span className="text-xs font-bold leading-none">{likesCount > 99 ? '99+' : likesCount}</span>
                     </span>
@@ -833,7 +833,7 @@ function Chat() {
                     >
                       <span
                         className={`relative block rounded-2xl p-[2px] ${
-                          c.isNewMatch ? 'bg-gradient-to-br from-pink-500 to-violet-500' : 'bg-white/10'
+                          c.isNewMatch ? 'bg-gradient-to-br from-white to-violet-300' : 'bg-white/10'
                         }`}
                       >
                         <img

@@ -31,7 +31,7 @@ function LikeBurst({ burstId }) {
           {BURST_PARTICLES.map((p) => (
             <motion.span
               key={p.id}
-              className="absolute text-coral-500"
+              className="absolute text-heart-500"
               initial={{ opacity: 1, scale: 0, x: 0, y: 0, rotate: 0 }}
               animate={{ opacity: 0, scale: p.scale, x: p.x, y: p.y, rotate: p.rotate }}
               transition={{ duration: 0.7, delay: p.delay, ease: [0.16, 1, 0.3, 1] }}
@@ -241,7 +241,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
                 type="button"
                 onClick={handleToggleLike}
                 whileTap={{ scale: 0.85 }}
-                className={`${glassButton} ${isLiked ? 'text-pink-300' : ''}`}
+                className={`${glassButton} ${isLiked ? 'text-heart-300' : ''}`}
               >
                 <LikeBurst burstId={burstId} />
                 <motion.span
@@ -346,7 +346,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
           onClick={handleToggleLike}
           whileTap={{ scale: 0.85 }}
           className={`relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-            isLiked ? 'bg-coral-500/10 text-coral-500' : 'text-ink-soft/60 hover:bg-coral-500/5 hover:text-coral-500'
+            isLiked ? 'bg-heart-500/10 text-heart-500' : 'text-ink-soft/60 hover:bg-heart-500/5 hover:text-heart-500'
           }`}
         >
           <LikeBurst burstId={burstId} />

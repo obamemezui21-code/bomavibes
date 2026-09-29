@@ -208,8 +208,8 @@ function EventsHub() {
                 <div className="relative h-36 w-full bg-ink/10">
                   {ev.image && <img src={ev.image} alt="" className="h-full w-full object-cover" loading="lazy" />}
                   <div className="absolute left-3 top-3 rounded-lg bg-white/90 px-2.5 py-1 text-center leading-none shadow-sm">
-                    <p className="text-sm font-bold text-ink-on-brand">{day}</p>
-                    <p className="text-[9px] font-semibold uppercase text-ink-on-brand/70">{month}</p>
+                    <p className="text-sm font-bold text-violet-950">{day}</p>
+                    <p className="text-[9px] font-semibold uppercase text-violet-950/70">{month}</p>
                   </div>
                   <span
                     className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
