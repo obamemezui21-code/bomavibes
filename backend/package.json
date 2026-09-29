@@ -10,7 +10,8 @@
     "broadcast": "node scripts/broadcastAnnouncement.js",
     "announce": "node scripts/announceFeature.js",
     "grant-admin": "node scripts/setAdmin.js",
-    "notify-user": "node scripts/notifyUser.js"
+    "notify-user": "node scripts/notifyUser.js",
+    "deploy-rules": "node scripts/deployFirestoreRules.js"
   },
   "keywords": [],
   "author": "",

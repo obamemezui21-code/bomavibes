@@ -15,6 +15,13 @@ git pull origin main
 echo "🔧 Backend..."
 cd backend
 npm install
+
+echo "🔐 Règles Firestore..."
+# Publishes frontend-web/firestore.rules with the backend's Firebase Admin
+# credentials (skipped when already up to date). A failure here must not
+# block the rest of the deploy — the previous rules simply stay live.
+node scripts/deployFirestoreRules.js || echo "⚠️  Règles Firestore non publiées (voir le message ci-dessus) — le déploiement continue."
+
 pm2 restart kani-api
 
 echo "🎨 Frontend..."
