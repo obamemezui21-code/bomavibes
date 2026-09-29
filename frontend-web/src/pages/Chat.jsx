@@ -774,45 +774,45 @@ function Chat() {
     <div className="flex h-[calc(100dvh_-_5rem_-_3.5rem_-_env(safe-area-inset-bottom))] overflow-hidden bg-surface-soft desktop:h-[calc(100svh_-_3.5rem)]">
       {/* Conversation list */}
       <div
-        className={`relative w-full flex-col border-r border-ink/8 desktop:flex desktop:w-80 ${
+        className={`relative w-full flex-col border-r border-ink/8 bg-violet-950 desktop:flex desktop:w-80 ${
           conversationId ? 'hidden' : 'flex'
         }`}
       >
-        <div className="border-b border-ink/8 px-5 pb-4 pt-5">
-          <h1 className="font-display text-xl font-semibold text-ink">Messages</h1>
+        {/* Deep violet header (Friendzy Messages screen); the list sits in a
+            light rounded sheet below it. */}
+        <div className="px-5 pb-4 pt-5">
+          <h1 className="text-center font-display text-xl font-semibold text-white">Messages</h1>
           <div className="relative mt-3">
-            <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
+            <Search size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-white/50" />
             <input
               type="text"
               value={listSearch}
               onChange={(e) => setListSearch(e.target.value)}
               placeholder="Rechercher..."
-              className="w-full rounded-full border border-ink/12 bg-ink/[0.04] py-2.5 pl-9 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06]"
+              className="w-full rounded-full border border-white/10 bg-white/10 py-2.5 pl-9 pr-3.5 text-sm text-white placeholder-white/50 outline-none transition focus:border-pink-400/60 focus:bg-white/15 focus:ring-4 focus:ring-pink-400/15"
             />
           </div>
         </div>
         <div
           ref={listScrollRef}
           onScroll={(e) => setShowScrollUp(e.currentTarget.scrollTop > 300)}
-          className="flex-1 overflow-y-auto px-3 py-3"
+          className="flex flex-1 flex-col overflow-y-auto"
         >
           {conversations.length > 0 && !query && (
-            <div className="mb-4">
-              <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-ink-soft/50">
-                Matchs récents
-              </p>
-              <div className="mt-2 flex gap-3 overflow-x-auto px-1 pb-1">
+            <div className="px-4 pb-5">
+              <p className="px-1 text-sm font-semibold text-white/90">Matchs récents</p>
+              <div className="mt-3 flex gap-3 overflow-x-auto px-1 pb-1">
                 {likesCount > 0 && (
                   <button
                     type="button"
                     onClick={() => navigate('/likes')}
                     className="flex shrink-0 flex-col items-center gap-1"
                   >
-                    <span className="relative flex h-[60px] w-[60px] flex-col items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-violet-500 text-ink-on-brand shadow-md">
-                      <Heart size={18} strokeWidth={2.5} fill="currentColor" />
-                      <span className="text-[11px] font-bold leading-none">{likesCount > 99 ? '99+' : likesCount}</span>
+                    <span className="relative flex h-[76px] w-[60px] flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-pink-500 to-violet-500 text-white shadow-lg shadow-pink-500/30">
+                      <Heart size={20} strokeWidth={2.5} fill="currentColor" />
+                      <span className="text-xs font-bold leading-none">{likesCount > 99 ? '99+' : likesCount}</span>
                     </span>
-                    <span className="text-xs font-medium text-ink">Likes</span>
+                    <span className="text-xs font-medium text-white/80">Likes</span>
                   </button>
                 )}
                 {/* New matches first, then people you haven't talked to yet
@@ -832,28 +832,28 @@ function Chat() {
                       className="flex shrink-0 flex-col items-center gap-1"
                     >
                       <span
-                        className={`relative block rounded-full p-[2px] ${
-                          c.isNewMatch ? 'bg-gradient-to-br from-pink-500 to-violet-500' : 'bg-ink/10'
+                        className={`relative block rounded-2xl p-[2px] ${
+                          c.isNewMatch ? 'bg-gradient-to-br from-pink-500 to-violet-500' : 'bg-white/10'
                         }`}
                       >
                         <img
                           src={c.profile.photo}
                           onError={fallbackToFullPhoto(c.profile.photoFull)}
                           alt={c.profile.firstName}
-                          className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                          className="h-[72px] w-14 rounded-[14px] object-cover"
                         />
                         {c.online && (
-                          <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-surface-soft bg-mint-500" />
+                          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-violet-950 bg-mint-500" />
                         )}
                       </span>
-                      <span className="max-w-[4rem] truncate text-xs font-medium text-ink">{c.profile.firstName}</span>
+                      <span className="max-w-[4rem] truncate text-xs font-medium text-white/80">{c.profile.firstName}</span>
                     </button>
                   ))}
               </div>
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="flex-1 space-y-1 rounded-t-[32px] bg-surface-soft px-3 pb-3 pt-4">
             {visibleConversations.map((c) => {
               const last = c.messages[c.messages.length - 1]
               const isActive = c.id === activeId
@@ -862,19 +862,10 @@ function Chat() {
                   key={c.id}
                   type="button"
                   onClick={() => navigate(`/chat/${c.id}`)}
-                  className={`relative flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-2xl border bg-white p-3 text-left shadow-sm transition hover:border-violet-400/30 dark:bg-surface-tint ${
-                    isActive ? 'border-violet-400/60 ring-2 ring-violet-400/30' : 'border-ink/8'
+                  className={`relative flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-2xl px-2.5 py-3 text-left transition ${
+                    isActive ? 'bg-violet-500/10' : 'hover:bg-ink/[0.04]'
                   }`}
                 >
-                  <div className="pointer-events-none absolute inset-0">
-                    <img
-                      src={c.profile.photoFull || c.profile.photo}
-                      onError={fallbackToFullPhoto(c.profile.photo)}
-                      alt=""
-                      className="h-full w-full object-cover opacity-35"
-                    />
-                    <div className="absolute inset-0 bg-white/70 dark:bg-surface-tint/75" />
-                  </div>
                   <div className="relative shrink-0">
                     <img
                       src={c.profile.photo}
@@ -883,7 +874,7 @@ function Chat() {
                       className="h-12 w-12 rounded-full object-cover"
                     />
                     {c.online && (
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-mint-500 dark:border-surface-tint" />
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-surface-soft bg-mint-500" />
                     )}
                   </div>
                   <div className="relative min-w-0 flex-1">
@@ -920,7 +911,7 @@ function Chat() {
               )
             })}
             {visibleConversations.length === 0 && (
-              <p className="px-2 py-8 text-center text-sm text-ink-soft/50">Aucune conversation trouvée.</p>
+              <p className="px-2 py-8 text-center text-sm text-ink-soft/60">Aucune conversation trouvée.</p>
             )}
           </div>
         </div>
