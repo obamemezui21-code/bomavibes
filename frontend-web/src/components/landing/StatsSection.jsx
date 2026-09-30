@@ -8,7 +8,7 @@ import { LANGUAGES } from '../../lib/onboardingOptions.js'
 const CITY_COUNT = COUNTRIES.reduce((sum, c) => sum + c.regions.reduce((s, r) => s + r.cities.length, 0), 0)
 
 const STATS = [
-  { value: `${COUNTRIES.length}`, label: 'pays africains au programme' },
+  { value: `${COUNTRIES.length}`, label: 'pays au programme, sur 8 régions du monde' },
   { value: `${LANGUAGES.length}`, label: 'langues supportées' },
   { value: `${CITY_COUNT}+`, label: 'villes et régions cartographiées' },
   { value: '6', label: 'piliers de sécurité intégrés' },

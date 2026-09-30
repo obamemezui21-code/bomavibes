@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Flag, Heart, Lock, Mic, Send, ShieldOff, Sparkles, Star, X } from 'lucide-react'
+import { BadgeCheck, Camera, Check, CheckCircle2, Heart, Mic, MicOff, PhoneOff, Send, Star, Video, X } from 'lucide-react'
 import amaraPhoto from '../../assets/faces/amara.jpg'
 import juniorPhoto from '../../assets/faces/junior.jpg'
 import kwamePhoto from '../../assets/faces/kwame.jpg'
@@ -34,7 +34,12 @@ function DiscoverMock() {
       <div className="relative flex-1 overflow-hidden rounded-2xl">
         <img src={amaraPhoto} alt="Amara" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-          <p className="text-sm font-bold text-white">Amara, 27</p>
+          <p className="flex items-center gap-1 text-sm font-bold text-white">
+            Amara, 27
+            <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-sky-500">
+              <Check size={8} strokeWidth={3.5} />
+            </span>
+          </p>
           <p className="text-[10px] text-white/80">Libreville · 92% match</p>
         </div>
       </div>
@@ -77,6 +82,13 @@ function ChatMock() {
             <span className="text-[9px] text-[#635a65]">0:12</span>
           </div>
         </div>
+        <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-sm">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-mint-500/15 text-mint-600">
+            <Video size={10} strokeWidth={2.5} />
+          </span>
+          <span className="text-[9px] font-medium text-[#261b28]">Appel vidéo · 12 min</span>
+          <span className="text-[9px] font-bold text-violet-600">Rappeler</span>
+        </div>
       </div>
       <div className="mt-2 flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2">
         <span className="flex-1 text-[10px] text-[#635a65]/60">Écrivez un message…</span>
@@ -88,123 +100,125 @@ function ChatMock() {
   )
 }
 
-function ProfileMock() {
-  const chips = ['Voyages', 'Musique', 'Cuisine', 'Sport', 'Cinéma', 'Nature']
+function VideoCallMock() {
   return (
-    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Votre profil</p>
-      <div className="flex flex-col items-center">
-        <img src={juniorPhoto} alt="Junior" className="h-16 w-16 rounded-full object-cover shadow" />
-        <p className="mt-2 text-xs font-bold text-[#261b28]">Junior, 29</p>
-        <p className="text-[10px] text-[#635a65]">Douala, Cameroun</p>
+    <div className="relative flex h-[410px] flex-col bg-[#1c1024]">
+      <img src={zolaPhoto} alt="Zola" className="absolute inset-0 h-full w-full object-cover opacity-90" />
+      <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent px-3 pb-6 pt-3 text-center">
+        <p className="text-xs font-bold text-white">Zola</p>
+        <p className="text-[10px] text-white/80">Appel vidéo · 04:12</p>
       </div>
-      <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Centres d'intérêt</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {chips.map((c) => (
-          <span key={c} className="rounded-full border border-violet-400 bg-violet-500/10 px-2 py-1 text-[9px] font-medium text-violet-600">
-            {c}
-          </span>
-        ))}
-      </div>
-      <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Langues</p>
-      <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {['Français', 'Anglais', 'Douala'].map((l) => (
-          <span key={l} className="rounded-full border border-black/10 px-2 py-1 text-[9px] font-medium text-[#635a65]">
-            {l}
-          </span>
-        ))}
+      <img
+        src={malikPhoto}
+        alt=""
+        className="absolute right-3 top-14 h-20 w-14 rounded-xl border-2 border-white/80 object-cover shadow-lg"
+      />
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 bg-gradient-to-t from-black/70 to-transparent px-3 pb-5 pt-10">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur">
+          <MicOff size={14} strokeWidth={2.5} />
+        </span>
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-coral-500 text-white shadow-lg">
+          <PhoneOff size={16} strokeWidth={2.5} />
+        </span>
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur">
+          <Video size={14} strokeWidth={2.5} />
+        </span>
       </div>
     </div>
   )
 }
 
-function LikesYouMock() {
+function ColorPostsMock() {
+  const posts = [
+    { text: 'Qui est chaud pour un resto ce week-end à Libreville ? 🍲', bg: 'linear-gradient(135deg, #4b164c 0%, #8a4d8b 100%)', color: '#fff', font: 'Outfit, sans-serif', weight: 800, who: 'Ndeye', photo: ndeyePhoto },
+    { text: 'La vie est belle quand on sourit ☀️', bg: 'linear-gradient(135deg, #f2726c 0%, #f2bf4e 100%)', color: '#2b1a2c', font: '"Dancing Script", cursive', weight: 700, who: 'Kwame', photo: kwamePhoto },
+  ]
   return (
-    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Qui vous a aimé·e</p>
-      <div className="grid flex-1 grid-cols-2 gap-2">
-        {[malikPhoto, ndeyePhoto, zolaPhoto, kwamePhoto].map((photo, i) => (
-          <div key={i} className="relative overflow-hidden rounded-xl">
-            <img src={photo} alt="" className="h-full w-full object-cover blur-[2px]" />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <Lock size={14} className="text-white/90" strokeWidth={2.5} />
-            </div>
+    <div className="flex h-[410px] flex-col gap-2.5 bg-[#f7f1e6] p-3">
+      <p className="text-center text-[11px] font-bold text-[#261b28]">Fil d'actualité</p>
+      {posts.map((p) => (
+        <div key={p.who} className="overflow-hidden rounded-2xl bg-white shadow-sm">
+          <div className="flex items-center gap-1.5 px-2.5 py-2">
+            <img src={p.photo} alt="" className="h-5 w-5 rounded-full object-cover" />
+            <span className="text-[10px] font-bold text-[#261b28]">{p.who}</span>
           </div>
-        ))}
-      </div>
-      <div className="mt-3 flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2">
-        <Sparkles size={12} strokeWidth={2.5} className="text-[#261b28]" />
-        <span className="text-[10px] font-bold text-[#261b28]">12 personnes vous ont aimé·e</span>
-      </div>
-    </div>
-  )
-}
-
-function SecurityMock() {
-  return (
-    <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
-      <div className="flex items-center gap-2 rounded-t-xl bg-white px-2 py-2 shadow-sm">
-        <img src={kwamePhoto} alt="Kwame" className="h-7 w-7 rounded-full object-cover" />
-        <span className="flex-1 text-[11px] font-bold text-[#261b28]">Kwame</span>
-      </div>
-      <div className="relative flex-1 rounded-b-xl bg-white px-2 pb-2">
-        <div className="ml-auto mt-2 w-40 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5">
-          <div className="flex items-center gap-2 px-3 py-2.5 text-[10px] font-semibold text-[#261b28]">
-            <Flag size={12} strokeWidth={2.25} />
-            Signaler
-          </div>
-          <div className="flex items-center gap-2 border-t border-black/6 px-3 py-2.5 text-[10px] font-semibold text-coral-500">
-            <ShieldOff size={12} strokeWidth={2.25} />
-            Bloquer
+          <div
+            className="flex h-[118px] items-center justify-center px-4 text-center text-[13px] leading-snug"
+            style={{ background: p.bg, color: p.color, fontFamily: p.font, fontWeight: p.weight }}
+          >
+            {p.text}
           </div>
         </div>
+      ))}
+      <div className="mt-auto flex items-center justify-center gap-1.5">
+        {['#4b164c', '#dd88cf', '#f2726c', '#1f6b44', '#1e5aa8'].map((c) => (
+          <span key={c} className="h-5 w-5 rounded-full ring-2 ring-white" style={{ background: c }} />
+        ))}
       </div>
-      <p className="mt-2 text-center text-[10px] font-medium text-[#635a65]">
-        Effet immédiat, des deux côtés
+    </div>
+  )
+}
+
+function VerifiedMock() {
+  return (
+    <div className="flex h-[410px] flex-col items-center bg-[#f7f1e6] p-3">
+      <p className="mb-4 text-center text-[11px] font-bold text-[#261b28]">Vérification du profil</p>
+      <div className="relative">
+        <img src={juniorPhoto} alt="Junior" className="h-24 w-24 rounded-full object-cover shadow-lg ring-4 ring-white" />
+        <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow">
+          <BadgeCheck size={22} strokeWidth={2.25} className="text-sky-500" />
+        </span>
+      </div>
+      <p className="mt-3 text-sm font-bold text-[#261b28]">Junior, 29</p>
+      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-500/12 px-2.5 py-1 text-[10px] font-bold text-sky-600">
+        <BadgeCheck size={11} strokeWidth={2.5} />
+        Profil vérifié
+      </span>
+      <div className="mt-5 w-full space-y-2">
+        {['Selfie avec la pose demandée', 'Vérifié par notre équipe', 'Badge ✓ activé'].map((step) => (
+          <div key={step} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-sm">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-mint-500 text-white">
+              <Check size={11} strokeWidth={3} />
+            </span>
+            <span className="text-[10px] font-medium text-[#261b28]">{step}</span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-auto flex items-center gap-1 text-[10px] text-[#635a65]">
+        <Camera size={11} strokeWidth={2.25} />
+        Votre selfie n'est jamais affiché
       </p>
     </div>
   )
 }
 
-function OnboardingMock() {
-  const countries = [
-    { code: 'GA', name: 'Gabon', active: true },
-    { code: 'CM', name: 'Cameroun', active: false },
-    { code: 'SN', name: 'Sénégal', active: false },
-  ]
-  const regions = ['Estuaire', 'Haut-Ogooué', 'Ngounié']
+function MobileMoneyMock() {
   return (
     <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
-      <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Où vous êtes</p>
-      <p className="mb-2 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Pays</p>
-      <div className="flex flex-wrap gap-1.5">
-        {countries.map((c) => (
-          <span
-            key={c.name}
-            className={`rounded-full border px-2 py-1 text-[9px] font-medium ${
-              c.active ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#635a65]'
-            }`}
-          >
-            <FlagIcon code={c.code} className="mr-1 !h-2.5 !w-3.5 rounded-sm align-[-1px]" />
-            {c.name}
-          </span>
-        ))}
+      <p className="mb-3 text-center text-[11px] font-bold text-[#261b28]">Activer Diamant Rouge</p>
+      <div className="rounded-2xl bg-white p-3 text-center shadow-sm">
+        <p className="text-[10px] text-[#635a65]">Forfait mensuel</p>
+        <p className="whitespace-nowrap font-display text-lg font-extrabold text-[#261b28]">3 500 FCFA</p>
+        <div className="mt-2 flex flex-wrap justify-center gap-1">
+          {['Likes illimités', 'Boost 3×/sem.', 'Appels'].map((perk) => (
+            <span key={perk} className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[9px] font-medium text-violet-600">
+              {perk}
+            </span>
+          ))}
+        </div>
       </div>
-      <p className="mb-2 mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Région</p>
-      <div className="flex flex-wrap gap-1.5">
-        {regions.map((r, i) => (
-          <span
-            key={r}
-            className={`rounded-full border px-2 py-1 text-[9px] font-medium ${
-              i === 0 ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-black/10 text-[#635a65]'
-            }`}
-          >
-            {r}
-          </span>
-        ))}
+      <p className="mt-4 text-[9px] font-semibold uppercase tracking-wide text-pink-600">Numéro Mobile Money</p>
+      <div className="mt-1.5 flex items-center gap-2 rounded-xl border border-violet-400 bg-white px-3 py-2">
+        <FlagIcon code="GA" className="!h-3 !w-4 rounded-sm" />
+        <span className="text-[11px] font-medium text-[#261b28]">+241 074 12 34 56</span>
       </div>
-      <div className="mt-auto rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-center text-[10px] font-bold text-[#261b28]">
-        Continuer
+      <div className="mt-2 flex gap-1.5">
+        <span className="flex-1 rounded-lg bg-[#e4002b] py-1.5 text-center text-[9px] font-bold text-white">Airtel Money</span>
+        <span className="flex-1 rounded-lg bg-[#0066b3] py-1.5 text-center text-[9px] font-bold text-white">Moov Money</span>
+      </div>
+      <div className="mt-auto flex items-center justify-center gap-1.5 rounded-xl bg-mint-500 py-2.5 text-[11px] font-bold text-white">
+        <CheckCircle2 size={13} strokeWidth={2.5} />
+        Paiement réussi, forfait activé
       </div>
     </div>
   )
@@ -212,11 +226,11 @@ function OnboardingMock() {
 
 const SCREENS = [
   { label: 'Découvrir', Mock: DiscoverMock, tilt: -3 },
-  { label: 'Messagerie & notes vocales', Mock: ChatMock, tilt: 2 },
-  { label: 'Profil enrichi', Mock: ProfileMock, tilt: -2 },
-  { label: 'Qui vous a aimé·e', Mock: LikesYouMock, tilt: 3 },
-  { label: 'Sécurité en un geste', Mock: SecurityMock, tilt: -2 },
-  { label: 'Onboarding guidé', Mock: OnboardingMock, tilt: 2 },
+  { label: 'Messagerie & appels', Mock: ChatMock, tilt: 2 },
+  { label: 'Appels vidéo', Mock: VideoCallMock, tilt: -2 },
+  { label: 'Publications en couleur', Mock: ColorPostsMock, tilt: 3 },
+  { label: 'Profil vérifié', Mock: VerifiedMock, tilt: -2 },
+  { label: 'Paiement Mobile Money', Mock: MobileMoneyMock, tilt: 2 },
 ]
 
 function AppPreviewSection() {

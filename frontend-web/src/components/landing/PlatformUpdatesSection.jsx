@@ -71,7 +71,8 @@ function PlatformUpdatesSection() {
                 >
                   {dateLabel && <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">{dateLabel}</p>}
                   <h3 className="mt-2 font-display text-base font-bold leading-snug text-[#261b28]">{u.title}</h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-[#635a65]">{u.description}</p>
+                  {/* Long announcements (changelogs) would stretch the whole row. */}
+                  <p className="mt-2 line-clamp-5 flex-1 text-sm leading-relaxed text-[#635a65]">{u.description}</p>
                   {u.ctaLink && (
                     <a
                       href={u.ctaLink}
