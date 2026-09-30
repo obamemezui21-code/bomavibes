@@ -21,6 +21,8 @@ const aiPartnersRoutes = require("./routes/aiPartnersRoutes");
 const callRoutes = require("./routes/callRoutes");
 const verificationRoutes = require("./routes/verificationRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
 
@@ -61,9 +63,11 @@ app.use("/api/admin/verifications", verificationRoutes.adminRouter);
 app.use("/api/swipes", subscriptionRoutes.swipeRouter);
 app.use("/api/me", subscriptionRoutes.meRouter);
 app.use("/api/admin/subscriptions", subscriptionRoutes.adminRouter);
+app.use("/api/payments", paymentRoutes);
 
 startWwfNewsScheduler();
 startCallCleanupScheduler();
+startPaymentSweepScheduler();
 
 // Error handler
 app.use((err, req, res, next) => {

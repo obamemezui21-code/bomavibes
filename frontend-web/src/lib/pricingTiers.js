@@ -11,6 +11,7 @@ export const TIERS = [
   {
     badge: badgeVip,
     emoji: '👑',
+    id: 'vip',
     name: 'VIP',
     tagline: 'Pour découvrir Premium',
     highlight: false,
@@ -31,6 +32,7 @@ export const TIERS = [
   {
     badge: badgeDiamant,
     emoji: '💎',
+    id: 'diamant',
     name: 'Diamant Rouge',
     tagline: 'Notre offre premium',
     highlight: true,
@@ -48,6 +50,7 @@ export const TIERS = [
   {
     badge: badgeJade,
     emoji: '💚',
+    id: 'jade',
     name: 'Jadéite Impériale',
     tagline: "L'offre ultra-premium, pour l'exclusivité",
     highlight: false,

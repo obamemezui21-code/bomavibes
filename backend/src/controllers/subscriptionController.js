@@ -1,15 +1,13 @@
 const admin = require("../config/firebaseAdmin");
-const { PLANS, PAID_PLANS, BOOST_DURATION_MS, activePlanId, planFor, periodKey, toMillis } = require("../config/plans");
+const { PAID_PLANS, BOOST_DURATION_MS, activePlanId, planFor, periodKey, toMillis } = require("../config/plans");
 const { logAdminAction } = require("../services/adminLogService");
-const { sendPushToUser } = require("../services/pushService");
+const { grantPlan } = require("../services/subscriptionService");
 
 const db = admin.firestore();
 const { FieldValue, Timestamp } = admin.firestore;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 // PATCH /api/admin/subscriptions/:uid { plan: 'vip'|'diamant'|'jade'|null, days }
-// Manual activation while online payment isn't wired up: the user pays by
+// Manual activation (payments outside the app, gifts, fixes): the user pays by
 // Mobile Money, an admin records it here. Renewing the same plan extends it
 // from its current end date; any other change starts from today.
 async function setUserPlan(req, res) {
@@ -22,34 +20,15 @@ async function setUserPlan(req, res) {
 
     try {
         const userRef = db.collection("users").doc(uid);
-        const userSnap = await userRef.get();
-        if (!userSnap.exists) return res.status(404).json({ message: "Utilisateur introuvable" });
-
-        const profileRef = db.collection("profiles").doc(uid);
-        const batch = db.batch();
-
         if (cancelling) {
+            if (!(await userRef.get()).exists) return res.status(404).json({ message: "Utilisateur introuvable" });
+            const batch = db.batch();
             batch.update(userRef, { plan: null, planExpiresAt: null, planUpdatedAt: FieldValue.serverTimestamp(), planUpdatedBy: req.firebaseUser.uid });
-            batch.set(profileRef, { visibility: 0, visibilityUntil: null, invisible: false, boostedUntil: null }, { merge: true });
+            batch.set(db.collection("profiles").doc(uid), { visibility: 0, visibilityUntil: null, invisible: false, boostedUntil: null }, { merge: true });
+            await batch.commit();
         } else {
-            const now = Date.now();
-            const current = userSnap.data();
-            const from = activePlanId(current, now) === plan ? Math.max(now, toMillis(current.planExpiresAt)) : now;
-            const expiresAt = Timestamp.fromMillis(from + days * DAY_MS);
-            batch.update(userRef, {
-                plan,
-                planExpiresAt: expiresAt,
-                planUpdatedAt: FieldValue.serverTimestamp(),
-                planUpdatedBy: req.firebaseUser.uid,
-            });
-            // Public, read by everyone's Discover ranking.
-            batch.set(
-                profileRef,
-                { visibility: PLANS[plan].visibility, visibilityUntil: expiresAt, ...(PLANS[plan].invisible ? {} : { invisible: false }) },
-                { merge: true },
-            );
+            await grantPlan(uid, plan, days, req.firebaseUser.uid);
         }
-        await batch.commit();
 
         await logAdminAction(req, {
             action: cancelling ? "CANCEL_SUBSCRIPTION" : "SET_SUBSCRIPTION",
@@ -59,16 +38,9 @@ async function setUserPlan(req, res) {
         });
 
         const updated = (await userRef.get()).data();
-        if (!cancelling) {
-            const until = new Date(toMillis(updated.planExpiresAt)).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-            sendPushToUser(uid, {
-                title: `Forfait ${PLANS[plan].label} activé 🎉`,
-                body: `Profitez de vos avantages jusqu'au ${until}.`,
-                path: "/profile",
-            });
-        }
         res.json({ plan: activePlanId(updated), planExpiresAt: toMillis(updated.planExpiresAt) || null });
     } catch (err) {
+        if (err.status) return res.status(err.status).json({ message: err.message });
         console.error(err);
         res.status(500).json({ message: "Impossible de modifier le forfait" });
     }

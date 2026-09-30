@@ -30,3 +30,20 @@ export function adminSetUserPlan(uid, plan, days) {
     body: JSON.stringify({ plan, days }),
   })
 }
+
+// Online payment (SingPay Mobile Money, Gabon) — see
+// backend/src/controllers/paymentController.js.
+export async function getPaymentConfig() {
+  const res = await fetch('/api/payments/config')
+  return res.ok ? res.json() : { singpay: false }
+}
+
+// → { reference, status: 'pending', ... } once the USSD Push is sent.
+export function startMobileMoneyPayment(plan, phone) {
+  return api('/api/payments/singpay', { method: 'POST', body: JSON.stringify({ plan, phone }) })
+}
+
+// → { status: 'pending' | 'paid' | 'failed' | 'expired', message, planExpiresAt }
+export function getPayment(reference) {
+  return api(`/api/payments/${encodeURIComponent(reference)}`)
+}

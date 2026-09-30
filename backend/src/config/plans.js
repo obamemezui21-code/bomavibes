@@ -22,6 +22,7 @@ const PLANS = {
     },
     vip: {
         label: "VIP",
+        price: 2000,
         likesPerDay: UNLIMITED,
         superlikes: { count: 5, period: "week" },
         boosts: { count: 1, period: "week" },
@@ -32,6 +33,7 @@ const PLANS = {
     },
     diamant: {
         label: "Diamant Rouge",
+        price: 3500,
         likesPerDay: UNLIMITED,
         superlikes: { count: 3, period: "day" },
         boosts: { count: 3, period: "week" },
@@ -42,6 +44,7 @@ const PLANS = {
     },
     jade: {
         label: "Jadéite Impériale",
+        price: 5500,
         likesPerDay: UNLIMITED,
         superlikes: { count: 10, period: "day" },
         boosts: { count: 1, period: "day" },
@@ -54,6 +57,8 @@ const PLANS = {
 
 const PAID_PLANS = ["vip", "diamant", "jade"];
 const BOOST_DURATION_MS = 30 * 60 * 1000;
+// A paid plan's price (FCFA) buys this many days.
+const PLAN_PERIOD_DAYS = 30;
 
 function toMillis(value) {
     if (!value) return 0;
@@ -85,4 +90,4 @@ function periodKey(period, now = Date.now()) {
     return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
-module.exports = { PLANS, PAID_PLANS, UNLIMITED, BOOST_DURATION_MS, activePlanId, planFor, periodKey, toMillis };
+module.exports = { PLANS, PAID_PLANS, UNLIMITED, BOOST_DURATION_MS, PLAN_PERIOD_DAYS, activePlanId, planFor, periodKey, toMillis };
