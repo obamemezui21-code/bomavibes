@@ -27,3 +27,6 @@ Thumbs.db
 
 # BomaVibes 2 reference project (design source, not part of the app)
 bomavibes2/
+
+# Original stock photos (tens of MB) — the site ships the optimised crops in src/assets/people
+frontend-web/src/assets/faces/pexels-*

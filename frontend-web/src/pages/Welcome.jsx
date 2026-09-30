@@ -4,15 +4,10 @@ import { motion } from 'framer-motion'
 import { Mail, MapPin, MessageCircle } from 'lucide-react'
 import GoogleIcon from '../components/GoogleIcon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import centerPhoto from '../assets/faces/center.jpg'
-import amaraPhoto from '../assets/faces/amara.jpg'
-import kwamePhoto from '../assets/faces/kwame.jpg'
-import zolaPhoto from '../assets/faces/zola.jpg'
-import malikPhoto from '../assets/faces/malik.jpg'
-import ndeyePhoto from '../assets/faces/ndeye.jpg'
-import juniorPhoto from '../assets/faces/junior.jpg'
+import centerPhoto from '../assets/people/couple-tendresse.webp'
+import { DEMO_PROFILES } from '../lib/demoProfiles.js'
 
-const SATELLITE_PHOTOS = [amaraPhoto, kwamePhoto, zolaPhoto, malikPhoto, ndeyePhoto, juniorPhoto]
+const SATELLITE_PHOTOS = ['zola', 'kofi', 'mariam', 'serge', 'aicha', 'ines'].map((id) => DEMO_PROFILES[id].photo)
 
 const SATELLITE_POSITIONS = [
   'top-1 left-1/2 -translate-x-1/2',

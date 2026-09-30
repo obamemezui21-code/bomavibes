@@ -6,7 +6,8 @@ import logo from '../assets/bomavibes-icon.webp'
 
 const NAV_LINKS = [
   { label: 'Accueil', href: '/#top' },
-  { label: 'Fonctionnalités', href: '/#fonctionnalites' },
+  { label: 'Découvrir', href: '/#decouverte' },
+  { label: 'Vibe Places', href: '/#vibe-places' },
   { label: 'Sécurité', href: '/#securite' },
   { label: 'Nos tarifs', href: '/tarifs' },
   { label: 'Événements', href: '/evenements' },

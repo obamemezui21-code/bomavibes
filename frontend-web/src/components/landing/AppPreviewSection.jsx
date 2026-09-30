@@ -1,12 +1,9 @@
 import { motion } from 'framer-motion'
 import { BadgeCheck, Camera, Check, CheckCircle2, Heart, Mic, MicOff, PhoneOff, Send, Star, Video, X } from 'lucide-react'
-import amaraPhoto from '../../assets/faces/amara.jpg'
-import juniorPhoto from '../../assets/faces/junior.jpg'
-import kwamePhoto from '../../assets/faces/kwame.jpg'
-import malikPhoto from '../../assets/faces/malik.jpg'
-import ndeyePhoto from '../../assets/faces/ndeye.jpg'
-import zolaPhoto from '../../assets/faces/zola.jpg'
+import { DEMO_PROFILES } from '../../lib/demoProfiles.js'
 import FlagIcon from '../FlagIcon.jsx'
+
+const { aicha, ines, kofi, serge, zola } = DEMO_PROFILES
 
 function PhoneFrame({ children, label, delay, tilt }) {
   return (
@@ -32,15 +29,15 @@ function DiscoverMock() {
     <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Découvrir</p>
       <div className="relative flex-1 overflow-hidden rounded-2xl">
-        <img src={amaraPhoto} alt="Amara" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={aicha.photo} alt="Aïcha" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
           <p className="flex items-center gap-1 text-sm font-bold text-white">
-            Amara, 27
+            Aïcha, 27
             <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-sky-500">
               <Check size={8} strokeWidth={3.5} />
             </span>
           </p>
-          <p className="text-[10px] text-white/80">Libreville · 92% match</p>
+          <p className="text-[10px] text-white/80">Paris · 89% match</p>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-center gap-3">
@@ -103,13 +100,13 @@ function ChatMock() {
 function VideoCallMock() {
   return (
     <div className="relative flex h-[410px] flex-col bg-[#1c1024]">
-      <img src={zolaPhoto} alt="Zola" className="absolute inset-0 h-full w-full object-cover opacity-90" />
+      <img src={zola.photo} alt="Zola" className="absolute inset-0 h-full w-full object-cover opacity-90" />
       <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent px-3 pb-6 pt-3 text-center">
         <p className="text-xs font-bold text-white">Zola</p>
         <p className="text-[10px] text-white/80">Appel vidéo · 04:12</p>
       </div>
       <img
-        src={malikPhoto}
+        src={kofi.photo}
         alt=""
         className="absolute right-3 top-14 h-20 w-14 rounded-xl border-2 border-white/80 object-cover shadow-lg"
       />
@@ -130,8 +127,8 @@ function VideoCallMock() {
 
 function ColorPostsMock() {
   const posts = [
-    { text: 'Qui est chaud pour un resto ce week-end à Libreville ? 🍲', bg: 'linear-gradient(135deg, #4b164c 0%, #8a4d8b 100%)', color: '#fff', font: 'Outfit, sans-serif', weight: 800, who: 'Ndeye', photo: ndeyePhoto },
-    { text: 'La vie est belle quand on sourit ☀️', bg: 'linear-gradient(135deg, #f2726c 0%, #f2bf4e 100%)', color: '#2b1a2c', font: '"Dancing Script", cursive', weight: 700, who: 'Kwame', photo: kwamePhoto },
+    { text: 'Qui est chaud pour un resto ce week-end à Libreville ? 🍲', bg: 'linear-gradient(135deg, #4b164c 0%, #8a4d8b 100%)', color: '#fff', font: 'Outfit, sans-serif', weight: 800, who: 'Inès', photo: ines.photo },
+    { text: 'La vie est belle quand on sourit ☀️', bg: 'linear-gradient(135deg, #f2726c 0%, #f2bf4e 100%)', color: '#2b1a2c', font: '"Dancing Script", cursive', weight: 700, who: 'Serge', photo: serge.photo },
   ]
   return (
     <div className="flex h-[410px] flex-col gap-2.5 bg-[#f7f1e6] p-3">
@@ -164,12 +161,12 @@ function VerifiedMock() {
     <div className="flex h-[410px] flex-col items-center bg-[#f7f1e6] p-3">
       <p className="mb-4 text-center text-[11px] font-bold text-[#261b28]">Vérification du profil</p>
       <div className="relative">
-        <img src={juniorPhoto} alt="Junior" className="h-24 w-24 rounded-full object-cover shadow-lg ring-4 ring-white" />
+        <img src={kofi.photo} alt="Kofi" className="h-24 w-24 rounded-full object-cover shadow-lg ring-4 ring-white" />
         <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow">
           <BadgeCheck size={22} strokeWidth={2.25} className="text-sky-500" />
         </span>
       </div>
-      <p className="mt-3 text-sm font-bold text-[#261b28]">Junior, 29</p>
+      <p className="mt-3 text-sm font-bold text-[#261b28]">Kofi, 33</p>
       <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-500/12 px-2.5 py-1 text-[10px] font-bold text-sky-600">
         <BadgeCheck size={11} strokeWidth={2.5} />
         Profil vérifié
