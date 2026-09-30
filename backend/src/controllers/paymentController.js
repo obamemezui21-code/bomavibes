@@ -76,7 +76,7 @@ async function reconcile(reference) {
         await ref.update({
             status: "failed",
             singpayStatus,
-            failureReason: tx?.result || "Paiement refusé ou annulé.",
+            failureReason: singpay.failureMessage(tx?.result),
             updatedAt: FieldValue.serverTimestamp(),
         });
         return (await ref.get()).data();
@@ -178,7 +178,7 @@ async function startSingPayPayment(req, res) {
         const tx = singpay.transactionOf(result);
         console.log(`[singpay] ${reference} envoyé`, JSON.stringify({ status: result?.status, tx: { id: tx?.id, status: tx?.status, result: tx?.result } }));
         if (result?.status?.success === false || singpay.classify(result) === "failed") {
-            const reason = result?.status?.message || tx?.result || "Paiement refusé.";
+            const reason = singpay.failureMessage(tx?.result || result?.status?.message);
             await ref.update({ status: "failed", failureReason: reason, updatedAt: FieldValue.serverTimestamp() });
             return res.status(402).json({ message: reason });
         }

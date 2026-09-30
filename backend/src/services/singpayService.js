@@ -85,20 +85,35 @@ function transactionOf(payload) {
     return payload?.transaction || payload || null;
 }
 
-// The reference doc doesn't list the possible status/result values, so this
-// matches on wording rather than exact strings. Anything unrecognised stays
-// "pending" — a payment is never granted on a guess. Raw payloads are logged
-// by the caller so the patterns can be tightened against real responses.
-const FAILED = /(fail|echec|échec|cancel|annul|refus|reject|insuffi|expir|invalid|erreur|error|timeout)/i;
-const SUCCEEDED = /(succe|réussi|reussi|complet|approved|termin)/i;
+// The reference doc doesn't list the possible values. Seen in production:
+//   status "Partenaire"                     → push sent, customer hasn't answered
+//   status "Terminate", result "BalanceError" → insufficient balance
+// "Terminate" only means the transaction is over — success or not — so only
+// `result` decides the outcome. Anything unrecognised stays "pending": a
+// payment is never granted on a guess. Raw values are logged by the caller.
+const FAILED = /(fail|echec|échec|cancel|annul|refus|reject|insuffi|balance|expir|invalid|erreur|error|timeout|pin)/i;
+const SUCCEEDED = /(succe|réussi|reussi|complet|approved)/i;
 
 function classify(payload) {
     const tx = transactionOf(payload);
     if (!tx) return "pending";
     const words = [tx.status, tx.result].filter(Boolean).join(" ");
     if (FAILED.test(words)) return "failed";
-    if (SUCCEEDED.test(words)) return "succeeded";
+    if (SUCCEEDED.test(tx.result || "")) return "succeeded";
     return "pending";
+}
+
+const FAILURE_MESSAGES = [
+    [/balance|insuffi/i, "Solde insuffisant sur votre compte Mobile Money."],
+    [/pin/i, "Code secret incorrect."],
+    [/cancel|annul|refus|reject/i, "Paiement annulé."],
+    [/expir|timeout/i, "La demande de paiement a expiré. Réessayez."],
+];
+
+// User-facing French for a failed transaction's raw result.
+function failureMessage(result) {
+    const hit = FAILURE_MESSAGES.find(([re]) => re.test(result || ""));
+    return hit ? hit[1] : "Le paiement n'a pas abouti.";
 }
 
 module.exports = {
@@ -110,4 +125,5 @@ module.exports = {
     findByReference,
     transactionOf,
     classify,
+    failureMessage,
 };
