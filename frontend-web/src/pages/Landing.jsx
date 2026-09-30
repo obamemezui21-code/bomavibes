@@ -10,7 +10,6 @@ import DiscoverProfilesSection from '../components/landing/DiscoverProfilesSecti
 import HowItWorksSection from '../components/landing/HowItWorksSection.jsx'
 import VibePlacesSection from '../components/landing/VibePlacesSection.jsx'
 import PremiumSection from '../components/landing/PremiumSection.jsx'
-import FeaturesGridSection from '../components/landing/FeaturesGridSection.jsx'
 import SecuritySection from '../components/landing/SecuritySection.jsx'
 import AppPreviewSection from '../components/landing/AppPreviewSection.jsx'
 import AvailabilitySection from '../components/landing/AvailabilitySection.jsx'
@@ -127,7 +126,6 @@ function Landing() {
         </div>
       </section>
 
-      <FeaturesGridSection />
       <AppPreviewSection />
       <AvailabilitySection />
       <StatsSection />
