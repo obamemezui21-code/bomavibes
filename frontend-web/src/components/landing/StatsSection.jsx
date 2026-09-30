@@ -1,14 +1,16 @@
 import Reveal from './Reveal.jsx'
-import { COUNTRIES } from '../../lib/geography.js'
+import { COUNTRIES, SITE_CONTINENTS } from '../../lib/geography.js'
 import { LANGUAGES } from '../../lib/onboardingOptions.js'
 
 // Every number here is computed from real, shipped data — never a vanity
 // metric. Swap this for real usage stats (members, matches...) once the
 // platform has enough traction for those to be meaningful on their own.
-const CITY_COUNT = COUNTRIES.reduce((sum, c) => sum + c.regions.reduce((s, r) => s + r.cities.length, 0), 0)
+// Countries are counted on the continents the site advertises.
+const SITE_COUNTRIES = COUNTRIES.filter((c) => SITE_CONTINENTS.includes(c.continent))
+const CITY_COUNT = SITE_COUNTRIES.reduce((sum, c) => sum + c.regions.reduce((s, r) => s + r.cities.length, 0), 0)
 
 const STATS = [
-  { value: `${COUNTRIES.length}`, label: 'pays au programme, sur 8 régions du monde' },
+  { value: `${SITE_COUNTRIES.length}`, label: 'pays au programme en Afrique, en Europe et en Asie' },
   { value: `${LANGUAGES.length}`, label: 'langues supportées' },
   { value: `${CITY_COUNT}+`, label: 'villes et régions cartographiées' },
   { value: '6', label: 'piliers de sécurité intégrés' },

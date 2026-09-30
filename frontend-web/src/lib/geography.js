@@ -7,6 +7,10 @@
 // Display order shared by every UI that groups countries by continent
 // (onboarding, profile editing, the landing availability section) — kept
 // here once so the three can't drift apart.
+// Continents advertised on the public site (Disponibilité, chiffres). The
+// others stay selectable in the app — they're just not shown there.
+export const SITE_CONTINENTS = ['Afrique', 'Europe', 'Asie']
+
 export const CONTINENT_ORDER = [
   'Afrique',
   'Europe',

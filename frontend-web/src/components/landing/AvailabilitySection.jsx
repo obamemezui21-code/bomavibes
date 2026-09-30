@@ -1,5 +1,5 @@
 import Reveal from './Reveal.jsx'
-import { CONTINENT_ORDER, COUNTRIES } from '../../lib/geography.js'
+import { COUNTRIES, SITE_CONTINENTS } from '../../lib/geography.js'
 import FlagIcon from '../FlagIcon.jsx'
 
 // Gabon, France and Germany are live — everything else is roadmap. Update
@@ -12,15 +12,10 @@ const LIVE_COUNTRY_CODES = new Set(['GA', 'FR', 'DE'])
 const FEATURED = {
   Afrique: ['GA', 'CM', 'CI', 'SN', 'CG'],
   Europe: ['FR', 'DE', 'BE', 'CH', 'GB'],
-  'Amérique du Nord': ['CA', 'US', 'MX'],
-  'Amérique centrale & Caraïbes': ['HT', 'DO', 'JM', 'CU', 'TT'],
-  'Amérique du Sud': ['BR', 'CO', 'AR', 'CL', 'PE'],
-  'Moyen-Orient': ['AE', 'SA', 'QA', 'LB', 'TR'],
   Asie: ['CN', 'IN', 'JP', 'KR', 'SG'],
-  Océanie: ['AU', 'NZ', 'FJ', 'PG', 'WS'],
 }
 
-const GROUPS = CONTINENT_ORDER.map((continent) => {
+const GROUPS = SITE_CONTINENTS.map((continent) => {
   const all = COUNTRIES.filter((c) => c.continent === continent)
   const featured = (FEATURED[continent] || []).map((code) => all.find((c) => c.code === code)).filter(Boolean)
   return { continent, featured, others: all.length - featured.length }
@@ -47,7 +42,7 @@ function AvailabilitySection() {
         </div>
       </div>
 
-      <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto mt-14 grid max-w-4xl grid-cols-1 gap-5 sm:grid-cols-3">
         {GROUPS.map((group, gi) => (
           <Reveal
             key={group.continent} delay={(gi % 4) * 0.06}
