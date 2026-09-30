@@ -54,6 +54,7 @@ const AdminVerifications = lazy(() => import('./pages/AdminVerifications.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
 const AdminUsersDirectory = lazy(() => import('./pages/AdminUsersDirectory.jsx'))
 const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
+const AdminPayments = lazy(() => import('./pages/AdminPayments.jsx'))
 const AdminContent = lazy(() => import('./pages/AdminContent.jsx'))
 const AdminNotifications = lazy(() => import('./pages/AdminNotifications.jsx'))
 const AdminAiPartners = lazy(() => import('./pages/AdminAiPartners.jsx'))
@@ -206,6 +207,14 @@ function App() {
                 element={
                   <RequireRole check={hasFullAdminAccess}>
                     <AdminMusic />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="payments"
+                element={
+                  <RequireRole check={hasFullAdminAccess}>
+                    <AdminPayments />
                   </RequireRole>
                 }
               />

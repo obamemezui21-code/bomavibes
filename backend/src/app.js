@@ -63,7 +63,8 @@ app.use("/api/admin/verifications", verificationRoutes.adminRouter);
 app.use("/api/swipes", subscriptionRoutes.swipeRouter);
 app.use("/api/me", subscriptionRoutes.meRouter);
 app.use("/api/admin/subscriptions", subscriptionRoutes.adminRouter);
-app.use("/api/payments", paymentRoutes);
+app.use("/api/payments", paymentRoutes.router);
+app.use("/api/admin/payments", paymentRoutes.adminRouter);
 
 startWwfNewsScheduler();
 startCallCleanupScheduler();

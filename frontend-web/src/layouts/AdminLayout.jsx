@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { BadgeCheck, Bell, Calendar, ClipboardList, FileText, HelpCircle, Image as ImageIcon, Images, LayoutDashboard, MapPin, Music, Newspaper, Settings as SettingsIcon, ShieldAlert, Sparkles, Users, UsersRound } from 'lucide-react'
+import { BadgeCheck, Bell, Calendar, ClipboardList, FileText, HelpCircle, Image as ImageIcon, Images, LayoutDashboard, MapPin, Music, Newspaper, Settings as SettingsIcon, ShieldAlert, Sparkles, Users, UsersRound, Wallet } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { ROLES, hasAdminAccess, hasContentAccess, hasFullAdminAccess, hasModerationAccess, isSuperAdmin } from '../lib/roles.js'
 
@@ -14,6 +14,7 @@ function buildTabs(role) {
   const tabs = []
   if (hasAdminAccess(role)) tabs.push({ to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/directory', label: 'Utilisateurs', icon: UsersRound })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/payments', label: 'Paiements', icon: Wallet })
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert })
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/verifications', label: 'Vérifications', icon: BadgeCheck })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music })

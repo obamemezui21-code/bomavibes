@@ -181,3 +181,9 @@ export function updateAiPartner(id, data) {
 export function deleteAiPartner(id) {
   return authedFetch(`/api/admin/ai-partners/${id}`, { method: 'DELETE' })
 }
+
+// period: '7' | '30' | '90' | '365' | 'all' — see
+// backend/src/controllers/adminPaymentsController.js for the response shape.
+export function fetchAdminPayments(period = '30') {
+  return authedFetch(`/api/admin/payments?period=${encodeURIComponent(period)}`)
+}
