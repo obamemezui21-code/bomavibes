@@ -76,8 +76,8 @@ const KB = [
   {
     id: 'pays',
     question: 'Dans quels pays BomaVibes est disponible ?',
-    keywords: ['pays', 'disponible', 'gabon', 'france', 'afrique'],
-    answer: "BomaVibes est disponible dès aujourd'hui au Gabon et en France, avec une extension progressive vers le reste de l'Afrique puis le monde entier.",
+    keywords: ['pays', 'disponible', 'gabon', 'france', 'allemagne', 'afrique'],
+    answer: "BomaVibes est disponible dès aujourd'hui au Gabon, en France et en Allemagne, avec une extension progressive vers le reste de l'Afrique puis le monde entier.",
     related: ['cible'],
   },
   {

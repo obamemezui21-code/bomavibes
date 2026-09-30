@@ -2,16 +2,16 @@ import { motion } from 'framer-motion'
 import { CONTINENT_ORDER, COUNTRIES } from '../../lib/geography.js'
 import FlagIcon from '../FlagIcon.jsx'
 
-// Gabon and France are live — everything else is roadmap. Update this set as
-// new markets actually launch; never mark a country "Disponible" ahead of
-// the real launch.
-const LIVE_COUNTRY_CODES = new Set(['GA', 'FR'])
+// Gabon, France and Germany are live — everything else is roadmap. Update
+// this set as new markets actually launch; never mark a country
+// "Disponible" ahead of the real launch.
+const LIVE_COUNTRY_CODES = new Set(['GA', 'FR', 'DE'])
 
 // Five showcase countries per continent (live ones first); the rest of
 // geography.js is summed up as "+ N autres pays".
 const FEATURED = {
   Afrique: ['GA', 'CM', 'CI', 'SN', 'CG'],
-  Europe: ['FR', 'BE', 'CH', 'GB', 'DE'],
+  Europe: ['FR', 'DE', 'BE', 'CH', 'GB'],
   'Amérique du Nord': ['CA', 'US', 'MX'],
   'Amérique centrale & Caraïbes': ['HT', 'DO', 'JM', 'CU', 'TT'],
   'Amérique du Sud': ['BR', 'CO', 'AR', 'CL', 'PE'],
@@ -32,7 +32,7 @@ function AvailabilitySection() {
       <div className="text-center">
         <h2 className="font-display text-4xl font-bold text-[#261b28] sm:text-5xl">Disponibilité dans le monde</h2>
         <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-[#635a65]">
-          BomaVibes démarre au Gabon et en France, avec l'ambition claire de s'étendre à toute l'Afrique francophone,
+          BomaVibes est disponible au Gabon, en France et en Allemagne, avec l'ambition claire de s'étendre à toute l'Afrique francophone,
           puis panafricaine — et, à terme, dans le monde entier.
         </p>
         <div className="mt-6 inline-flex items-center gap-4 rounded-full bg-white px-5 py-2 text-xs font-semibold shadow-sm">
