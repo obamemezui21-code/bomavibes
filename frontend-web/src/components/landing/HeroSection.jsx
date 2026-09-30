@@ -1,11 +1,59 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight, BadgeCheck, Heart, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, BadgeCheck, Heart, ShieldCheck } from 'lucide-react'
 import heroCouple from '../../assets/people/couple-complices.webp'
+import logoIcon from '../../assets/bomavibes-icon.webp'
 import { DEMO_PROFILES } from '../../lib/demoProfiles.js'
 
 const EASE = [0.22, 1, 0.36, 1]
+
+// "B[logo]MAVIBES" wordmark: letters rise in one by one, the logo spins into
+// place of the O, then keeps a slow pulse.
+const WORD_CONTAINER = {
+  hidden: {},
+  visible: { transition: { delayChildren: 0.1, staggerChildren: 0.06 } },
+}
+const LETTER = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+}
+const LOGO_SETTLE = { opacity: 1, scale: 1, rotate: 0 }
+const LOGO_SETTLE_TRANSITION = { delay: 0.95, type: 'spring', stiffness: 260, damping: 15, mass: 0.7 }
+const LOGO_PULSE = { opacity: 1, scale: [1, 1.045, 1], rotate: 0 }
+const LOGO_PULSE_TRANSITION = { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }
+
+function Wordmark() {
+  const [logoSettled, setLogoSettled] = useState(false)
+  return (
+    <h1
+      className="font-display text-[clamp(2.4rem,12vw,4.5rem)] font-extrabold uppercase leading-none tracking-tight text-white"
+      aria-label="BomaVibes"
+    >
+      <motion.span aria-hidden="true" className="inline-flex items-center" variants={WORD_CONTAINER} initial="hidden" animate="visible">
+        <motion.span variants={LETTER}>B</motion.span>
+        <motion.img
+          src={logoIcon}
+          alt=""
+          initial={{ opacity: 0, scale: 0.3, rotate: -140 }}
+          animate={logoSettled ? LOGO_PULSE : LOGO_SETTLE}
+          transition={logoSettled ? LOGO_PULSE_TRANSITION : LOGO_SETTLE_TRANSITION}
+          onAnimationComplete={() => setLogoSettled(true)}
+          className="mx-[0.02em] inline-block h-[0.95em] w-[0.95em] rounded-full object-cover align-middle shadow-md ring-2 ring-pink-400/80"
+        />
+        <motion.span variants={LETTER}>M</motion.span>
+        <motion.span variants={LETTER}>A</motion.span>
+        <span className="inline-flex text-pink-400">
+          <motion.span variants={LETTER}>V</motion.span>
+          <motion.span variants={LETTER}>I</motion.span>
+          <motion.span variants={LETTER}>B</motion.span>
+          <motion.span variants={LETTER}>E</motion.span>
+          <motion.span variants={LETTER}>S</motion.span>
+        </span>
+      </motion.span>
+    </h1>
+  )
+}
 
 // Small profile card floating around the main photo. `depth` drives the
 // parallax (how far it drifts while the hero scrolls away).
@@ -63,27 +111,19 @@ function HeroSection() {
       <div className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
         {/* Copy */}
         <motion.div style={{ y: textY }} className="relative z-10 text-center lg:text-left">
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: EASE }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-white/85 backdrop-blur"
-          >
-            <Sparkles size={13} className="text-[#f2bf4e]" />
-            La rencontre africaine, version moderne
-          </motion.p>
+          <Wordmark />
 
-          <motion.h1
+          <motion.p
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1, ease: EASE }}
-            className="mt-6 font-display text-[clamp(2.4rem,9vw,4.4rem)] font-extrabold leading-[1.02] tracking-tight"
+            transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
+            className="mt-6 font-display text-[clamp(1.6rem,6vw,2.6rem)] font-bold leading-[1.1] tracking-tight"
           >
             Rencontrez quelqu'un qui partage{' '}
             <span className="bg-gradient-to-r from-pink-400 via-[#f2a0c8] to-[#f2bf4e] bg-clip-text text-transparent">
               votre vibe.
             </span>
-          </motion.h1>
+          </motion.p>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
