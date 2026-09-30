@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
 import { BadgeCheck, Crown, Heart, Mic, Palette, Rocket, ShieldOff, Sparkles, Video } from 'lucide-react'
 
 // `isNew` marks what shipped recently — drop it once it's no longer news.
@@ -67,12 +67,8 @@ function FeaturesGridSection() {
 
       <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map((f, i) => (
-          <motion.div
-            key={f.title}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45, delay: i * 0.05, ease: 'easeOut' }}
+          <Reveal
+            key={f.title} delay={i * 0.05}
             className="rounded-3xl border border-violet-600/8 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
             <div className="flex items-start justify-between gap-3">
@@ -87,7 +83,7 @@ function FeaturesGridSection() {
             </div>
             <h3 className="mt-5 font-display text-lg font-bold text-[#261b28]">{f.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-[#635a65]">{f.text}</p>
-          </motion.div>
+          </Reveal>
         ))}
       </div>
     </section>

@@ -18,6 +18,7 @@ import StatsSection from '../components/landing/StatsSection.jsx'
 import PlatformUpdatesSection from '../components/landing/PlatformUpdatesSection.jsx'
 import SupportTeaserSection from '../components/landing/SupportTeaserSection.jsx'
 import FinalCtaSection from '../components/landing/FinalCtaSection.jsx'
+import Reveal from '../components/landing/Reveal.jsx'
 import SupportChatWidget from '../components/landing/SupportChatWidget.jsx'
 
 const SOCIALS = [
@@ -96,13 +97,7 @@ function Landing() {
       {/* About */}
       <section id="about" className="scroll-mt-20 px-4 py-24 sm:px-8 sm:py-28">
         <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mx-auto w-full max-w-md"
-          >
+          <Reveal from="scale" className="relative mx-auto w-full max-w-md">
             <div className="absolute -inset-3 -z-10 rotate-3 rounded-[2.25rem] bg-gradient-to-br from-pink-400/40 to-[#f2bf4e]/40" />
             <img
               src={aboutPhoto}
@@ -111,13 +106,8 @@ function Landing() {
               decoding="async"
               className="aspect-[4/5] w-full rounded-[2rem] object-cover shadow-xl"
             />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          >
+          </Reveal>
+          <Reveal>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-pink-600">À propos</p>
             <h2 className="mt-3 font-display text-4xl font-bold leading-tight text-[#261b28] sm:text-5xl">
               L'amour naît quand on peut être pleinement soi-même
@@ -133,7 +123,7 @@ function Landing() {
                 début de quelque chose de beau — dans un environnement sûr, respectueux et bienveillant.
               </p>
             </div>
-          </motion.div>
+          </Reveal>
         </div>
       </section>
 

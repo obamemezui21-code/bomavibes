@@ -5,6 +5,7 @@ import { ArrowRight, BadgeCheck, Heart, ShieldCheck } from 'lucide-react'
 import heroCouple from '../../assets/people/couple-complices.webp'
 import logoIcon from '../../assets/bomavibes-icon.webp'
 import { DEMO_PROFILES } from '../../lib/demoProfiles.js'
+import { glow } from '../../lib/glow.js'
 
 const EASE = [0.22, 1, 0.36, 1]
 
@@ -20,8 +21,6 @@ const LETTER = {
 }
 const LOGO_SETTLE = { opacity: 1, scale: 1, rotate: 0 }
 const LOGO_SETTLE_TRANSITION = { delay: 0.95, type: 'spring', stiffness: 260, damping: 15, mass: 0.7 }
-const LOGO_PULSE = { opacity: 1, scale: [1, 1.045, 1], rotate: 0 }
-const LOGO_PULSE_TRANSITION = { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }
 
 function Wordmark() {
   const [logoSettled, setLogoSettled] = useState(false)
@@ -32,15 +31,18 @@ function Wordmark() {
     >
       <motion.span aria-hidden="true" className="inline-flex items-center" variants={WORD_CONTAINER} initial="hidden" animate="visible">
         <motion.span variants={LETTER}>B</motion.span>
-        <motion.img
-          src={logoIcon}
-          alt=""
-          initial={{ opacity: 0, scale: 0.3, rotate: -140 }}
-          animate={logoSettled ? LOGO_PULSE : LOGO_SETTLE}
-          transition={logoSettled ? LOGO_PULSE_TRANSITION : LOGO_SETTLE_TRANSITION}
-          onAnimationComplete={() => setLogoSettled(true)}
-          className="mx-[0.02em] inline-block h-[0.95em] w-[0.95em] rounded-full object-cover align-middle shadow-md ring-2 ring-pink-400/80"
-        />
+        {/* Spin-in via framer, then an endless pulse via CSS (off the main thread). */}
+        <span className={`mx-[0.02em] inline-block h-[0.95em] w-[0.95em] align-middle ${logoSettled ? 'animate-bv-pulse' : ''}`}>
+          <motion.img
+            src={logoIcon}
+            alt=""
+            initial={{ opacity: 0, scale: 0.3, rotate: -140 }}
+            animate={LOGO_SETTLE}
+            transition={LOGO_SETTLE_TRANSITION}
+            onAnimationComplete={() => setLogoSettled(true)}
+            className="block h-full w-full rounded-full object-cover shadow-md ring-2 ring-pink-400/80"
+          />
+        </span>
         <motion.span variants={LETTER}>M</motion.span>
         <motion.span variants={LETTER}>A</motion.span>
         <span className="inline-flex text-pink-400">
@@ -66,10 +68,11 @@ function FloatingProfile({ profile, className, delay, depth, scrollYProgress, fl
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.7, delay, ease: EASE }}
       >
-        <motion.div
-          animate={{ y: [0, -7, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: floatDelay }}
-          className="flex items-center gap-2.5 rounded-2xl border border-white/15 bg-[#1c1024]/70 p-2 pr-3.5 shadow-2xl shadow-black/40 backdrop-blur-md"
+        {/* CSS float (compositor) and an opaque background instead of
+            backdrop-blur, which had to be recomputed on every scroll frame. */}
+        <div
+          style={{ animationDelay: `${floatDelay}s` }}
+          className="animate-bv-float flex items-center gap-2.5 rounded-2xl border border-white/15 bg-[#241529]/95 p-2 pr-3.5 shadow-2xl shadow-black/40"
         >
           <img src={profile.photo} alt="" className="h-11 w-11 rounded-xl object-cover sm:h-12 sm:w-12" />
           <div className="min-w-0">
@@ -79,7 +82,7 @@ function FloatingProfile({ profile, className, delay, depth, scrollYProgress, fl
             </p>
             <p className="text-[11px] text-white/70">{profile.city}</p>
           </div>
-        </motion.div>
+        </div>
       </motion.div>
     </motion.div>
   )
@@ -89,8 +92,6 @@ function HeroSection() {
   const ref = useRef(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const photoY = useTransform(scrollYProgress, [0, 1], [0, 60])
-  const photoScale = useTransform(scrollYProgress, [0, 1], [1, 1.06])
-  const textY = useTransform(scrollYProgress, [0, 1], [0, -40])
 
   const { zola, kofi, mariam } = DEMO_PROFILES
 
@@ -102,15 +103,15 @@ function HeroSection() {
     >
       {/* Ambient glows */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-violet-600/40 blur-[110px]" />
-        <div className="absolute -right-24 top-1/3 h-[26rem] w-[26rem] rounded-full bg-pink-500/30 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-[#f2bf4e]/15 blur-[100px]" />
+        <div className="absolute -left-48 -top-48 h-[40rem] w-[40rem]" style={glow('var(--color-violet-600)', 55)} />
+        <div className="absolute -right-40 top-1/4 h-[38rem] w-[38rem]" style={glow('var(--color-pink-500)', 45)} />
+        <div className="absolute -bottom-20 left-1/4 h-[26rem] w-[26rem]" style={glow('#f2bf4e', 22)} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#1c1024_75%)]" />
       </div>
 
       <div className="mx-auto grid w-full max-w-6xl items-center gap-14 px-4 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
         {/* Copy */}
-        <motion.div style={{ y: textY }} className="relative z-10 text-center lg:text-left">
+        <div className="relative z-10 text-center lg:text-left">
           <Wordmark />
 
           <motion.p
@@ -150,7 +151,7 @@ function HeroSection() {
             </Link>
             <a
               href="#decouverte"
-              className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.98]"
+              className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.98]"
             >
               Découvrir BomaVibes
             </a>
@@ -175,7 +176,7 @@ function HeroSection() {
               </Link>
             </span>
           </motion.div>
-        </motion.div>
+        </div>
 
         {/* Visual */}
         <div className="relative mx-auto w-full max-w-[26rem] lg:max-w-none">
@@ -187,7 +188,7 @@ function HeroSection() {
               className="absolute inset-0 overflow-hidden rounded-[2rem] shadow-2xl shadow-black/50 ring-1 ring-white/10"
             >
               <motion.img
-                style={{ y: photoY, scale: photoScale }}
+                style={{ y: photoY }}
                 src={heroCouple}
                 alt="Un couple complice qui rit ensemble"
                 fetchPriority="high"

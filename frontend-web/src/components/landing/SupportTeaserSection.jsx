@@ -1,15 +1,11 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
 import { HeartHandshake } from 'lucide-react'
 
 function SupportTeaserSection() {
   return (
     <section id="soutenir" className="mx-auto max-w-4xl scroll-mt-20 px-4 py-24 sm:px-10">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+      <Reveal
         className="rounded-[2.5rem] border border-pink-500/25 bg-gradient-to-br from-white to-pink-500/5 p-10 text-center shadow-sm sm:p-14"
       >
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-coral-600 text-white shadow-md">
@@ -29,7 +25,7 @@ function SupportTeaserSection() {
         >
           Soutenir BomaVibes
         </Link>
-      </motion.div>
+      </Reveal>
     </section>
   )
 }

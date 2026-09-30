@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import Reveal from './landing/Reveal.jsx'
 import { ArrowUpRight, Leaf } from 'lucide-react'
 
 function formatPublishedAt(value) {
@@ -63,12 +63,9 @@ function WwfNewsSection() {
           : state.articles.map((article, i) => {
               const publishedLabel = formatPublishedAt(article.publishedAt)
               return (
-                <motion.div
+                <Reveal
                   key={article.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.45, delay: i * 0.06, ease: 'easeOut' }}
+                  delay={(i % 3) * 0.06}
                   className="flex flex-col overflow-hidden rounded-3xl border border-violet-600/8 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
                   {article.image && (
@@ -77,6 +74,7 @@ function WwfNewsSection() {
                         src={article.image}
                         alt=""
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition duration-500 hover:scale-105"
                       />
                     </div>
@@ -101,7 +99,7 @@ function WwfNewsSection() {
                       <ArrowUpRight size={15} strokeWidth={2.5} />
                     </a>
                   </div>
-                </motion.div>
+                </Reveal>
               )
             })}
       </div>

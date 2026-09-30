@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
 import { COUNTRIES } from '../../lib/geography.js'
 import { LANGUAGES } from '../../lib/onboardingOptions.js'
 
@@ -27,17 +27,13 @@ function StatsSection() {
 
         <div className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
           {STATS.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-30px' }}
-              transition={{ duration: 0.45, delay: i * 0.08, ease: 'easeOut' }}
+            <Reveal
+              key={s.label} delay={i * 0.08}
               className="rounded-3xl border border-violet-600/8 bg-white p-6 text-center shadow-sm"
             >
               <p className="font-display text-4xl font-extrabold text-pink-500 sm:text-5xl">{s.value}</p>
               <p className="mt-2 text-sm leading-snug text-[#635a65]">{s.label}</p>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
       </div>

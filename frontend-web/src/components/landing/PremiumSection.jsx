@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
 import { ArrowRight, Check, Crown, Eye, Rocket, Star } from 'lucide-react'
 import { TIERS } from '../../lib/pricingTiers.js'
 
-const EASE = [0.22, 1, 0.36, 1]
 
 // Figures mirror lib/plans.js (itself a copy of backend/src/config/plans.js,
 // which is what's enforced) — keep them in sync when a tier changes.
@@ -35,11 +34,7 @@ function PremiumSection() {
     <section id="tarifs" className="relative isolate scroll-mt-20 overflow-hidden px-4 py-24 sm:px-8 sm:py-28">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#f7f1e6] via-[#f3e6f1] to-[#f7f1e6]" />
       <div className="mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.7, ease: EASE }}
+        <Reveal
           className="mx-auto max-w-2xl text-center"
         >
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-pink-600">Premium</p>
@@ -49,17 +44,13 @@ function PremiumSection() {
           <p className="mt-4 text-base leading-relaxed text-[#635a65] sm:text-lg">
             L'essentiel reste gratuit. Premium, c'est pour celles et ceux qui veulent être vus plus, plus vite.
           </p>
-        </motion.div>
+        </Reveal>
 
         {/* Highlights */}
         <div className="mt-12 grid gap-4 sm:grid-cols-3 sm:gap-6">
           {HIGHLIGHTS.map((h, i) => (
-            <motion.div
-              key={h.title}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.6, delay: i * 0.08, ease: EASE }}
+            <Reveal
+              key={h.title} delay={i * 0.08}
               className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-sm ring-1 ring-violet-600/8 transition duration-500 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-900/10"
             >
               <div
@@ -71,17 +62,13 @@ function PremiumSection() {
               </span>
               <h3 className="relative mt-5 font-display text-xl font-bold text-[#261b28]">{h.title}</h3>
               <p className="relative mt-2 text-sm leading-relaxed text-[#635a65]">{h.text}</p>
-            </motion.div>
+            </Reveal>
           ))}
         </div>
 
         {/* Plans + free tier */}
         <div className="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr] lg:gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.6, ease: EASE }}
+          <Reveal
             className="rounded-3xl bg-[#1c1024] p-5 text-white shadow-xl sm:p-7"
           >
             <p className="font-display text-lg font-bold">Nos forfaits</p>
@@ -121,13 +108,9 @@ function PremiumSection() {
                 <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
-          </motion.div>
+          </Reveal>
 
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.6, delay: 0.1, ease: EASE }}
+          <Reveal delay={0.1}
             className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-violet-600/8 sm:p-7"
           >
             <p className="flex items-center gap-2 font-display text-lg font-bold text-[#261b28]">
@@ -143,7 +126,7 @@ function PremiumSection() {
                 </li>
               ))}
             </ul>
-          </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>

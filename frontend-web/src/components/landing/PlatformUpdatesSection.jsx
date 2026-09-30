@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
 import { ArrowUpRight, Newspaper } from 'lucide-react'
 
 function formatDate(value) {
@@ -61,12 +61,8 @@ function PlatformUpdatesSection() {
           : state.updates.map((u, i) => {
               const dateLabel = formatDate(u.createdAt)
               return (
-                <motion.div
-                  key={u.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.45, delay: i * 0.06, ease: 'easeOut' }}
+                <Reveal
+                  key={u.id} delay={i * 0.06}
                   className="flex flex-col rounded-3xl border border-violet-600/8 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
                   {dateLabel && <p className="text-xs font-semibold uppercase tracking-wide text-pink-600">{dateLabel}</p>}
@@ -82,7 +78,7 @@ function PlatformUpdatesSection() {
                       <ArrowUpRight size={14} strokeWidth={2.5} />
                     </a>
                   )}
-                </motion.div>
+                </Reveal>
               )
             })}
       </div>

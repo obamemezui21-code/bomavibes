@@ -38,8 +38,10 @@ function SiteHeader() {
     window.scrollTo(0, 0)
   }
 
+  // Solid background, no backdrop-blur: a blurred fixed header is
+  // re-rendered on every scroll frame (it was 90 % opaque anyway).
   return (
-    <header className="fixed inset-x-0 top-0 z-30 bg-violet-600/90 shadow-md backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-30 bg-violet-600 shadow-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8">
         <a href="/" className="flex items-center">
           <img
@@ -71,7 +73,7 @@ function SiteHeader() {
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-violet-600 shadow-lg backdrop-blur-sm sm:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg sm:hidden"
           aria-label="Menu"
           aria-expanded={menuOpen}
         >

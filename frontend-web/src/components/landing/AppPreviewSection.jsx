@@ -1,26 +1,27 @@
-import { motion } from 'framer-motion'
 import { BadgeCheck, Camera, Check, CheckCircle2, Heart, Mic, MicOff, PhoneOff, Send, Star, Video, X } from 'lucide-react'
 import { DEMO_PROFILES } from '../../lib/demoProfiles.js'
 import FlagIcon from '../FlagIcon.jsx'
+import Reveal from './Reveal.jsx'
 
 const { aicha, ines, kofi, serge, zola } = DEMO_PROFILES
 
+// Reveal on scroll (CSS), then a resting tilt that straightens on hover.
+// Tilt uses the `rotate` property and hover the `translate`/`scale` ones, so
+// none of them fights the reveal animation (which runs on `transform`).
 function PhoneFrame({ children, label, delay, tilt }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0, rotate: tilt }}
-      viewport={{ once: true, margin: '-60px' }}
-      whileHover={{ rotate: 0, scale: 1.035, y: -6 }}
-      transition={{ duration: 0.5, delay, ease: 'easeOut' }}
-      className="mx-auto w-full max-w-[240px]"
-    >
-      <div className="overflow-hidden rounded-[2.25rem] border-[10px] border-[#261b28] bg-white shadow-2xl shadow-violet-600/20">
-        <div className="mx-auto -mt-1 h-4 w-24 rounded-b-2xl bg-[#261b28]" />
-        {children}
+    <Reveal delay={delay} className="mx-auto w-full max-w-[240px]">
+      <div
+        style={{ '--tilt': `${tilt}deg` }}
+        className="rotate-[var(--tilt)] transition duration-500 ease-out hover:-translate-y-1.5 hover:rotate-0 hover:scale-[1.035]"
+      >
+        <div className="overflow-hidden rounded-[2.25rem] border-[10px] border-[#261b28] bg-white shadow-2xl shadow-violet-600/20">
+          <div className="mx-auto -mt-1 h-4 w-24 rounded-b-2xl bg-[#261b28]" />
+          {children}
+        </div>
+        <p className="mt-4 text-center text-sm font-semibold text-[#261b28]">{label}</p>
       </div>
-      <p className="mt-4 text-center text-sm font-semibold text-[#261b28]">{label}</p>
-    </motion.div>
+    </Reveal>
   )
 }
 
@@ -29,7 +30,7 @@ function DiscoverMock() {
     <div className="flex h-[410px] flex-col bg-[#f7f1e6] p-3">
       <p className="mb-2 text-center text-[11px] font-bold text-[#261b28]">Découvrir</p>
       <div className="relative flex-1 overflow-hidden rounded-2xl">
-        <img src={aicha.photo} alt="Aïcha" className="absolute inset-0 h-full w-full object-cover" />
+        <img loading="lazy" decoding="async" src={aicha.photo} alt="Aïcha" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3">
           <p className="flex items-center gap-1 text-sm font-bold text-white">
             Aïcha, 27
@@ -100,24 +101,26 @@ function ChatMock() {
 function VideoCallMock() {
   return (
     <div className="relative flex h-[410px] flex-col bg-[#1c1024]">
-      <img src={zola.photo} alt="Zola" className="absolute inset-0 h-full w-full object-cover opacity-90" />
+      <img loading="lazy" decoding="async" src={zola.photo} alt="Zola" className="absolute inset-0 h-full w-full object-cover opacity-90" />
       <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 to-transparent px-3 pb-6 pt-3 text-center">
         <p className="text-xs font-bold text-white">Zola</p>
         <p className="text-[10px] text-white/80">Appel vidéo · 04:12</p>
       </div>
       <img
+        loading="lazy"
+        decoding="async"
         src={kofi.photo}
         alt=""
         className="absolute right-3 top-14 h-20 w-14 rounded-xl border-2 border-white/80 object-cover shadow-lg"
       />
       <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 bg-gradient-to-t from-black/70 to-transparent px-3 pb-5 pt-10">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 text-white">
           <MicOff size={14} strokeWidth={2.5} />
         </span>
         <span className="flex h-11 w-11 items-center justify-center rounded-full bg-coral-500 text-white shadow-lg">
           <PhoneOff size={16} strokeWidth={2.5} />
         </span>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 text-white">
           <Video size={14} strokeWidth={2.5} />
         </span>
       </div>
@@ -136,7 +139,7 @@ function ColorPostsMock() {
       {posts.map((p) => (
         <div key={p.who} className="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div className="flex items-center gap-1.5 px-2.5 py-2">
-            <img src={p.photo} alt="" className="h-5 w-5 rounded-full object-cover" />
+            <img loading="lazy" decoding="async" src={p.photo} alt="" className="h-5 w-5 rounded-full object-cover" />
             <span className="text-[10px] font-bold text-[#261b28]">{p.who}</span>
           </div>
           <div
@@ -161,7 +164,7 @@ function VerifiedMock() {
     <div className="flex h-[410px] flex-col items-center bg-[#f7f1e6] p-3">
       <p className="mb-4 text-center text-[11px] font-bold text-[#261b28]">Vérification du profil</p>
       <div className="relative">
-        <img src={kofi.photo} alt="Kofi" className="h-24 w-24 rounded-full object-cover shadow-lg ring-4 ring-white" />
+        <img loading="lazy" decoding="async" src={kofi.photo} alt="Kofi" className="h-24 w-24 rounded-full object-cover shadow-lg ring-4 ring-white" />
         <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow">
           <BadgeCheck size={22} strokeWidth={2.25} className="text-sky-500" />
         </span>

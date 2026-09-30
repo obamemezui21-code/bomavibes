@@ -1,21 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
 import { ArrowRight, BadgeCheck, Heart, MapPin } from 'lucide-react'
 import { DEMO_PROFILES, DISCOVER_ORDER } from '../../lib/demoProfiles.js'
 import FlagIcon from '../FlagIcon.jsx'
+import { glow } from '../../lib/glow.js'
 
-const EASE = [0.22, 1, 0.36, 1]
 
 // Hover (desktop) or tap (touch) reveals the interests and the CTA. Tapping
 // the card body toggles; the CTA itself is a real link.
 function ProfileCard({ profile, index, open, onToggle }) {
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.6, delay: (index % 3) * 0.08, ease: EASE }}
+    <Reveal as="article" delay={(index % 3) * 0.08}
       className="group relative"
     >
       <div
@@ -43,7 +39,7 @@ function ProfileCard({ profile, index, open, onToggle }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1c1024] via-[#1c1024]/25 to-transparent" />
 
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[#4b164c] shadow backdrop-blur">
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-[#4b164c] shadow">
           <Heart size={11} className="fill-pink-500 text-pink-500" />
           {profile.match} %
         </span>
@@ -68,7 +64,7 @@ function ProfileCard({ profile, index, open, onToggle }) {
             <div className="overflow-hidden">
               <div className="flex flex-wrap gap-1.5">
                 {profile.interests.map((i) => (
-                  <span key={i} className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium backdrop-blur">
+                  <span key={i} className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-medium">
                     {i}
                   </span>
                 ))}
@@ -85,7 +81,7 @@ function ProfileCard({ profile, index, open, onToggle }) {
           </div>
         </div>
       </div>
-    </motion.article>
+    </Reveal>
   )
 }
 
@@ -94,13 +90,9 @@ function DiscoverProfilesSection() {
 
   return (
     <section id="decouverte" className="relative scroll-mt-20 overflow-hidden px-4 py-24 sm:px-8 sm:py-28">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-40 top-10 h-96 w-96 rounded-full bg-pink-500/10 blur-[100px]" />
+      <div aria-hidden="true" className="pointer-events-none absolute -right-56 top-0 h-[34rem] w-[34rem]" style={glow('var(--color-pink-500)', 14)} />
       <div className="relative mx-auto max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.7, ease: EASE }}
+        <Reveal
           className="mx-auto max-w-2xl text-center"
         >
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-pink-600">Découverte</p>
@@ -111,7 +103,7 @@ function DiscoverProfilesSection() {
             Chaque jour, BomaVibes vous présente des profils compatibles avec vos valeurs, vos envies et votre style de
             vie. Survolez ou touchez une carte pour en savoir plus.
           </p>
-        </motion.div>
+        </Reveal>
 
         <div className="mt-12 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 lg:gap-7">
           {DISCOVER_ORDER.map((id, i) => (

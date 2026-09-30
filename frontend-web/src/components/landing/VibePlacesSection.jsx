@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, CalendarHeart, Map, MapPin, Send, Sparkles, UtensilsCrossed } from 'lucide-react'
 import dateCouple from '../../assets/people/couple-hiver.webp'
+import { glow } from '../../lib/glow.js'
+import Reveal from './Reveal.jsx'
 
-const EASE = [0.22, 1, 0.36, 1]
 
 // "Vibe Places" is the marketing name of the in-app venues module
 // (/coins-chics): curated restaurants, bars and lounges a user can send to a
@@ -28,8 +29,8 @@ function VibePlacesSection() {
       className="relative isolate scroll-mt-20 overflow-hidden bg-[#1c1024] px-4 py-24 text-white sm:px-8 sm:py-28"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -left-20 bottom-0 h-96 w-96 rounded-full bg-[#f2bf4e]/15 blur-[110px]" />
-        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-violet-600/30 blur-[120px]" />
+        <div className="absolute -bottom-32 -left-40 h-[34rem] w-[34rem]" style={glow('#f2bf4e', 22)} />
+        <div className="absolute -right-32 -top-32 h-[36rem] w-[36rem]" style={glow('var(--color-violet-600)', 45)} />
       </div>
 
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-2 lg:gap-16">
@@ -52,12 +53,7 @@ function VibePlacesSection() {
             style={{ y: cardY }}
             className="absolute -bottom-6 left-1/2 w-[86%] -translate-x-1/2 sm:-right-8 sm:left-auto sm:w-72 sm:translate-x-0"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
-              className="rounded-2xl bg-white p-3.5 text-[#261b28] shadow-2xl shadow-black/40"
+            <Reveal delay={0.2}              className="rounded-2xl bg-white p-3.5 text-[#261b28] shadow-2xl shadow-black/40"
             >
               <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-pink-600">
                 <CalendarHeart size={13} /> Invitation
@@ -72,17 +68,12 @@ function VibePlacesSection() {
                 </span>
                 <span className="rounded-full bg-[#f7f1e6] px-3 py-1.5 text-xs font-semibold text-[#635a65]">Plus tard</span>
               </div>
-            </motion.div>
+            </Reveal>
           </motion.div>
         </div>
 
         {/* Copy */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.7, ease: EASE }}
-          className="order-1 lg:order-2"
+        <Reveal          className="order-1 lg:order-2"
         >
           <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#f2bf4e]">
             <Sparkles size={14} /> Vibe Places
@@ -97,13 +88,8 @@ function VibePlacesSection() {
 
           <ul className="mt-8 space-y-4">
             {POINTS.map((p, i) => (
-              <motion.li
-                key={p.title}
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: 0.1 + i * 0.08, ease: EASE }}
-                className="flex gap-4"
+              <Reveal
+                key={p.title} as="li" from="left" delay={0.1 + i * 0.08}                className="flex gap-4"
               >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#f2bf4e] ring-1 ring-white/10">
                   <p.icon size={20} />
@@ -112,7 +98,7 @@ function VibePlacesSection() {
                   <p className="font-semibold">{p.title}</p>
                   <p className="text-sm text-white/65">{p.text}</p>
                 </div>
-              </motion.li>
+              </Reveal>
             ))}
           </ul>
 
@@ -123,7 +109,7 @@ function VibePlacesSection() {
             Explorer Vibe Places
             <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
-        </motion.div>
+        </Reveal>
       </div>
     </section>
   )

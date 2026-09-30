@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
 import { CONTINENT_ORDER, COUNTRIES } from '../../lib/geography.js'
 import FlagIcon from '../FlagIcon.jsx'
 
@@ -49,12 +49,8 @@ function AvailabilitySection() {
 
       <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         {GROUPS.map((group, gi) => (
-          <motion.div
-            key={group.continent}
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.4, delay: (gi % 4) * 0.06, ease: 'easeOut' }}
+          <Reveal
+            key={group.continent} delay={(gi % 4) * 0.06}
             className="flex flex-col rounded-3xl border border-violet-600/8 bg-white p-5 shadow-sm"
           >
             <h3 className="font-display text-base font-bold text-[#261b28]">{group.continent}</h3>
@@ -81,7 +77,7 @@ function AvailabilitySection() {
                 + {group.others} autre{group.others > 1 ? 's' : ''} pays au programme
               </p>
             )}
-          </motion.div>
+          </Reveal>
         ))}
       </div>
     </section>

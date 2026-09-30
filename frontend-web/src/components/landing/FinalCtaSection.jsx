@@ -1,17 +1,14 @@
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import Reveal from './Reveal.jsx'
+import { glow } from '../../lib/glow.js'
 
 function FinalCtaSection() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-violet-600 to-violet-950 px-4 py-28 text-center sm:px-10">
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-pink-500/15 blur-[100px]" />
-      <div className="pointer-events-none absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-coral-600/15 blur-[100px]" />
+      <div className="pointer-events-none absolute -left-40 -top-40 h-[28rem] w-[28rem]" style={glow('var(--color-pink-500)', 22)} />
+      <div className="pointer-events-none absolute -bottom-32 -right-40 h-[28rem] w-[28rem]" style={glow('var(--color-coral-600)', 22)} />
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-40px' }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+      <Reveal
         className="relative mx-auto max-w-2xl"
       >
         <h2 className="font-display text-4xl font-bold text-white sm:text-5xl">
@@ -29,12 +26,12 @@ function FinalCtaSection() {
           </Link>
           <Link
             to="/welcome"
-            className="rounded-xl border border-white/40 bg-white/10 px-8 py-3.5 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/60 hover:bg-white/20 active:translate-y-0"
+            className="rounded-xl border border-white/40 bg-white/10 px-8 py-3.5 text-base font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:border-white/60 hover:bg-white/20 active:translate-y-0"
           >
             Se connecter
           </Link>
         </div>
-      </motion.div>
+      </Reveal>
     </section>
   )
 }

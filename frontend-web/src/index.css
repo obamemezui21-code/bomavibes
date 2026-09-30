@@ -272,9 +272,84 @@ select optgroup {
   animation: float-slower 13s ease-in-out infinite;
 }
 
+/* Looping decorations of the public site. Plain CSS keyframes on transform /
+   opacity only, so the compositor runs them off the main thread — the
+   framer-motion `repeat: Infinity` versions re-rendered every frame. */
+@keyframes bv-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.animate-bv-float {
+  animation: bv-float 6s ease-in-out infinite;
+}
+
+@keyframes bv-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+.animate-bv-pulse {
+  animation: bv-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes bv-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-7px) rotate(-3deg); }
+  66% { transform: translateY(-4px) rotate(3deg); }
+}
+.animate-bv-bob {
+  animation: bv-bob 2.6s ease-in-out infinite;
+}
+
+@keyframes bv-glow {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.3); }
+}
+.animate-bv-glow {
+  animation: bv-glow 2.6s ease-in-out infinite;
+}
+
+/* Scroll reveal (components/landing/Reveal.jsx). Hidden until the observer
+   adds .is-visible, then a one-off keyframe animation on transform/opacity. */
+.bv-reveal {
+  opacity: 0;
+}
+.bv-reveal.is-visible {
+  animation: bv-reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0s) both;
+}
+.bv-reveal-left.is-visible {
+  animation-name: bv-reveal-left;
+}
+.bv-reveal-scale.is-visible {
+  animation-name: bv-reveal-scale;
+}
+@keyframes bv-reveal-up {
+  from { opacity: 0; transform: translate3d(0, 26px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bv-reveal-left {
+  from { opacity: 0; transform: translate3d(26px, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bv-reveal-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bv-reveal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .bv-reveal.is-visible {
+    animation-name: bv-reveal-fade;
+    animation-duration: 0.3s;
+  }
   .animate-float-slow,
   .animate-float-slower,
+  .animate-bv-float,
+  .animate-bv-pulse,
+  .animate-bv-bob,
+  .animate-bv-glow,
   .typewriter-cursor {
     animation: none;
   }
