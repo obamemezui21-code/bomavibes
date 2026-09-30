@@ -2,14 +2,12 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   EmailAuthProvider,
-  createUserWithEmailAndPassword,
   getAdditionalUserInfo,
   onAuthStateChanged,
   reauthenticateWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
-  updateProfile,
   updatePassword,
   verifyBeforeUpdateEmail,
 } from 'firebase/auth'
@@ -171,10 +169,20 @@ export function AuthProvider({ children }) {
     if (!res.ok) throw new Error()
   }
 
-  async function register(firstName, email, password) {
+  // The account is created by the backend, which first checks the Turnstile
+  // token (see backend/src/controllers/signupController.js); then we sign in.
+  async function register(firstName, email, password, turnstileToken) {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ firstName, email, password, turnstileToken }),
+    }).catch(() => null)
+    if (!res?.ok) {
+      const body = await res?.json().catch(() => null)
+      throw new Error(body?.message || 'Une erreur est survenue, réessaie.')
+    }
     try {
-      const credential = await createUserWithEmailAndPassword(auth, email, password)
-      await updateProfile(credential.user, { displayName: firstName })
+      const credential = await signInWithEmailAndPassword(auth, email, password)
       await sendVerificationEmailFor(credential.user).catch(() => {})
       setUser(toAppUser(credential.user))
     } catch (error) {

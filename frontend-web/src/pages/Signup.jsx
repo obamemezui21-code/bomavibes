@@ -4,11 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import AuthLayout from '../components/AuthLayout.jsx'
 import PasswordInput from '../components/PasswordInput.jsx'
 import GoogleIcon from '../components/GoogleIcon.jsx'
-import ImageGridCaptcha from '../components/ImageGridCaptcha.jsx'
+import TurnstileWidget from '../components/TurnstileWidget.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 
-// Anti-bot: no external service, no keys. `website` is a hidden field real
+// Anti-bot: Cloudflare Turnstile, checked server-side before the account is
+// created. On top of it, `website` is a hidden field real
 // visitors never see or fill — form-filling bots do, since they fill every
 // input. `formLoadedAt` catches the other common bot pattern, submitting
 // within a second of the page loading, faster than a human can type.
@@ -26,9 +27,9 @@ function Signup() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
-  const [captcha, setCaptcha] = useState({ token: '', indices: [] })
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [formLoadedAt] = useState(() => Date.now())
-  const captchaRef = useRef(null)
+  const turnstileRef = useRef(null)
 
   useEffect(() => {
     if (token) navigate('/discover', { replace: true })
@@ -57,28 +58,19 @@ function Signup() {
       setError('Une erreur est survenue, réessayez')
       return
     }
-    if (captcha.indices.length === 0) {
-      setError('Merci de sélectionner les images demandées')
+    if (!turnstileToken) {
+      setError('Vérification anti-robot en cours, patientez une seconde')
       return
     }
 
     setIsSubmitting(true)
     try {
-      const captchaRes = await fetch('/api/captcha/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: captcha.token, indices: captcha.indices }),
-      })
-      if (!captchaRes.ok) {
-        const body = await captchaRes.json().catch(() => null)
-        throw new Error(body?.message || 'Vérification anti-robot invalide, réessayez')
-      }
-
-      await register(firstName, email, password)
+      await register(firstName, email, password, turnstileToken)
       navigate('/onboarding', { replace: true })
     } catch (err) {
       setError(err.message)
-      captchaRef.current?.refresh()
+      // Each token works once: get a fresh one for the next attempt.
+      turnstileRef.current?.reset()
     } finally {
       setIsSubmitting(false)
     }
@@ -224,7 +216,7 @@ function Signup() {
           aria-hidden="true"
         />
 
-        <ImageGridCaptcha ref={captchaRef} onChange={setCaptcha} />
+        <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
 
         <motion.button
           type="submit"
