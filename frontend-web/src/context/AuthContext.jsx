@@ -209,15 +209,15 @@ export function AuthProvider({ children }) {
   }
 
   async function resetPassword(email) {
-    try {
-      const res = await fetch('/api/auth/send-password-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      if (!res.ok) throw new Error()
-    } catch (error) {
-      throw new Error('Une erreur est survenue, réessaie.', { cause: error })
+    const res = await fetch('/api/auth/send-password-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }).catch(() => null)
+    if (!res?.ok) {
+      // 429 carries a readable "too many requests" message worth showing.
+      const body = res?.status === 429 ? await res.json().catch(() => null) : null
+      throw new Error(body?.message || 'Une erreur est survenue, réessaie.')
     }
   }
 

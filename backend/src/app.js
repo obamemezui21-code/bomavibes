@@ -1,4 +1,5 @@
 const express = require("express");
+const { apiLimiter } = require("./middleware/rateLimits");
 const cors = require("cors");
 const emailActionRoutes = require("./routes/emailActionRoutes");
 const photoRoutes = require("./routes/photoRoutes");
@@ -27,9 +28,14 @@ const { startCallCleanupScheduler } = require("./services/callCleanupService");
 
 const app = express();
 
+// nginx on the same machine proxies /api here: trust X-Forwarded-For from it
+// (and only from it) so req.ip is the visitor's address, not 127.0.0.1.
+app.set("trust proxy", "loopback");
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use("/api", apiLimiter);
 
 // Route test
 app.get("/", (req, res) => {

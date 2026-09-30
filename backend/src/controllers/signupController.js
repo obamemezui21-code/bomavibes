@@ -23,9 +23,7 @@ async function register(req, res) {
         return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caractères" });
     }
 
-    const forwarded = req.headers["x-forwarded-for"];
-    const ip = (typeof forwarded === "string" && forwarded.split(",")[0].trim()) || req.socket?.remoteAddress;
-    if (!(await verifyTurnstile(turnstileToken, ip))) {
+    if (!(await verifyTurnstile(turnstileToken, req.ip))) {
         return res.status(400).json({ message: "La vérification anti-robot a échoué, réessayez", code: "turnstile" });
     }
 
