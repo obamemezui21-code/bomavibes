@@ -4,7 +4,6 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import aboutPhoto from '../assets/people/couple-tradition.webp'
 import SiteHeader from '../components/SiteHeader.jsx'
-import WwfNewsSection from '../components/WwfNewsSection.jsx'
 import HeroSection from '../components/landing/HeroSection.jsx'
 import DiscoverProfilesSection from '../components/landing/DiscoverProfilesSection.jsx'
 import HowItWorksSection from '../components/landing/HowItWorksSection.jsx'
@@ -16,7 +15,6 @@ import AvailabilitySection from '../components/landing/AvailabilitySection.jsx'
 import StatsSection from '../components/landing/StatsSection.jsx'
 import PlatformUpdatesSection from '../components/landing/PlatformUpdatesSection.jsx'
 import SupportTeaserSection from '../components/landing/SupportTeaserSection.jsx'
-import FinalCtaSection from '../components/landing/FinalCtaSection.jsx'
 import Reveal from '../components/landing/Reveal.jsx'
 import SupportChatWidget from '../components/landing/SupportChatWidget.jsx'
 
@@ -170,10 +168,8 @@ function Landing() {
       </section>
 
       <PlatformUpdatesSection />
-      <WwfNewsSection />
 
       <SupportTeaserSection />
-      <FinalCtaSection />
 
       {/* Contact */}
       <section id="contact" className="scroll-mt-20 bg-violet-600 px-4 py-24 text-center sm:px-8">
