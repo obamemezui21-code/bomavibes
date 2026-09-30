@@ -154,6 +154,16 @@ h3 {
   color: var(--color-ink);
 }
 
+/* Dropdown lists of <select>. The closed selects use a see-through fill
+   (bg-ink/[0.03]); Chrome/Edge on Windows reuse the select's background for
+   the open option list and paint a transparent one as BLACK — dark text on
+   black, unreadable. Give options a solid, theme-aware background. */
+select option,
+select optgroup {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+
 .typewriter-cursor {
   display: inline-block;
   width: 3px;

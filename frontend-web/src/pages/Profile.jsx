@@ -361,10 +361,10 @@ function Profile() {
                 Genre
               </label>
               <select id="gender" value={form.gender} onChange={handleChange('gender')} className={inputClass}>
-                <option value="" className="bg-white">Non précisé</option>
-                <option value="FEMME" className="bg-white">Femme</option>
-                <option value="HOMME" className="bg-white">Homme</option>
-                <option value="AUTRE" className="bg-white">Autre</option>
+                <option value="">Non précisé</option>
+                <option value="FEMME">Femme</option>
+                <option value="HOMME">Homme</option>
+                <option value="AUTRE">Autre</option>
               </select>
             </div>
           </div>
