@@ -271,7 +271,9 @@ export function ConversationsProvider({ children }) {
         })
         const matchedAt = match.createdAt?.toDate ? match.createdAt.toDate().toISOString() : new Date().toISOString()
         const lastActivityAt = match.lastMessageAt?.toDate ? match.lastMessageAt.toDate().toISOString() : matchedAt
-        const online = isRecent(profile.lastActive, ONLINE_THRESHOLD_MS, now)
+        // Invisible mode (Jadéite Impériale) also hides the "En ligne" status.
+        const isInvisible = !!profile.invisible && (profile.visibilityUntil?.toMillis?.() ?? 0) > now
+        const online = !isInvisible && isRecent(profile.lastActive, ONLINE_THRESHOLD_MS, now)
         return {
           id: match.id,
           otherUid,
@@ -298,7 +300,7 @@ export function ConversationsProvider({ children }) {
           lastMessage: match.lastMessage || null,
           messages,
           online,
-          lastSeenLabel: online ? 'En ligne' : formatLastSeen(profile.lastActive, now),
+          lastSeenLabel: online ? 'En ligne' : isInvisible ? null : formatLastSeen(profile.lastActive, now),
           isTyping: isRecent(match.typing?.[otherUid], TYPING_THRESHOLD_MS, now),
           hasOlderMessages: !!hasOlderMessages[match.id],
         }

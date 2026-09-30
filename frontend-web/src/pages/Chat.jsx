@@ -54,6 +54,8 @@ import { countIncomingLikes } from '../firebase/swipes.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { callLabel, formatCallDuration, isMissedCall } from '../lib/callSummary.js'
+import { activePlan } from '../lib/plans.js'
+import PaywallModal from '../components/PaywallModal.jsx'
 import { formatDuration } from '../lib/formatDuration.js'
 import { matchPercent } from '../lib/interests.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
@@ -366,13 +368,14 @@ function Chat() {
     refreshBlockedIds,
     loadOlderMessages,
   } = useConversations()
-  const { user, publicProfile } = useAuth()
+  const { user, publicProfile, profile: account } = useAuth()
   const { showToast } = useToast()
   const { theme } = useTheme()
   const { startCall } = useCall()
   const [draft, setDraft] = useState('')
   const [listSearch, setListSearch] = useState('')
   const [likesCount, setLikesCount] = useState(null)
+  const [paywall, setPaywall] = useState(null)
   const [expandedProfile, setExpandedProfile] = useState(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showStickerPicker, setShowStickerPicker] = useState(false)
@@ -758,6 +761,12 @@ function Chat() {
 
   function handleStartCall(type) {
     if (!active?.otherUid) return
+    // Placing a call is a subscriber perk (also enforced by the rules);
+    // receiving one stays free.
+    if (!activePlan(account).calls) {
+      setPaywall('calls')
+      return
+    }
     startCall({
       matchId: active.id,
       otherUid: active.otherUid,
@@ -1652,6 +1661,10 @@ function Chat() {
             isDeleting={isDeleting}
           />
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {paywall && <PaywallModal reason={paywall} onClose={() => setPaywall(null)} />}
       </AnimatePresence>
 
       {showReport && active && (

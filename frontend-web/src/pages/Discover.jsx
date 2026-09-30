@@ -28,7 +28,8 @@ import Confetti from '../components/Confetti.jsx'
 import SupportPromptCard from '../components/SupportPromptCard.jsx'
 import { TIERS } from '../lib/pricingTiers.js'
 import { fetchDiscoverCandidates, getCachedCandidates, setCachedCandidates } from '../firebase/discovery.js'
-import { recordSwipeAndMatch } from '../firebase/swipes.js'
+import { isQuotaError, recordSwipeAndMatch } from '../firebase/swipes.js'
+import PaywallModal from '../components/PaywallModal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { INTEREST_ICONS, iconForInterest, matchPercent } from '../lib/interests.js'
@@ -91,6 +92,7 @@ function Discover() {
   const [religionFilter, setReligionFilter] = useState('')
   const [travelingOnly, setTravelingOnly] = useState(false)
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+  const [paywall, setPaywall] = useState(null)
   const [interestFilter, setInterestFilter] = useState('')
   const [viewMode, setViewMode] = useState(readViewMode)
   const [showSearch, setShowSearch] = useState(false)
@@ -281,8 +283,14 @@ function Discover() {
       } else if (direction !== 'pass') {
         showToast(`Vous avez aimé le profil de ${profile.firstName}.`, 'success')
       }
-    } catch {
-      showToast("Impossible d'enregistrer votre choix, réessayez.", 'error')
+    } catch (err) {
+      // Nothing was recorded: put the profile back where it was.
+      setProfiles((prev) => (prev.some((p) => p.id === profile.id) ? prev : [profile, ...prev]))
+      if (isQuotaError(err)) {
+        setPaywall({ reason: err.code === 'SUPERLIKE_LIMIT' ? 'superlikes' : 'likes', message: err.message })
+      } else {
+        showToast("Impossible d'enregistrer votre choix, réessayez.", 'error')
+      }
     }
   }
 
@@ -771,6 +779,10 @@ function Discover() {
             onReset={handleResetFilters}
           />
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {paywall && <PaywallModal reason={paywall.reason} message={paywall.message} onClose={() => setPaywall(null)} />}
       </AnimatePresence>
 
       <AnimatePresence>

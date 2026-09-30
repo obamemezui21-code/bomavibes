@@ -89,10 +89,20 @@ function Feed() {
   const expandedMatch = expandedAuthorId ? conversations.find((c) => c.otherUid === expandedAuthorId) : null
 
   async function handleLike(profile) {
-    await recordSwipeAndMatch(user.id, profile.id, 'like', user.firstName)
+    try {
+      const matchId = await recordSwipeAndMatch(user.id, profile.id, 'like', user.firstName)
+      if (matchId) showToast(`C'est un match avec ${profile.firstName} !`, 'success')
+    } catch (err) {
+      // Quota reached (free plan) or network error — the server says which.
+      showToast(err.message || "Impossible d'enregistrer votre choix, réessayez.", 'error')
+    }
   }
   async function handlePass(profile) {
-    await recordSwipeAndMatch(user.id, profile.id, 'pass', user.firstName)
+    try {
+      await recordSwipeAndMatch(user.id, profile.id, 'pass', user.firstName)
+    } catch {
+      showToast("Impossible d'enregistrer votre choix, réessayez.", 'error')
+    }
   }
 
   async function handleReportSubmit(reason, description, alsoBlock) {

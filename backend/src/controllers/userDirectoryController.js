@@ -2,6 +2,7 @@ const admin = require("../config/firebaseAdmin");
 const { SUPER_ADMIN_EMAIL, ROLES, isSuperAdminRole } = require("../config/roles");
 const { eraseAccount } = require("../services/accountDeletionService");
 const { logAdminAction } = require("../services/adminLogService");
+const { activePlanId } = require("../config/plans");
 
 const db = admin.firestore();
 
@@ -115,6 +116,8 @@ async function getDirectoryUser(req, res) {
                 lastActive: toIso(profile.lastActive),
                 createdAt: toIso(data.createdAt),
                 deletedAt: toIso(data.deletedAt),
+                plan: activePlanId(data),
+                planExpiresAt: toIso(data.planExpiresAt),
                 matchesCount: matchesCount.data().count,
                 reportsCount: reportsCount.data().count,
             },

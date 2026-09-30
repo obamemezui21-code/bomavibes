@@ -26,6 +26,19 @@ service cloud.firestore {
         || (request.resource.data[field] is string && request.resource.data[field].size() <= maxLen);
     }
 
+    // Subscription in force (see backend/src/config/plans.js).
+    function hasActivePlan(uid) {
+      let account = get(/databases/$(database)/documents/users/$(uid)).data;
+      return account.get('plan', null) in ['vip', 'diamant', 'jade']
+        && account.get('planExpiresAt', null) != null
+        && account.planExpiresAt > request.time;
+    }
+
+    // Fields only the server may set; a client write must leave them as is.
+    function unchangedFields(fields) {
+      return !request.resource.data.diff(resource == null ? {} : resource.data).affectedKeys().hasAny(fields);
+    }
+
     function isBlockedByRecipient(matchId) {
       let matchUsers = get(/databases/$(database)/documents/matches/$(matchId)).data.users;
       let otherUid = matchUsers[0] == request.auth.uid ? matchUsers[1] : matchUsers[0];
@@ -52,7 +65,9 @@ service cloud.firestore {
           // see accountController.js) may ever set these, so a user can't
           // fake or clear their own "deleted" tombstone.
           && (!('deleted' in data) || (resource != null && data.deleted == resource.data.get('deleted', false)))
-          && (!('deletedAt' in data) || (resource != null && data.deletedAt == resource.data.get('deletedAt', null)));
+          && (!('deletedAt' in data) || (resource != null && data.deletedAt == resource.data.get('deletedAt', null)))
+          // Subscription: set only by an admin through the backend.
+          && unchangedFields(['plan', 'planExpiresAt', 'planUpdatedAt', 'planUpdatedBy']);
       }
 
       // Account deletion is a full erasure (see accountController.deleteAccount:
@@ -83,9 +98,15 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn();
-      allow create: if isOwner(userId) && validPublicProfile()
+      // Plan perks shown to others (Discover ranking, boost, invisible mode)
+      // are written by the backend only.
+      function perksUnchanged() {
+        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible']);
+      }
+
+      allow create: if isOwner(userId) && validPublicProfile() && perksUnchanged()
         && (!('verified' in request.resource.data) || request.resource.data.verified == false);
-      allow update: if isOwner(userId) && validPublicProfile() && verifiedUnchanged();
+      allow update: if isOwner(userId) && validPublicProfile() && verifiedUnchanged() && perksUnchanged();
       allow delete: if isOwner(userId);
     }
 
@@ -93,6 +114,13 @@ service cloud.firestore {
     // user follows their own request live; every write goes through the
     // backend (pose assignment, selfie upload, moderator decision).
     match /verificationRequests/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    // Daily / weekly quota counters (likes, super likes, boosts) — kept by
+    // the backend (swipeController.js), readable by their owner.
+    match /usage/{uid} {
       allow read: if isOwner(uid);
       allow write: if false;
     }
@@ -220,23 +248,15 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Likes are recorded by the backend (POST /api/swipes) so plan quotas
+    // can't be bypassed; "who liked you" is served by the backend to
+    // subscribers only. A user can only read their own swipes.
     match /swipes/{swipeId} {
-      allow read: if isSignedIn()
-        && (resource == null || resource.data.swiperId == request.auth.uid || resource.data.targetId == request.auth.uid);
-      allow create, update: if isSignedIn()
-        && swipeId == request.auth.uid + '_' + request.resource.data.targetId
-        && request.resource.data.swiperId == request.auth.uid
-        && request.resource.data.targetId != request.auth.uid
-        && request.resource.data.direction in ['like', 'pass', 'superlike'];
-      allow delete: if false;
+      allow read: if isSignedIn() && (resource == null || resource.data.swiperId == request.auth.uid);
+      allow write: if false;
     }
 
     match /matches/{matchId} {
-      function hasLiked(fromUid, toUid) {
-        let swipePath = /databases/$(database)/documents/swipes/$(fromUid + '_' + toUid);
-        return exists(swipePath) && get(swipePath).data.direction in ['like', 'superlike'];
-      }
-
       // Per-user maps (typing, activeIn, lastReadAt): each user may only
       // touch their own entry.
       function onlyOwnEntry(field) {
@@ -245,19 +265,9 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn() && (resource == null || request.auth.uid in resource.data.users);
-      // A match only exists when both people liked each other (see
-      // recordSwipeAndMatch in swipes.js): its id is the two sorted uids and
-      // both swipes must be likes — nobody can open a conversation (or a
-      // call) with someone who didn't like them back.
-      allow create: if isSignedIn()
-        && request.resource.data.keys().hasOnly(['users', 'createdAt', 'lastMessage', 'lastMessageAt', 'seen'])
-        && request.resource.data.users is list
-        && request.resource.data.users.size() == 2
-        && request.auth.uid in request.resource.data.users
-        && request.resource.data.users[0] < request.resource.data.users[1]
-        && matchId == request.resource.data.users[0] + '_' + request.resource.data.users[1]
-        && hasLiked(request.resource.data.users[0], request.resource.data.users[1])
-        && hasLiked(request.resource.data.users[1], request.resource.data.users[0]);
+      // Matches are created by the backend (swipeController.js) when both
+      // people liked each other — never directly by a client.
+      allow create: if false;
       // Participants can only update the chat bookkeeping fields — never
       // `users` (which would let someone add a third person) or createdAt.
       allow update: if isSignedIn()
@@ -324,6 +334,7 @@ service cloud.firestore {
         && request.resource.data.calleeId != request.auth.uid
         && request.resource.data.type in ['audio', 'video']
         && request.resource.data.status == 'ringing'
+        && hasActivePlan(request.auth.uid)
         && request.resource.data.matchId is string
         && request.auth.uid in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users
         && request.resource.data.calleeId in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users

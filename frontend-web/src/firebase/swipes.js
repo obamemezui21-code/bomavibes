@@ -1,77 +1,51 @@
-import {
-  collection,
-  doc,
-  getCountFromServer,
-  getDoc,
-  getDocs,
-  query,
-  runTransaction,
-  serverTimestamp,
-  setDoc,
-  where,
-} from 'firebase/firestore'
-import { db } from './config.js'
-import { sendPushNotification } from './notify.js'
-import { fetchBlockedIds } from './safety.js'
+import { auth } from './config.js'
 import { rememberSwipe } from './discovery.js'
 
-// Server-side count (billed per 1000 matching docs) instead of downloading
-// every incoming like just to read its length.
-export async function countIncomingLikes(uid) {
-  const snap = await getCountFromServer(
-    query(collection(db, 'swipes'), where('targetId', '==', uid), where('direction', 'in', ['like', 'superlike'])),
-  )
-  return snap.data().count
-}
+// Likes, matches and "who liked you" go through the backend
+// (backend/src/controllers/swipeController.js): that's where plan quotas
+// are enforced, and Firestore rules don't let the app write them directly.
 
-export async function getIncomingLikers(uid) {
-  const [snap, blockedIds] = await Promise.all([
-    getDocs(
-      query(collection(db, 'swipes'), where('targetId', '==', uid), where('direction', 'in', ['like', 'superlike'])),
-    ),
-    fetchBlockedIds(uid),
-  ])
-  const swiperIds = snap.docs.map((d) => d.data().swiperId).filter((id) => !blockedIds.has(id))
-  const profiles = await Promise.all(
-    swiperIds.map(async (swiperId) => {
-      const snapshot = await getDoc(doc(db, 'profiles', swiperId))
-      return snapshot.exists() ? { id: swiperId, ...snapshot.data() } : null
-    }),
-  )
-  return profiles.filter(Boolean)
-}
-
-export async function recordSwipeAndMatch(uid, targetId, direction, firstName) {
-  await setDoc(doc(db, 'swipes', `${uid}_${targetId}`), {
-    swiperId: uid,
-    targetId,
-    direction,
-    createdAt: serverTimestamp(),
+async function api(path, options = {}) {
+  const idToken = await auth.currentUser?.getIdToken()
+  const res = await fetch(path, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}`, ...options.headers },
   })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    const err = new Error(body?.message || 'request failed')
+    // LIKE_LIMIT / SUPERLIKE_LIMIT → the caller shows the paywall
+    err.code = body?.code || null
+    err.status = res.status
+    throw err
+  }
+  return body
+}
+
+export function isQuotaError(err) {
+  return err?.code === 'LIKE_LIMIT' || err?.code === 'SUPERLIKE_LIMIT'
+}
+
+export async function countIncomingLikes() {
+  return (await api('/api/swipes/likes-count')).count
+}
+
+// { locked, count, likers } — likers are only filled for subscribers.
+export function getIncomingLikers() {
+  return api('/api/swipes/likers')
+}
+
+// { remaining: { likes (null = unlimited), superlikes } }
+export function getSwipeQuota() {
+  return api('/api/swipes/quota')
+}
+
+// Returns the match id when this like completes a match, else null.
+// Throws an error with `code` LIKE_LIMIT / SUPERLIKE_LIMIT when the plan's
+// quota is used up (nothing is recorded then).
+// eslint-disable-next-line no-unused-vars
+export async function recordSwipeAndMatch(uid, targetId, direction, _firstName) {
+  const { matchId } = await api('/api/swipes', { method: 'POST', body: JSON.stringify({ targetId, direction }) })
   rememberSwipe(uid, targetId, direction)
-
-  if (direction === 'pass') return null
-
-  const reciprocal = await getDoc(doc(db, 'swipes', `${targetId}_${uid}`))
-  const reciprocalLiked = reciprocal.exists() && ['like', 'superlike'].includes(reciprocal.data().direction)
-  if (!reciprocalLiked) return null
-
-  const matchId = [uid, targetId].sort().join('_')
-  const matchRef = doc(db, 'matches', matchId)
-
-  await runTransaction(db, async (tx) => {
-    const existing = await tx.get(matchRef)
-    if (existing.exists()) return
-    tx.set(matchRef, {
-      users: [uid, targetId].sort(),
-      createdAt: serverTimestamp(),
-      lastMessage: null,
-      lastMessageAt: serverTimestamp(),
-      seen: { [uid]: true, [targetId]: false },
-    })
-  })
-
-  sendPushNotification(targetId, 'match', { firstName })
-
-  return matchId
+  return matchId || null
 }

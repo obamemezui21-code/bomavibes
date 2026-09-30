@@ -96,6 +96,12 @@ function scoreCandidate(candidate, { mySwipe, hasSeenThisSession, myInterests, n
   const compat = matchPercent(myInterests, candidate.interests)
   if (compat != null && compat >= 50) score += 25 // compatibility bonus
 
+  // Subscription perks (set by the backend only): an active Boost puts the
+  // profile at the top for 30 min; the plan's visibility priority adds a
+  // steady bonus (VIP 1, Diamant Rouge 2, Jadéite Impériale 3).
+  if (toMillis(candidate.boostedUntil) > now) score += 150
+  if (toMillis(candidate.visibilityUntil) > now) score += (candidate.visibility || 0) * 15
+
   return score
 }
 
@@ -129,6 +135,8 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
       const id = docSnap.id
       if (id === uid || id === SYSTEM_ACCOUNT_ID || blockedIds.has(id)) continue
       const data = docSnap.data()
+      // Invisible mode (Jadéite Impériale): hidden from Discover while the plan runs.
+      if (data.invisible && toMillis(data.visibilityUntil) > now) continue
       if (filters.minAge != null && data.age != null && data.age < filters.minAge) continue
       if (filters.maxAge != null && data.age != null && data.age > filters.maxAge) continue
 

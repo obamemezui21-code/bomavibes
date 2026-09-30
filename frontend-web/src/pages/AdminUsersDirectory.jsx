@@ -7,6 +7,8 @@ import {
   setAdminUserBanned,
 } from '../firebase/admin.js'
 import { useToast } from '../context/ToastContext.jsx'
+import { adminSetUserPlan } from '../firebase/subscriptions.js'
+import { PLANS } from '../lib/plans.js'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Modal from '../components/ui/Modal.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -51,6 +53,84 @@ function DetailRow({ label, value }) {
     <div className="flex items-center justify-between gap-3 border-b border-ink/6 py-2 text-sm last:border-0">
       <span className="text-ink-soft/50">{label}</span>
       <span className="truncate text-right font-medium text-ink">{value}</span>
+    </div>
+  )
+}
+
+const PLAN_OPTIONS = ['vip', 'diamant', 'jade']
+const DURATION_OPTIONS = [
+  { days: 30, label: '1 mois' },
+  { days: 90, label: '3 mois' },
+  { days: 180, label: '6 mois' },
+  { days: 365, label: '1 an' },
+]
+
+// Manual activation while online payment isn't wired up: after the user has
+// paid (Mobile Money…), pick the plan and duration here.
+function PlanSection({ detail, onChange }) {
+  const { showToast } = useToast()
+  const [plan, setPlan] = useState(detail.plan !== 'free' ? detail.plan : 'vip')
+  const [days, setDays] = useState(30)
+  const [isBusy, setIsBusy] = useState(false)
+  const isActive = detail.plan && detail.plan !== 'free'
+
+  async function submit(nextPlan) {
+    setIsBusy(true)
+    try {
+      const result = await adminSetUserPlan(detail.uid, nextPlan, nextPlan ? days : undefined)
+      onChange({ plan: result.plan, planExpiresAt: result.planExpiresAt ? new Date(result.planExpiresAt).toISOString() : null })
+      showToast(nextPlan ? `Forfait ${PLANS[nextPlan].label} activé.` : 'Abonnement annulé.', 'success')
+    } catch (err) {
+      showToast(err.message || "Impossible de modifier l'abonnement.", 'error')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  const selectClass = 'w-full rounded-xl border border-ink/12 bg-ink/[0.03] px-3 py-2 text-sm text-ink outline-none focus:border-violet-400'
+  return (
+    <div className="mt-4 rounded-xl border border-ink/8 p-3.5">
+      <p className="text-sm font-semibold text-ink">Abonnement</p>
+      <p className="mt-0.5 text-sm text-ink-soft/70">
+        {isActive
+          ? `${PLANS[detail.plan]?.emoji || ''} ${PLANS[detail.plan]?.label || detail.plan} jusqu'au ${formatDate(detail.planExpiresAt)}`
+          : 'Compte gratuit'}
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <label className="text-xs text-ink-soft/60">
+          Forfait
+          <select value={plan} onChange={(e) => setPlan(e.target.value)} className={`mt-1 ${selectClass}`}>
+            {PLAN_OPTIONS.map((p) => (
+              <option key={p} value={p}>
+                {PLANS[p].emoji} {PLANS[p].label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-ink-soft/60">
+          Durée
+          <select value={days} onChange={(e) => setDays(Number(e.target.value))} className={`mt-1 ${selectClass}`}>
+            {DURATION_OPTIONS.map((d) => (
+              <option key={d.days} value={d.days}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <p className="mt-2 text-xs text-ink-soft/50">
+        Même forfait déjà actif : la durée s'ajoute à la date de fin. Autre forfait : il démarre aujourd'hui.
+      </p>
+      <div className="mt-3 flex gap-2">
+        <Button className="flex-1" onClick={() => submit(plan)} disabled={isBusy}>
+          {isActive && detail.plan === plan ? 'Prolonger' : 'Activer'}
+        </Button>
+        {isActive && (
+          <Button variant="secondary" className="flex-1" onClick={() => submit(null)} disabled={isBusy}>
+            Annuler l'abonnement
+          </Button>
+        )}
+      </div>
     </div>
   )
 }
@@ -204,6 +284,10 @@ function AdminUsersDirectory() {
                 <DetailRow label="Signalements reçus" value={detail.reportsCount} />
                 {detail.deleted && <DetailRow label="Supprimé le" value={formatDateTime(detail.deletedAt)} />}
               </div>
+
+              {!detail.deleted && (
+                <PlanSection key={detail.uid} detail={detail} onChange={(patch) => setDetail((prev) => ({ ...prev, ...patch }))} />
+              )}
 
               {!detail.deleted && (
                 <div className="mt-4 flex gap-2">

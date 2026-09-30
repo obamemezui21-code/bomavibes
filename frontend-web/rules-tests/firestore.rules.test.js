@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import process from 'node:process'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
-import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import { Timestamp, addDoc, collection, deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 
 let env
 
@@ -39,6 +39,11 @@ beforeEach(async () => {
     await setDoc(doc(db, `matches/${MATCH}/messages/fromBob`), { senderId: 'bob', text: 'Salut Alice' })
     await setDoc(doc(db, `matches/${MATCH}/messages/fromAlice`), { senderId: 'alice', text: 'Coucou' })
     await setDoc(doc(db, `matches/${MATCH}/messages/aliceSticker`), { senderId: 'alice', text: '', type: 'sticker', stickerId: 'x' })
+    await setDoc(doc(db, 'users/alice'), {
+      email: 'alice@x.test', onboarded: true, plan: 'vip', planExpiresAt: Timestamp.fromMillis(Date.now() + 86400000),
+    })
+    await setDoc(doc(db, 'users/bob'), { email: 'bob@x.test', onboarded: true })
+    await setDoc(doc(db, 'profiles/bob'), { firstName: 'Bob', verified: false })
     await setDoc(doc(db, 'posts/p1'), { authorId: 'alice', type: 'text', text: 'Bonjour', photoUrl: null, likeCount: 0, commentCount: 0 })
     await setDoc(doc(db, 'posts/styled'), {
       authorId: 'alice', type: 'text', text: 'Stylé', background: 'plum', font: 'script', likeCount: 0, commentCount: 0,
@@ -49,35 +54,10 @@ beforeEach(async () => {
 const as = (uid) => env.authenticatedContext(uid).firestore()
 
 describe('matches', () => {
-  it('can be created with a mutual like (sorted id)', async () => {
-    await env.withSecurityRulesDisabled((ctx) => deleteDoc(doc(ctx.firestore(), `matches/${MATCH}`)))
-    await assertSucceeds(
-      setDoc(doc(as('alice'), `matches/${MATCH}`), {
-        users: ['alice', 'bob'],
-        createdAt: serverTimestamp(),
-        lastMessage: null,
-        lastMessageAt: serverTimestamp(),
-        seen: { alice: true, bob: false },
-      }),
-    )
-  })
-
-  it('cannot be created without a like back', async () => {
-    await assertFails(
-      setDoc(doc(as('carol'), 'matches/bob_carol'), {
-        users: ['bob', 'carol'],
-        createdAt: serverTimestamp(),
-        lastMessage: null,
-        lastMessageAt: serverTimestamp(),
-        seen: {},
-      }),
-    )
-  })
-
-  it('cannot be created under a made-up id', async () => {
-    await assertFails(
-      setDoc(doc(as('alice'), 'matches/anything'), { users: ['alice', 'bob'], createdAt: serverTimestamp() }),
-    )
+  it('can never be created by the app (the server creates them on a mutual like)', async () => {
+    const match = { users: ['bob', 'carol'], createdAt: serverTimestamp(), lastMessage: null, lastMessageAt: serverTimestamp(), seen: {} }
+    await assertFails(setDoc(doc(as('carol'), 'matches/bob_carol'), match))
+    await assertFails(setDoc(doc(as('alice'), 'matches/anything'), { users: ['alice', 'bob'], createdAt: serverTimestamp() }))
   })
 
   it('is only readable by its two users', async () => {
@@ -175,6 +155,40 @@ describe('profile verification', () => {
     await assertFails(updateDoc(doc(as('alice'), 'verificationRequests/alice'), { status: 'approved' }))
     await assertFails(setDoc(doc(as('bob'), 'verificationRequests/bob'), { uid: 'bob', status: 'approved' }))
     await assertFails(updateDoc(doc(as('alice'), 'profiles/alice'), { verified: true }))
+  })
+})
+
+describe('subscriptions', () => {
+  it('lets only subscribers place a call (a free account can still receive one)', async () => {
+    const call = (callerId, calleeId) => ({ callerId, calleeId, matchId: MATCH, type: 'audio', status: 'ringing' })
+    await assertSucceeds(addDoc(collection(as('alice'), 'calls'), call('alice', 'bob')))
+    await assertFails(addDoc(collection(as('bob'), 'calls'), call('bob', 'alice')))
+  })
+
+  it('never lets a user give themselves a plan or its perks', async () => {
+    await assertFails(updateDoc(doc(as('bob'), 'users/bob'), { plan: 'jade', planExpiresAt: Timestamp.fromMillis(Date.now() + 1e10) }))
+    await assertFails(updateDoc(doc(as('alice'), 'users/alice'), { planExpiresAt: Timestamp.fromMillis(Date.now() + 1e10) }))
+    await assertFails(updateDoc(doc(as('bob'), 'profiles/bob'), { boostedUntil: Timestamp.fromMillis(Date.now() + 1e7) }))
+    await assertFails(updateDoc(doc(as('bob'), 'profiles/bob'), { visibility: 3 }))
+    await assertFails(updateDoc(doc(as('bob'), 'profiles/bob'), { invisible: true }))
+  })
+
+  it('still lets users edit the rest of their account and profile', async () => {
+    await assertSucceeds(updateDoc(doc(as('alice'), 'users/alice'), { firstName: 'Alice B.' }))
+    await assertSucceeds(updateDoc(doc(as('bob'), 'profiles/bob'), { bio: 'Salut !' }))
+  })
+
+  it('keeps likes server-side: no direct writes, and no peeking at who liked you', async () => {
+    await assertFails(setDoc(doc(as('carol'), 'swipes/carol_alice'), { swiperId: 'carol', targetId: 'alice', direction: 'like' }))
+    await assertSucceeds(getDoc(doc(as('carol'), 'swipes/carol_bob')))
+    await assertFails(getDoc(doc(as('bob'), 'swipes/carol_bob')))
+  })
+
+  it('lets users read their own quota counters only', async () => {
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'usage/bob'), { likes: 3 }))
+    await assertSucceeds(getDoc(doc(as('bob'), 'usage/bob')))
+    await assertFails(getDoc(doc(as('alice'), 'usage/bob')))
+    await assertFails(setDoc(doc(as('bob'), 'usage/bob'), { likes: 0 }))
   })
 })
 

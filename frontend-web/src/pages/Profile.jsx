@@ -11,6 +11,7 @@ import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
 import CountryPicker from '../components/CountryPicker.jsx'
 import SupportModal from '../components/SupportModal.jsx'
 import VerificationCard from '../components/VerificationCard.jsx'
+import SubscriptionCard from '../components/SubscriptionCard.jsx'
 import {
   DATING_GOALS,
   LANGUAGES,
@@ -251,6 +252,7 @@ function Profile() {
           </div>
         </div>
 
+        <SubscriptionCard />
         <VerificationCard />
 
         <form onSubmit={handleSubmit} className="glass-panel space-y-4 rounded-2xl p-6">
