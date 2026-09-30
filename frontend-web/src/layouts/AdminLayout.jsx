@@ -10,26 +10,51 @@ const ROLE_LABELS = {
   [ROLES.EDITOR]: 'Éditeur',
 }
 
+// One colour per tab (full class strings so Tailwind generates them):
+//   tile   — solid circle behind the white icon
+//   active — the whole pill once the tab is open
+const tint = (tile, active) => ({ tile, active })
+const C = {
+  violet: tint('bg-violet-500', 'bg-violet-500 shadow-violet-500/30'),
+  sky: tint('bg-sky-500', 'bg-sky-500 shadow-sky-500/30'),
+  emerald: tint('bg-emerald-500', 'bg-emerald-500 shadow-emerald-500/30'),
+  red: tint('bg-red-500', 'bg-red-500 shadow-red-500/30'),
+  blue: tint('bg-blue-500', 'bg-blue-500 shadow-blue-500/30'),
+  fuchsia: tint('bg-fuchsia-500', 'bg-fuchsia-500 shadow-fuchsia-500/30'),
+  amber: tint('bg-amber-500', 'bg-amber-500 shadow-amber-500/30'),
+  purple: tint('bg-purple-500', 'bg-purple-500 shadow-purple-500/30'),
+  yellow: tint('bg-yellow-500', 'bg-yellow-500 shadow-yellow-500/30'),
+  cyan: tint('bg-cyan-500', 'bg-cyan-500 shadow-cyan-500/30'),
+  teal: tint('bg-teal-500', 'bg-teal-500 shadow-teal-500/30'),
+  orange: tint('bg-orange-500', 'bg-orange-500 shadow-orange-500/30'),
+  rose: tint('bg-rose-500', 'bg-rose-500 shadow-rose-500/30'),
+  green: tint('bg-green-600', 'bg-green-600 shadow-green-600/30'),
+  lime: tint('bg-lime-500', 'bg-lime-600 shadow-lime-500/30'),
+  slate: tint('bg-slate-500', 'bg-slate-500 shadow-slate-500/30'),
+  indigo: tint('bg-indigo-500', 'bg-indigo-500 shadow-indigo-500/30'),
+  zinc: tint('bg-zinc-500', 'bg-zinc-600 shadow-zinc-500/30'),
+}
+
 function buildTabs(role) {
   const tabs = []
-  if (hasAdminAccess(role)) tabs.push({ to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/directory', label: 'Utilisateurs', icon: UsersRound })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/payments', label: 'Paiements', icon: Wallet })
-  if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert })
-  if (hasModerationAccess(role)) tabs.push({ to: '/admin/verifications', label: 'Vérifications', icon: BadgeCheck })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/notifications', label: 'Notifications', icon: Bell })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/ai-partners', label: 'Studio IA', icon: Sparkles })
-  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/pages', label: 'Pages', icon: FileText })
-  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/articles', label: 'Articles', icon: Newspaper })
-  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/faqs', label: 'FAQ', icon: HelpCircle })
-  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/banners', label: 'Bannières', icon: ImageIcon })
-  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/events', label: 'Événements', icon: Calendar })
-  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/venues', label: 'Coins Chics', icon: MapPin })
-  if (hasContentAccess(role)) tabs.push({ to: '/admin/media', label: 'Médiathèque', icon: Images })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/logs', label: "Journal d'activité", icon: ClipboardList })
-  if (isSuperAdmin(role)) tabs.push({ to: '/admin/users', label: 'Administrateurs', icon: Users })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/settings', label: 'Paramètres', icon: SettingsIcon })
+  if (hasAdminAccess(role)) tabs.push({ to: '/admin', label: "Vue d'ensemble", icon: LayoutDashboard, end: true, color: C.violet })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/directory', label: 'Utilisateurs', icon: UsersRound, color: C.sky })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/payments', label: 'Paiements', icon: Wallet, color: C.emerald })
+  if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert, color: C.red })
+  if (hasModerationAccess(role)) tabs.push({ to: '/admin/verifications', label: 'Vérifications', icon: BadgeCheck, color: C.blue })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music, color: C.fuchsia })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/notifications', label: 'Notifications', icon: Bell, color: C.amber })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/ai-partners', label: 'Studio IA', icon: Sparkles, color: C.purple })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/pages', label: 'Pages', icon: FileText, color: C.yellow })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/articles', label: 'Articles', icon: Newspaper, color: C.cyan })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/faqs', label: 'FAQ', icon: HelpCircle, color: C.teal })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/banners', label: 'Bannières', icon: ImageIcon, color: C.orange })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/events', label: 'Événements', icon: Calendar, color: C.rose })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/content/venues', label: 'Coins Chics', icon: MapPin, color: C.green })
+  if (hasContentAccess(role)) tabs.push({ to: '/admin/media', label: 'Médiathèque', icon: Images, color: C.lime })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/logs', label: "Journal d'activité", icon: ClipboardList, color: C.slate })
+  if (isSuperAdmin(role)) tabs.push({ to: '/admin/users', label: 'Administrateurs', icon: Users, color: C.indigo })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/settings', label: 'Paramètres', icon: SettingsIcon, color: C.zinc })
   return tabs
 }
 
@@ -48,15 +73,23 @@ function AdminLayout() {
                 to={tab.to}
                 end={tab.end}
                 className={({ isActive }) =>
-                  `flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                    isActive
-                      ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25'
-                      : 'text-ink-soft/60 hover:bg-ink/5 hover:text-ink'
+                  `group flex shrink-0 items-center gap-2 rounded-full py-1 pl-1 pr-3.5 text-[13px] font-semibold transition active:scale-[0.97] ${
+                    isActive ? `${tab.color.active} text-white shadow-md` : 'text-ink-soft/70 hover:bg-ink/5 hover:text-ink'
                   }`
                 }
               >
-                <tab.icon size={14} strokeWidth={2.25} />
-                {tab.label}
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition ${
+                        isActive ? 'bg-white/25 text-white' : `${tab.color.tile} text-white shadow-sm group-hover:scale-110`
+                      }`}
+                    >
+                      <tab.icon size={16} strokeWidth={2.25} />
+                    </span>
+                    {tab.label}
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
