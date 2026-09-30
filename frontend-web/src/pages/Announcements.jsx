@@ -2,14 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore'
-import { ArrowLeft, Megaphone, Sparkles } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import { db } from '../firebase/config.js'
 import { useAuth } from '../context/AuthContext.jsx'
-
-function formatDate(date) {
-  if (!date) return ''
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-}
+import AnnouncementCard from '../components/AnnouncementCard.jsx'
 
 function Announcements() {
   const navigate = useNavigate()
@@ -68,26 +64,8 @@ function Announcements() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
-                className="glass-panel rounded-2xl p-5"
               >
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-600">
-                    <Megaphone size={16} strokeWidth={2.25} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-display text-base font-semibold text-ink">{a.title}</p>
-                    <p className="mt-1 text-xs text-ink-soft/50">{formatDate(a.date)}</p>
-                    <p className="mt-2 text-sm leading-relaxed text-ink-soft/80">{a.description}</p>
-                    {a.ctaLink && (
-                      <a
-                        href={a.ctaLink}
-                        className="mt-3 inline-block text-sm font-semibold text-violet-600 underline-offset-2 hover:underline"
-                      >
-                        {a.ctaLabel || 'Découvrir'} →
-                      </a>
-                    )}
-                  </div>
-                </div>
+                <AnnouncementCard announcement={a} />
               </motion.div>
             ))}
           </div>
