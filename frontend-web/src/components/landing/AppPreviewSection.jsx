@@ -10,7 +10,7 @@ const { aicha, ines, kofi, serge, zola } = DEMO_PROFILES
 // none of them fights the reveal animation (which runs on `transform`).
 function PhoneFrame({ children, label, delay, tilt }) {
   return (
-    <Reveal delay={delay} className="mx-auto w-full max-w-[240px]">
+    <Reveal delay={delay} className="w-[220px] shrink-0 snap-center sm:mx-auto sm:w-full sm:max-w-[240px]">
       <div
         style={{ '--tilt': `${tilt}deg` }}
         className="rotate-[var(--tilt)] transition duration-500 ease-out hover:-translate-y-1.5 hover:rotate-0 hover:scale-[1.035]"
@@ -243,13 +243,17 @@ function AppPreviewSection() {
         </p>
       </div>
 
-      <div className="mt-16 grid grid-cols-2 gap-x-6 gap-y-14 sm:grid-cols-3 sm:gap-x-10">
+      {/* Phones keep their real proportions: a swipeable, snapping row on
+          mobile (two squeezed columns looked stretched), a 3-column grid from
+          tablet up. The row bleeds to the screen edges so a phone peeks in. */}
+      <div className="-mx-4 mt-12 flex snap-x snap-mandatory gap-6 overflow-x-auto px-[calc(50%-110px)] pb-6 pt-4 [scrollbar-width:none] sm:mx-0 sm:mt-16 sm:grid sm:grid-cols-3 sm:gap-x-10 sm:gap-y-14 sm:overflow-visible sm:p-0 [&::-webkit-scrollbar]:hidden">
         {SCREENS.map(({ label, Mock, tilt }, i) => (
-          <PhoneFrame key={label} label={label} delay={i * 0.08} tilt={tilt}>
+          <PhoneFrame key={label} label={label} delay={Math.min(i, 2) * 0.08} tilt={tilt}>
             <Mock />
           </PhoneFrame>
         ))}
       </div>
+      <p className="mt-2 text-center text-xs font-medium text-[#635a65]/70 sm:hidden">← Faites glisser pour voir les autres écrans →</p>
     </section>
   )
 }
