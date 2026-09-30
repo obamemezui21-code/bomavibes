@@ -10,11 +10,18 @@ import { hasAdminAccess } from '../lib/roles.js'
 import logo from '../assets/bomavibes-icon.webp'
 
 const iconButtonClass =
-  'flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink transition hover:bg-ink/8'
+  'flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink transition hover:bg-ink/8 active:scale-95'
+
+// Colored shortcut buttons: each feature keeps its own tint (icon + a soft
+// background of the same hue), readable in both themes.
+const tintedButtonClass = 'flex h-10 w-10 items-center justify-center rounded-full transition hover:scale-105 active:scale-95'
 
 // Same button, but only shown on desktop (swaps the display utility rather
 // than stacking `hidden` on top of `flex`).
-const desktopIconButtonClass = iconButtonClass.replace(/^flex /, 'hidden desktop:flex ')
+const desktopTintedButtonClass = `hidden desktop:flex ${tintedButtonClass.replace(/^flex /, '')}`
+
+const THEME_TINT = 'bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500/25'
+const BELL_TINT = 'bg-sun/20 text-sun hover:bg-sun/30'
 
 const menuItemClass =
   'flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-ink transition hover:bg-ink/5'
@@ -42,10 +49,12 @@ function AppTopBar() {
   // Secondary shortcuts: inline on desktop, folded into the menu on phones so
   // the mobile header stays as light as the Friendzy one (logo, bell, avatar).
   const shortcuts = [
-    ...(isAdmin ? [{ to: '/admin', label: 'Administration', icon: ShieldCheck }] : []),
-    { to: '/events', label: 'Événements', icon: LayoutGrid },
-    { to: '/coins-chics', label: 'Coins Chics', icon: MapPin },
-    { to: '/studio-ia', label: 'Studio IA', icon: Sparkles },
+    ...(isAdmin
+      ? [{ to: '/admin', label: 'Administration', icon: ShieldCheck, tint: 'bg-violet-500/15 text-violet-500 hover:bg-violet-500/25' }]
+      : []),
+    { to: '/events', label: 'Événements', icon: LayoutGrid, tint: 'bg-mint-500/15 text-mint-500 hover:bg-mint-500/25' },
+    { to: '/coins-chics', label: 'Coins Chics', icon: MapPin, tint: 'bg-pink-500/15 text-pink-500 hover:bg-pink-500/25' },
+    { to: '/studio-ia', label: 'Studio IA', icon: Sparkles, tint: 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25' },
   ]
 
   return (
@@ -60,21 +69,22 @@ function AppTopBar() {
 
       <div className="flex items-center gap-2">
         {shortcuts.map((s) => (
-          <NavLink key={s.to} to={s.to} className={desktopIconButtonClass} aria-label={s.label}>
-            <s.icon size={16} strokeWidth={2} />
+          <NavLink key={s.to} to={s.to} className={`${desktopTintedButtonClass} ${s.tint}`} aria-label={s.label} title={s.label}>
+            <s.icon size={20} strokeWidth={2.25} />
           </NavLink>
         ))}
         <button
           type="button"
           onClick={toggleTheme}
-          className={desktopIconButtonClass}
+          className={`${desktopTintedButtonClass} ${THEME_TINT}`}
           aria-label="Changer le thème"
+          title="Changer le thème"
         >
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          {theme === 'dark' ? <Sun size={20} strokeWidth={2.25} /> : <Moon size={20} strokeWidth={2.25} />}
         </button>
 
-        <NavLink to="/notifications" className={`relative ${iconButtonClass}`} aria-label="Notifications">
-          <Bell size={16} strokeWidth={2} className="text-sun" />
+        <NavLink to="/notifications" className={`relative ${tintedButtonClass} ${BELL_TINT}`} aria-label="Notifications">
+          <Bell size={20} strokeWidth={2.25} />
           {notificationsCount > 0 && (
             <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-bold text-white">
               {notificationsCount > 9 ? '9+' : notificationsCount}
@@ -90,7 +100,7 @@ function AppTopBar() {
             aria-label="Plus"
             aria-expanded={showMenu}
           >
-            <Menu size={16} strokeWidth={2} />
+            <Menu size={20} strokeWidth={2.25} />
           </button>
           <AnimatePresence>
             {showMenu && (
@@ -103,7 +113,9 @@ function AppTopBar() {
               >
                 {shortcuts.map((s) => (
                   <NavLink key={s.to} to={s.to} onClick={() => setShowMenu(false)} className={menuItemClass}>
-                    <s.icon size={16} strokeWidth={2} className="text-violet-500" />
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${s.tint}`}>
+                      <s.icon size={18} strokeWidth={2.25} />
+                    </span>
                     {s.label}
                   </NavLink>
                 ))}
@@ -115,11 +127,9 @@ function AppTopBar() {
                   }}
                   className={`${menuItemClass} border-t border-ink/6`}
                 >
-                  {theme === 'dark' ? (
-                    <Sun size={16} strokeWidth={2} className="text-violet-500" />
-                  ) : (
-                    <Moon size={16} strokeWidth={2} className="text-violet-500" />
-                  )}
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${THEME_TINT}`}>
+                    {theme === 'dark' ? <Sun size={18} strokeWidth={2.25} /> : <Moon size={18} strokeWidth={2.25} />}
+                  </span>
                   {theme === 'dark' ? 'Thème clair' : 'Thème sombre'}
                 </button>
               </motion.div>
@@ -129,7 +139,7 @@ function AppTopBar() {
 
         <NavLink
           to="/profile"
-          className="h-9 w-9 overflow-hidden rounded-full border border-ink/10 bg-surface"
+          className="h-10 w-10 overflow-hidden rounded-full border border-ink/10 bg-surface"
           aria-label="Votre profil"
         >
           {photoUrl ? (
