@@ -149,7 +149,7 @@ async function generateBrandedImage({ kicker, title, subtitle, imageUrl }) {
         .toBuffer();
 }
 
-async function publishBrandedPost({ kicker, title, subtitle, imageUrl, caption }) {
+async function publishBrandedPost({ kicker, title, subtitle, imageUrl, caption, extra = {} }) {
     await ensureOfficialProfile();
     const imageBuffer = await generateBrandedImage({ kicker, title, subtitle, imageUrl });
 
@@ -168,6 +168,7 @@ async function publishBrandedPost({ kicker, title, subtitle, imageUrl, caption }
         commentCount: 0,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         editedAt: null,
+        ...extra,
     });
     return ref.id;
 }
@@ -175,7 +176,7 @@ async function publishBrandedPost({ kicker, title, subtitle, imageUrl, caption }
 // Regenerates the branded card for an existing post in place (same id, so
 // likes/comments on it aren't lost) — used when an admin edits an
 // announcement after the fact, so the image doesn't keep showing stale text.
-async function updateBrandedPost(postId, { kicker, title, subtitle, imageUrl, caption }) {
+async function updateBrandedPost(postId, { kicker, title, subtitle, imageUrl, caption, extra = {} }) {
     const imageBuffer = await generateBrandedImage({ kicker, title, subtitle, imageUrl });
 
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -188,6 +189,7 @@ async function updateBrandedPost(postId, { kicker, title, subtitle, imageUrl, ca
         photoUrl: url,
         photoThumbUrl: url,
         editedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...extra,
     });
 }
 
@@ -215,18 +217,33 @@ async function postNewEventToFeed(event) {
     });
 }
 
-async function postAnnouncementToFeed({ title, message }) {
+// The feed shows announcements as a centred card (title, message, button)
+// over the logo — see AnnouncementCard in the app — so the plain fields are
+// stored on the post too; the generated image stays for link previews.
+function announcementFields({ title, message, ctaLabel, ctaLink }) {
+    return { announcement: { title: title || "", message: message || "", ctaLabel: ctaLabel || null, ctaLink: ctaLink || null } };
+}
+
+async function postAnnouncementToFeed({ title, message, ctaLabel, ctaLink }) {
     return publishBrandedPost({
         kicker: "Annonce",
         title,
         subtitle: null,
         imageUrl: null,
         caption: message,
+        extra: announcementFields({ title, message, ctaLabel, ctaLink }),
     });
 }
 
-async function updateAnnouncementFeedPost(postId, { title, message }) {
-    return updateBrandedPost(postId, { kicker: "Annonce", title, subtitle: null, imageUrl: null, caption: message });
+async function updateAnnouncementFeedPost(postId, { title, message, ctaLabel, ctaLink }) {
+    return updateBrandedPost(postId, {
+        kicker: "Annonce",
+        title,
+        subtitle: null,
+        imageUrl: null,
+        caption: message,
+        extra: announcementFields({ title, message, ctaLabel, ctaLink }),
+    });
 }
 
 module.exports = {

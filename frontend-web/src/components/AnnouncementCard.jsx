@@ -51,10 +51,13 @@ function AnnouncementCard({ announcement, compact = false, onOpen, onDismiss }) 
           </p>
         )}
 
-        {compact && onOpen ? (
+        {(compact || !ctaLink) && onOpen ? (
           <button
             type="button"
-            onClick={onOpen}
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpen()
+            }}
             className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-semibold text-violet-950 transition hover:bg-white/90"
           >
             En savoir plus
@@ -63,6 +66,7 @@ function AnnouncementCard({ announcement, compact = false, onOpen, onDismiss }) 
           ctaLink && (
             <a
               href={ctaLink}
+              onClick={(e) => e.stopPropagation()}
               className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-semibold text-violet-950 transition hover:bg-white/90"
             >
               {ctaLabel || 'Découvrir'}

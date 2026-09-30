@@ -37,7 +37,7 @@ async function sendBroadcast(req, res) {
             // announcement doc once it exists, so editing/deleting the
             // announcement later (see announcementController.js) can also
             // update/remove this post.
-            postAnnouncementToFeed({ title, message })
+            postAnnouncementToFeed({ title, message, ctaLabel, ctaLink })
                 .then((feedPostId) => announcementRef.update({ feedPostId }))
                 .catch((err) => console.error("Feed announcement for broadcast failed:", err));
         }

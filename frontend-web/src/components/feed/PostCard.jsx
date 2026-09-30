@@ -1,4 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { collection, getDocs, limit, query, where } from 'firebase/firestore'
+import { db } from '../../firebase/config.js'
+import AnnouncementCard from '../AnnouncementCard.jsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BadgeCheck, Flag, Heart, MessageCircle, MoreVertical, Pencil, Send, Sparkles, Trash2 } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
@@ -46,10 +50,42 @@ function LikeBurst({ burstId }) {
   )
 }
 
+// Posts published by the official account for an announcement (see
+// backend systemFeedPostService.js) carry { announcement: { title, message,
+// ctaLabel, ctaLink } }. Older ones only have the generated image: their
+// text is looked up on the announcement that links to them (feedPostId).
+const OFFICIAL_UID = 'bomavibes-official'
+
+function useOfficialAnnouncement(post) {
+  const isOfficial = post.authorId === OFFICIAL_UID
+  const needsLookup = isOfficial && !post.announcement && post.type === 'photo'
+  const [found, setFound] = useState(null)
+
+  useEffect(() => {
+    if (!needsLookup) return undefined
+    let cancelled = false
+    getDocs(query(collection(db, 'announcements'), where('feedPostId', '==', post.id), limit(1)))
+      .then((snap) => {
+        if (cancelled || snap.empty) return
+        const a = snap.docs[0].data()
+        setFound({ title: a.title, message: a.description, ctaLabel: a.ctaLabel, ctaLink: a.ctaLink })
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [needsLookup, post.id])
+
+  if (!isOfficial) return null
+  return post.announcement || found
+}
+
 function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, currentUserId, onDelete, onEdit, onReport, onShare }) {
   const [showMenu, setShowMenu] = useState(false)
   const [burstId, setBurstId] = useState(0)
   const { showToast } = useToast()
+  const navigate = useNavigate()
+  const announcement = useOfficialAnnouncement(post)
   const wasLikedRef = useRef(isLiked)
   const isOwn = post.authorId === currentUserId
   const fullPhoto = author?.photos?.[0]
@@ -178,7 +214,84 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
     )
   }
 
+  // ❤ 💬 ↗ row, shared by the text card and the announcement card.
+  function renderActions() {
+    return (
+      <div className="mt-1.5 -mb-1 flex items-center gap-1">
+        <motion.button
+          type="button"
+          onClick={handleToggleLike}
+          whileTap={{ scale: 0.85 }}
+          className={`relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
+            isLiked ? 'bg-heart-500/10 text-heart-500' : 'text-ink-soft/60 hover:bg-heart-500/5 hover:text-heart-500'
+          }`}
+        >
+          <LikeBurst burstId={burstId} />
+          <motion.span
+            key={isLiked ? 'liked' : 'unliked'}
+            initial={{ scale: 0.6 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 12 }}
+            className="inline-flex"
+          >
+            <Heart size={17} strokeWidth={2.25} fill={isLiked ? 'currentColor' : 'none'} />
+          </motion.span>
+          {post.likeCount || 0}
+        </motion.button>
+
+        <motion.button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onOpen?.()
+          }}
+          whileTap={{ scale: 0.85 }}
+          whileHover={{ scale: 1.05 }}
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft/60 transition hover:bg-violet-500/10 hover:text-violet-600"
+        >
+          <MessageCircle size={17} strokeWidth={2.25} />
+          {post.commentCount || 0}
+        </motion.button>
+
+        <motion.button
+          type="button"
+          onClick={handleShare}
+          whileTap={{ scale: 0.8, rotate: -15 }}
+          whileHover={{ scale: 1.05 }}
+          className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft/60 transition hover:bg-violet-500/10 hover:text-violet-600"
+          aria-label="Partager"
+        >
+          <Send size={16} strokeWidth={2.25} />
+        </motion.button>
+      </div>
+    )
+  }
+
   const authorName = author?.firstName || 'Quelqu’un'
+
+  // Official announcement: centred card over the logo, actions below.
+  if (announcement) {
+    return (
+      <div
+        onClick={onOpen}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && onOpen?.()}
+        className="min-w-0 max-w-full cursor-pointer"
+      >
+        <AnnouncementCard
+          announcement={{
+            title: announcement.title,
+            description: announcement.message,
+            ctaLabel: announcement.ctaLabel,
+            ctaLink: announcement.ctaLink,
+          }}
+          onOpen={() => navigate('/annonces')}
+        />
+        <div className="px-1 pt-1">{renderActions()}</div>
+      </div>
+    )
+  }
 
   // Photo posts: Friendzy-style full-bleed image card with the text, author
   // chip and actions laid over it.
@@ -344,53 +457,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
           <PostText text={post.text} background={post.background} font={post.font} clamp className="mt-2" />
         ))}
 
-      <div className="mt-1.5 -mb-1 flex items-center gap-1">
-        <motion.button
-          type="button"
-          onClick={handleToggleLike}
-          whileTap={{ scale: 0.85 }}
-          className={`relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-            isLiked ? 'bg-heart-500/10 text-heart-500' : 'text-ink-soft/60 hover:bg-heart-500/5 hover:text-heart-500'
-          }`}
-        >
-          <LikeBurst burstId={burstId} />
-          <motion.span
-            key={isLiked ? 'liked' : 'unliked'}
-            initial={{ scale: 0.6 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 12 }}
-            className="inline-flex"
-          >
-            <Heart size={17} strokeWidth={2.25} fill={isLiked ? 'currentColor' : 'none'} />
-          </motion.span>
-          {post.likeCount || 0}
-        </motion.button>
-
-        <motion.button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onOpen?.()
-          }}
-          whileTap={{ scale: 0.85 }}
-          whileHover={{ scale: 1.05 }}
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft/60 transition hover:bg-violet-500/10 hover:text-violet-600"
-        >
-          <MessageCircle size={17} strokeWidth={2.25} />
-          {post.commentCount || 0}
-        </motion.button>
-
-        <motion.button
-          type="button"
-          onClick={handleShare}
-          whileTap={{ scale: 0.8, rotate: -15 }}
-          whileHover={{ scale: 1.05 }}
-          className="ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-ink-soft/60 transition hover:bg-violet-500/10 hover:text-violet-600"
-          aria-label="Partager"
-        >
-          <Send size={16} strokeWidth={2.25} />
-        </motion.button>
-      </div>
+      {renderActions()}
     </div>
   )
 }

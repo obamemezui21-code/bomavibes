@@ -9,6 +9,7 @@ import {
   Layers,
   LayoutGrid,
   MapPin,
+  Megaphone,
   MessageCircle,
   Plane,
   RotateCcw,
@@ -29,7 +30,6 @@ import { TIERS } from '../lib/pricingTiers.js'
 import { fetchDiscoverCandidates, getCachedCandidates, setCachedCandidates } from '../firebase/discovery.js'
 import { isQuotaError, recordSwipeAndMatch } from '../firebase/swipes.js'
 import PaywallModal from '../components/PaywallModal.jsx'
-import AnnouncementCard from '../components/AnnouncementCard.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { INTEREST_ICONS, iconForInterest, matchPercent } from '../lib/interests.js'
@@ -531,12 +531,30 @@ function Discover() {
                 transition={{ duration: 0.25 }}
                 className="mt-4 overflow-hidden"
               >
-                <AnnouncementCard
-                  announcement={latestAnnouncement}
-                  compact
-                  onOpen={() => navigate('/annonces')}
-                  onDismiss={markAnnouncementsSeen}
-                />
+                <div className="flex items-start gap-3 rounded-2xl border border-violet-400/30 bg-gradient-to-r from-violet-500/10 to-pink-500/10 p-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-600">
+                    <Megaphone size={16} strokeWidth={2.25} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink">{latestAnnouncement.title}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-ink-soft/70">{latestAnnouncement.description}</p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/annonces')}
+                      className="mt-2 text-xs font-semibold text-violet-600 underline-offset-2 hover:underline"
+                    >
+                      En savoir plus →
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={markAnnouncementsSeen}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-ink-soft/50 transition hover:bg-ink/5"
+                    aria-label="Fermer"
+                  >
+                    <X size={14} strokeWidth={2.25} />
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

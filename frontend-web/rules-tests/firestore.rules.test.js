@@ -201,6 +201,16 @@ describe('posts', () => {
     )
   })
 
+  it('never lets a user publish a fake official announcement', async () => {
+    await assertFails(
+      addDoc(posts('bob'), {
+        authorId: 'bob', type: 'text', text: 'Promo', likeCount: 0, commentCount: 0,
+        announcement: { title: 'Annonce officielle', message: 'Envoyez votre mot de passe' },
+      }),
+    )
+    await assertFails(updateDoc(doc(as('alice'), 'posts/p1'), { announcement: { title: 'Fake', message: 'x' } }))
+  })
+
   it('rejects oversized style values', async () => {
     await assertFails(
       addDoc(posts('bob'), { authorId: 'bob', type: 'text', text: 'Salut', background: 'x'.repeat(200), likeCount: 0, commentCount: 0 }),

@@ -371,6 +371,8 @@ service cloud.firestore {
           // Text-post style preset ids (lib/postStyles.js)
           && isOptionalString('background', 30)
           && isOptionalString('font', 30)
+          // Official announcement cards are published by the backend only.
+          && !('announcement' in data)
           && (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500))
           && (data.type != 'photo' || (data.photoUrl is string && data.photoUrl.size() > 0))
           && (data.type == 'photo' || (data.text is string && data.text.size() > 0))
@@ -395,6 +397,7 @@ service cloud.firestore {
           && request.resource.data.commentCount == resource.data.commentCount
           && request.resource.data.get('background', null) == resource.data.get('background', null)
           && request.resource.data.get('font', null) == resource.data.get('font', null)
+          && request.resource.data.get('announcement', null) == resource.data.get('announcement', null)
           && isOptionalString('text', 1000))
         || isCounterOnlyBump('likeCount')
         || isCounterOnlyBump('commentCount')

@@ -56,7 +56,7 @@ async function updateAnnouncement(req, res) {
         // image regeneration shouldn't block the admin's edit from landing.
         const feedPostId = snap.data().feedPostId;
         if (feedPostId) {
-            updateAnnouncementFeedPost(feedPostId, { title: data.title, message: data.description }).catch((err) =>
+            updateAnnouncementFeedPost(feedPostId, { title: data.title, message: data.description, ctaLabel: data.ctaLabel, ctaLink: data.ctaLink }).catch((err) =>
                 console.error("Failed to update announcement's Feed post:", err)
             );
         }
