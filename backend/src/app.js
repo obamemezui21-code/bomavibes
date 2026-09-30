@@ -19,6 +19,7 @@ const settingsRoutes = require("./routes/settingsRoutes");
 const eventTicketsRoutes = require("./routes/eventTicketsRoutes");
 const aiPartnersRoutes = require("./routes/aiPartnersRoutes");
 const callRoutes = require("./routes/callRoutes");
+const verificationRoutes = require("./routes/verificationRoutes");
 const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
 
@@ -54,6 +55,8 @@ app.use("/api/admin/settings", settingsRoutes);
 app.use("/api/events", eventTicketsRoutes);
 app.use("/api/admin/ai-partners", aiPartnersRoutes);
 app.use("/api/calls", callRoutes);
+app.use("/api/verification", verificationRoutes.userRouter);
+app.use("/api/admin/verifications", verificationRoutes.adminRouter);
 
 startWwfNewsScheduler();
 startCallCleanupScheduler();

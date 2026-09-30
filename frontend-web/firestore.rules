@@ -89,6 +89,14 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
+    // Selfie verification requests (see verificationController.js): the
+    // user follows their own request live; every write goes through the
+    // backend (pose assignment, selfie upload, moderator decision).
+    match /verificationRequests/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
     match /announcements/{announcementId} {
       allow read: if isSignedIn();
       allow write: if false; // created only server-side via the Admin SDK

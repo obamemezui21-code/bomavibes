@@ -90,6 +90,7 @@ function Discover() {
   const [countryFilter, setCountryFilter] = useState('')
   const [religionFilter, setReligionFilter] = useState('')
   const [travelingOnly, setTravelingOnly] = useState(false)
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [interestFilter, setInterestFilter] = useState('')
   const [viewMode, setViewMode] = useState(readViewMode)
   const [showSearch, setShowSearch] = useState(false)
@@ -156,13 +157,14 @@ function Discover() {
     if (countryFilter) list = list.filter((p) => p.country === countryFilter)
     if (religionFilter) list = list.filter((p) => p.religion === religionFilter)
     if (travelingOnly) list = list.filter((p) => p.isTraveling)
+    if (verifiedOnly) list = list.filter((p) => p.verified)
     if (interestFilter) list = list.filter((p) => p.interests?.includes(interestFilter))
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((p) => p.firstName?.toLowerCase().includes(q))
     }
     return list
-  }, [profiles, search, activeChip, countryFilter, religionFilter, travelingOnly, interestFilter, publicProfile])
+  }, [profiles, search, activeChip, countryFilter, religionFilter, travelingOnly, verifiedOnly, interestFilter, publicProfile])
 
   // The user's own interests first (the ones they're most likely to filter
   // by), then the rest of the catalogue.
@@ -178,7 +180,7 @@ function Discover() {
     if (viewMode === 'swipe' && topProfile?.id) seenIdsRef.current.add(topProfile.id)
   }, [viewMode, topProfile?.id])
 
-  const extraFiltersCount = [countryFilter, religionFilter, travelingOnly].filter(Boolean).length
+  const extraFiltersCount = [countryFilter, religionFilter, travelingOnly, verifiedOnly].filter(Boolean).length
 
   function changeViewMode(mode) {
     setViewMode(mode)
@@ -492,6 +494,17 @@ function Discover() {
                   <option value="traveling">En voyage</option>
                 </select>
               </div>
+              <button
+                type="button"
+                onClick={() => setVerifiedOnly((v) => !v)}
+                aria-pressed={verifiedOnly}
+                className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  verifiedOnly ? 'border-sky-500 bg-sky-500 text-white' : 'border-ink/12 bg-ink/[0.03] text-ink-soft/80'
+                }`}
+              >
+                <Check size={12} strokeWidth={3} />
+                Vérifiés uniquement
+              </button>
             </div>
           )}
 

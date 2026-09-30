@@ -257,11 +257,21 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                   {profile.age ? `, ${profile.age}` : ''}
                 </h2>
                 {profile.verified && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white">
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white"
+                    title="Profil vérifié par BomaVibes"
+                    aria-label="Profil vérifié"
+                  >
                     <Check size={12} strokeWidth={3} />
                   </span>
                 )}
               </div>
+              {profile.verified && (
+                <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-sky-500/90 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md">
+                  <Check size={11} strokeWidth={3} />
+                  Profil vérifié par selfie
+                </span>
+              )}
               {matchPercent > 0 && (
                 <div className="mt-3">
                   <MatchRing percent={matchPercent} />

@@ -2,6 +2,7 @@
 // Firestore emulator; needs Java). Each test states who does what and
 // whether the rules must allow it.
 import { readFileSync } from 'node:fs'
+import process from 'node:process'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
 import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
@@ -154,6 +155,26 @@ describe('calls', () => {
     await assertSucceeds(addDoc(collection(as('alice'), 'calls'), call('alice', 'bob', MATCH)))
     await assertFails(addDoc(collection(as('carol'), 'calls'), call('carol', 'bob', MATCH)))
     await assertFails(addDoc(collection(as('alice'), 'calls'), call('alice', 'carol', MATCH)))
+  })
+})
+
+describe('profile verification', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'verificationRequests/alice'), { uid: 'alice', status: 'pending', pose: 'peace' }),
+    )
+    await env.withSecurityRulesDisabled((ctx) => setDoc(doc(ctx.firestore(), 'profiles/alice'), { firstName: 'Alice', verified: false }))
+  })
+
+  it('lets a user follow only their own request', async () => {
+    await assertSucceeds(getDoc(doc(as('alice'), 'verificationRequests/alice')))
+    await assertFails(getDoc(doc(as('bob'), 'verificationRequests/alice')))
+  })
+
+  it('never lets a user approve themselves', async () => {
+    await assertFails(updateDoc(doc(as('alice'), 'verificationRequests/alice'), { status: 'approved' }))
+    await assertFails(setDoc(doc(as('bob'), 'verificationRequests/bob'), { uid: 'bob', status: 'approved' }))
+    await assertFails(updateDoc(doc(as('alice'), 'profiles/alice'), { verified: true }))
   })
 })
 

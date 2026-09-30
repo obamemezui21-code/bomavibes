@@ -50,6 +50,7 @@ const StudioIA = lazy(() => import('./pages/StudioIA.jsx'))
 const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
+const AdminVerifications = lazy(() => import('./pages/AdminVerifications.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
 const AdminUsersDirectory = lazy(() => import('./pages/AdminUsersDirectory.jsx'))
 const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
@@ -189,6 +190,14 @@ function App() {
                 element={
                   <RequireRole check={hasModerationAccess}>
                     <AdminReports />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="verifications"
+                element={
+                  <RequireRole check={hasModerationAccess}>
+                    <AdminVerifications />
                   </RequireRole>
                 }
               />
