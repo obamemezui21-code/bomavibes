@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 // Cloudflare Turnstile — mostly invisible anti-bot check for the signup form.
 // The site key is public by design; its secret half lives only in the
@@ -31,6 +31,10 @@ const TurnstileWidget = forwardRef(function TurnstileWidget({ onToken }, ref) {
   const containerRef = useRef(null)
   const widgetIdRef = useRef(null)
   const onTokenRef = useRef(onToken)
+  // Script blocked (ad blocker, weak network) or challenge error: without
+  // this the form just waited forever for a token that would never come.
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     onTokenRef.current = onToken
@@ -53,20 +57,52 @@ const TurnstileWidget = forwardRef(function TurnstileWidget({ onToken }, ref) {
           language: 'fr',
           theme: 'auto',
           size: 'flexible',
-          callback: (token) => onTokenRef.current?.(token),
+          retry: 'auto',
+          'refresh-expired': 'auto',
+          callback: (token) => {
+            setFailed(false)
+            onTokenRef.current?.(token)
+          },
           'expired-callback': () => onTokenRef.current?.(''),
-          'error-callback': () => onTokenRef.current?.(''),
+          'error-callback': () => {
+            onTokenRef.current?.('')
+            setFailed(true)
+          },
         })
       })
-      .catch(() => onTokenRef.current?.(''))
+      .catch(() => {
+        onTokenRef.current?.('')
+        if (!cancelled) setFailed(true)
+      })
     return () => {
       cancelled = true
       if (widgetIdRef.current !== null) window.turnstile?.remove(widgetIdRef.current)
       widgetIdRef.current = null
     }
-  }, [])
+  }, [attempt])
 
-  return <div ref={containerRef} className="min-h-[65px]" />
+  return (
+    <div>
+      <div ref={containerRef} className="min-h-[65px]" />
+      {failed && (
+        <p className="mt-1 text-xs text-coral-400">
+          La vérification anti-robot ne se charge pas. Vérifiez votre connexion ou désactivez votre bloqueur de pub,
+          puis{' '}
+          <button
+            type="button"
+            onClick={() => {
+              setFailed(false)
+              setAttempt((a) => a + 1)
+            }}
+            className="font-semibold underline"
+          >
+            réessayez
+          </button>
+          .
+        </p>
+      )}
+    </div>
+  )
 })
 
 export default TurnstileWidget

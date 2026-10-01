@@ -10,6 +10,14 @@ const actionCodeSettings = {
     handleCodeInApp: true,
 };
 
+// The Resend SDK doesn't throw on failure (bad domain, quota, invalid
+// recipient…): it resolves with { error }. Without this check a failed send
+// was reported as sent and the user waited for an email that never came.
+async function sendEmail(message) {
+    const { error } = await resend.emails.send(message);
+    if (error) throw Object.assign(new Error(error.message || "Resend error"), { resend: error });
+}
+
 // Firebase's generated links always route through <project>.firebaseapp.com first
 // and render Firebase's own hosted UI there, regardless of actionCodeSettings/continueUrl.
 // To get our own branded page instead, pull the oobCode out of Firebase's link and
@@ -30,7 +38,7 @@ async function sendPasswordReset(req, res) {
         const firebaseLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
         const link = buildDirectLink(firebaseLink, "resetPassword");
         const { subject, html } = passwordResetEmail(link);
-        await resend.emails.send({ from: FROM_ADDRESS, to: email, subject, html });
+        await sendEmail({ from: FROM_ADDRESS, to: email, subject, html });
     } catch (err) {
         // Never reveal whether an account exists for this email.
         if (err?.code !== "auth/user-not-found") {
@@ -52,7 +60,7 @@ async function sendVerification(req, res) {
         const firebaseLink = await admin.auth().generateEmailVerificationLink(email, actionCodeSettings);
         const link = buildDirectLink(firebaseLink, "verifyEmail");
         const { subject, html } = verificationEmail(link, name);
-        await resend.emails.send({ from: FROM_ADDRESS, to: email, subject, html });
+        await sendEmail({ from: FROM_ADDRESS, to: email, subject, html });
         res.json({ message: "Email de vérification envoyé" });
     } catch (err) {
         console.error(err);

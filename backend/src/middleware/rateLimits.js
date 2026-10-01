@@ -8,7 +8,7 @@ const { rateLimit, ipKeyGenerator } = require("express-rate-limit");
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
 
-function limiter({ windowMs, limit, message, keyGenerator, skip }) {
+function limiter({ windowMs, limit, message, keyGenerator, skip, skipFailedRequests = false }) {
     return rateLimit({
         windowMs,
         limit,
@@ -16,6 +16,7 @@ function limiter({ windowMs, limit, message, keyGenerator, skip }) {
         legacyHeaders: false,
         keyGenerator,
         skip,
+        skipFailedRequests,
         handler: (req, res) => res.status(429).json({ message }),
     });
 }
@@ -31,9 +32,13 @@ const apiLimiter = limiter({
     skip: (req) => req.path === "/payments/singpay/callback",
 });
 
+// Only accounts actually created count: a typo, an email already taken or
+// a failed Turnstile check must not lock out everyone sharing the same
+// carrier IP. Turnstile already stops bots before an account is created.
 const registerLimiter = limiter({
     windowMs: HOUR,
-    limit: 20,
+    limit: 60,
+    skipFailedRequests: true,
     message: "Trop de créations de compte depuis cette connexion. Réessayez dans une heure.",
 });
 

@@ -14,6 +14,7 @@ import {
 import { collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase/config.js'
 import { useToast } from './ToastContext.jsx'
+import { isInAppBrowser } from '../lib/inAppBrowser.js'
 
 const AuthContext = createContext(null)
 
@@ -31,6 +32,14 @@ const ERROR_MESSAGES = {
   'auth/account-exists-with-different-credential':
     'Un compte existe déjà avec cet email. Connectez-vous avec votre mot de passe.',
   'auth/requires-recent-login': 'Pour des raisons de sécurité, reconnectez-vous puis réessayez.',
+  'auth/network-request-failed': 'Connexion internet instable, vérifiez votre réseau et réessayez.',
+  'auth/popup-blocked':
+    "La fenêtre Google a été bloquée. Autorisez les pop-ups ou ouvrez bomavibes.tech dans Chrome ou Safari.",
+  'auth/operation-not-supported-in-this-environment':
+    "La connexion Google ne marche pas dans ce navigateur. Ouvrez bomavibes.tech dans Chrome ou Safari, ou inscrivez-vous avec votre email.",
+  'auth/web-storage-unsupported':
+    "Ce navigateur bloque la connexion. Ouvrez bomavibes.tech dans Chrome ou Safari, ou désactivez la navigation privée.",
+  'auth/cancelled-popup-request': null,
 }
 
 function mapAuthError(error) {
@@ -171,23 +180,43 @@ export function AuthProvider({ children }) {
 
   // The account is created by the backend, which first checks the Turnstile
   // token (see backend/src/controllers/signupController.js); then we sign in.
-  async function register(firstName, email, password, turnstileToken) {
+  async function register(firstName, rawEmail, password, turnstileToken) {
+    const email = rawEmail.trim()
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, email, password, turnstileToken }),
+      body: JSON.stringify({ firstName: firstName.trim(), email, password, turnstileToken }),
     }).catch(() => null)
-    if (!res?.ok) {
-      const body = await res?.json().catch(() => null)
+    if (!res) throw new Error('Connexion internet instable, vérifiez votre réseau et réessayez.')
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      // 409 = the email already has an account. Often it's this same person
+      // whose previous attempt created the account but then failed to sign
+      // in (network cut): if the password matches, just carry on.
+      if (res.status === 409) {
+        const credential = await signInWithEmailAndPassword(auth, email, password).catch(() => null)
+        if (credential) {
+          if (!credential.user.emailVerified) await sendVerificationEmailFor(credential.user).catch(() => {})
+          setUser(toAppUser(credential.user))
+          return
+        }
+      }
       throw new Error(body?.message || 'Une erreur est survenue, réessaie.')
     }
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password)
-      await sendVerificationEmailFor(credential.user).catch(() => {})
+      await sendVerificationEmailFor(credential.user).catch(() =>
+        showToast("L'email de vérification n'a pas pu partir, appuyez sur « Renvoyer ».", 'error'),
+      )
       setUser(toAppUser(credential.user))
     } catch (error) {
+      // The account exists at this point: tell them to log in rather than
+      // retrying signup, which would only answer "email already used".
       const message = mapAuthError(error)
-      if (message) throw new Error(message, { cause: error })
+      throw new Error(
+        `${message || 'Une erreur est survenue.'} Votre compte est bien créé : connectez-vous avec votre email et mot de passe.`,
+        { cause: error },
+      )
     }
   }
 
@@ -222,6 +251,11 @@ export function AuthProvider({ children }) {
   }
 
   async function loginWithGoogle() {
+    if (isInAppBrowser()) {
+      throw new Error(
+        "Google bloque la connexion dans ce navigateur intégré. Ouvrez bomavibes.tech dans Chrome ou Safari (menu ⋮ → « Ouvrir dans le navigateur »), ou inscrivez-vous avec votre email.",
+      )
+    }
     try {
       const result = await signInWithPopup(auth, googleProvider)
       const isNewUser = getAdditionalUserInfo(result)?.isNewUser

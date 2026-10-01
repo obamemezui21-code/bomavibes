@@ -2,13 +2,14 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Mars, Minus, NonBinary, Plus, Venus, X } from 'lucide-react'
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
-import { uploadProfilePhotos } from '../firebase/photos.js'
+import { uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { findCountry, findRegion } from '../lib/geography.js'
 import CountryPicker from '../components/CountryPicker.jsx'
+import ProfileLaunchOverlay from '../components/ProfileLaunchOverlay.jsx'
 import {
   DATING_GOALS,
   LANGUAGES,
@@ -32,6 +33,10 @@ const GENDER_OPTIONS = [
   { value: 'AUTRE', label: 'Autre', Icon: NonBinary },
 ]
 
+// firestore.rules refuses a profile with more than 20 interests: the
+// save failed with no explanation for anyone who ticked 21 or 22.
+const MAX_INTERESTS = 20
+
 const MIN_AGE = 18
 const MAX_AGE = 80
 
@@ -50,9 +55,13 @@ function Onboarding() {
   const { showToast } = useToast()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
+  // Last upload per server slot: a new photo reusing a freed slot waits for
+  // the removed photo's upload so it can't be overwritten by it afterwards.
+  const slotUploadsRef = useRef([null, null, null])
 
   const [step, setStep] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDone, setIsDone] = useState(false)
   const [form, setForm] = useState({
     photos: [],
     age: 25,
@@ -73,9 +82,26 @@ function Onboarding() {
     prefMaxDistance: 25,
   })
 
+  // Photos start uploading as soon as they're picked, so by the time the
+  // user reaches "Terminer" they're usually already on the server.
+  function startUpload(slot, file) {
+    const previous = slotUploadsRef.current[slot] || Promise.resolve()
+    const upload = previous
+      .then(() => uploadProfilePhoto(user.id, slot, file))
+      .catch(() => null)
+    slotUploadsRef.current[slot] = upload
+    return upload
+  }
+
   function handleAddPhotos(e) {
     const files = Array.from(e.target.files || []).slice(0, 3 - form.photos.length)
-    const entries = files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }))
+    const freeSlots = [0, 1, 2].filter((slot) => !form.photos.some((p) => p.slot === slot))
+    const entries = files.map((file, i) => ({
+      file,
+      slot: freeSlots[i],
+      previewUrl: URL.createObjectURL(file),
+      upload: startUpload(freeSlots[i], file),
+    }))
     setForm((f) => ({ ...f, photos: [...f.photos, ...entries].slice(0, 3) }))
     e.target.value = ''
   }
@@ -89,7 +115,9 @@ function Onboarding() {
       ...f,
       interests: f.interests.includes(interest)
         ? f.interests.filter((i) => i !== interest)
-        : [...f.interests, interest],
+        : f.interests.length >= MAX_INTERESTS
+          ? f.interests
+          : [...f.interests, interest],
     }))
   }
 
@@ -144,10 +172,16 @@ function Onboarding() {
 
   async function finish() {
     setIsSaving(true)
+    let photoUrls
     try {
-      const photoUrls = (await uploadProfilePhotos(user.id, form.photos.map((p) => p.file))).filter(Boolean)
+      // Background uploads that failed get one more try here.
+      photoUrls = (
+        await Promise.all(form.photos.map(async (p) => (await p.upload) || startUpload(p.slot, p.file)))
+      ).filter(Boolean)
 
-      await setDoc(
+      // Both docs in one round trip instead of two sequential writes.
+      const batch = writeBatch(db)
+      batch.set(
         doc(db, 'users', user.id),
         {
           // email is required by the users rule: if the account doc was
@@ -160,8 +194,7 @@ function Onboarding() {
         },
         { merge: true },
       )
-
-      await setDoc(
+      batch.set(
         doc(db, 'profiles', user.id),
         {
           firstName: user?.firstName || '',
@@ -187,14 +220,19 @@ function Onboarding() {
         },
         { merge: true },
       )
+      await batch.commit()
     } catch {
       setIsSaving(false)
       showToast("Impossible d'enregistrer votre profil, réessayez.", 'error')
       return
     }
-    setIsSaving(false)
-    showToast(`Bienvenue sur BomaVibes, ${user?.firstName || ''} 🎉`, 'success')
-    navigate('/discover', { replace: true })
+    // A failed photo no longer blocks the whole signup: it's skipped instead.
+    if (photoUrls.length < form.photos.length) {
+      showToast("Une photo n'a pas pu être envoyée, ajoutez-la depuis votre profil.", 'error')
+    }
+    // Short celebration on the overlay before landing on Discover.
+    setIsDone(true)
+    setTimeout(() => navigate('/discover', { replace: true }), 1100)
   }
 
   const canContinue =
@@ -214,6 +252,16 @@ function Onboarding() {
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-surface-soft px-4 py-8 md:items-center md:justify-center">
       <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-mint-500/15 blur-[100px]" />
       <div className="pointer-events-none absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-violet-500/10 blur-[100px]" />
+
+      <AnimatePresence>
+        {isSaving && (
+          <ProfileLaunchOverlay
+            photoUrl={form.photos[0]?.previewUrl}
+            firstName={user?.firstName}
+            done={isDone}
+          />
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 mx-auto w-full max-w-md">
         <div className="mb-6">
@@ -430,7 +478,7 @@ function Onboarding() {
               {step === 3 && (
                 <div>
                   <h2 className="font-display text-xl font-semibold text-ink">Vos centres d'intérêt</h2>
-                  <p className="mt-1 text-sm text-ink-soft/60">Choisissez-en au moins 3.</p>
+                  <p className="mt-1 text-sm text-ink-soft/60">Choisissez-en au moins 3 (jusqu'à {MAX_INTERESTS}).</p>
                   <div className="mt-4 flex flex-wrap gap-2">
                     {INTEREST_OPTIONS.map((interest) => (
                       <button
