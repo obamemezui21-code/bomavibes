@@ -218,6 +218,59 @@ select optgroup {
   box-shadow: var(--shadow-glass-solid);
 }
 
+/* Apple-style "liquid glass": mostly see-through, the content behind is
+   blurred and its colours boosted; a bright rim and a top sheen give the
+   pane its thickness. Used by the floating mobile tab bar. The element must
+   be positioned (fixed/relative) itself, for the ::before sheen. */
+.liquid-glass {
+  isolation: isolate;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.22));
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.25),
+    0 12px 32px -8px rgba(28, 16, 36, 0.3),
+    0 4px 12px -4px rgba(169, 93, 218, 0.22);
+}
+
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+
+.dark .liquid-glass {
+  background: linear-gradient(180deg, rgba(48, 43, 57, 0.5), rgba(19, 16, 25, 0.35));
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 12px 32px -8px rgba(0, 0, 0, 0.55),
+    0 4px 12px -4px rgba(169, 93, 218, 0.25);
+}
+
+.dark .liquid-glass::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 55%);
+}
+
+/* Without backdrop-filter the glass would be unreadable: fall back to a
+   nearly opaque pane. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  .dark .liquid-glass {
+    background: rgba(19, 16, 25, 0.92);
+  }
+}
+
 .text-gradient-brand {
   background: var(--gradient-brand);
   -webkit-background-clip: text;

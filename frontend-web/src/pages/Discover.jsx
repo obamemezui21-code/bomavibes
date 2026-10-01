@@ -46,6 +46,7 @@ const VIEW_MODES = [
 ]
 const VIEW_MODE_KEY = 'bv:discoverViewMode'
 const INTERESTS_PREVIEW = 6
+const INTERESTS_HIDDEN_KEY = 'bv:discoverInterestsHidden'
 const HEADER_ICON_BUTTON =
   'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600'
 
@@ -54,6 +55,14 @@ function readViewMode() {
     return localStorage.getItem(VIEW_MODE_KEY) === 'swipe' ? 'swipe' : 'cards'
   } catch {
     return 'cards'
+  }
+}
+
+function readInterestsHidden() {
+  try {
+    return localStorage.getItem(INTERESTS_HIDDEN_KEY) === '1'
+  } catch {
+    return false
   }
 }
 
@@ -98,6 +107,7 @@ function Discover() {
   const [showSearch, setShowSearch] = useState(false)
   const [showMoreFilters, setShowMoreFilters] = useState(false)
   const [showAllInterests, setShowAllInterests] = useState(false)
+  const [interestsHidden, setInterestsHidden] = useState(readInterestsHidden)
   const [matchedProfile, setMatchedProfile] = useState(null)
   const [matchConversationId, setMatchConversationId] = useState(null)
   const [exitingId, setExitingId] = useState(null)
@@ -198,20 +208,48 @@ function Discover() {
     setExpandedProfile(profile)
   }
 
-  const visibleInterests = showAllInterests ? interestChips : interestChips.slice(0, INTERESTS_PREVIEW)
+  function toggleInterestsHidden() {
+    setInterestsHidden((hidden) => {
+      try {
+        localStorage.setItem(INTERESTS_HIDDEN_KEY, hidden ? '0' : '1')
+      } catch {
+        // storage unavailable — the choice just won't persist
+      }
+      return !hidden
+    })
+  }
+
+  const visibleInterests = interestsHidden
+    ? []
+    : showAllInterests
+      ? interestChips
+      : interestChips.slice(0, INTERESTS_PREVIEW)
   const interestsSection = (
     <div>
-      <div className="flex items-baseline justify-between px-1">
+      <div className="flex items-baseline justify-between gap-3 px-1">
         <h2 className="font-display text-base font-semibold text-ink">Centres d'intérêt</h2>
-        <button
-          type="button"
-          onClick={() => setShowAllInterests((v) => !v)}
-          className="text-xs font-semibold text-violet-600 hover:underline"
-        >
-          {showAllInterests ? 'Voir moins' : 'Voir tout'}
-        </button>
+        <div className="flex items-center gap-3">
+          {!interestsHidden && (
+            <button
+              type="button"
+              onClick={() => setShowAllInterests((v) => !v)}
+              className="text-xs font-semibold text-violet-600 hover:underline"
+            >
+              {showAllInterests ? 'Voir moins' : 'Voir tout'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={toggleInterestsHidden}
+            className="flex items-center gap-0.5 text-xs font-semibold text-ink-soft/70 hover:text-ink"
+            aria-expanded={!interestsHidden}
+          >
+            {interestsHidden ? 'Afficher' : 'Masquer'}
+            <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform ${interestsHidden ? '' : 'rotate-180'}`} />
+          </button>
+        </div>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className={`flex flex-wrap gap-2 ${interestsHidden && !interestFilter ? '' : 'mt-3'}`}>
         {visibleInterests.map((interest) => {
           const Icon = iconForInterest(interest)
           const isActive = interestFilter === interest
@@ -231,8 +269,8 @@ function Discover() {
             </button>
           )
         })}
-        {/* Keep an active filter visible even when it's outside the preview */}
-        {!showAllInterests && interestFilter && !visibleInterests.includes(interestFilter) && (
+        {/* Keep an active filter visible (and removable) even when hidden or outside the preview */}
+        {interestFilter && !visibleInterests.includes(interestFilter) && (
           <button
             type="button"
             onClick={() => setInterestFilter('')}

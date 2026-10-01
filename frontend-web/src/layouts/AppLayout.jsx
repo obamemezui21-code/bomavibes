@@ -144,9 +144,9 @@ function AppLayout() {
         </main>
       </div>
 
-      {/* Floating pill, lifted off the bottom edge (Friendzy-style). The gap
+      {/* Floating "liquid glass" pill, lifted off the bottom edge. The gap
           below it grows to clear the iPhone home indicator when there is one. */}
-      <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 flex items-stretch justify-around gap-1 rounded-full border border-ink/8 bg-surface/80 px-2 py-1.5 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.35),0_4px_12px_-4px_rgba(169,93,218,0.25)] backdrop-blur-2xl desktop:hidden">
+      <nav className="liquid-glass fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 flex items-stretch justify-around gap-1 rounded-full px-2 py-1.5 desktop:hidden">
         {navItems.map((item, i) => {
           const isActive = location.pathname === item.to
           const anim = iconAnimation(item, i, isActive, 1)
@@ -177,7 +177,7 @@ function AppLayout() {
                   <item.icon
                     size={21}
                     strokeWidth={2}
-                    className={item.ring ? '' : isActive ? 'text-white' : 'text-ink-soft/60'}
+                    className={item.ring ? '' : isActive ? 'text-white' : 'text-ink/75'}
                     fill={item.ring ? 'currentColor' : 'none'}
                   />
                 </motion.span>
