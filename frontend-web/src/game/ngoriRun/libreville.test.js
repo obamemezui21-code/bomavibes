@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DISTRICTS, districtAt, placeVenues } from './libreville.js'
+import { DISTRICTS, LANDMARKS, STALL_EVERY, districtAt, passerbyFor, placeVenues, stallFor, stallIndexAt } from './libreville.js'
 
 describe('districtAt', () => {
   it('follows the route as the distance grows', () => {
@@ -37,5 +37,41 @@ describe('placeVenues', () => {
   it('brings venues back in turn past Owendo', () => {
     const placed = placeVenues([louis], 9000)
     expect(placed.filter((p) => p.at >= 7200).length).toBeGreaterThan(1)
+  })
+})
+
+describe('stallFor', () => {
+  it('places a stall every STALL_EVERY m, in the order of VENDOR_STALLS', () => {
+    const stalls = [1, 2, 3, 4, 5, 6, 7, 8].map((k) => stallFor(k)).filter(Boolean)
+    expect(stalls.length).toBeGreaterThan(4)
+    for (const s of stalls) expect((s.at - 30) % STALL_EVERY).toBe(0)
+  })
+
+  it('keeps clear of landmark signs, district arches and billboards', () => {
+    for (let k = 0; k < 200; k++) {
+      const s = stallFor(k, [{ at: 470 }])
+      if (!s) continue
+      expect(LANDMARKS.every((l) => Math.abs(l.at - s.at) >= 10)).toBe(true)
+      expect(DISTRICTS.every(([from]) => Math.abs(from - s.at) >= 12)).toBe(true)
+      expect(Math.abs(470 - s.at)).toBeGreaterThanOrEqual(10)
+    }
+  })
+
+  it('finds the next stall from a distance', () => {
+    expect(stallIndexAt(30)).toBe(0)
+    expect(stallIndexAt(31)).toBe(1)
+  })
+})
+
+describe('passerbyFor', () => {
+  it('stands halfway between two stalls, never on a landmark', () => {
+    for (let k = 0; k < 200; k++) {
+      const p = passerbyFor(k)
+      if (!p) continue
+      expect(p.sprite).toBeGreaterThanOrEqual(5)
+      expect(LANDMARKS.every((l) => Math.abs(l.at - p.at) >= 10)).toBe(true)
+      const stall = stallFor(k)
+      if (stall) expect(p.at - stall.at).toBe(Math.round(STALL_EVERY / 2))
+    }
   })
 })

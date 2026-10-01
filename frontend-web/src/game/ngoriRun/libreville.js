@@ -73,13 +73,79 @@ export const DISTRICT_COORDS = {
 // Public landmarks, no brands: a brown tourist sign at that distance (m),
 // plus a drawing for some of them.
 export const LANDMARKS = [
+  { at: 70, text: 'Palais du Bord de mer 🏛️' },
   { at: 150, text: 'Port-Môle ⚓', visual: 'boats' },
+  // visual 'monument': a picture from assets/game/monuments.webp standing
+  // on the city side instead of the buildings (renderer.js MONUMENTS).
+  { at: 230, text: 'Cathédrale Sainte-Marie ⛪', visual: 'monument', monument: 0 },
   { at: 550, text: 'Pointe Denis ⛴' },
   { at: 1350, text: 'Plage de la Sablière 🏖️' },
+  { at: 1550, text: 'Arboretum Raponda Walker 🌳' },
+  { at: 2050, text: 'Aéroport Léon Mba ✈️', visual: 'plane' },
   { at: 3500, text: "Stade de l'Amitié 🏟️", visual: 'stadium' },
   { at: 4350, text: 'Plage du Cap Estérias 🏖️' },
+  { at: 5400, text: 'Église Saint-Michel de Nkembo ⛪' },
+  { at: 5650, text: 'Marché de Mont-Bouët 🛍️', visual: 'monument', monument: 1 },
   { at: 6750, text: "Port d'Owendo ⚓", visual: 'cranes' },
 ]
+
+// Roadside stalls on the seafront promenade. `sprite` is the stall's
+// picture in assets/game/roadside.webp (see renderer.js ROADSIDE); `call`
+// is what the vendor shouts as you run past (spoken by the browser's
+// voice, if it has one).
+export const VENDOR_STALLS = [
+  { kind: 'manioc', sprite: 0, label: 'BÂTONS DE MANIOC', call: 'Bâton de manioc ! Bâton !' },
+  { kind: 'plantain', sprite: 1, label: 'BANANES PLANTAIN', call: 'Banane plantain, bon prix !' },
+  { kind: 'grill', sprite: 2, label: 'COUPÉ-COUPÉ', call: 'Coupé-coupé ! Viens goûter !' },
+  { kind: 'fruits', sprite: 3, label: 'FRUITS', call: 'Mangues, bananes, bon prix !' },
+  { kind: 'grill', sprite: 4, label: 'BROCHETTES', call: 'Brochettes, brochettes !' },
+]
+
+// People strolling on the promenade, halfway between two stalls.
+export const PASSERSBY = [
+  { kind: 'basin', sprite: 5 }, // beignets in a basin carried on the head
+  { kind: 'football', sprite: 6 },
+  { kind: 'mama', sprite: 7 }, // waving from her stool
+]
+
+// A stall every STALL_EVERY m, a passer-by between each pair, except
+// where a landmark sign, a district arch or a Coins Chics billboard
+// ([{ at }]) already stands.
+export const STALL_EVERY = 55
+const STALL_OFFSET = 30
+
+const isFree = (at, billboards) =>
+  !LANDMARKS.some((l) => Math.abs(l.at - at) < 10) &&
+  !DISTRICTS.some(([from]) => Math.abs(from - at) < 12) &&
+  !billboards.some((b) => Math.abs(b.at - at) < 10)
+
+export function stallFor(k, billboards = []) {
+  if (k < 0) return null
+  const at = k * STALL_EVERY + STALL_OFFSET
+  return isFree(at, billboards) ? { at, ...VENDOR_STALLS[k % VENDOR_STALLS.length] } : null
+}
+
+export function passerbyFor(k, billboards = []) {
+  if (k < 0) return null
+  const at = k * STALL_EVERY + STALL_OFFSET + Math.round(STALL_EVERY / 2)
+  return isFree(at, billboards) ? { at, ...PASSERSBY[k % PASSERSBY.length] } : null
+}
+
+// Index of the stall at or just past `metres`.
+export const stallIndexAt = (metres) => Math.ceil((metres - STALL_OFFSET) / STALL_EVERY)
+
+// Stretches where the city gives way to forest on the right of the road.
+export const FOREST_DISTRICTS = ['Angondjé', 'Cap Estérias']
+
+// What the game shouts at the player, in Libreville's own words.
+export const PHRASES = {
+  start: ['Mbolo ! On y va 🇬🇦', 'Mbolo ! C’est parti 🇬🇦'],
+  combo: ['Ékiééé !', 'Tu es fort !', 'Ça chauffe 🔥', 'Tu gères !'],
+  bonus: ['Akiba !', 'On est ensemble !'],
+  district: (name) => [`Bienvenue à ${name} 🔥`, `${name}, c’est comment ? 👋`, `On est à ${name} !`],
+}
+
+export const pick = (list, n) => list[Math.abs(n) % list.length]
 
 const KM_PER_DEGREE = 111
 const MAX_VENUE_KM = 15 // farther than this from every district: not in Libreville

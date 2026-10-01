@@ -282,7 +282,7 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
         </p>
         {(outcome?.newBestScore || outcome?.newBestDistance) && (
           <p className="mt-2 text-center">
-            <span className="rounded-full bg-gold/20 px-3 py-1 text-xs font-bold text-amber-200">🏆 Nouveau record personnel !</span>
+            <span className="rounded-full bg-gold/20 px-3 py-1 text-xs font-bold text-amber-200">🏆 Nouveau record ! On est ensemble 🇬🇦</span>
           </p>
         )}
 

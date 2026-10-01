@@ -1,6 +1,19 @@
 import { JUMP_TICKS, OBSTACLES, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
-import { DIRECTION_SIGNS, DISTRICTS, LANDMARKS, SHOP_SIGNS } from './libreville.js'
+import roadsideUrl from '../../assets/game/roadside.webp'
+import horizonsUrl from '../../assets/game/horizons.webp'
+import monumentsUrl from '../../assets/game/monuments.webp'
+import {
+  DIRECTION_SIGNS,
+  DISTRICTS,
+  FOREST_DISTRICTS,
+  LANDMARKS,
+  SHOP_SIGNS,
+  STALL_EVERY,
+  districtAt,
+  passerbyFor,
+  stallFor,
+} from './libreville.js'
 
 // NGORI RUN renderer — draws the simulation's state on a 2D canvas as a
 // pseudo-3D road: Libreville-style seafront at sunset, sea and palms on the
@@ -34,6 +47,16 @@ const COLORS = {
 }
 const BUILDING_COLORS = ['#c46a4a', '#d99a4e', '#2f8f83', '#8a4f9e', '#e2b98f', '#4b6fa8']
 const CAR_COLORS = ['#f2bf4e', '#2dd4bf', '#e9467d', '#f5f5f4', '#7c3aed']
+// Libreville's taxis: red and white two-tone. Two cars in five are taxis.
+const TAXI = { upper: '#d62828', lower: '#f8fafc' }
+const isTaxi = (o) => o.id % 5 === 0 || o.id % 5 === 3
+// Wax-print colour pairs for the stalls' parasols and the vendors' pagnes.
+const WAX = [
+  ['#f59e0b', '#15803d'],
+  ['#dc2626', '#facc15'],
+  ['#2563eb', '#f97316'],
+  ['#7c3aed', '#22c55e'],
+]
 const SKIN = '#5a3825'
 const POWERUP_STYLE = {
   shield: { color: '#38bdf8', icon: '🛡️' },
@@ -52,6 +75,55 @@ export const RUNNERS = { man: 0, woman: 3 } // first sheet row of each runner
 const sheetImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: runnersUrl })
 const sheetReady = () => !!sheetImage?.complete && sheetImage.naturalWidth > 0
 
+// Street vendors and passers-by (assets/game/roadside.webp): one strip of
+// pictures, feet on its bottom edge. [x, y, w, h] in the strip, and the
+// real height (cm) each picture stands for — parasol, raised hand or basin
+// included. Indexes match libreville.js VENDOR_STALLS / PASSERSBY.
+const ROADSIDE = [
+  { rect: [0, 3, 293, 379], heightCm: 245 }, // manioc
+  { rect: [295, 3, 283, 379], heightCm: 245 }, // plantain
+  { rect: [580, 59, 296, 323], heightCm: 190 }, // coupé-coupé grill
+  { rect: [878, 3, 284, 379], heightCm: 245 }, // fruits
+  { rect: [1164, 40, 231, 342], heightCm: 160 }, // brochettes
+  { rect: [1397, 0, 131, 382], heightCm: 205 }, // woman with a basin on her head
+  { rect: [1530, 20, 190, 362], heightCm: 180 }, // young footballer
+  { rect: [1722, 59, 170, 323], heightCm: 140 }, // seated mama, waving
+]
+// A bit larger than life, so they still read on a phone screen.
+const ROADSIDE_SCALE = 1.35
+const roadsideImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: roadsideUrl })
+const roadsideReady = () => !!roadsideImage?.complete && roadsideImage.naturalWidth > 0
+
+// Far-away horizon panoramas (assets/game/horizons.webp, stacked 1264 px
+// wide bands, transparent sky): Libreville's skyline, the forested north
+// coast, the port of Owendo. Each district shows one; `mirror` puts the
+// forest on the right, on the side of the road where the forest stands.
+const HORIZONS = [
+  { y: 0, h: 174 }, // city
+  { y: 176, h: 250, mirror: true }, // forest coast
+  { y: 428, h: 118 }, // port
+]
+const HORIZONS_W = 1264
+const HORIZON_OF = { Angondjé: 1, 'Cap Estérias': 1, Owendo: 2 }
+const HORIZON_FADE_M = 150 // crossfade length after entering a district
+const horizonsImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: horizonsUrl })
+const horizonsReady = () => !!horizonsImage?.complete && horizonsImage.naturalWidth > 0
+const horizonAt = (metres) => HORIZON_OF[districtAt(metres)] ?? 0
+
+// Landmark buildings (assets/game/monuments.webp), indexed by a landmark's
+// `monument` in libreville.js: [x, y, w, h] in the strip and the real
+// height (cm) and width of ground (cm) each one takes on the city side.
+const MONUMENTS = [
+  { rect: [0, 0, 418, 251], heightCm: 2000, lengthCm: 4000 }, // Cathédrale Sainte-Marie
+  { rect: [420, 46, 422, 205], heightCm: 1100, lengthCm: 4000 }, // Marché de Mont-Bouët
+]
+const monumentsImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: monumentsUrl })
+const monumentsReady = () => !!monumentsImage?.complete && monumentsImage.naturalWidth > 0
+const MONUMENT_SPOTS = LANDMARKS.filter((l) => l.visual === 'monument').map((l) => ({
+  z: l.at * 100,
+  ...MONUMENTS[l.monument],
+}))
+
 // Stable pseudo-random from an integer — scenery only, never the game.
 function hash(n) {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b)
@@ -68,6 +140,8 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   const photos = new Map()
   const stadium = LANDMARKS.find((l) => l.visual === 'stadium')
   const stadiumZ = stadium ? stadium.at * 100 : -1e9
+  const airport = LANDMARKS.find((l) => l.visual === 'plane')
+  const airportZ = airport ? airport.at * 100 : -1e9
   const ctx = canvas.getContext('2d', { alpha: false })
   let W = 0
   let H = 0
@@ -158,6 +232,46 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     return Math.max(0, Math.min(1, (VIEW_DEPTH - zr) / 3000))
   }
 
+  // One horizon panorama sitting on the horizon line, repeated across the
+  // width when the screen is wider than it; barely moves with the camera.
+  function drawHorizon(index, alpha) {
+    const band = HORIZONS[index]
+    const scale = Math.min((W * 2.2) / HORIZONS_W, (horizonY * 0.55) / 250)
+    const w = HORIZONS_W * scale
+    const h = band.h * scale
+    const top = horizonY + 1 - h
+    let x = W / 2 - w / 2 - camX * 0.02
+    while (x > 0) x -= w
+    ctx.globalAlpha = alpha
+    for (; x < W; x += w) {
+      if (band.mirror) {
+        ctx.save()
+        ctx.translate(x + w, 0)
+        ctx.scale(-1, 1)
+        ctx.drawImage(horizonsImage, 0, band.y, HORIZONS_W, band.h, 0, top, w, h)
+        ctx.restore()
+      } else {
+        ctx.drawImage(horizonsImage, 0, band.y, HORIZONS_W, band.h, x, top, w, h)
+      }
+    }
+    ctx.globalAlpha = 1
+  }
+
+  // The panorama of the current district, crossfading from the previous one.
+  function drawHorizons(metres) {
+    const current = horizonAt(metres)
+    const entry = [...DISTRICTS].reverse().find(([from]) => metres >= from)
+    const since = metres - (entry ? entry[0] : 0)
+    const previous = entry && entry[0] > 0 ? horizonAt(entry[0] - 1) : current
+    if (previous !== current && since < HORIZON_FADE_M) {
+      const t = since / HORIZON_FADE_M
+      drawHorizon(previous, 1 - t)
+      drawHorizon(current, t)
+    } else {
+      drawHorizon(current, 1)
+    }
+  }
+
   function drawSky(time, dist) {
     ctx.fillStyle = skyGradient
     ctx.fillRect(0, 0, W, horizonY + 1)
@@ -183,6 +297,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.ellipse(cx, cy, W * 0.16, H * 0.012, 0, 0, Math.PI * 2)
       ctx.fill()
     }
+    if (horizonsReady()) drawHorizons(dist / 100)
     // Pointe Denis, across the estuary, while running along the Bord de mer.
     if (dist < 150000) {
       ctx.globalAlpha = Math.min(1, (150000 - dist) / 50000)
@@ -195,7 +310,9 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.fill()
       ctx.globalAlpha = 1
     }
-    // City skyline on the right, far away.
+    drawPlane(dist, time)
+    if (horizonsReady()) return
+    // Until the panoramas load: a plain city skyline on the right, far away.
     ctx.fillStyle = 'rgba(60,20,70,0.85)'
     let x = W * 0.5
     let i = 0
@@ -612,13 +729,239 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.globalAlpha = 1
   }
 
+  // A landmark building set back on the city side, facing the road.
+  function drawMonument(m, zr) {
+    const [sx, sy, sw, sh] = m.rect
+    const widthCm = (m.heightCm * sw) / sh
+    const base = project(ROAD_HALF + 420 + widthCm * 0.35, 0, zr)
+    const h = m.heightCm * base.s
+    const w = (h * sw) / sh
+    ctx.globalAlpha = fogAlpha(zr)
+    ctx.drawImage(monumentsImage, sx, sy, sw, sh, base.x - w / 2, base.y - h, w, h)
+    ctx.globalAlpha = 1
+  }
+
+  // One roadside picture standing on the ground at (x, zr), lifted by `lift` cm.
+  function drawRoadsideSprite(index, x, zr, lift = 0) {
+    const { rect, heightCm } = ROADSIDE[index]
+    const [sx, sy, sw, sh] = rect
+    const base = project(x, lift, zr)
+    const h = heightCm * ROADSIDE_SCALE * base.s
+    const w = (h * sw) / sh
+    ctx.drawImage(roadsideImage, sx, sy, sw, sh, base.x - w / 2, base.y - h, w, h)
+  }
+
+  // Little hand-painted board in front of a stall, saying what it sells.
+  function drawStallSign(x, zr, label) {
+    face(x, 8, 0, 70, zr, '#5b3a1e')
+    const board = face(x, 150, 55, 105, zr, '#fef3c7')
+    const bw = board.right - board.left
+    const bh = board.bottom - board.top
+    ctx.fillStyle = '#7c2d12'
+    ctx.font = `800 ${Math.max(4, bh * 0.5)}px system-ui, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(label, board.left + bw / 2, board.top + bh / 2, bw * 0.92)
+  }
+
+  function drawPasserby(zr, p, k, time) {
+    if (!roadsideReady()) return
+    ctx.globalAlpha = fogAlpha(zr)
+    // A gentle bob: walking, juggling — the mama just sits.
+    const bob = p.kind === 'mama' ? 0 : Math.abs(Math.sin(time * (p.kind === 'football' ? 7 : 4.5) + k)) * 6
+    drawRoadsideSprite(p.sprite, -ROAD_HALF - 110, zr, bob)
+    ctx.globalAlpha = 1
+  }
+
+  // A street vendor's stall on the promenade: wax parasol, table of goods,
+  // the vendor behind it in a pagne and headwrap. Drawn from the roadside
+  // picture once loaded, with plain shapes until then.
+  function drawStall(zr, stall, k, time) {
+    const x = -ROAD_HALF - 150
+    if (roadsideReady()) {
+      ctx.globalAlpha = fogAlpha(zr)
+      drawRoadsideSprite(stall.sprite, x - 30, zr + 40)
+      drawStallSign(x + 75, zr - 20, stall.label)
+      ctx.globalAlpha = 1
+      return
+    }
+    const [c1, c2] = WAX[k % WAX.length]
+    ctx.globalAlpha = fogAlpha(zr)
+
+    // Vendor, standing behind the table.
+    const vz = zr + 70
+    face(x - 40, 70, 0, 150, vz, c2)
+    const shoulders = face(x - 40, 60, 150, 190, vz, c1)
+    const head = project(x - 40, 215, vz)
+    ctx.fillStyle = SKIN
+    ctx.beginPath()
+    ctx.arc(head.x, head.y, Math.max(1, 20 * head.s), 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = c1 // headwrap
+    ctx.beginPath()
+    ctx.ellipse(head.x, head.y - 16 * head.s, 24 * head.s, 14 * head.s, 0, 0, Math.PI * 2)
+    ctx.fill()
+    // Waving arm, now and then.
+    const wave = Math.sin(time * 6 + k) > 0.2 ? 1 : 0
+    const arm = project(x + 5, 190 + wave * 70, vz)
+    ctx.strokeStyle = SKIN
+    ctx.lineWidth = Math.max(1, 12 * head.s)
+    ctx.beginPath()
+    ctx.moveTo(shoulders.right - 3, shoulders.top + 4)
+    ctx.lineTo(arm.x, arm.y)
+    ctx.stroke()
+
+    // Parasol.
+    face(x, 8, 90, 330, zr + 40, '#3f3f46')
+    const l = project(x - 170, 300, zr + 40)
+    const r = project(x + 170, 300, zr + 40)
+    const apex = project(x, 370, zr + 40)
+    for (let i = 0; i < 4; i++) {
+      const a = l.x + ((r.x - l.x) * i) / 4
+      const b = l.x + ((r.x - l.x) * (i + 1)) / 4
+      ctx.fillStyle = i % 2 ? c1 : c2
+      ctx.beginPath()
+      ctx.moveTo(apex.x, apex.y)
+      ctx.lineTo(a, l.y)
+      ctx.lineTo(b, r.y)
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    // Table and its goods.
+    top(x, 220, 90, zr, zr + 90, '#a16207')
+    const table = face(x, 220, 0, 90, zr, '#7c4a1e')
+    const tw = table.right - table.left
+    const th = table.bottom - table.top
+    const goodsY = project(x, 90, zr + 30).y
+    const u = table.s
+    if (stall.kind === 'manioc') {
+      // Bundles wrapped in leaves.
+      for (let i = 0; i < 5; i++) {
+        const gx = table.left + tw * (0.15 + i * 0.16)
+        roundRect(gx, goodsY - 22 * u - (i % 2) * 8 * u, 26 * u, 22 * u, 8 * u, i % 2 ? '#4d7c0f' : '#65a30d')
+      }
+    } else if (stall.kind === 'plantain') {
+      ctx.strokeStyle = '#ca8a04'
+      ctx.lineWidth = Math.max(1, 9 * u)
+      ctx.lineCap = 'round'
+      for (let i = 0; i < 6; i++) {
+        const gx = table.left + tw * (0.18 + i * 0.12)
+        ctx.strokeStyle = i % 3 === 0 ? '#84cc16' : '#eab308'
+        ctx.beginPath()
+        ctx.arc(gx, goodsY - 6 * u, 18 * u, Math.PI * 1.1, Math.PI * 1.9)
+        ctx.stroke()
+      }
+    } else if (stall.kind === 'grill') {
+      roundRect(table.left + tw * 0.15, goodsY - 14 * u, tw * 0.7, 14 * u, 3 * u, '#18181b')
+      const ember = ctx.createRadialGradient(table.left + tw / 2, goodsY - 10 * u, 0, table.left + tw / 2, goodsY - 10 * u, tw * 0.4)
+      ember.addColorStop(0, 'rgba(251,146,60,0.9)')
+      ember.addColorStop(1, 'rgba(251,146,60,0)')
+      ctx.fillStyle = ember
+      ctx.fillRect(table.left, goodsY - 40 * u, tw, 40 * u)
+      // Smoke rising from the braise.
+      for (let i = 0; i < 4; i++) {
+        const t = (time * 0.5 + i / 4) % 1
+        const puff = project(x + (i - 1.5) * 30 + Math.sin(time + i) * 20, 110 + t * 260, zr + 30)
+        ctx.fillStyle = `rgba(214,211,209,${0.35 * (1 - t)})`
+        ctx.beginPath()
+        ctx.arc(puff.x, puff.y, Math.max(1, (14 + t * 30) * puff.s), 0, Math.PI * 2)
+        ctx.fill()
+      }
+    } else if (stall.kind === 'fruits') {
+      ctx.fillStyle = '#a16207'
+      ctx.beginPath()
+      ctx.ellipse(table.left + tw / 2, goodsY - 4 * u, tw * 0.3, 10 * u, 0, 0, Math.PI)
+      ctx.fill()
+      for (let i = 0; i < 7; i++) {
+        ctx.fillStyle = i % 2 ? '#4c1d95' : '#6d28d9'
+        ctx.beginPath()
+        ctx.ellipse(table.left + tw * (0.27 + i * 0.075), goodsY - 10 * u - (i % 2) * 6 * u, 9 * u, 6 * u, 0, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+    // Hand-painted name on the front of the table.
+    ctx.fillStyle = '#fef3c7'
+    ctx.font = `800 ${Math.max(4, th * 0.3)}px system-ui, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(stall.label, table.left + tw / 2, table.top + th * 0.5, tw * 0.92)
+    ctx.globalAlpha = 1
+  }
+
+  // Equatorial forest where the city thins out (Angondjé, Cap Estérias).
+  function drawForest(k, dist) {
+    for (let j = 2; j >= 0; j--) {
+      const zr = k * 1500 + 100 + j * 500 - dist
+      if (zr < -CAM_BACK + 60 || zr > VIEW_DEPTH) continue
+      const n = k * 3 + j
+      const x = ROAD_HALF + 350 + hash(n) * 700
+      const h = 700 + hash(n + 7) * 600
+      ctx.globalAlpha = fogAlpha(zr)
+      face(x, 50, 0, h * 0.6, zr, '#4a3222')
+      const crown = project(x, h, zr)
+      const r = (260 + hash(n + 3) * 140) * crown.s
+      for (const [dx, dy, rr, color] of [
+        [-0.6, 0.35, 0.8, '#14532d'],
+        [0.6, 0.3, 0.75, '#166534'],
+        [0, 0, 1, '#15803d'],
+      ]) {
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.arc(crown.x + dx * r, crown.y + dy * r, rr * r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+    ctx.globalAlpha = 1
+  }
+
+  // A plane climbing out of Léon Mba airport while you run past it.
+  function drawPlane(dist, time) {
+    const progress = (dist - (airportZ - 40000)) / 80000
+    if (progress < 0 || progress > 1) return
+    const px = W * (1.1 - progress * 1.3)
+    const py = horizonY * (0.6 - progress * 0.4)
+    const s = Math.min(W, H) * 0.0009 * (1 + progress)
+    ctx.save()
+    ctx.translate(px, py)
+    ctx.rotate(0.12)
+    ctx.scale(s, s)
+    ctx.fillStyle = '#f1f5f9'
+    ctx.beginPath()
+    ctx.ellipse(0, 0, 60, 9, 0, 0, Math.PI * 2) // fuselage
+    ctx.fill()
+    ctx.beginPath()
+    ctx.moveTo(-5, 0)
+    ctx.lineTo(18, -40)
+    ctx.lineTo(28, -40)
+    ctx.lineTo(18, 0)
+    ctx.moveTo(-5, 0)
+    ctx.lineTo(18, 30)
+    ctx.lineTo(28, 30)
+    ctx.lineTo(18, 0)
+    ctx.moveTo(45, -4)
+    ctx.lineTo(62, -28)
+    ctx.lineTo(68, -28)
+    ctx.lineTo(60, 0)
+    ctx.fill()
+    if (Math.sin(time * 8) > 0.6) {
+      ctx.fillStyle = '#ef4444'
+      ctx.beginPath()
+      ctx.arc(22, -38, 5, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.restore()
+  }
+
   function drawScenery(dist, time) {
     const first = Math.floor((dist - CAM_BACK) / 1500)
     const last = Math.floor((dist + VIEW_DEPTH) / 1500)
     for (let k = last; k >= first; k--) {
       const z0 = k * 1500
       if (z0 + 1500 > stadiumZ - 600 && z0 < stadiumZ + 3600) continue // the stadium stands here
-      drawBuilding(k, dist)
+      if (monumentsReady() && MONUMENT_SPOTS.some((m) => z0 + 1500 > m.z - 600 && z0 < m.z + m.lengthCm)) continue
+      if (FOREST_DISTRICTS.includes(districtAt(Math.floor(z0 / 100)))) drawForest(k, dist)
+      else drawBuilding(k, dist)
     }
     if (stadiumZ - dist < VIEW_DEPTH && stadiumZ + 3000 - dist > -CAM_BACK + 60) drawStadium(stadiumZ - dist)
     const props = []
@@ -638,6 +981,19 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     for (const b of billboards) {
       const zr = b.at * 100 - dist
       if (zr > -CAM_BACK && zr < VIEW_DEPTH) props.push({ zr, draw: (z) => drawBillboard(z, b) })
+    }
+    if (monumentsReady()) {
+      for (const m of MONUMENT_SPOTS) {
+        const zr = m.z + m.lengthCm * 0.4 - dist
+        if (zr > -CAM_BACK && zr < VIEW_DEPTH) props.push({ zr, draw: (z) => drawMonument(m, z) })
+      }
+    }
+    const stallStep = STALL_EVERY * 100
+    for (let k = Math.max(0, Math.floor((dist - CAM_BACK) / stallStep)); k * stallStep < dist + VIEW_DEPTH; k++) {
+      const stall = stallFor(k, billboards)
+      if (stall) props.push({ zr: stall.at * 100 - dist, draw: (zr) => drawStall(zr, stall, k, time) })
+      const passerby = passerbyFor(k, billboards)
+      if (passerby) props.push({ zr: passerby.at * 100 - dist, draw: (zr) => drawPasserby(zr, passerby, k, time) })
     }
     // A direction sign every ~650 m, kept away from the district arches.
     for (let k = Math.max(0, Math.floor((dist - CAM_BACK - 40000) / 65000)); k * 65000 + 40000 < dist + VIEW_DEPTH; k++) {
@@ -697,13 +1053,19 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.textBaseline = 'middle'
       ctx.fillText('BOMA ↓', (banner.left + banner.right) / 2, (banner.top + banner.bottom) / 2)
     } else if (o.type === 'car') {
-      const color = CAR_COLORS[o.id % CAR_COLORS.length]
-      top(xc, 150, 145, zr, zr + def.len, shade(color, -0.1))
+      const taxi = isTaxi(o)
+      const color = taxi ? TAXI.upper : CAR_COLORS[1 + (o.id % (CAR_COLORS.length - 1))]
+      top(xc, 150, 145, zr, zr + def.len, shade(taxi ? TAXI.lower : color, -0.1))
       top(xc, 130, 150, zr + 90, zr + 280, 'rgba(30,30,50,0.55)')
       const body = face(xc, 150, 0, 145, zr, color)
-      ctx.fillStyle = 'rgba(25,25,45,0.85)'
       const bw = body.right - body.left
       const bh = body.bottom - body.top
+      if (taxi) {
+        // White lower half, red upper half.
+        ctx.fillStyle = TAXI.lower
+        ctx.fillRect(body.left, body.top + bh * 0.45, bw, bh * 0.55)
+      }
+      ctx.fillStyle = 'rgba(25,25,45,0.85)'
       ctx.fillRect(body.left + bw * 0.12, body.top + bh * 0.1, bw * 0.76, bh * 0.3)
       ctx.fillStyle = '#ef4444'
       ctx.fillRect(body.left + bw * 0.04, body.top + bh * 0.52, bw * 0.16, bh * 0.1)
@@ -711,9 +1073,9 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.fillStyle = '#111'
       ctx.fillRect(body.left + bw * 0.06, body.bottom - bh * 0.1, bw * 0.2, bh * 0.1)
       ctx.fillRect(body.right - bw * 0.26, body.bottom - bh * 0.1, bw * 0.2, bh * 0.1)
-      if (color === CAR_COLORS[0]) {
+      if (taxi) {
         const sign = face(xc, 50, 150, 175, zr + 120, '#111')
-        ctx.fillStyle = '#f2bf4e'
+        ctx.fillStyle = '#facc15'
         ctx.font = `800 ${Math.max(5, 16 * sign.s)}px system-ui, sans-serif`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'

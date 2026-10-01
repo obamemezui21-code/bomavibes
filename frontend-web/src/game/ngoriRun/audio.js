@@ -20,22 +20,24 @@ export function saveMuted(muted) {
   }
 }
 
-const TEMPO = 112
+// A soukous / ndombolo-flavoured loop, the sound of Libreville's maquis:
+// bright major I – IV – V – IV, a cascading "sebene" guitar on every 16th,
+// a bouncing bass, four-on-the-floor kick, snare on 2 and 4, clave on top.
+const TEMPO = 128
 const STEP = 60 / TEMPO / 4 // one 16th note, in seconds
-// A minor pentatonic-ish loop: Am – F – C – G, one bar each.
-const BASS = [
-  [45, 0], [45, 3], [52, 6], [45, 10], [57, 12],
-  [41, 16], [41, 19], [48, 22], [41, 26], [53, 28],
-  [48, 32], [48, 35], [55, 38], [48, 42], [60, 44],
-  [43, 48], [43, 51], [50, 54], [43, 58], [55, 60],
-]
-const PLUCKS = [
-  [69, 2], [72, 5], [76, 8], [74, 13],
-  [72, 18], [69, 21], [65, 24], [69, 29],
-  [67, 34], [72, 37], [76, 40], [79, 45],
-  [74, 50], [71, 53], [67, 56], [74, 61],
-]
 const LOOP_STEPS = 64
+// Per bar: bass root (MIDI) and the guitar's chord tones, low to high.
+const BARS = [
+  { root: 48, tones: [72, 76, 79, 84] }, // C
+  { root: 53, tones: [72, 77, 81, 84] }, // F
+  { root: 55, tones: [71, 74, 79, 83] }, // G
+  { root: 53, tones: [72, 77, 81, 84] }, // F
+]
+// Which chord tone the sebene guitar plays on each 16th of a bar.
+const SEBENE = [3, 2, 1, 0, 2, 1, 0, 1, 3, 2, 1, 2, 3, 1, 2, 0]
+// Bass: [16th in the bar, interval above the root].
+const BASS = [[0, 0], [3, 7], [6, 12], [8, 0], [10, 7], [14, 12]]
+const CLAVE = [0, 3, 6, 10, 12] // 3-2 clave
 
 const midi = (n) => 440 * 2 ** ((n - 69) / 12)
 
@@ -131,28 +133,39 @@ export function createGameAudio(initiallyMuted) {
       tone({ freq: 1175, at: 0.12, dur: 0.4, vol: 0.09, type: 'sine' })
     },
     reward: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ freq: f, at: i * 0.09, dur: 0.35, vol: 0.12, type: 'triangle' })),
+    // A Libreville taxi's double "pin-pin!" — two detuned square horns.
+    honk: () => {
+      for (const at of [0, 0.22]) {
+        tone({ freq: 370, at, dur: 0.16, vol: 0.07, type: 'square' })
+        tone({ freq: 466, at, dur: 0.16, vol: 0.06, type: 'square' })
+      }
+    },
   }
 
   function scheduleStep(i, t) {
     const s = i % LOOP_STEPS
     const inBar = s % 16
-    // Kick on the beat, a syncopated extra before beat 3.
-    if (inBar % 4 === 0 || inBar === 7) {
+    const bar = BARS[Math.floor(s / 16)]
+    // Four-on-the-floor kick.
+    if (inBar % 4 === 0) {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.frequency.setValueAtTime(150, t)
       osc.frequency.exponentialRampToValueAtTime(45, t + 0.12)
-      gain.gain.setValueAtTime(inBar === 7 ? 0.35 : 0.6, t)
+      gain.gain.setValueAtTime(0.55, t)
       gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18)
       osc.connect(gain)
       gain.connect(musicGain)
       osc.start(t)
       osc.stop(t + 0.2)
     }
-    // Shaker on every 8th, accented off-beats.
-    if (inBar % 2 === 0) noise({ when: t, dur: 0.05, vol: inBar % 4 === 2 ? 0.16 : 0.07, filter: 'highpass', freq: 6000, dest: musicGain })
-    for (const [note, at] of BASS) if (at === s) bassNote(note, t)
-    for (const [note, at] of PLUCKS) if (at === s) pluck(note, t)
+    // Snare on 2 and 4, light hi-hat on every 16th.
+    if (inBar === 4 || inBar === 12) noise({ when: t, dur: 0.12, vol: 0.22, filter: 'bandpass', freq: 1800, dest: musicGain })
+    noise({ when: t, dur: 0.03, vol: inBar % 2 ? 0.04 : 0.08, filter: 'highpass', freq: 7000, dest: musicGain })
+    // Clave: a short wooden click.
+    if (CLAVE.includes(inBar)) tone({ freq: 1750, at: Math.max(0, t - ctx.currentTime), dur: 0.04, vol: 0.06, type: 'sine', dest: musicGain })
+    for (const [at, interval] of BASS) if (at === inBar) bassNote(bar.root + interval, t)
+    pluck(bar.tones[SEBENE[inBar]], t, inBar % 4 === 0 ? 0.2 : 0.12)
   }
 
   function bassNote(note, t) {
@@ -169,14 +182,15 @@ export function createGameAudio(initiallyMuted) {
     osc.stop(t + STEP * 3)
   }
 
-  // Marimba-like: a sine and its quickly fading 4th harmonic.
-  function pluck(note, t) {
-    for (const [mult, vol, dur] of [
-      [1, 0.22, 0.45],
-      [4, 0.06, 0.08],
+  // Bright guitar-like pluck: a triangle and its quickly fading 3rd harmonic.
+  function pluck(note, t, volume = 0.15) {
+    for (const [mult, vol, dur, type] of [
+      [1, volume, 0.22, 'triangle'],
+      [3, volume * 0.25, 0.06, 'sine'],
     ]) {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
+      osc.type = type
       osc.frequency.value = midi(note) * mult
       gain.gain.setValueAtTime(0.0001, t)
       gain.gain.exponentialRampToValueAtTime(vol, t + 0.005)
@@ -209,6 +223,22 @@ export function createGameAudio(initiallyMuted) {
         }
       }, 50)
     },
+    // A street vendor's call, in the browser's own French voice (none on
+    // some devices: then simply silent).
+    say(text) {
+      if (muted || typeof speechSynthesis === 'undefined') return
+      try {
+        speechSynthesis.cancel()
+        const u = new SpeechSynthesisUtterance(text)
+        u.lang = 'fr-FR'
+        u.rate = 1.1
+        u.pitch = 1.2
+        u.volume = 0.8
+        speechSynthesis.speak(u)
+      } catch {
+        // sound is never critical
+      }
+    },
     stopMusic() {
       clearInterval(musicTimer)
       musicTimer = null
@@ -218,6 +248,7 @@ export function createGameAudio(initiallyMuted) {
       if (master) master.gain.setTargetAtTime(value ? 0 : 0.9, ctx.currentTime, 0.05)
     },
     close() {
+      if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel()
       clearInterval(musicTimer)
       musicTimer = null
       ctx?.close().catch(() => {})
