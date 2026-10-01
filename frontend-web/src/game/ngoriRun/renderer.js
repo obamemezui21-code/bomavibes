@@ -1,6 +1,6 @@
 import { JUMP_TICKS, OBSTACLES, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
-import { DIRECTION_SIGNS, DISTRICTS, SHOP_SIGNS } from './libreville.js'
+import { DIRECTION_SIGNS, DISTRICTS, LANDMARKS, SHOP_SIGNS } from './libreville.js'
 
 // NGORI RUN renderer — draws the simulation's state on a 2D canvas as a
 // pseudo-3D road: Libreville-style seafront at sunset, sea and palms on the
@@ -62,6 +62,12 @@ function hash(n) {
 
 export function createRenderer(canvas, { runner = 'man' } = {}) {
   const runnerRow = RUNNERS[runner] ?? 0
+  // Coins Chics billboards ([{ at (m), name, category, image }]), set once
+  // the venues have loaded; their photos load lazily on first sight.
+  let billboards = []
+  const photos = new Map()
+  const stadium = LANDMARKS.find((l) => l.visual === 'stadium')
+  const stadiumZ = stadium ? stadium.at * 100 : -1e9
   const ctx = canvas.getContext('2d', { alpha: false })
   let W = 0
   let H = 0
@@ -152,7 +158,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     return Math.max(0, Math.min(1, (VIEW_DEPTH - zr) / 3000))
   }
 
-  function drawSky(time) {
+  function drawSky(time, dist) {
     ctx.fillStyle = skyGradient
     ctx.fillRect(0, 0, W, horizonY + 1)
     // Sun setting over the estuary, on the sea side.
@@ -176,6 +182,18 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.beginPath()
       ctx.ellipse(cx, cy, W * 0.16, H * 0.012, 0, 0, Math.PI * 2)
       ctx.fill()
+    }
+    // Pointe Denis, across the estuary, while running along the Bord de mer.
+    if (dist < 150000) {
+      ctx.globalAlpha = Math.min(1, (150000 - dist) / 50000)
+      ctx.fillStyle = '#3d2a5c'
+      ctx.beginPath()
+      ctx.moveTo(W * 0.02, horizonY + 1)
+      ctx.quadraticCurveTo(W * 0.1, horizonY - H * 0.022, W * 0.2, horizonY - H * 0.012)
+      ctx.quadraticCurveTo(W * 0.27, horizonY - H * 0.016, W * 0.34, horizonY + 1)
+      ctx.closePath()
+      ctx.fill()
+      ctx.globalAlpha = 1
     }
     // City skyline on the right, far away.
     ctx.fillStyle = 'rgba(60,20,70,0.85)'
@@ -389,13 +407,238 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.globalAlpha = 1
   }
 
+  const VENUE_EMOJI = { Restaurant: '🍽️', Bar: '🍸', Lounge: '🛋️' }
+
+  function venuePhoto(url) {
+    if (!url) return null
+    let img = photos.get(url)
+    if (!img) {
+      img = new Image()
+      img.src = url
+      photos.set(url, img)
+    }
+    return img.complete && img.naturalWidth > 0 ? img : null
+  }
+
+  // Coins Chics billboard on the seafront promenade.
+  function drawBillboard(zr, b) {
+    const x = -ROAD_HALF - 190
+    ctx.globalAlpha = fogAlpha(zr)
+    face(x - 130, 12, 0, 250, zr, '#3f3f46')
+    face(x + 130, 12, 0, 250, zr, '#3f3f46')
+    const frame = face(x, 340, 225, 430, zr, '#ec4899')
+    const fw = frame.right - frame.left
+    const fh = frame.bottom - frame.top
+    const pad = fh * 0.05
+    ctx.fillStyle = '#1f1030'
+    ctx.fillRect(frame.left + pad, frame.top + pad, fw - pad * 2, fh - pad * 2)
+    const side = fh - pad * 4
+    const img = venuePhoto(b.image)
+    if (img) {
+      // Centre-crop the photo into a square.
+      const sq = Math.min(img.naturalWidth, img.naturalHeight)
+      ctx.drawImage(
+        img,
+        (img.naturalWidth - sq) / 2,
+        (img.naturalHeight - sq) / 2,
+        sq,
+        sq,
+        frame.left + pad * 2,
+        frame.top + pad * 2,
+        side,
+        side,
+      )
+    } else {
+      ctx.fillStyle = '#3b1d4f'
+      ctx.fillRect(frame.left + pad * 2, frame.top + pad * 2, side, side)
+      ctx.font = `${side * 0.55}px system-ui, sans-serif`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(VENUE_EMOJI[b.category] || '✨', frame.left + pad * 2 + side / 2, frame.top + pad * 2 + side / 2)
+    }
+    const tx = frame.left + pad * 3 + side
+    const tw = frame.right - pad * 2 - tx
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#f9a8d4'
+    ctx.font = `800 ${Math.max(4, fh * 0.12)}px system-ui, sans-serif`
+    ctx.fillText('COINS CHICS ✨', tx, frame.top + fh * 0.24, tw)
+    ctx.fillStyle = '#fff'
+    ctx.font = `900 ${Math.max(5, fh * 0.22)}px system-ui, sans-serif`
+    ctx.fillText(b.name, tx, frame.top + fh * 0.5, tw)
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'
+    ctx.font = `600 ${Math.max(4, fh * 0.13)}px system-ui, sans-serif`
+    ctx.fillText(`${VENUE_EMOJI[b.category] || ''} ${b.category}`.trim(), tx, frame.top + fh * 0.76, tw)
+    ctx.globalAlpha = 1
+  }
+
+  // Brown tourist sign for a public landmark.
+  function drawLandmarkSign(zr, text) {
+    const x = -ROAD_HALF - 80
+    ctx.globalAlpha = fogAlpha(zr)
+    face(x, 12, 0, 330, zr, '#52525b')
+    const panel = face(x - 60, 380, 230, 330, zr, '#7c4a1e')
+    const pw = panel.right - panel.left
+    const ph = panel.bottom - panel.top
+    ctx.strokeStyle = '#fef3c7'
+    ctx.lineWidth = Math.max(1, ph * 0.05)
+    ctx.strokeRect(panel.left + pw * 0.03, panel.top + ph * 0.1, pw * 0.94, ph * 0.8)
+    ctx.fillStyle = '#fff'
+    ctx.font = `700 ${Math.max(5, ph * 0.36)}px system-ui, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, panel.left + pw / 2, panel.top + ph / 2, pw * 0.88)
+    ctx.globalAlpha = 1
+  }
+
+  // Pirogues and small sailing boats moored off Port-Môle.
+  function drawBoat(zr, k, time) {
+    const x = -ROAD_HALF - 700 - hash(k) * 900
+    const bob = Math.sin(time * 1.5 + k) * 8
+    const a = project(x - 160, bob, zr)
+    const b = project(x + 160, bob, zr)
+    const c = project(x + 120, bob - 50, zr)
+    const d = project(x - 120, bob - 50, zr)
+    ctx.globalAlpha = fogAlpha(zr)
+    ctx.fillStyle = k % 2 ? '#f8fafc' : '#b45309'
+    ctx.beginPath()
+    ctx.moveTo(a.x, a.y)
+    ctx.lineTo(b.x, b.y)
+    ctx.lineTo(c.x, c.y)
+    ctx.lineTo(d.x, d.y)
+    ctx.closePath()
+    ctx.fill()
+    if (k % 2) {
+      const mast = project(x, 380 + bob, zr)
+      ctx.strokeStyle = '#e5e7eb'
+      ctx.lineWidth = Math.max(1, 5 * a.s)
+      ctx.beginPath()
+      ctx.moveTo(mast.x, a.y)
+      ctx.lineTo(mast.x, mast.y)
+      ctx.stroke()
+      const sail = project(x + 130, 80 + bob, zr)
+      ctx.fillStyle = 'rgba(255,255,255,0.9)'
+      ctx.beginPath()
+      ctx.moveTo(mast.x, mast.y)
+      ctx.lineTo(mast.x, sail.y)
+      ctx.lineTo(sail.x, sail.y)
+      ctx.closePath()
+      ctx.fill()
+    }
+    ctx.globalAlpha = 1
+  }
+
+  // Container cranes of the Port d'Owendo, out over the water.
+  function drawCrane(zr, k) {
+    const x = -ROAD_HALF - 900 - k * 500
+    ctx.globalAlpha = fogAlpha(zr)
+    ctx.strokeStyle = k % 2 ? '#dc2626' : '#2563eb'
+    const legL = project(x - 150, 0, zr)
+    const legR = project(x + 150, 0, zr)
+    const apex = project(x, 2200, zr)
+    const boomEnd = project(x + 900, 2100, zr)
+    const boomBack = project(x - 500, 2100, zr)
+    ctx.lineWidth = Math.max(1, 30 * legL.s)
+    ctx.beginPath()
+    ctx.moveTo(legL.x, legL.y)
+    ctx.lineTo(apex.x, apex.y)
+    ctx.lineTo(legR.x, legR.y)
+    ctx.moveTo(boomBack.x, boomBack.y)
+    ctx.lineTo(boomEnd.x, boomEnd.y)
+    ctx.stroke()
+    // Stacked containers at its feet.
+    const colors = ['#f97316', '#0ea5e9', '#22c55e', '#e11d48']
+    for (let i = 0; i < 3; i++) face(x + 350 + i * 270, 250, 0, 260 + (i % 2) * 260, zr + 200, colors[(k + i) % colors.length])
+    ctx.globalAlpha = 1
+  }
+
+  // Stade de l'Amitié: a long curved stand along the road, with floodlights.
+  function drawStadium(zr0) {
+    const zr1 = zr0 + 3000
+    const x = ROAD_HALF + 520
+    const h = 950
+    const near = Math.max(zr0, -CAM_BACK + 60)
+    ctx.globalAlpha = fogAlpha(zr0)
+    const a = project(x, 0, near)
+    const b = project(x, h, near)
+    const c = project(x, h, zr1)
+    const d = project(x, 0, zr1)
+    ctx.fillStyle = '#d6d3d1'
+    ctx.beginPath()
+    ctx.moveTo(a.x, a.y)
+    ctx.lineTo(b.x, b.y)
+    ctx.lineTo(c.x, c.y)
+    ctx.lineTo(d.x, d.y)
+    ctx.closePath()
+    ctx.fill()
+    ctx.fillStyle = 'rgba(20,5,30,0.25)'
+    ctx.fill()
+    // Arched openings.
+    ctx.fillStyle = '#3f3f46'
+    for (let i = 0; i < 10; i++) {
+      const z = zr0 + 150 + i * 285
+      if (z < -CAM_BACK + 80) continue
+      const p = project(x, 380, z)
+      const q = project(x, 0, z + 170)
+      ctx.fillRect(Math.min(p.x, q.x), p.y, Math.max(1.5, Math.abs(q.x - p.x)), q.y - p.y)
+    }
+    // Roof canopy edge.
+    ctx.strokeStyle = '#f5f5f4'
+    ctx.lineWidth = Math.max(1, 30 * c.s)
+    ctx.beginPath()
+    ctx.moveTo(b.x, b.y)
+    ctx.quadraticCurveTo((b.x + c.x) / 2, Math.min(b.y, c.y) - 30 * c.s, c.x, c.y)
+    ctx.stroke()
+    // Floodlights at both ends.
+    for (const z of [zr0 + 100, zr1 - 100]) {
+      if (z < -CAM_BACK + 80) continue
+      const base = project(x + 200, h, z)
+      const lamp = project(x + 200, h + 700, z)
+      ctx.strokeStyle = '#52525b'
+      ctx.lineWidth = Math.max(1, 14 * base.s)
+      ctx.beginPath()
+      ctx.moveTo(base.x, base.y)
+      ctx.lineTo(lamp.x, lamp.y)
+      ctx.stroke()
+      ctx.fillStyle = '#fef9c3'
+      ctx.fillRect(lamp.x - 60 * lamp.s, lamp.y - 50 * lamp.s, 120 * lamp.s, 50 * lamp.s)
+    }
+    const label = project(x, h * 0.62, Math.max(zr0 + 600, -CAM_BACK + 120))
+    ctx.font = `900 ${Math.max(6, 90 * label.s)}px system-ui, sans-serif`
+    ctx.textAlign = 'right'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#7c3aed'
+    ctx.fillText("STADE DE L'AMITIÉ", label.x - 6, label.y)
+    ctx.globalAlpha = 1
+  }
+
   function drawScenery(dist, time) {
     const first = Math.floor((dist - CAM_BACK) / 1500)
     const last = Math.floor((dist + VIEW_DEPTH) / 1500)
-    for (let k = last; k >= first; k--) drawBuilding(k, dist)
+    for (let k = last; k >= first; k--) {
+      const z0 = k * 1500
+      if (z0 + 1500 > stadiumZ - 600 && z0 < stadiumZ + 3600) continue // the stadium stands here
+      drawBuilding(k, dist)
+    }
+    if (stadiumZ - dist < VIEW_DEPTH && stadiumZ + 3000 - dist > -CAM_BACK + 60) drawStadium(stadiumZ - dist)
     const props = []
     for (let k = Math.floor((dist - CAM_BACK) / 1100); k * 1100 < dist + VIEW_DEPTH; k++) props.push({ zr: k * 1100 + 300 - dist, draw: (zr) => drawPalm(zr, k, time) })
     for (let k = Math.floor((dist - CAM_BACK) / 1400); k * 1400 < dist + VIEW_DEPTH; k++) props.push({ zr: k * 1400 + 700 - dist, draw: (zr) => drawLamp(zr) })
+    for (const l of LANDMARKS) {
+      const z = l.at * 100
+      if (z - dist > VIEW_DEPTH || z - dist < -CAM_BACK) continue
+      props.push({ zr: z - dist, draw: (zr) => drawLandmarkSign(zr, l.text) })
+      if (l.visual === 'boats') {
+        for (let k = 0; k < 5; k++) props.push({ zr: z - 2500 + k * 1300 - dist, draw: (zr) => drawBoat(zr, k, time) })
+      }
+      if (l.visual === 'cranes') {
+        for (let k = 0; k < 3; k++) props.push({ zr: z + 800 + k * 1800 - dist, draw: (zr) => drawCrane(zr, k) })
+      }
+    }
+    for (const b of billboards) {
+      const zr = b.at * 100 - dist
+      if (zr > -CAM_BACK && zr < VIEW_DEPTH) props.push({ zr, draw: (z) => drawBillboard(z, b) })
+    }
     // A direction sign every ~650 m, kept away from the district arches.
     for (let k = Math.max(0, Math.floor((dist - CAM_BACK - 40000) / 65000)); k * 65000 + 40000 < dist + VIEW_DEPTH; k++) {
       const z = k * 65000 + 40000
@@ -734,7 +977,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       const k = (shakeUntil - now) / 400
       ctx.translate((Math.random() - 0.5) * 18 * k, (Math.random() - 0.5) * 18 * k)
     }
-    drawSky(view.time)
+    drawSky(view.time, view.dist)
     drawGround(view.dist)
     drawSeaSparkles(view.time)
     drawScenery(view.dist, view.time)
@@ -778,6 +1021,9 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   return {
     resize,
     render,
+    setBillboards(list) {
+      billboards = list || []
+    },
     popup(text, color, laneVis, size = 26) {
       const a = runnerAnchor(laneVis)
       popups.push({ text, color, x: a.x, y: a.y, size, born: performance.now() })

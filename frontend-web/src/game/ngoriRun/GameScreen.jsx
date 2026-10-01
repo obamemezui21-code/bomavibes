@@ -20,7 +20,7 @@ const BONUS_LABEL = { combo: 'Combo', distance: 'Distance' }
 // One run of NGORI RUN, full screen. Runs the shared simulation at a fixed
 // 60 ticks/s, records every gesture with the tick it was applied on, and
 // hands { inputs, endTick, claimed } to onEnd — the server replays it.
-function GameScreen({ seed, runner, audio, muted, onToggleMute, showButtons, onEnd }) {
+function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, showButtons, onEnd }) {
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
   const pendingRef = useRef([])
@@ -30,16 +30,23 @@ function GameScreen({ seed, runner, audio, muted, onToggleMute, showButtons, onE
   const [paused, setPaused] = useState(false)
   const [toast, setToast] = useState(null)
   const onEndRef = useRef(onEnd)
+  const rendererRef = useRef(null)
   const endRef = useRef(null)
 
   useEffect(() => {
     onEndRef.current = onEnd
   }, [onEnd])
 
+  // Coins Chics billboards may arrive after the run has started.
+  useEffect(() => {
+    rendererRef.current?.setBillboards(billboards)
+  }, [billboards, seed])
+
   useEffect(() => {
     const canvas = canvasRef.current
     const wrap = wrapRef.current
     const renderer = createRenderer(canvas, { runner })
+    rendererRef.current = renderer
     const state = createRun(seed)
     const inputs = []
     let laneVis = state.lane

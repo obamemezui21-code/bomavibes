@@ -9,7 +9,8 @@ import { REWARDS } from '../lib/ngori.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
-import { districtAt } from '../game/ngoriRun/libreville.js'
+import { districtAt, placeVenues } from '../game/ngoriRun/libreville.js'
+import { fetchPublishedVenuesOnly } from '../firebase/venues.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
@@ -362,6 +363,7 @@ function NgoriRun() {
   const [muted, setMuted] = useState(loadMuted)
   const [showButtons, setShowButtons] = useState(() => readFlag(BUTTONS_KEY))
   const [runner, setRunner] = useState(readRunner)
+  const [billboards, setBillboards] = useState([])
   const [tab, setTab] = useState('leaderboard')
   const [phase, setPhase] = useState('lobby') // lobby | starting | playing | result
   const [run, setRun] = useState(null) // { runId, seed }
@@ -373,6 +375,17 @@ function NgoriRun() {
   const balance = account?.ngori || 0
 
   useEffect(() => () => audio.close(), [audio])
+
+  // The Coins Chics venues become billboards along the route.
+  useEffect(() => {
+    let cancelled = false
+    fetchPublishedVenuesOnly()
+      .then((venues) => !cancelled && setBillboards(placeVenues(venues)))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     getMyNgoriRunStats()
@@ -573,6 +586,7 @@ function NgoriRun() {
           key={run.runId}
           seed={run.seed}
           runner={runner}
+          billboards={billboards}
           audio={audio}
           muted={muted}
           onToggleMute={toggleMute}
