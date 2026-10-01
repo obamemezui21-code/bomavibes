@@ -10,7 +10,7 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
 import { districtAt, placeVenues } from '../game/ngoriRun/libreville.js'
-import { fetchPublishedVenuesOnly } from '../firebase/venues.js'
+import { fetchPublishedVenues } from '../firebase/venues.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
@@ -379,7 +379,7 @@ function NgoriRun() {
   // The Coins Chics venues become billboards along the route.
   useEffect(() => {
     let cancelled = false
-    fetchPublishedVenuesOnly()
+    fetchPublishedVenues()
       .then((venues) => !cancelled && setBillboards(placeVenues(venues)))
       .catch(() => {})
     return () => {

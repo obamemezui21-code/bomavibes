@@ -1,14 +1,14 @@
-import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { collection, getDocs, query, where } from 'firebase/firestore'
 import { auth, db } from './config.js'
 
-// No `where('status', '==', 'published')` clause needed: firestore.rules
-// already filters out drafts per-document for anyone who isn't an Editor/
-// Admin/Super Admin, so a plain orderBy query already returns only what
-// the signed-in user is allowed to see.
+// Published events, soonest first. The status filter has to be in the
+// query: Firestore rules are not filters, so for a regular user a query
+// that could return a single draft is rejected as a whole. Sorted here
+// (dates are "YYYY-MM-DD" strings) rather than with orderBy, which would
+// need a composite (status, date) index.
 export async function fetchPublishedEvents() {
-  const q = query(collection(db, 'events'), orderBy('date', 'asc'))
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  const snap = await getDocs(query(collection(db, 'events'), where('status', '==', 'published')))
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')))
 }
 
 async function authedFetch(path, options = {}) {
