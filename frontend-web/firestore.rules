@@ -34,6 +34,13 @@ service cloud.firestore {
         && account.planExpiresAt > request.time;
     }
 
+    // Subscribers, or anyone who unlocked calls with Ngori (perks.callsUntil).
+    function canPlaceCalls(uid) {
+      let account = get(/databases/$(database)/documents/users/$(uid)).data;
+      return hasActivePlan(uid)
+        || (account.get('perks', {}).get('callsUntil', null) != null && account.perks.callsUntil > request.time);
+    }
+
     // Fields only the server may set; a client write must leave them as is.
     function unchangedFields(fields) {
       return !request.resource.data.diff(resource == null ? {} : resource.data).affectedKeys().hasAny(fields);
@@ -67,7 +74,9 @@ service cloud.firestore {
           && (!('deleted' in data) || (resource != null && data.deleted == resource.data.get('deleted', false)))
           && (!('deletedAt' in data) || (resource != null && data.deletedAt == resource.data.get('deletedAt', null)))
           // Subscription: set only by an admin through the backend.
-          && unchangedFields(['plan', 'planExpiresAt', 'planUpdatedAt', 'planUpdatedBy']);
+          && unchangedFields(['plan', 'planExpiresAt', 'planUpdatedAt', 'planUpdatedBy'])
+          // Ngori wallet and the perks it buys: backend only (ngoriController.js).
+          && unchangedFields(['ngori', 'ngoriStreak', 'ngoriLastClaimDay', 'perks']);
       }
 
       // Account deletion is a full erasure (see accountController.deleteAccount:
@@ -88,6 +97,11 @@ service cloud.firestore {
           && isOptionalString('city', 100)
           && isOptionalString('country', 100)
           && isOptionalString('gender', 20)
+          && isOptionalString('neighborhood', 80)
+          && isOptionalString('jobTitle', 80)
+          && isOptionalString('workplace', 80)
+          && isOptionalString('children', 60)
+          && (!('height' in data) || data.height == null || (data.height is number && data.height >= 120 && data.height <= 230))
           && (!('age' in data) || data.age == null || (data.age is number && data.age >= 18 && data.age <= 120))
           && (!('interests' in data) || (data.interests is list && data.interests.size() <= 20))
           && (!('photos' in data) || (data.photos is list && data.photos.size() <= 3));
@@ -99,9 +113,10 @@ service cloud.firestore {
 
       allow read: if isSignedIn();
       // Plan perks shown to others (Discover ranking, boost, invisible mode)
+      // and the 🔥 login-streak badge
       // are written by the backend only.
       function perksUnchanged() {
-        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible']);
+        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible', 'streakBadge', 'streakDay']);
       }
 
       allow create: if isOwner(userId) && validPublicProfile() && perksUnchanged()
@@ -334,7 +349,7 @@ service cloud.firestore {
         && request.resource.data.calleeId != request.auth.uid
         && request.resource.data.type in ['audio', 'video']
         && request.resource.data.status == 'ringing'
-        && hasActivePlan(request.auth.uid)
+        && canPlaceCalls(request.auth.uid)
         && request.resource.data.matchId is string
         && request.auth.uid in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users
         && request.resource.data.calleeId in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users

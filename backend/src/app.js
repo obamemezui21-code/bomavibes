@@ -21,9 +21,10 @@ const aiPartnersRoutes = require("./routes/aiPartnersRoutes");
 const callRoutes = require("./routes/callRoutes");
 const verificationRoutes = require("./routes/verificationRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
+const ngoriRoutes = require("./routes/ngoriRoutes");
+const ngoriRunRoutes = require("./routes/ngoriRunRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
-const { startWwfNewsScheduler } = require("./services/wwfNewsService");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
 
 const app = express();
@@ -67,10 +68,11 @@ app.use("/api/admin/verifications", verificationRoutes.adminRouter);
 app.use("/api/swipes", subscriptionRoutes.swipeRouter);
 app.use("/api/me", subscriptionRoutes.meRouter);
 app.use("/api/admin/subscriptions", subscriptionRoutes.adminRouter);
+app.use("/api/ngori", ngoriRoutes);
+app.use("/api/ngori-run", ngoriRunRoutes);
 app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
 
-startWwfNewsScheduler();
 startCallCleanupScheduler();
 startPaymentSweepScheduler();
 

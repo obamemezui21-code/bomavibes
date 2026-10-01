@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coordsForProfile, groupProfilesByCity } from './nearby.js'
+import { coordsForProfile, distanceKmBetween, groupProfilesByCity } from './nearby.js'
 
 const TABLE = {
   'GA|Libreville': [0.4087, 9.4419],
@@ -38,5 +38,21 @@ describe('groupProfilesByCity', () => {
       ['Oyem', ['a']],
     ])
     expect(groups[0]).toMatchObject({ lat: 0.4087, lng: 9.4419 })
+  })
+})
+
+describe('distanceKmBetween', () => {
+  it('is zero within the same city', () => {
+    expect(distanceKmBetween({ countryCode: 'GA', city: 'Libreville' }, { countryCode: 'GA', city: 'Libreville' }, TABLE)).toBe(0)
+  })
+
+  it('measures the straight line between two city centres', () => {
+    const km = distanceKmBetween({ countryCode: 'GA', city: 'Libreville' }, { countryCode: 'GA', city: 'Oyem' }, TABLE)
+    expect(km).toBeGreaterThan(260)
+    expect(km).toBeLessThan(275)
+  })
+
+  it('is null when a city is unknown', () => {
+    expect(distanceKmBetween({ countryCode: 'GA', city: 'Libreville' }, { countryCode: 'GA', city: 'Atlantis' }, TABLE)).toBeNull()
   })
 })

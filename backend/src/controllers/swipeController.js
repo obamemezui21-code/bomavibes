@@ -1,5 +1,6 @@
 const admin = require("../config/firebaseAdmin");
-const { PLANS, UNLIMITED, planFor, periodKey } = require("../config/plans");
+const { PLANS, UNLIMITED, periodKey } = require("../config/plans");
+const { effectivePlanFor } = require("../config/ngori");
 const { sendPushToUser } = require("../services/pushService");
 
 const db = admin.firestore();
@@ -51,7 +52,7 @@ async function recordSwipe(req, res) {
         let usageAfter = null;
         await db.runTransaction(async (tx) => {
             const [userSnap, usageSnap, prevSwipe] = await Promise.all([tx.get(userRef), tx.get(usageRef), tx.get(swipeRef)]);
-            plan = planFor(userSnap.data(), now);
+            plan = effectivePlanFor(userSnap.data(), now);
             const usage = usageSnap.data() || {};
             const wasLiked = LIKE_DIRECTIONS.includes(prevSwipe.data()?.direction);
             const update = {};
@@ -132,7 +133,7 @@ async function getQuota(req, res) {
             db.collection("users").doc(uid).get(),
             db.collection("usage").doc(uid).get(),
         ]);
-        const plan = planFor(userSnap.data());
+        const plan = effectivePlanFor(userSnap.data());
         res.json({ remaining: remainingFor(plan, usageSnap.data(), Date.now()) });
     } catch (err) {
         console.error(err);
@@ -178,7 +179,7 @@ async function getIncomingLikers(req, res) {
             .filter((s) => !answered.has(s.swiperId) && !blocked.has(s.swiperId))
             .map((s) => ({ id: s.swiperId, superlike: s.direction === "superlike" }));
 
-        if (!planFor(userSnap.data()).seeLikes) {
+        if (!effectivePlanFor(userSnap.data()).seeLikes) {
             return res.json({ locked: true, count: likerIds.length, likers: [] });
         }
 

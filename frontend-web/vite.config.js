@@ -6,6 +6,8 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    // The NGORI RUN engine lives in ../shared (the backend replays runs with it).
+    fs: { allow: ['.', '../shared'] },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

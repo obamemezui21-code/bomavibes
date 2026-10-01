@@ -3,14 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
+  Baby,
+  Briefcase,
   Check,
   Flag,
   Heart,
+  House,
   Languages,
   Leaf,
   MapPin,
   MessageCircle,
   MoreVertical,
+  Navigation,
+  Ruler,
   ShieldOff,
   Sparkles,
   Star,
@@ -19,6 +24,8 @@ import {
 } from 'lucide-react'
 import { iconForInterest } from '../lib/interests.js'
 import { LIFESTYLE_GROUPS } from '../lib/onboardingOptions.js'
+import { distanceKmBetween } from '../lib/nearby.js'
+import { activeStreakBadge } from '../lib/ngori.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -50,6 +57,37 @@ function InfoSection({ icon: Icon, title, items, iconFor }) {
         ))}
       </div>
     </div>
+  )
+}
+
+function formatDistance(km) {
+  if (km == null) return null
+  if (km < 5) return 'Dans votre ville'
+  return `À ${km < 100 ? Math.round(km) : Math.round(km / 10) * 10} km de vous`
+}
+
+function formatHeight(cm) {
+  return `${(cm / 100).toFixed(2).replace('.', ',')} m`
+}
+
+// The facts people look for first — distance, height, where they live and
+// work, languages, children — as one compact list at the top of the sheet.
+function KeyFacts({ facts }) {
+  if (!facts.length) return null
+  return (
+    <ul className="mt-5 divide-y divide-ink/6 rounded-2xl bg-surface-soft px-4">
+      {facts.map(({ Icon, label, value }) => (
+        <li key={label} className="flex items-center gap-3 py-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-600">
+            <Icon size={15} strokeWidth={2.25} />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-soft/60">{label}</span>
+            <span className="block text-sm font-medium text-ink">{value}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
@@ -91,7 +129,7 @@ function MatchRing({ percent }) {
 }
 
 function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked, matchId, isSelf }) {
-  const { user } = useAuth()
+  const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const photos = profile.photos?.length
@@ -137,6 +175,18 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
   }
 
   const showActions = !isSelf
+  const [streakBadge] = useState(() => activeStreakBadge(profile))
+
+  const work = [profile.jobTitle, profile.workplace].filter(Boolean).join(' chez ')
+  const home = [profile.neighborhood, profile.city].filter(Boolean).join(', ')
+  const facts = [
+    !isSelf && { Icon: Navigation, label: 'Distance', value: formatDistance(distanceKmBetween(publicProfile, profile)) },
+    { Icon: Ruler, label: 'Taille', value: profile.height ? formatHeight(profile.height) : null },
+    { Icon: House, label: 'Habite à', value: home },
+    { Icon: Briefcase, label: 'Travail', value: work },
+    { Icon: Languages, label: 'Langues', value: profile.languages?.join(', ') },
+    { Icon: Baby, label: 'Enfants', value: profile.children },
+  ].filter((f) => f && f.value)
 
   return (
     <motion.div
@@ -266,11 +316,23 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                   </span>
                 )}
               </div>
-              {profile.verified && (
-                <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-sky-500/90 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md">
-                  <Check size={11} strokeWidth={3} />
-                  Profil vérifié par selfie
-                </span>
+              {(profile.verified || streakBadge) && (
+                <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                  {profile.verified && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/90 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md">
+                      <Check size={11} strokeWidth={3} />
+                      Profil vérifié par selfie
+                    </span>
+                  )}
+                  {streakBadge && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-orange-500/90 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md"
+                      title="Connecté·e à BomaVibes plusieurs jours d'affilée"
+                    >
+                      🔥 {streakBadge} jours d'affilée
+                    </span>
+                  )}
+                </div>
               )}
               {matchPercent > 0 && (
                 <div className="mt-3">
@@ -300,6 +362,8 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               </div>
             )}
 
+            <KeyFacts facts={facts} />
+
             {profile.bio && (
               <div className="mt-5">
                 <p className="font-display text-sm font-semibold text-ink">À propos</p>
@@ -309,7 +373,6 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
 
             <InfoSection icon={Heart} title="Centres d'intérêt" items={profile.interests} iconFor={iconForInterest} />
             <InfoSection icon={Sparkles} title="Personnalité" items={profile.personalityTraits} />
-            <InfoSection icon={Languages} title="Langues parlées" items={profile.languages} />
             <InfoSection
               icon={Leaf}
               title="Style de vie"

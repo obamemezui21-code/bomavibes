@@ -54,7 +54,7 @@ import { countIncomingLikes } from '../firebase/swipes.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { callLabel, formatCallDuration, isMissedCall } from '../lib/callSummary.js'
-import { activePlan } from '../lib/plans.js'
+import { effectivePlan } from '../lib/ngori.js'
 import PaywallModal from '../components/PaywallModal.jsx'
 import { formatDuration } from '../lib/formatDuration.js'
 import { matchPercent } from '../lib/interests.js'
@@ -761,9 +761,9 @@ function Chat() {
 
   function handleStartCall(type) {
     if (!active?.otherUid) return
-    // Placing a call is a subscriber perk (also enforced by the rules);
+    // Placing a call is a subscriber (or Ngori) perk, also enforced by the rules;
     // receiving one stays free.
-    if (!activePlan(account).calls) {
+    if (!effectivePlan(account).calls) {
       setPaywall('calls')
       return
     }

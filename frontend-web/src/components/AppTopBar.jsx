@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, LayoutGrid, MapPin, Menu, Moon, ShieldCheck, Sparkles, Sun } from 'lucide-react'
+import { Bell, Gamepad2, LayoutGrid, MapPin, Menu, Moon, ShieldCheck, Sparkles, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { hasAdminAccess } from '../lib/roles.js'
 import logo from '../assets/bomavibes-icon.webp'
+import NgoriCoin from './NgoriCoin.jsx'
 
 const iconButtonClass =
   'flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink transition hover:bg-ink/8 active:scale-95'
@@ -55,13 +56,14 @@ function AppTopBar() {
     { to: '/events', label: 'Événements', icon: LayoutGrid, tint: 'bg-mint-500/15 text-mint-500 hover:bg-mint-500/25' },
     { to: '/coins-chics', label: 'Coins Chics', icon: MapPin, tint: 'bg-pink-500/15 text-pink-500 hover:bg-pink-500/25' },
     { to: '/studio-ia', label: 'Studio IA', icon: Sparkles, tint: 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25' },
+    { to: '/ngori-run', label: 'Ngori Run', icon: Gamepad2, tint: 'bg-gold/20 text-amber-600 hover:bg-gold/30 dark:text-gold' },
   ]
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 bg-surface-soft/85 px-4 backdrop-blur-xl desktop:border-b desktop:border-ink/8 desktop:bg-surface/80">
       <div className="flex items-center gap-2">
         <img src={logo} alt="BomaVibes" className="h-8 w-8 rounded-2xl object-cover" />
-        <span className="font-display text-lg font-bold tracking-tight">
+        <span className="font-display text-lg font-bold tracking-tight max-[379px]:hidden">
           <span className="text-ink">Boma</span>
           <span className="text-pink-500">Vibes</span>
         </span>
@@ -82,6 +84,16 @@ function AppTopBar() {
         >
           {theme === 'dark' ? <Sun size={20} strokeWidth={2.25} /> : <Moon size={20} strokeWidth={2.25} />}
         </button>
+
+        <NavLink
+          to="/ngori"
+          className="flex h-10 items-center gap-1.5 rounded-full bg-gold/20 pl-1.5 pr-3 text-sm font-bold text-ink transition hover:bg-gold/30 active:scale-95"
+          aria-label={`Mes Ngori : ${profile?.ngori || 0}`}
+          title="Mes Ngori"
+        >
+          <NgoriCoin size={24} />
+          {profile?.ngori || 0}
+        </NavLink>
 
         <NavLink to="/notifications" className={`relative ${tintedButtonClass} ${BELL_TINT}`} aria-label="Notifications">
           <Bell size={20} strokeWidth={2.25} />

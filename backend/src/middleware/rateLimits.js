@@ -62,8 +62,18 @@ const verificationEmailLimiter = limiter({
     keyGenerator: (req) => `uid:${req.firebaseUser.uid}`,
 });
 
+// NGORI RUN — per account, generous for real play (a run takes two calls)
+// but stops scripted request floods. Must run after requireFirebaseAuth.
+const ngoriRunLimiter = limiter({
+    windowMs: 10 * MINUTE,
+    limit: 80,
+    message: "Doucement ! Trop de parties d'affilée, réessayez dans quelques minutes.",
+    keyGenerator: (req) => `uid:${req.firebaseUser.uid}`,
+});
+
 module.exports = {
     apiLimiter,
+    ngoriRunLimiter,
     registerLimiter,
     passwordResetIpLimiter,
     passwordResetEmailLimiter,

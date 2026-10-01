@@ -32,3 +32,5 @@ export const LIFESTYLE_GROUPS = [
   { key: 'smoking', label: 'Tabac', options: ['Non-fumeur', 'Fumeur occasionnel', 'Fumeur'] },
   { key: 'alcohol', label: 'Alcool', options: ['Jamais', 'Occasionnel', 'Régulier'] },
 ]
+
+export const CHILDREN_OPTIONS = ["Pas d'enfant", "A des enfants", "Pas d'enfant, en veut", "A des enfants, en veut d'autres"]

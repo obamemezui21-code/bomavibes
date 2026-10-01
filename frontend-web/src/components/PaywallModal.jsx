@@ -1,6 +1,10 @@
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Crown, X } from 'lucide-react'
+import NgoriCoin from './NgoriCoin.jsx'
+
+// Limits a Ngori reward can lift for a while (see lib/ngori.js).
+const NGORI_REASONS = ['likes', 'calls', 'likers', 'boost']
 
 const REASONS = {
   likes: {
@@ -81,6 +85,16 @@ function PaywallModal({ reason = 'likes', message, onClose }) {
         >
           Voir les forfaits
         </button>
+        {NGORI_REASONS.includes(reason) && (
+          <button
+            type="button"
+            onClick={() => navigate('/ngori')}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-white/25 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+          >
+            <NgoriCoin size={18} />
+            Débloquer avec mes Ngori
+          </button>
+        )}
         <button type="button" onClick={onClose} className="mt-2 w-full py-2 text-sm text-white/70 hover:text-white">
           Plus tard
         </button>

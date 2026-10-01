@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 import AppTopBar from '../components/AppTopBar.jsx'
+import NgoriDailyReward from '../components/NgoriDailyReward.jsx'
 
 function useNavItems() {
   const { unreadMessagesCount, newMatchesCount } = useConversations()
@@ -122,7 +123,9 @@ function AppLayout() {
           </button>
         </aside>
 
-        <main className="min-h-[calc(100svh_-_3.5rem)] flex-1 pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
+        {/* overflow-x-clip (not hidden): nothing a page does can widen the
+            viewport, while sticky headers inside pages keep working. */}
+        <main className="min-h-[calc(100svh_-_3.5rem)] min-w-0 flex-1 overflow-x-clip pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
           {/* Keyed by the top-level segment only (not the full pathname) so
               opening a chat thread (/chat -> /chat/:id) or a post
               (/feed -> /feed/:postId) doesn't retrigger a full-page fade —
@@ -186,6 +189,7 @@ function AppLayout() {
       </nav>
 
       <PushPermissionPrompt />
+      <NgoriDailyReward />
     </div>
   )
 }

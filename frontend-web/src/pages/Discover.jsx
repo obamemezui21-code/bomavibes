@@ -339,7 +339,10 @@ function Discover() {
   }
 
   return (
-    <div className="relative min-h-svh bg-surface-soft desktop:min-h-full">
+    // overflow-x-hidden: the decorative halos and a swiped card flying out
+    // (EXIT_X = 600px) widened the page, and iOS Safari then let the whole
+    // screen slide sideways, leaving an empty strip on the right.
+    <div className="relative min-h-svh overflow-x-hidden bg-surface-soft desktop:min-h-full">
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-mint-500/15 blur-[100px]" />
       <div className="pointer-events-none absolute -right-20 top-40 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 

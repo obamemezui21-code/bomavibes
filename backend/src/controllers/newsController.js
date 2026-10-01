@@ -1,29 +1,12 @@
-const { getCachedNews, refreshCache } = require("../services/wwfNewsService");
 const admin = require("../config/firebaseAdmin");
 
 // Announcements change rarely (admin-authored), but this route is public
 // and unauthenticated — every landing-page visit (including bots/uptime
 // pings, which don't share a browser cache) was re-querying Firestore with
-// no throttling at all. A short in-memory cache, mirroring the pattern
-// already used for the WWF news feed, cuts that to one read per interval
-// no matter how many people hit the page.
+// no throttling at all. A short in-memory cache cuts that to one read per
+// interval no matter how many people hit the page.
 const UPDATES_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 let updatesCache = { updates: null, fetchedAt: 0 };
-
-async function getWwfNews(req, res) {
-    let cache = getCachedNews();
-
-    // First request after a cold start: fetch synchronously instead of returning empty.
-    if (!cache.updatedAt && !cache.error) {
-        cache = await refreshCache();
-    }
-
-    res.json({
-        articles: cache.articles,
-        updatedAt: cache.updatedAt,
-        error: cache.articles.length === 0 ? cache.error : null,
-    });
-}
 
 // Public, unauthenticated view of the in-app announcements feed — lets the
 // landing page show real platform news without loosening the Firestore
@@ -61,4 +44,4 @@ async function getPlatformUpdates(req, res) {
     }
 }
 
-module.exports = { getWwfNews, getPlatformUpdates };
+module.exports = { getPlatformUpdates };

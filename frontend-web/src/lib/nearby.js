@@ -29,3 +29,17 @@ export function groupProfilesByCity(profiles, table = CITY_COORDS) {
   }
   return [...groups.values()].sort((a, b) => b.profiles.length - a.profiles.length)
 }
+
+// Straight-line distance in km between two profiles' city centres, or null
+// when either city has no known coordinates. City-level on purpose, like the
+// map: it says "about 12 km away", never where someone actually is.
+export function distanceKmBetween(a, b, table = CITY_COORDS) {
+  const from = coordsForProfile(a, table)
+  const to = coordsForProfile(b, table)
+  if (!from || !to) return null
+  const rad = (deg) => (deg * Math.PI) / 180
+  const dLat = rad(to[0] - from[0])
+  const dLng = rad(to[1] - from[1])
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(from[0])) * Math.cos(rad(to[0])) * Math.sin(dLng / 2) ** 2
+  return 6371 * 2 * Math.asin(Math.sqrt(h))
+}

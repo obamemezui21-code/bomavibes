@@ -47,6 +47,8 @@ const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
 const MyTickets = lazy(() => import('./pages/MyTickets.jsx'))
 const Venues = lazy(() => import('./pages/Venues.jsx'))
 const StudioIA = lazy(() => import('./pages/StudioIA.jsx'))
+const Ngori = lazy(() => import('./pages/Ngori.jsx'))
+const NgoriRun = lazy(() => import('./pages/NgoriRun.jsx'))
 const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
@@ -162,6 +164,8 @@ function App() {
             <Route path="/coins-chics" element={<Venues />} />
             <Route path="/studio-ia" element={<StudioIA />} />
             <Route path="/likes" element={<LikesYou />} />
+            <Route path="/ngori" element={<Ngori />} />
+            <Route path="/ngori-run" element={<NgoriRun />} />
             <Route path="/annonces" element={<Announcements />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/chat" element={<Chat />} />

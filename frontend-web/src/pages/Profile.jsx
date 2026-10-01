@@ -13,6 +13,7 @@ import SupportModal from '../components/SupportModal.jsx'
 import VerificationCard from '../components/VerificationCard.jsx'
 import SubscriptionCard from '../components/SubscriptionCard.jsx'
 import {
+  CHILDREN_OPTIONS,
   DATING_GOALS,
   LANGUAGES,
   LIFESTYLE_GROUPS,
@@ -30,6 +31,11 @@ const emptyForm = {
   city: '',
   country: '',
   region: '',
+  neighborhood: '',
+  height: '',
+  jobTitle: '',
+  workplace: '',
+  children: '',
   bio: '',
   languages: [],
   personalityTraits: [],
@@ -63,6 +69,11 @@ function Profile() {
       city: publicProfile?.city || '',
       country: publicProfile?.country || '',
       region: publicProfile?.region || '',
+      neighborhood: publicProfile?.neighborhood || '',
+      height: publicProfile?.height ?? '',
+      jobTitle: publicProfile?.jobTitle || '',
+      workplace: publicProfile?.workplace || '',
+      children: publicProfile?.children || '',
       bio: publicProfile?.bio || '',
       languages: publicProfile?.languages || [],
       personalityTraits: publicProfile?.personalityTraits || [],
@@ -146,6 +157,11 @@ function Profile() {
       setError("L'âge doit être un nombre valide (18 ou plus)")
       return
     }
+    const parsedHeight = form.height === '' ? null : Number(form.height)
+    if (parsedHeight !== null && (!Number.isInteger(parsedHeight) || parsedHeight < 120 || parsedHeight > 230)) {
+      setError('La taille doit être en centimètres (entre 120 et 230)')
+      return
+    }
 
     setIsSaving(true)
     try {
@@ -170,6 +186,11 @@ function Profile() {
           country: form.country || null,
           countryCode: countryCode || null,
           region: form.region || null,
+          neighborhood: form.neighborhood.trim() || null,
+          height: parsedHeight,
+          jobTitle: form.jobTitle.trim() || null,
+          workplace: form.workplace.trim() || null,
+          children: form.children || null,
           bio: form.bio || null,
           languages: form.languages,
           personalityTraits: form.personalityTraits,
@@ -194,9 +215,9 @@ function Profile() {
     }
   }
 
-  const completion = Math.round(
+  const completion = Math.min(100, Math.round(
     (Object.entries(form).filter(([key, v]) => key !== 'age' && String(v).trim()).length / 6) * 100,
-  )
+  ))
 
   if (isPublicProfileLoading) {
     return (
@@ -431,6 +452,84 @@ function Profile() {
               />
             </div>
           )}
+
+          <div>
+            <label htmlFor="neighborhood" className={labelClass}>
+              Quartier
+            </label>
+            <input
+              id="neighborhood"
+              type="text"
+              maxLength="80"
+              placeholder="Ex: Louis, Glass, Akanda…"
+              value={form.neighborhood}
+              onChange={handleChange('neighborhood')}
+              className={inputClass}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="jobTitle" className={labelClass}>
+                Métier
+              </label>
+              <input
+                id="jobTitle"
+                type="text"
+                maxLength="80"
+                placeholder="Ex: Comptable"
+                value={form.jobTitle}
+                onChange={handleChange('jobTitle')}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="workplace" className={labelClass}>
+                Lieu de travail
+              </label>
+              <input
+                id="workplace"
+                type="text"
+                maxLength="80"
+                placeholder="Entreprise ou secteur"
+                value={form.workplace}
+                onChange={handleChange('workplace')}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="height" className={labelClass}>
+              Taille <span className="font-normal text-ink-soft/50">(en cm)</span>
+            </label>
+            <input
+              id="height"
+              type="number"
+              min="120"
+              max="230"
+              placeholder="Ex: 175"
+              value={form.height}
+              onChange={handleChange('height')}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>Enfants</label>
+            <div className="flex flex-wrap gap-2">
+              {CHILDREN_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, children: f.children === option ? '' : option }))}
+                  className={chipClass(form.children === option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div>
             <label htmlFor="bio" className={labelClass}>
