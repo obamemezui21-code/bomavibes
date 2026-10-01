@@ -125,6 +125,11 @@ export function createGameAudio(initiallyMuted) {
       noise({ dur: 0.6, vol: 0.55, freq: 700 })
       tone({ freq: 140, slideTo: 40, dur: 0.5, vol: 0.35, type: 'sine' })
     },
+    // Entering a new district: a soft two-note chime.
+    district: () => {
+      tone({ freq: 880, dur: 0.25, vol: 0.09, type: 'sine' })
+      tone({ freq: 1175, at: 0.12, dur: 0.4, vol: 0.09, type: 'sine' })
+    },
     reward: () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone({ freq: f, at: i * 0.09, dur: 0.35, vol: 0.12, type: 'triangle' })),
   }
 

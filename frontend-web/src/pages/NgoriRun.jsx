@@ -9,6 +9,7 @@ import { REWARDS } from '../lib/ngori.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
+import { districtAt } from '../game/ngoriRun/libreville.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
@@ -141,7 +142,7 @@ function Leaderboard({ refreshKey }) {
                   {e.isMe ? ' (toi)' : ''}
                 </p>
                 <p className="text-xs text-ink-soft/60">
-                  {fmt(e.distance)} m · {e.ngoriEarned} Ngori gagnés
+                  {fmt(e.distance)} m · 📍 {districtAt(e.distance)} · {e.ngoriEarned} Ngori
                 </p>
               </div>
               <span className="font-display text-sm font-bold tabular-nums text-ink">{fmt(e.score)}</span>
@@ -174,6 +175,7 @@ function Stats({ refreshKey }) {
   const s = data.stats
   const tiles = [
     ['🏁', 'Meilleure distance', `${fmt(s.bestDistance)} m`],
+    ['📍', 'Quartier le plus loin', s.games ? districtAt(s.bestDistance) : '—'],
     ['⭐', 'Meilleur score', fmt(s.bestScore)],
     ['🪙', 'Ngori ramassés', fmt(s.totalCollected)],
     ['💰', 'Ngori gagnés', fmt(s.totalEarned)],
@@ -230,6 +232,7 @@ function Help({ dailyCap }) {
     ['👆 Commandes', 'Glisse ← ou → pour changer de voie, ↑ pour sauter, ↓ pour glisser. Sur ordinateur : les flèches du clavier (Échap pour la pause).'],
     ['🚧 Obstacles', 'Barrières, cônes et trous : saute par-dessus. Banderoles : glisse dessous. Taxis et travaux : change de voie !'],
     ['🪙 Ngori', 'Pièce normale +1, pièce dorée +3. Enchaîne-les sans en rater : 5 d’affilée = +1, 10 = +2, 20 = +5.'],
+    ['📍 Le parcours', 'Tu longes la côte du Bord de mer jusqu’au Cap Estérias : Louis, Batterie IV, La Sablière, Les Charbonnages, Okala, Angondjé… Après 5 km, c’est le Tour de Libreville par Glass, Oloumi et Owendo !'],
     ['🏁 Distance', 'Bonus à 500 m (+1), 1 km (+2), 2 km (+3) et 5 km (+5). La vitesse augmente toutes les 30 secondes.'],
     ['⚡ Bonus rares', '🛡️ Bouclier : encaisse un choc. 🧲 Aimant : attire les Ngori. ×2 : double les Ngori. ⚡ Boost : vitesse et invincibilité.'],
     ['💰 Gains', `Tes Ngori ramassés sont crédités sur ton solde, jusqu'à ${dailyCap} Ngori par jour grâce au jeu. Ensuite tu peux continuer à jouer pour le classement !`],
@@ -271,6 +274,11 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
               ? `👏 Bien joué, ${hero.name} !`
               : `💪 On recommence, ${hero.name} ?`}
         </h2>
+        <p className="mt-1 text-center text-sm text-white/75">
+          {districtAt(r.distance) === districtAt(0)
+            ? 'Encore un effort pour sortir du Bord de mer !'
+            : `Tu es ${hero.id === 'woman' ? 'allée' : 'allé'} jusqu'à 📍 ${districtAt(r.distance)}`}
+        </p>
         {(outcome?.newBestScore || outcome?.newBestDistance) && (
           <p className="mt-2 text-center">
             <span className="rounded-full bg-gold/20 px-3 py-1 text-xs font-bold text-amber-200">🏆 Nouveau record personnel !</span>
@@ -280,6 +288,7 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
         <dl className="mt-5 space-y-2 text-sm">
           {[
             ['Distance', `${fmt(r.distance)} m`],
+            ['Quartier atteint', `📍 ${districtAt(r.distance)}`],
             ['Score', fmt(r.score)],
             ['Ngori ramassés', r.coins],
             ['Bonus', `+${r.bonus}`],

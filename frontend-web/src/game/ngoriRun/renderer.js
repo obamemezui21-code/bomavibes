@@ -1,5 +1,6 @@
 import { JUMP_TICKS, OBSTACLES, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
+import { DIRECTION_SIGNS, DISTRICTS, SHOP_SIGNS } from './libreville.js'
 
 // NGORI RUN renderer — draws the simulation's state on a 2D canvas as a
 // pseudo-3D road: Libreville-style seafront at sunset, sea and palms on the
@@ -32,7 +33,6 @@ const COLORS = {
   curbAlt: '#f4efe9',
 }
 const BUILDING_COLORS = ['#c46a4a', '#d99a4e', '#2f8f83', '#8a4f9e', '#e2b98f', '#4b6fa8']
-const SIGNS = ['LOUNGE', 'MAQUIS', 'BOMA', 'CAFÉ', 'GRILL', 'VIBES', 'SUNSET', 'BAR']
 const CAR_COLORS = ['#f2bf4e', '#2dd4bf', '#e9467d', '#f5f5f4', '#7c3aed']
 const SKIN = '#5a3825'
 const POWERUP_STYLE = {
@@ -286,7 +286,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.shadowColor = '#ff4fa3'
       ctx.shadowBlur = 12
       ctx.fillStyle = '#ffd1e8'
-      ctx.fillText(SIGNS[k % SIGNS.length], p.x - 4, p.y)
+      ctx.fillText(SHOP_SIGNS[k % SHOP_SIGNS.length], p.x - 4, p.y)
       ctx.shadowBlur = 0
     }
     ctx.globalAlpha = 1
@@ -345,6 +345,50 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.globalAlpha = 1
   }
 
+  // Green direction sign on the right sidewalk, like Libreville's own.
+  function drawDirectionSign(zr, text) {
+    const x = ROAD_HALF + 70
+    ctx.globalAlpha = fogAlpha(zr)
+    face(x, 12, 0, 400, zr, '#52525b')
+    const panel = face(x - 90, 400, 290, 410, zr, '#0f7a4a')
+    const pw = panel.right - panel.left
+    const ph = panel.bottom - panel.top
+    ctx.strokeStyle = '#f8fafc'
+    ctx.lineWidth = Math.max(1, ph * 0.05)
+    ctx.strokeRect(panel.left + pw * 0.03, panel.top + ph * 0.08, pw * 0.94, ph * 0.84)
+    ctx.fillStyle = '#fff'
+    ctx.font = `700 ${Math.max(5, ph * 0.38)}px system-ui, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(text, panel.left + pw / 2, panel.top + ph / 2, pw * 0.88)
+    ctx.globalAlpha = 1
+  }
+
+  // "Bienvenue à …" gantry across the road where a new district starts.
+  function drawArch(zr, name) {
+    const span = ROAD_HALF + 110
+    ctx.globalAlpha = fogAlpha(zr)
+    face(-span, 26, 0, 520, zr, '#3b1d4f')
+    face(span, 26, 0, 520, zr, '#3b1d4f')
+    const beam = face(0, span * 2 + 26, 410, 525, zr, '#5b1f6e')
+    const bw = beam.right - beam.left
+    const bh = beam.bottom - beam.top
+    const g = ctx.createLinearGradient(beam.left, 0, beam.right, 0)
+    g.addColorStop(0, '#8b5cf6')
+    g.addColorStop(1, '#ec4899')
+    ctx.fillStyle = g
+    ctx.fillRect(beam.left + bw * 0.01, beam.top + bh * 0.06, bw * 0.98, bh * 0.88)
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'
+    ctx.font = `700 ${Math.max(4, bh * 0.22)}px system-ui, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('BIENVENUE À', beam.left + bw / 2, beam.top + bh * 0.3, bw * 0.9)
+    ctx.fillStyle = '#fff'
+    ctx.font = `900 ${Math.max(5, bh * 0.42)}px system-ui, sans-serif`
+    ctx.fillText(name.toUpperCase(), beam.left + bw / 2, beam.top + bh * 0.68, bw * 0.92)
+    ctx.globalAlpha = 1
+  }
+
   function drawScenery(dist, time) {
     const first = Math.floor((dist - CAM_BACK) / 1500)
     const last = Math.floor((dist + VIEW_DEPTH) / 1500)
@@ -352,6 +396,12 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     const props = []
     for (let k = Math.floor((dist - CAM_BACK) / 1100); k * 1100 < dist + VIEW_DEPTH; k++) props.push({ zr: k * 1100 + 300 - dist, draw: (zr) => drawPalm(zr, k, time) })
     for (let k = Math.floor((dist - CAM_BACK) / 1400); k * 1400 < dist + VIEW_DEPTH; k++) props.push({ zr: k * 1400 + 700 - dist, draw: (zr) => drawLamp(zr) })
+    // A direction sign every ~650 m, kept away from the district arches.
+    for (let k = Math.max(0, Math.floor((dist - CAM_BACK - 40000) / 65000)); k * 65000 + 40000 < dist + VIEW_DEPTH; k++) {
+      const z = k * 65000 + 40000
+      if (DISTRICTS.some(([from]) => Math.abs(from * 100 - z) < 15000)) continue
+      props.push({ zr: z - dist, draw: (zr) => drawDirectionSign(zr, DIRECTION_SIGNS[k % DIRECTION_SIGNS.length]) })
+    }
     props
       // Props already passed would fill the screen edge: drop them early.
       .filter((p) => p.zr > -120 && p.zr < VIEW_DEPTH)
@@ -694,6 +744,9 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     for (const c of state.coinsOnRoad) if (!c.taken) items.push({ zr: c.z - view.dist, draw: (zr) => drawCoin(c, zr, view.time) })
     for (const p of state.powerups) if (!p.taken) items.push({ zr: p.z - view.dist, draw: (zr) => drawPowerup(p, zr, view.time) })
     items.push({ zr: 30, draw: () => drawRunner(state, view) })
+    for (const [from, name] of DISTRICTS) {
+      if (from > 0) items.push({ zr: from * 100 - view.dist, draw: (zr) => drawArch(zr, name) })
+    }
     items
       .filter((it) => it.zr > -CAM_BACK + 40 && it.zr < VIEW_DEPTH)
       .sort((a, b) => b.zr - a.zr)
