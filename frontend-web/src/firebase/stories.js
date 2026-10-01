@@ -39,7 +39,9 @@ function subscribeToActiveStories(cb) {
   })
 }
 
-async function createStory(authorId, { type, text, photoUrl, photoThumbUrl, background }) {
+// type: 'text' | 'photo' | 'video'. For a video, photoThumbUrl holds its
+// poster frame and duration its length in seconds.
+async function createStory(authorId, { type, text, photoUrl, photoThumbUrl, background, videoUrl, duration }) {
   const ref = await addDoc(collection(db, 'stories'), {
     authorId,
     type,
@@ -47,6 +49,8 @@ async function createStory(authorId, { type, text, photoUrl, photoThumbUrl, back
     background: background || null,
     photoUrl: photoUrl || null,
     photoThumbUrl: photoThumbUrl || null,
+    videoUrl: videoUrl || null,
+    duration: duration || null,
     viewedBy: [],
     createdAt: serverTimestamp(),
   })
@@ -80,4 +84,23 @@ async function uploadStoryPhoto(file) {
   return res.json()
 }
 
-export { createStory, deleteStory, markStoryViewed, subscribeToActiveStories, uploadStoryPhoto }
+// Sends the video file as is (plus its poster frame, if one could be
+// grabbed) — see backend/src/controllers/storyVideoController.js.
+// → { videoUrl, posterUrl }
+async function uploadStoryVideo(file, posterBlob) {
+  const idToken = await auth.currentUser?.getIdToken()
+  const formData = new FormData()
+  formData.append('video', file)
+  if (posterBlob) formData.append('poster', posterBlob, 'poster.jpg')
+
+  const res = await fetch('/api/story-videos', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: formData,
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(body?.message || (res.status === 413 ? 'Vidéo trop lourde.' : 'upload failed'))
+  return body
+}
+
+export { createStory, deleteStory, markStoryViewed, subscribeToActiveStories, uploadStoryPhoto, uploadStoryVideo }

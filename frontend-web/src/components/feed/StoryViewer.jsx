@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Flag, MoreVertical, Trash2, X } from 'lucide-react'
+import { Flag, MoreVertical, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import { fallbackToFullPhoto } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
 
@@ -13,12 +13,21 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
   const [storyIndex, setStoryIndex] = useState(0)
   const [showMenu, setShowMenu] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [muted, setMuted] = useState(false)
   const rafRef = useRef(null)
   const startRef = useRef(0)
+  const videoRef = useRef(null)
+  const errorTimerRef = useRef(null)
+  // Press-and-hold pauses the story, as on WhatsApp; releasing resumes it
+  // without skipping to the next one.
+  const pausedRef = useRef(false)
+  const elapsedRef = useRef(0)
+  const holdRef = useRef({ timer: null, held: false })
 
   const group = groups[groupIndex]
   const story = group?.stories[storyIndex]
   const isOwn = story?.authorId === currentUserId
+  const isVideo = story?.type === 'video' && !!story.videoUrl
 
   function goNext() {
     setShowMenu(false)
@@ -49,9 +58,26 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
     if (!isOwn) onViewed?.(story)
     setProgress(0)
     startRef.current = performance.now()
+    elapsedRef.current = 0
+    pausedRef.current = false
 
+    // A video story drives its own progress bar and moves on when it ends.
+    if (story.type === 'video' && story.videoUrl) {
+      const video = videoRef.current
+      // Sound on if the browser allows it, otherwise start muted.
+      video?.play().catch(() => {
+        setMuted(true)
+        video.muted = true
+        video.play().catch(() => {})
+      })
+      return () => clearTimeout(errorTimerRef.current)
+    }
+
+    let last = performance.now()
     function tick(now) {
-      const pct = Math.min(1, (now - startRef.current) / STORY_DURATION_MS)
+      if (!pausedRef.current) elapsedRef.current += now - last
+      last = now
+      const pct = Math.min(1, elapsedRef.current / STORY_DURATION_MS)
       setProgress(pct)
       if (pct >= 1) {
         goNext()
@@ -74,6 +100,42 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
     return () => window.removeEventListener('keydown', handleKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupIndex, storyIndex, groups])
+
+  function holdStart() {
+    clearTimeout(holdRef.current.timer)
+    holdRef.current.held = false
+    holdRef.current.timer = setTimeout(() => {
+      holdRef.current.held = true
+      pausedRef.current = true
+      videoRef.current?.pause()
+    }, 220)
+  }
+
+  function holdEnd() {
+    clearTimeout(holdRef.current.timer)
+    if (!pausedRef.current) return
+    pausedRef.current = false
+    videoRef.current?.play().catch(() => {})
+  }
+
+  // A tap navigates; the release of a long press only resumes.
+  function tapTo(go) {
+    return () => {
+      if (holdRef.current.held) {
+        holdRef.current.held = false
+        return
+      }
+      go()
+    }
+  }
+
+  const tapZone = {
+    onPointerDown: holdStart,
+    onPointerUp: holdEnd,
+    onPointerLeave: holdEnd,
+    onPointerCancel: holdEnd,
+    onContextMenu: (e) => e.preventDefault(),
+  }
 
   if (!group || !story) return null
 
@@ -102,6 +164,19 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
             <p className="truncate text-sm font-semibold text-white">{group.author?.firstName || 'Quelqu’un'}</p>
             <p className="truncate text-xs text-white/70">{formatRelativeTime(story.createdAt)}</p>
           </div>
+          {isVideo && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setMuted((m) => !m)
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-white/90 hover:bg-white/10"
+              aria-label={muted ? 'Activer le son' : 'Couper le son'}
+            >
+              {muted ? <VolumeX size={18} strokeWidth={2.25} /> : <Volume2 size={18} strokeWidth={2.25} />}
+            </button>
+          )}
           <div className="relative">
             <button
               type="button"
@@ -164,8 +239,27 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
           className="flex h-full w-full items-center justify-center"
           style={{ background: story.type === 'text' ? story.background || 'linear-gradient(135deg,#a95dda,#e652a3)' : '#000' }}
         >
-          {story.type === 'photo' ? (
-            <img src={story.photoUrl} alt="" className="h-full w-full object-contain" />
+          {isVideo ? (
+            <video
+              ref={videoRef}
+              src={story.videoUrl}
+              poster={story.photoThumbUrl || undefined}
+              autoPlay
+              playsInline
+              muted={muted}
+              onTimeUpdate={(e) => {
+                const v = e.currentTarget
+                if (v.duration) setProgress(Math.min(1, v.currentTime / v.duration))
+              }}
+              onEnded={goNext}
+              // Unplayable here (codec, network): show the poster briefly, then move on.
+              onError={() => {
+                errorTimerRef.current = setTimeout(goNext, 2500)
+              }}
+              className="h-full w-full object-contain"
+            />
+          ) : story.type === 'photo' ? (
+            <img src={story.photoUrl} alt="" className="h-full w-full object-contain" draggable={false} />
           ) : (
             <p className="max-w-[85%] whitespace-pre-wrap break-words text-center text-2xl font-semibold text-white [overflow-wrap:anywhere]">
               {story.text}
@@ -173,8 +267,29 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
           )}
         </motion.div>
 
-        <button type="button" onClick={goPrev} className="absolute inset-y-0 left-0 z-10 w-1/3" aria-label="Story précédente" />
-        <button type="button" onClick={goNext} className="absolute inset-y-0 right-0 z-10 w-2/3" aria-label="Story suivante" />
+        {/* Caption of a photo or video story */}
+        {story.type !== 'text' && story.text && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-16">
+            <p className="whitespace-pre-wrap break-words text-center text-base font-medium text-white [overflow-wrap:anywhere]">
+              {story.text}
+            </p>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={tapTo(goPrev)}
+          {...tapZone}
+          className="absolute inset-y-0 left-0 z-10 w-1/3 select-none"
+          aria-label="Story précédente"
+        />
+        <button
+          type="button"
+          onClick={tapTo(goNext)}
+          {...tapZone}
+          className="absolute inset-y-0 right-0 z-10 w-2/3 select-none"
+          aria-label="Story suivante"
+        />
       </div>
     </div>
   )

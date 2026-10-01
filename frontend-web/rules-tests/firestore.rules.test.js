@@ -228,3 +228,45 @@ describe('posts', () => {
     await assertFails(updateDoc(doc(as('bob'), 'posts/p1'), { text: 'Hacked' }))
   })
 })
+
+describe('stories', () => {
+  const stories = (uid) => collection(as(uid), 'stories')
+  // Exactly what StoryComposer / createStory() write.
+  const story = (overrides) => ({
+    authorId: 'alice',
+    type: 'photo',
+    text: null,
+    background: null,
+    photoUrl: 'https://bomavibes.tech/uploads/feed/alice/photo.jpg',
+    photoThumbUrl: 'https://bomavibes.tech/uploads/feed/alice/photo-thumb.jpg',
+    viewedBy: [],
+    createdAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  it('publishes a photo story without a caption', async () => {
+    await assertSucceeds(addDoc(stories('alice'), story()))
+  })
+
+  it('publishes a text story on a gradient', async () => {
+    await assertSucceeds(
+      addDoc(stories('alice'), story({ type: 'text', text: 'Bonne soirée !', background: 'linear-gradient(135deg,#a95dda,#e652a3)', photoUrl: null, photoThumbUrl: null })),
+    )
+  })
+
+  it('rejects an empty text story or a photo story without a photo', async () => {
+    await assertFails(addDoc(stories('alice'), story({ type: 'text', text: '', photoUrl: null, photoThumbUrl: null })))
+    await assertFails(addDoc(stories('alice'), story({ photoUrl: null })))
+  })
+
+  it('publishes a 30 s video story, not a video story without its file or too long', async () => {
+    const video = { type: 'video', photoUrl: null, videoUrl: 'https://bomavibes.tech/uploads/stories/alice/video-1.mp4', duration: 29.6 }
+    await assertSucceeds(addDoc(stories('alice'), story(video)))
+    await assertFails(addDoc(stories('alice'), story({ ...video, videoUrl: null })))
+    await assertFails(addDoc(stories('alice'), story({ ...video, duration: 120 })))
+  })
+
+  it("never lets someone post a story as someone else", async () => {
+    await assertFails(addDoc(stories('bob'), story()))
+  })
+})

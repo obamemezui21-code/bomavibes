@@ -448,12 +448,18 @@ service cloud.firestore {
       function validStoryCreate() {
         let data = request.resource.data;
         return data.authorId is string
-          && data.type in ['text', 'photo']
+          && data.type in ['text', 'photo', 'video']
           && isOptionalString('text', 300)
           && isOptionalString('background', 50)
           && (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500))
           && (data.type != 'photo' || (data.photoUrl is string && data.photoUrl.size() > 0))
-          && (data.type == 'text' || (data.text is string && data.text.size() > 0))
+          // A text story needs its text; photo and video stories need no caption.
+          && (data.type != 'text' || (data.text is string && data.text.size() > 0))
+          // Video stories: the file uploaded through POST /api/story-videos.
+          && (data.type != 'video' || (data.videoUrl is string && data.videoUrl.size() > 0 && data.videoUrl.size() <= 500))
+          && (!('videoUrl' in data) || data.videoUrl == null || (data.videoUrl is string && data.videoUrl.size() <= 500))
+          && (!('duration' in data) || data.duration == null || (data.duration is number && data.duration > 0 && data.duration <= 31))
+          && (!('photoThumbUrl' in data) || data.photoThumbUrl == null || (data.photoThumbUrl is string && data.photoThumbUrl.size() <= 500))
           && data.viewedBy is list && data.viewedBy.size() == 0;
       }
 

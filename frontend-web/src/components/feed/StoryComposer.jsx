@@ -1,10 +1,15 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Image as ImageIcon, Type, X } from 'lucide-react'
+import { ArrowLeft, Camera, Palette, Pencil, SendHorizontal, X } from 'lucide-react'
 import { useToast } from '../../context/ToastContext.jsx'
-import { createStory, uploadStoryPhoto } from '../../firebase/stories.js'
+import { createStory, uploadStoryPhoto, uploadStoryVideo } from '../../firebase/stories.js'
+import { readVideoFile } from '../../lib/videoFile.js'
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024
+// Must match backend/src/routes/storyVideoRoutes.js (and the 31 s cap in firestore.rules).
+const MAX_VIDEO_BYTES = 25 * 1024 * 1024
+const MAX_VIDEO_SECONDS = 30
+const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm']
 const MAX_TEXT_LENGTH = 300
 
 const BACKGROUNDS = [
@@ -15,175 +20,243 @@ const BACKGROUNDS = [
   'linear-gradient(135deg,#261b28,#635a65)',
 ]
 
+function SendButton({ onClick, disabled, busy }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-lg shadow-pink-500/30 transition active:scale-95 disabled:opacity-50"
+      aria-label="Publier la story"
+    >
+      {busy ? (
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+      ) : (
+        <SendHorizontal size={20} strokeWidth={2.25} />
+      )}
+    </button>
+  )
+}
+
+// Full-screen story composer, WhatsApp-status style: choose "Photo ou
+// vidéo" (the type is read from the file, with an optional caption) or
+// "Texte" (big text on a colour you cycle through), then send.
 function StoryComposer({ userId, onClose, onCreated }) {
   const { showToast } = useToast()
   const fileInputRef = useRef(null)
-  const [type, setType] = useState('photo')
+  const [mode, setMode] = useState('choose') // choose | media | text
   const [text, setText] = useState('')
-  const [background, setBackground] = useState(BACKGROUNDS[0])
-  const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
+  const [backgroundIndex, setBackgroundIndex] = useState(0)
+  // { kind: 'photo' | 'video', file, preview, duration?, posterBlob? }
+  const [media, setMedia] = useState(null)
+  const [isReading, setIsReading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handlePhotoSelect(e) {
+  async function handleFileSelect(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    if (file.size > MAX_PHOTO_BYTES) {
-      showToast('Photo trop volumineuse (10 Mo maximum).', 'error')
+
+    if (file.type.startsWith('image/')) {
+      if (file.size > MAX_PHOTO_BYTES) {
+        showToast('Photo trop volumineuse (10 Mo maximum).', 'error')
+        return
+      }
+      setMedia({ kind: 'photo', file, preview: URL.createObjectURL(file) })
+      setMode('media')
       return
     }
-    setPhotoFile(file)
-    setPhotoPreview(URL.createObjectURL(file))
+
+    if (!VIDEO_TYPES.includes(file.type)) {
+      showToast('Format non pris en charge : choisissez une photo ou une vidéo MP4, MOV ou WebM.', 'error')
+      return
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      showToast('Vidéo trop lourde (25 Mo maximum).', 'error')
+      return
+    }
+    setIsReading(true)
+    try {
+      const { duration, posterBlob } = await readVideoFile(file)
+      if (duration > MAX_VIDEO_SECONDS + 0.5) {
+        showToast(`Vidéo trop longue (${MAX_VIDEO_SECONDS} secondes maximum).`, 'error')
+        return
+      }
+      setMedia({ kind: 'video', file, preview: URL.createObjectURL(file), duration, posterBlob })
+      setMode('media')
+    } catch {
+      showToast('Impossible de lire cette vidéo sur cet appareil.', 'error')
+    } finally {
+      setIsReading(false)
+    }
   }
 
-  const canSubmit = type === 'photo' ? !!photoFile : text.trim().length > 0
+  function backToChoice() {
+    setMedia(null)
+    setText('')
+    setMode('choose')
+  }
 
   async function handleSubmit() {
-    if (!canSubmit || isSubmitting) return
+    const isText = mode === 'text'
+    if (isSubmitting || (isText ? !text.trim() : !media)) return
     setIsSubmitting(true)
     try {
       let photoUrl = null
       let photoThumbUrl = null
-      if (type === 'photo' && photoFile) {
-        const uploaded = await uploadStoryPhoto(photoFile)
+      let videoUrl = null
+      if (media?.kind === 'photo') {
+        const uploaded = await uploadStoryPhoto(media.file)
         photoUrl = uploaded.url
         photoThumbUrl = uploaded.thumbUrl
+      } else if (media?.kind === 'video') {
+        const uploaded = await uploadStoryVideo(media.file, media.posterBlob)
+        videoUrl = uploaded.videoUrl
+        photoThumbUrl = uploaded.posterUrl
       }
       await createStory(userId, {
-        type,
-        text: type === 'text' ? text.trim() : null,
-        background: type === 'text' ? background : null,
+        type: isText ? 'text' : media.kind,
+        text: text.trim() || null,
+        background: isText ? BACKGROUNDS[backgroundIndex] : null,
         photoUrl,
         photoThumbUrl,
+        videoUrl,
+        duration: media?.kind === 'video' ? Math.round(media.duration * 10) / 10 : null,
       })
       showToast('Story publiée pour 24h.', 'success')
       onCreated?.()
       onClose()
-    } catch {
-      showToast('Impossible de publier la story, réessayez.', 'error')
+    } catch (err) {
+      showToast(
+        media?.kind === 'video' && err?.message && err.message !== 'upload failed'
+          ? err.message
+          : 'Impossible de publier la story, réessayez.',
+        'error',
+      )
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const topBarButton = 'flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-md transition hover:bg-black/50'
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm md:items-center md:p-6" onClick={onClose}>
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 40 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-        onClick={(e) => e.stopPropagation()}
-        className="glass-panel w-full max-w-lg rounded-t-[28px] p-5 md:rounded-[28px]"
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold text-ink">Nouvelle story</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 hover:bg-ink/10"
-            aria-label="Fermer"
-          >
-            <X size={16} strokeWidth={2.25} />
-          </button>
-        </div>
-        <p className="mt-0.5 text-xs text-ink-soft/60">Visible 24h par la communauté, puis disparaît automatiquement.</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex flex-col bg-black text-white"
+      style={mode === 'text' ? { background: BACKGROUNDS[backgroundIndex] } : undefined}
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/mp4,video/quicktime,video/webm"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
-        <div className="mt-4 flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => setType('photo')}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-              type === 'photo' ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-ink/12 text-ink-soft/60 hover:bg-ink/5'
-            }`}
-          >
-            <ImageIcon size={14} strokeWidth={2.25} />
-            Photo
-          </button>
-          <button
-            type="button"
-            onClick={() => setType('text')}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-              type === 'text' ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-ink/12 text-ink-soft/60 hover:bg-ink/5'
-            }`}
-          >
-            <Type size={14} strokeWidth={2.25} />
-            Texte
-          </button>
-        </div>
-
-        <div className="mt-4">
-          {type === 'photo' ? (
-            <div>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-              {photoPreview ? (
-                <div className="relative">
-                  <img src={photoPreview} alt="" className="max-h-80 w-full rounded-xl object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPhotoFile(null)
-                      setPhotoPreview(null)
-                    }}
-                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
-                    aria-label="Retirer la photo"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink/15 py-10 text-sm font-medium text-ink-soft/60 transition hover:border-violet-400 hover:text-violet-600"
-                >
-                  <ImageIcon size={22} strokeWidth={1.75} />
-                  Choisir une photo
-                </button>
-              )}
-            </div>
-          ) : (
-            <div>
-              <div
-                className="flex h-48 w-full items-center justify-center rounded-xl p-4"
-                style={{ background }}
-              >
-                <textarea
-                  rows={3}
-                  maxLength={MAX_TEXT_LENGTH}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Écrivez votre story…"
-                  className="w-full resize-none bg-transparent text-center text-lg font-semibold text-white placeholder-white/70 outline-none"
-                />
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                {BACKGROUNDS.map((bg) => (
-                  <button
-                    key={bg}
-                    type="button"
-                    onClick={() => setBackground(bg)}
-                    className={`h-7 w-7 shrink-0 rounded-full transition ${background === bg ? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-surface-soft dark:ring-offset-surface' : ''}`}
-                    style={{ background: bg }}
-                    aria-label="Choisir ce fond"
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
+      {/* Top bar */}
+      <div className="flex items-center justify-between p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <button
           type="button"
-          onClick={handleSubmit}
-          disabled={!canSubmit || isSubmitting}
-          className="mt-4 w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={mode === 'choose' ? onClose : backToChoice}
+          className={topBarButton}
+          aria-label={mode === 'choose' ? 'Fermer' : 'Retour'}
         >
-          {isSubmitting ? 'Publication…' : 'Publier la story'}
+          {mode === 'choose' ? <X size={20} /> : <ArrowLeft size={20} />}
         </button>
-      </motion.div>
-    </div>
+        {mode === 'text' && (
+          <button
+            type="button"
+            onClick={() => setBackgroundIndex((i) => (i + 1) % BACKGROUNDS.length)}
+            className={topBarButton}
+            aria-label="Changer la couleur"
+          >
+            <Palette size={20} />
+          </button>
+        )}
+        {mode === 'media' && media?.kind === 'video' && (
+          <span className="rounded-full bg-black/45 px-3 py-1 text-xs font-semibold backdrop-blur-md">
+            Vidéo · {Math.round(media.duration)} s
+          </span>
+        )}
+      </div>
+
+      {mode === 'choose' && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 pb-16">
+          <div className="text-center">
+            <h2 className="font-display text-2xl font-bold">Nouvelle story</h2>
+            <p className="mt-1 text-sm text-white/60">Visible 24h, puis elle disparaît automatiquement.</p>
+          </div>
+          <div className="flex gap-10">
+            <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReading} className="flex flex-col items-center gap-3">
+              <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 shadow-xl shadow-pink-500/30 transition active:scale-95">
+                {isReading ? (
+                  <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                ) : (
+                  <Camera size={32} strokeWidth={1.75} />
+                )}
+              </span>
+              <span className="text-sm font-semibold">{isReading ? 'Lecture…' : 'Photo ou vidéo'}</span>
+            </button>
+            <button type="button" onClick={() => setMode('text')} className="flex flex-col items-center gap-3">
+              <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/15 transition active:scale-95">
+                <Pencil size={30} strokeWidth={1.75} />
+              </span>
+              <span className="text-sm font-semibold">Texte</span>
+            </button>
+          </div>
+          <p className="text-xs text-white/45">Vidéo : {MAX_VIDEO_SECONDS} secondes maximum · 25 Mo</p>
+        </div>
+      )}
+
+      {mode === 'media' && media && (
+        <>
+          <div className="flex min-h-0 flex-1 items-center justify-center">
+            {media.kind === 'photo' ? (
+              <img src={media.preview} alt="" className="max-h-full w-full object-contain" />
+            ) : (
+              <video src={media.preview} autoPlay loop playsInline muted controls className="max-h-full w-full object-contain" />
+            )}
+          </div>
+          <div className="flex items-center gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <input
+              type="text"
+              maxLength={MAX_TEXT_LENGTH}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              placeholder="Ajouter une légende…"
+              className="min-w-0 flex-1 rounded-full bg-white/12 px-4 py-3 text-sm text-white placeholder-white/55 outline-none backdrop-blur-md focus:bg-white/18"
+            />
+            <SendButton onClick={handleSubmit} disabled={isSubmitting} busy={isSubmitting} />
+          </div>
+        </>
+      )}
+
+      {mode === 'text' && (
+        <>
+          <div className="flex flex-1 items-center justify-center px-6">
+            <textarea
+              autoFocus
+              rows={4}
+              maxLength={MAX_TEXT_LENGTH}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Écrivez votre story…"
+              className="w-full resize-none bg-transparent text-center font-display text-3xl font-bold leading-snug text-white placeholder-white/60 outline-none"
+            />
+          </div>
+          <div className="flex items-center justify-end gap-3 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <span className="text-xs text-white/70">
+              {text.length}/{MAX_TEXT_LENGTH}
+            </span>
+            <SendButton onClick={handleSubmit} disabled={!text.trim() || isSubmitting} busy={isSubmitting} />
+          </div>
+        </>
+      )}
+    </motion.div>
   )
 }
 
