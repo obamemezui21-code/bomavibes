@@ -322,11 +322,24 @@ service cloud.firestore {
             && (!(request.auth.uid in after) || (after[request.auth.uid] is string && after[request.auth.uid].size() <= 16));
         }
 
+        // A shared position: plain coordinates, nothing else.
+        function validLocation() {
+          let loc = request.resource.data.get('location', null);
+          return request.resource.data.get('type', 'text') != 'location'
+            || (loc is map
+              && loc.keys().hasOnly(['lat', 'lng', 'accuracy'])
+              && loc.lat is number && loc.lat >= -90 && loc.lat <= 90
+              && loc.lng is number && loc.lng >= -180 && loc.lng <= 180);
+        }
+
         allow read: if isMatchParticipant();
         allow create: if isMatchParticipant()
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.get('type', 'text')
-            in ['text', 'voice', 'image', 'file', 'sticker', 'post', 'venue-invite', 'call']
+            in ['text', 'voice', 'image', 'file', 'sticker', 'post', 'venue-invite', 'call', 'location']
+          && validLocation()
+          // User-made sticker (POST /api/stickers): just its image URL.
+          && isOptionalString('stickerUrl', 500)
           && !isBlockedByRecipient(matchId);
         allow update: if isMatchParticipant() && (isOwnTextEdit() || isOwnReaction());
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
@@ -478,6 +491,13 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validStoryCreate();
       allow update: if isSignedIn() && isViewMark();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
+    }
+
+    // User-made chat stickers ("Mes stickers"): created and deleted only
+    // through POST/DELETE /api/stickers; each user lists their own.
+    match /customStickers/{stickerId} {
+      allow read: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow write: if false;
     }
 
     match /musicTracks/{trackId} {

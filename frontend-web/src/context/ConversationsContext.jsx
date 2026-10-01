@@ -236,6 +236,8 @@ export function ConversationsProvider({ children }) {
             fileName: data.fileName || null,
             fileSize: data.fileSize || 0,
             stickerId: data.stickerId || null,
+            stickerUrl: data.stickerUrl || null,
+            location: data.location || null,
             call: data.call || null,
             post: data.post || null,
             venue: data.venue || null,
@@ -424,12 +426,14 @@ export function ConversationsProvider({ children }) {
     }
   }
 
-  async function sendStickerMessage(matchId, stickerId) {
+  // `sticker`: a bundled sticker's id (lib/stickers.js), or { url } for one
+  // the user made themselves (POST /api/stickers).
+  async function sendStickerMessage(matchId, sticker) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
       text: '',
       type: 'sticker',
-      stickerId,
+      ...(typeof sticker === 'string' ? { stickerId: sticker } : { stickerUrl: sticker.url }),
       createdAt: serverTimestamp(),
     })
     const match = matches.find((m) => m.id === matchId)
@@ -457,6 +461,34 @@ export function ConversationsProvider({ children }) {
     const match = matches.find((m) => m.id === matchId)
     const otherUid = match?.users.find((u) => u !== uid)
     const preview = messagePreviewText({ type: 'post' })
+    await updateDoc(doc(db, 'matches', matchId), {
+      lastMessage: preview,
+      lastMessageAt: serverTimestamp(),
+      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
+    })
+
+    if (otherUid) {
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+    }
+  }
+
+  // A one-off "my current position" (lat/lng rounded to ~1 m, plus the GPS
+  // accuracy) — never tracked or updated afterwards.
+  async function sendLocationMessage(matchId, { lat, lng, accuracy }) {
+    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
+      senderId: uid,
+      text: '',
+      type: 'location',
+      location: {
+        lat: Math.round(lat * 1e5) / 1e5,
+        lng: Math.round(lng * 1e5) / 1e5,
+        accuracy: Number.isFinite(accuracy) ? Math.round(accuracy) : null,
+      },
+      createdAt: serverTimestamp(),
+    })
+    const match = matches.find((m) => m.id === matchId)
+    const otherUid = match?.users.find((u) => u !== uid)
+    const preview = messagePreviewText({ type: 'location' })
     await updateDoc(doc(db, 'matches', matchId), {
       lastMessage: preview,
       lastMessageAt: serverTimestamp(),
@@ -551,6 +583,7 @@ export function ConversationsProvider({ children }) {
         sendStickerMessage,
         sendPostMessage,
         sendVenueInviteMessage,
+        sendLocationMessage,
         editMessage,
         deleteMessage,
         toggleMessageReaction,

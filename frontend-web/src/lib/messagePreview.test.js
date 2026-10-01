@@ -31,6 +31,10 @@ describe('messagePreviewText', () => {
     expect(messagePreviewText({ type: 'file' })).toBe('📄 Document')
   })
 
+  it('describes a shared location', () => {
+    expect(messagePreviewText({ type: 'location', location: { lat: 0.4, lng: 9.4 } })).toBe('📍 Position')
+  })
+
   it('describes a sticker message', () => {
     expect(messagePreviewText({ type: 'sticker' })).toBe('😊 Sticker')
   })

@@ -26,6 +26,7 @@ import {
   PhoneMissed,
   PhoneOutgoing,
   Play,
+  Plus,
   Reply,
   Search,
   Send,
@@ -61,6 +62,10 @@ import { matchPercent } from '../lib/interests.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
+import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import LocationMessage from '../components/chat/LocationMessage.jsx'
+import StickerMaker from '../components/chat/StickerMaker.jsx'
+import { deleteSticker, listMyStickers } from '../firebase/stickers.js'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
@@ -359,6 +364,7 @@ function Chat() {
     sendVoiceMessage,
     sendAttachmentMessage,
     sendStickerMessage,
+    sendLocationMessage,
     editMessage,
     deleteMessage,
     toggleMessageReaction,
@@ -379,6 +385,13 @@ function Chat() {
   const [expandedProfile, setExpandedProfile] = useState(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showStickerPicker, setShowStickerPicker] = useState(false)
+  const [stickerTab, setStickerTab] = useState('bomavibes') // bomavibes | mine
+  const [myStickers, setMyStickers] = useState(null) // loaded on first open of "Mes stickers"
+  const [editingStickers, setEditingStickers] = useState(false)
+  const [showStickerMaker, setShowStickerMaker] = useState(false)
+  const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [confirmLocation, setConfirmLocation] = useState(false)
+  const [isLocating, setIsLocating] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
   const [selectedMessage, setSelectedMessage] = useState(null)
   const [infoMessage, setInfoMessage] = useState(null)
@@ -523,6 +536,76 @@ function Chat() {
     if (!active) return
     setShowStickerPicker(false)
     sendStickerMessage(active.id, stickerId)
+  }
+
+  function openMyStickers() {
+    setStickerTab('mine')
+    if (myStickers === null && user?.id) {
+      listMyStickers(user.id)
+        .then(setMyStickers)
+        .catch(() => setMyStickers([]))
+    }
+  }
+
+  function handleMyStickerClick(sticker) {
+    if (!active) return
+    if (editingStickers) return
+    setShowStickerPicker(false)
+    sendStickerMessage(active.id, { url: sticker.url })
+  }
+
+  async function handleDeleteMySticker(sticker) {
+    setMyStickers((list) => (list || []).filter((s) => s.id !== sticker.id))
+    try {
+      await deleteSticker(sticker.id)
+    } catch {
+      showToast('Impossible de supprimer ce sticker.', 'error')
+      setMyStickers((list) => [sticker, ...(list || [])])
+    }
+  }
+
+  function handleStickerCreated(sticker) {
+    setShowStickerMaker(false)
+    setMyStickers((list) => [sticker, ...(list || [])])
+    setStickerTab('mine')
+  }
+
+  // One-off "Ma position", after an explicit confirmation — never tracked.
+  function handleShareLocation() {
+    if (!active) return
+    if (!navigator.geolocation) {
+      showToast("La localisation n'est pas disponible sur cet appareil.", 'error')
+      setConfirmLocation(false)
+      return
+    }
+    setIsLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          await sendLocationMessage(active.id, {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          })
+        } catch {
+          showToast("Impossible d'envoyer la position, réessayez.", 'error')
+        } finally {
+          setIsLocating(false)
+          setConfirmLocation(false)
+        }
+      },
+      (err) => {
+        setIsLocating(false)
+        setConfirmLocation(false)
+        showToast(
+          err.code === 1
+            ? 'Autorisez la localisation pour BomaVibes dans les réglages de votre téléphone ou de votre navigateur.'
+            : 'Position introuvable pour le moment, réessayez (de préférence en extérieur).',
+          'error',
+        )
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    )
   }
 
   function handleDraftChange(value) {
@@ -1190,7 +1273,8 @@ function Chat() {
                   const isPost = m.type === 'post' && !!m.post
                   const isVenueInvite = m.type === 'venue-invite' && !!m.venue
                   const isCall = m.type === 'call'
-                  const isCard = isSticker || isPost || isVenueInvite || isCall
+                  const isLocation = m.type === 'location' && !!m.location
+                  const isCard = isSticker || isPost || isVenueInvite || isCall || isLocation
                   const callMissed = isCall && isMissedCall(m.call, m.fromMe)
                   const bubbleClass = isCard
                     ? 'cursor-pointer select-none'
@@ -1261,7 +1345,9 @@ function Chat() {
                           ) : m.type === 'file' ? (
                             <FileMessage url={m.fileUrl} fileName={m.fileName} fileSize={m.fileSize} fromMe={m.fromMe} />
                           ) : isSticker ? (
-                            <img src={stickerSrc(m.stickerId)} alt="" className="h-28 w-28 object-contain" />
+                            <img src={m.stickerUrl || stickerSrc(m.stickerId)} alt="" className="h-28 w-28 object-contain" />
+                          ) : isLocation ? (
+                            <LocationMessage location={m.location} fromMe={m.fromMe} />
                           ) : isPost ? (
                             <button
                               type="button"
@@ -1569,19 +1655,64 @@ function Chat() {
                       onChange={handleAttachmentSelect}
                       className="hidden"
                     />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isSendingAttachment || isSendingVoice || !!editingMessageId}
-                      className="flex h-9 w-9 items-center justify-center rounded-full text-ink-soft/60 transition hover:bg-ink/10 disabled:cursor-not-allowed disabled:opacity-40"
-                      aria-label="Joindre un fichier"
-                    >
-                      {isSendingAttachment ? (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink-soft/30 border-t-ink-soft" />
-                      ) : (
-                        <Paperclip size={18} strokeWidth={2} />
-                      )}
-                    </button>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowAttachMenu((v) => !v)}
+                        disabled={isSendingAttachment || isSendingVoice || !!editingMessageId}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                          showAttachMenu ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/10'
+                        }`}
+                        aria-label="Joindre"
+                      >
+                        {isSendingAttachment ? (
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink-soft/30 border-t-ink-soft" />
+                        ) : (
+                          <Paperclip size={18} strokeWidth={2} />
+                        )}
+                      </button>
+                      <AnimatePresence>
+                        {showAttachMenu && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setShowAttachMenu(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute bottom-full right-0 z-20 mb-2 w-52 overflow-hidden rounded-2xl border border-ink/10 bg-white p-1.5 shadow-xl dark:bg-surface-tint"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowAttachMenu(false)
+                                  fileInputRef.current?.click()
+                                }}
+                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink transition hover:bg-ink/5"
+                              >
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-500/12 text-violet-600">
+                                  <FileText size={17} strokeWidth={2.25} />
+                                </span>
+                                Photo ou document
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowAttachMenu(false)
+                                  setConfirmLocation(true)
+                                }}
+                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink transition hover:bg-ink/5"
+                              >
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-mint-500/15 text-mint-500">
+                                  <MapPin size={17} strokeWidth={2.25} />
+                                </span>
+                                Ma position
+                              </button>
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
                     <div className="relative">
                       <button
                         type="button"
@@ -1602,19 +1733,93 @@ function Chat() {
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 8, scale: 0.97 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute bottom-full right-0 z-20 mb-2 grid w-[min(18rem,calc(100vw_-_2rem))] grid-cols-4 gap-1.5 rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
-                              style={{ maxHeight: 'min(320px, 50vh)', overflowY: 'auto' }}
+                              className="absolute bottom-full right-0 z-20 mb-2 w-[min(18rem,calc(100vw_-_2rem))] rounded-2xl border border-ink/10 bg-white p-3 shadow-xl dark:bg-surface-tint"
                             >
-                              {STICKERS.map((s) => (
-                                <button
-                                  key={s.id}
-                                  type="button"
-                                  onClick={() => handleStickerClick(s.id)}
-                                  className="flex items-center justify-center rounded-xl p-1 transition hover:bg-ink/5"
-                                >
-                                  <img src={s.src} alt="" className="h-14 w-14 object-contain" />
-                                </button>
-                              ))}
+                              <div className="mb-2 flex items-center gap-1.5">
+                                {[
+                                  ['bomavibes', 'BomaVibes', () => setStickerTab('bomavibes')],
+                                  ['mine', 'Mes stickers', openMyStickers],
+                                ].map(([id, label, onClick]) => (
+                                  <button
+                                    key={id}
+                                    type="button"
+                                    onClick={onClick}
+                                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                      stickerTab === id ? 'bg-violet-500/15 text-violet-600' : 'text-ink-soft/60 hover:bg-ink/5'
+                                    }`}
+                                  >
+                                    {label}
+                                  </button>
+                                ))}
+                                {stickerTab === 'mine' && myStickers?.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingStickers((v) => !v)}
+                                    className="ml-auto text-xs font-semibold text-ink-soft/60 hover:text-ink"
+                                  >
+                                    {editingStickers ? 'Terminé' : 'Gérer'}
+                                  </button>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-4 gap-1.5" style={{ maxHeight: 'min(280px, 45vh)', overflowY: 'auto' }}>
+                                {stickerTab === 'bomavibes' ? (
+                                  STICKERS.map((s) => (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      onClick={() => handleStickerClick(s.id)}
+                                      className="flex items-center justify-center rounded-xl p-1 transition hover:bg-ink/5"
+                                    >
+                                      <img src={s.src} alt="" className="h-14 w-14 object-contain" />
+                                    </button>
+                                  ))
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowStickerPicker(false)
+                                        setShowStickerMaker(true)
+                                      }}
+                                      className="flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed border-ink/15 text-[10px] font-semibold text-ink-soft/60 transition hover:border-violet-400 hover:text-violet-600"
+                                    >
+                                      <Plus size={18} strokeWidth={2.5} />
+                                      Créer
+                                    </button>
+                                    {myStickers === null ? (
+                                      <span className="col-span-3 flex items-center justify-center">
+                                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+                                      </span>
+                                    ) : myStickers.length === 0 ? (
+                                      <p className="col-span-3 self-center text-[11px] text-ink-soft/60">
+                                        Transformez vos photos en stickers !
+                                      </p>
+                                    ) : (
+                                      myStickers.map((s) => (
+                                        <div key={s.id} className="relative">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleMyStickerClick(s)}
+                                            className="flex w-full items-center justify-center rounded-xl p-1 transition hover:bg-ink/5"
+                                          >
+                                            <img src={s.url} alt="" className="h-14 w-14 object-contain" />
+                                          </button>
+                                          {editingStickers && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteMySticker(s)}
+                                              className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-coral-500 text-white shadow"
+                                              aria-label="Supprimer ce sticker"
+                                            >
+                                              <X size={11} strokeWidth={3} />
+                                            </button>
+                                          )}
+                                        </div>
+                                      ))
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </motion.div>
                           </>
                         )}
@@ -1677,6 +1882,21 @@ function Chat() {
       )}
 
       {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
+
+      {confirmLocation && active && (
+        <ConfirmDialog
+          title="Partager votre position ?"
+          description={`${active.profile.firstName || 'Votre match'} verra l'endroit où vous vous trouvez en ce moment, sur une carte. Votre position n'est envoyée qu'une fois : elle n'est pas suivie ensuite.`}
+          confirmLabel={isLocating ? 'Localisation…' : 'Envoyer ma position'}
+          isConfirming={isLocating}
+          onCancel={() => setConfirmLocation(false)}
+          onConfirm={handleShareLocation}
+        />
+      )}
+
+      <AnimatePresence>
+        {showStickerMaker && <StickerMaker onClose={() => setShowStickerMaker(false)} onCreated={handleStickerCreated} />}
+      </AnimatePresence>
 
       <AnimatePresence>
         {expandedProfile && (

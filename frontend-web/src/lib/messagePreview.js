@@ -12,5 +12,6 @@ export function messagePreviewText(message) {
   if (message.type === 'sticker') return '😊 Sticker'
   if (message.type === 'post') return '📌 Publication partagée'
   if (message.type === 'venue-invite') return '📍 Invitation à un rendez-vous'
+  if (message.type === 'location') return '📍 Position'
   return message.text || ''
 }
