@@ -1,4 +1,5 @@
 import { JUMP_TICKS, OBSTACLES, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
+import runnersUrl from '../../assets/game/runners.webp'
 
 // NGORI RUN renderer — draws the simulation's state on a 2D canvas as a
 // pseudo-3D road: Libreville-style seafront at sunset, sea and palms on the
@@ -41,6 +42,16 @@ const POWERUP_STYLE = {
   boost: { color: '#f59e0b', icon: '⚡' },
 }
 
+// The runners' sprite sheet (assets/game/runners.webp): a 4 × 6 grid of
+// 232 × 292 cells, feet 4 px above each cell's bottom. Rows 0–2 are the
+// man, rows 3–5 the woman; for each: 8 running frames, then jump take-off,
+// jump in the air, slide, fall. Until it has loaded, the runner is drawn
+// with plain shapes instead.
+const SHEET = { cellW: 232, cellH: 292, feetPad: 4, figureH: 270 }
+export const RUNNERS = { man: 0, woman: 3 } // first sheet row of each runner
+const sheetImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: runnersUrl })
+const sheetReady = () => !!sheetImage?.complete && sheetImage.naturalWidth > 0
+
 // Stable pseudo-random from an integer — scenery only, never the game.
 function hash(n) {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b)
@@ -49,7 +60,8 @@ function hash(n) {
   return ((x ^ (x >>> 16)) >>> 0) / 4294967296
 }
 
-export function createRenderer(canvas) {
+export function createRenderer(canvas, { runner = 'man' } = {}) {
+  const runnerRow = RUNNERS[runner] ?? 0
   const ctx = canvas.getContext('2d', { alpha: false })
   let W = 0
   let H = 0
@@ -511,7 +523,8 @@ export function createRenderer(canvas) {
 
     ctx.save()
     ctx.translate(p.x, p.y)
-    if (view.crashT > 0) ctx.rotate(Math.min(1, view.crashT * 2.5) * 1.2)
+    const useSheet = sheetReady()
+    if (view.crashT > 0 && !useSheet) ctx.rotate(Math.min(1, view.crashT * 2.5) * 1.2)
 
     // Aura of active power-ups.
     if (state.shield || state.grace) {
@@ -537,7 +550,28 @@ export function createRenderer(canvas) {
     }
 
     const run = state.jump || view.crashT > 0 ? 0 : Math.sin(phase)
-    if (sliding) {
+    if (useSheet) {
+      let frame
+      if (view.crashT > 0) frame = 11
+      else if (sliding) frame = 10
+      else if (state.jump) frame = jumpT < 0.22 || jumpT > 0.9 ? 8 : 9
+      else frame = Math.floor(view.time * (8 + state.speed / 2.5)) % 8 // faster stride as speed grows
+      const index = runnerRow * 4 + frame
+      const cmPerPx = 178 / SHEET.figureH
+      const w = SHEET.cellW * cmPerPx * u
+      const h = SHEET.cellH * cmPerPx * u
+      ctx.drawImage(
+        sheetImage,
+        (index % 4) * SHEET.cellW,
+        Math.floor(index / 4) * SHEET.cellH,
+        SHEET.cellW,
+        SHEET.cellH,
+        -w / 2,
+        -h + SHEET.feetPad * cmPerPx * u,
+        w,
+        h,
+      )
+    } else if (sliding) {
       // Low slide: legs tucked forward, torso leaning back.
       roundRect(-30 * u, -38 * u, 60 * u, 30 * u, 10 * u, '#1e1b4b')
       roundRect(-26 * u, -8 * u, 20 * u, 10 * u, 4 * u, '#fff')

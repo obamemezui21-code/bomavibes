@@ -10,8 +10,25 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
 import NgoriCoin from '../components/NgoriCoin.jsx'
+import kevinPortrait from '../assets/game/kevin.webp'
+import aichaPortrait from '../assets/game/aicha.webp'
 
 const BUTTONS_KEY = 'ngoriRun.buttons'
+const RUNNER_KEY = 'ngoriRun.runner'
+// The two heroes (their in-game sprites: renderer.js RUNNERS). Purely
+// cosmetic: both play by exactly the same rules.
+const RUNNER_CHOICES = [
+  { id: 'man', name: 'Kévin', title: 'Le déterminé', portrait: kevinPortrait, ring: 'ring-amber-400' },
+  { id: 'woman', name: 'Aïcha', title: 'La rapide', portrait: aichaPortrait, ring: 'ring-fuchsia-400' },
+]
+
+function readRunner() {
+  try {
+    return localStorage.getItem(RUNNER_KEY) === 'woman' ? 'woman' : 'man'
+  } catch {
+    return 'man'
+  }
+}
 const TABS = [
   { id: 'leaderboard', label: 'Classement', icon: Trophy },
   { id: 'rewards', label: 'Récompenses', icon: Gift },
@@ -229,7 +246,7 @@ function Help({ dailyCap }) {
   )
 }
 
-function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, balance }) {
+function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, balance, hero }) {
   const navigate = useNavigate()
   const r = outcome?.result || local
   const capped = outcome && outcome.credited < r.total && !outcome.anomaly
@@ -245,9 +262,14 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
         className="w-full max-w-sm rounded-[28px] bg-violet-950 p-6 text-white shadow-2xl"
       >
+        <img src={hero.portrait} alt="" className={`mx-auto mb-3 h-16 w-16 rounded-full object-cover ring-2 ${hero.ring}`} />
         <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-pink-300">Course terminée</p>
         <h2 className="mt-1 text-center font-display text-2xl font-bold">
-          {r.distance >= 1000 ? '🔥 Belle course !' : r.distance >= 300 ? '👏 Bien joué !' : '💪 On recommence ?'}
+          {r.distance >= 1000
+            ? `🔥 Belle course, ${hero.name} !`
+            : r.distance >= 300
+              ? `👏 Bien joué, ${hero.name} !`
+              : `💪 On recommence, ${hero.name} ?`}
         </h2>
         {(outcome?.newBestScore || outcome?.newBestDistance) && (
           <p className="mt-2 text-center">
@@ -330,6 +352,7 @@ function NgoriRun() {
   const [audio] = useState(() => createGameAudio(loadMuted()))
   const [muted, setMuted] = useState(loadMuted)
   const [showButtons, setShowButtons] = useState(() => readFlag(BUTTONS_KEY))
+  const [runner, setRunner] = useState(readRunner)
   const [tab, setTab] = useState('leaderboard')
   const [phase, setPhase] = useState('lobby') // lobby | starting | playing | result
   const [run, setRun] = useState(null) // { runId, seed }
@@ -450,6 +473,45 @@ function NgoriRun() {
             <GoalBar balance={balance} dark />
           </div>
 
+          <div className="relative mt-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Choisis ton héros</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {RUNNER_CHOICES.map((choice) => {
+                const active = runner === choice.id
+                return (
+                  <button
+                    key={choice.id}
+                    type="button"
+                    onClick={() => {
+                      setRunner(choice.id)
+                      try {
+                        localStorage.setItem(RUNNER_KEY, choice.id)
+                      } catch {
+                        // not remembered in private mode
+                      }
+                    }}
+                    aria-pressed={active}
+                    className={`flex items-center gap-2 rounded-2xl p-1.5 pr-3 text-left text-sm font-semibold transition ${
+                      active ? 'bg-white text-violet-950 shadow-lg' : 'bg-white/10 text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <img
+                      src={choice.portrait}
+                      alt=""
+                      className={`h-12 w-12 shrink-0 rounded-full object-cover ring-2 ${active ? choice.ring : 'ring-white/30'}`}
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-display text-base font-bold leading-tight">{choice.name}</span>
+                      <span className={`block text-[11px] font-medium ${active ? 'text-violet-950/60' : 'text-white/60'}`}>
+                        {choice.title}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
@@ -501,6 +563,7 @@ function NgoriRun() {
         <GameScreen
           key={run.runId}
           seed={run.seed}
+          runner={runner}
           audio={audio}
           muted={muted}
           onToggleMute={toggleMute}
@@ -518,6 +581,7 @@ function NgoriRun() {
             onReplay={start}
             onClose={() => setPhase('lobby')}
             balance={balance}
+            hero={RUNNER_CHOICES.find((c) => c.id === runner) || RUNNER_CHOICES[0]}
           />
         )}
       </AnimatePresence>
