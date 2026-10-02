@@ -35,6 +35,7 @@ import {
   Sticker,
   Trash2,
   TriangleAlert,
+  Users,
   Video,
   X,
 } from 'lucide-react'
@@ -48,6 +49,8 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useCall } from '../context/CallContext.jsx'
+import { useGroupCall } from '../context/GroupCallContext.jsx'
+import GroupCallPicker from '../components/GroupCallPicker.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachments.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
@@ -380,6 +383,7 @@ function Chat() {
   const { showToast } = useToast()
   const { theme } = useTheme()
   const { startCall } = useCall()
+  const { startGroupCall } = useGroupCall()
   const [draft, setDraft] = useState('')
   const [listSearch, setListSearch] = useState('')
   const [likesCount, setLikesCount] = useState(null)
@@ -401,6 +405,7 @@ function Chat() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [showGroupPicker, setShowGroupPicker] = useState(false)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
@@ -912,6 +917,16 @@ function Chat() {
     })
   }
 
+  // Group call: pick more matches to call together with this one.
+  function handleStartGroupCall() {
+    if (!active?.otherUid) return
+    if (!effectivePlan(account).calls) {
+      setPaywall('calls')
+      return
+    }
+    setShowGroupPicker(true)
+  }
+
   async function handleReportUser(reason, description, alsoBlock) {
     if (!active) return
     setIsSubmittingSafety(true)
@@ -1282,6 +1297,14 @@ function Chat() {
                     aria-label="Appel vidéo"
                   >
                     <Video size={16} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStartGroupCall}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
+                    aria-label="Appel de groupe"
+                  >
+                    <Users size={16} strokeWidth={2} />
                   </button>
                 </div>
               </div>
@@ -1934,6 +1957,19 @@ function Chat() {
       <AnimatePresence>
         {paywall && <PaywallModal reason={paywall} onClose={() => setPaywall(null)} />}
       </AnimatePresence>
+
+      {showGroupPicker && active && (
+        <GroupCallPicker
+          title="Appel de groupe"
+          initialIds={[active.otherUid]}
+          chooseType
+          onClose={() => setShowGroupPicker(false)}
+          onConfirm={(ids, type) => {
+            setShowGroupPicker(false)
+            startGroupCall(type, ids)
+          }}
+        />
+      )}
 
       {showReport && active && (
         <ReportModal

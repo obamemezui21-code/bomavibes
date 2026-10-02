@@ -21,6 +21,8 @@ const settingsRoutes = require("./routes/settingsRoutes");
 const eventTicketsRoutes = require("./routes/eventTicketsRoutes");
 const aiPartnersRoutes = require("./routes/aiPartnersRoutes");
 const callRoutes = require("./routes/callRoutes");
+const groupCallRoutes = require("./routes/groupCallRoutes");
+const { startGroupCallSweep } = require("./controllers/groupCallController");
 const verificationRoutes = require("./routes/verificationRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const ngoriRoutes = require("./routes/ngoriRoutes");
@@ -68,6 +70,7 @@ app.use("/api/admin/settings", settingsRoutes);
 app.use("/api/events", eventTicketsRoutes);
 app.use("/api/admin/ai-partners", aiPartnersRoutes);
 app.use("/api/calls", callRoutes);
+app.use("/api/group-calls", groupCallRoutes);
 app.use("/api/verification", verificationRoutes.userRouter);
 app.use("/api/admin/verifications", verificationRoutes.adminRouter);
 app.use("/api/swipes", subscriptionRoutes.swipeRouter);
@@ -80,6 +83,7 @@ app.use("/api/admin/payments", paymentRoutes.adminRouter);
 
 startCallCleanupScheduler();
 startStoryCleanupScheduler();
+startGroupCallSweep();
 startPaymentSweepScheduler();
 
 // Error handler

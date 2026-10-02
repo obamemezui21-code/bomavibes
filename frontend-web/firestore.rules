@@ -402,6 +402,13 @@ service cloud.firestore {
       }
     }
 
+    // Group calls (LiveKit media server): created and updated only by the
+    // backend (groupCallController.js); everyone invited can follow theirs.
+    match /groupCalls/{callId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.members;
+      allow write: if false;
+    }
+
     match /posts/{postId} {
       function validPostCreate() {
         let data = request.resource.data;
