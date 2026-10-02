@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs'
 import process from 'node:process'
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest'
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
-import { Timestamp, addDoc, collection, deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import { Timestamp, addDoc, collection, deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 
 let env
 
@@ -268,5 +268,46 @@ describe('stories', () => {
 
   it("never lets someone post a story as someone else", async () => {
     await assertFails(addDoc(stories('bob'), story()))
+  })
+
+  describe('reactions and comments', () => {
+    beforeEach(async () => {
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'stories/s1'), { ...story(), createdAt: Timestamp.now() })
+      })
+    })
+    const reaction = (emoji) => ({ emoji, createdAt: serverTimestamp() })
+    const comment = (authorId, text = 'Trop beau 😍') => ({ authorId, text, createdAt: serverTimestamp() })
+
+    it('lets a viewer react with an allowed emoji, for themselves only', async () => {
+      await assertSucceeds(setDoc(doc(as('bob'), 'stories/s1/reactions/bob'), reaction('❤️')))
+      await assertSucceeds(setDoc(doc(as('bob'), 'stories/s1/reactions/bob'), reaction('🔥')))
+      await assertFails(setDoc(doc(as('bob'), 'stories/s1/reactions/bob'), reaction('💩')))
+      await assertFails(setDoc(doc(as('bob'), 'stories/s1/reactions/carol'), reaction('❤️')))
+    })
+
+    it('keeps reactions private to the reacting person and the author', async () => {
+      await setDoc(doc(as('bob'), 'stories/s1/reactions/bob'), reaction('❤️'))
+      await assertSucceeds(getDoc(doc(as('bob'), 'stories/s1/reactions/bob')))
+      await assertSucceeds(getDoc(doc(as('alice'), 'stories/s1/reactions/bob')))
+      await assertFails(getDoc(doc(as('carol'), 'stories/s1/reactions/bob')))
+    })
+
+    it('lets anyone comment as themselves, within 300 characters', async () => {
+      await assertSucceeds(addDoc(collection(as('bob'), 'stories/s1/comments'), comment('bob')))
+      await assertFails(addDoc(collection(as('bob'), 'stories/s1/comments'), comment('carol')))
+      await assertFails(addDoc(collection(as('bob'), 'stories/s1/comments'), comment('bob', 'x'.repeat(301))))
+      await assertFails(addDoc(collection(as('bob'), 'stories/s1/comments'), comment('bob', '')))
+    })
+
+    it('lets the commenter or the story author delete a comment, nobody else', async () => {
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'stories/s1/comments/c1'), { authorId: 'bob', text: 'Salut', createdAt: Timestamp.now() })
+        await setDoc(doc(ctx.firestore(), 'stories/s1/comments/c2'), { authorId: 'bob', text: 'Salut', createdAt: Timestamp.now() })
+      })
+      await assertFails(deleteDoc(doc(as('carol'), 'stories/s1/comments/c1')))
+      await assertSucceeds(deleteDoc(doc(as('bob'), 'stories/s1/comments/c1')))
+      await assertSucceeds(deleteDoc(doc(as('alice'), 'stories/s1/comments/c2')))
+    })
   })
 })

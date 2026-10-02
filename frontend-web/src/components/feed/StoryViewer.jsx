@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Flag, MoreVertical, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import { fallbackToFullPhoto } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
+import StoryInteractions from './StoryInteractions.jsx'
 
 const STORY_DURATION_MS = 5000
 
@@ -116,6 +117,13 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
     if (!pausedRef.current) return
     pausedRef.current = false
     videoRef.current?.play().catch(() => {})
+  }
+
+  // Typing a comment or reading a sheet holds the story, like a long press.
+  function setInteracting(on) {
+    pausedRef.current = on
+    if (on) videoRef.current?.pause()
+    else videoRef.current?.play().catch(() => {})
   }
 
   // A tap navigates; the release of a long press only resumes.
@@ -269,7 +277,7 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
 
         {/* Caption of a photo or video story */}
         {story.type !== 'text' && story.text && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-16">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 to-transparent px-5 pb-[max(5rem,calc(env(safe-area-inset-bottom)+4rem))] pt-16">
             <p className="whitespace-pre-wrap break-words text-center text-base font-medium text-white [overflow-wrap:anywhere]">
               {story.text}
             </p>
@@ -290,6 +298,10 @@ function StoryViewer({ groups, startGroupIndex, currentUserId, onClose, onViewed
           className="absolute inset-y-0 right-0 z-10 w-2/3 select-none"
           aria-label="Story suivante"
         />
+
+        {currentUserId && (
+          <StoryInteractions key={story.id} story={story} isOwn={isOwn} currentUserId={currentUserId} onPause={setInteracting} />
+        )}
       </div>
     </div>
   )

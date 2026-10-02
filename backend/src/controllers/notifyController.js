@@ -56,7 +56,23 @@ const NOTIFICATIONS = {
       body: payload?.text || "Vous avez reçu une réponse à votre commentaire.",
     }),
   },
+  story_reaction: {
+    prefField: "notifyFeed",
+    build: (payload) => ({
+      title: payload?.firstName ? `${payload.firstName} a réagi à votre statut ${payload.emoji || ""}`.trim() : "Nouvelle réaction",
+      body: "Ouvrez BomaVibes pour voir qui a réagi.",
+    }),
+  },
+  story_comment: {
+    prefField: "notifyFeed",
+    build: (payload) => ({
+      title: payload?.firstName ? `${payload.firstName} a commenté votre statut` : "Nouveau commentaire",
+      body: payload?.text || "Vous avez reçu un commentaire sur votre statut.",
+    }),
+  },
 };
+
+const STORY_EMOJIS = ["❤️", "😂", "😮", "😢", "🔥", "👏"];
 
 async function hasCommentBy(postId, uid) {
   const snap = await db.collection("posts").doc(postId).collection("comments")
@@ -82,6 +98,20 @@ async function checkRelationship(type, senderId, targetUid, payload) {
     const matchId = [senderId, targetUid].sort().join("_");
     const matchSnap = await db.collection("matches").doc(matchId).get();
     return { ok: matchSnap.exists };
+  }
+
+  if (type === "story_reaction" || type === "story_comment") {
+    if (typeof payload?.storyId !== "string" || !payload.storyId) return { ok: false };
+    const storySnap = await db.collection("stories").doc(payload.storyId).get();
+    if (!storySnap.exists || storySnap.data().authorId !== targetUid) return { ok: false };
+    if (type === "story_reaction") {
+      const reaction = await storySnap.ref.collection("reactions").doc(senderId).get();
+      // The emoji shown is the one actually stored, not the client's word for it.
+      const emoji = reaction.data()?.emoji;
+      return { ok: reaction.exists && STORY_EMOJIS.includes(emoji), emoji };
+    }
+    const comment = await storySnap.ref.collection("comments").where("authorId", "==", senderId).limit(1).get();
+    return { ok: !comment.empty };
   }
 
   if (typeof payload?.postId !== "string" || !payload.postId) return { ok: false };
@@ -131,6 +161,8 @@ async function notify(req, res) {
     // profile, not from whatever the client sent.
     const senderProfile = await db.collection("profiles").doc(senderId).get();
     const payload = { ...req.body.payload, firstName: senderProfile.data()?.firstName || "" };
+    if (type === "story_reaction") payload.emoji = relationship.emoji;
+    if (type === "story_comment" && typeof payload.text === "string") payload.text = payload.text.slice(0, 140);
 
     // A new chat message shouldn't push if the recipient already has that
     // exact conversation open — they're watching it arrive live.
