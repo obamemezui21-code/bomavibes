@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { useCookieConsent } from '../../lib/cookieConsent.js'
+import MapConsentPlaceholder from './MapConsentPlaceholder.jsx'
 
 // Custom flat divIcon pins instead of Leaflet's default marker image —
 // sidesteps a well-known Vite bug where the default icon's PNG asset paths
@@ -27,7 +29,7 @@ const LIBREVILLE = [0.39, 9.45]
 // A thin imperative wrapper around plain Leaflet (not react-leaflet — this
 // app is on React 19 and react-leaflet's compatibility there isn't worth
 // betting on; Leaflet itself has no React version dependency at all).
-function LeafletMap({
+function LeafletMapView({
   center = LIBREVILLE,
   zoom = 12,
   height = '300px',
@@ -121,6 +123,14 @@ function LeafletMap({
   }, [draggableMarker])
 
   return <div ref={containerRef} style={{ height, width: '100%' }} className="overflow-hidden rounded-xl" />
+}
+
+// The OpenStreetMap tiles only load once the visitor has allowed maps
+// (cookie banner) — until then, a placeholder offering to show them.
+function LeafletMap(props) {
+  const { maps } = useCookieConsent()
+  if (!maps) return <MapConsentPlaceholder height={props.height} />
+  return <LeafletMapView {...props} />
 }
 
 export default LeafletMap

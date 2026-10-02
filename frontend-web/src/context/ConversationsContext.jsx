@@ -23,6 +23,7 @@ import { photoVariant } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { usePageVisible } from '../lib/usePageVisible.js'
 import { useAuth } from './AuthContext.jsx'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 const ConversationsContext = createContext(null)
 const ONLINE_THRESHOLD_MS = 150 * 1000
@@ -287,13 +288,13 @@ export function ConversationsProvider({ children }) {
             interests: profile.interests || [],
             photo:
               photoVariant(profile.photos?.[0], 'thumb') ||
-              `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || 'Bomavibes')}&backgroundColor=e8c468`,
+              fallbackAvatar(profile.firstName || 'Bomavibes', 'e8c468'),
             photoMedium:
               photoVariant(profile.photos?.[0], 'medium') ||
-              `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || 'Bomavibes')}&backgroundColor=e8c468`,
+              fallbackAvatar(profile.firstName || 'Bomavibes', 'e8c468'),
             photoFull:
               profile.photos?.[0] ||
-              `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || 'Bomavibes')}&backgroundColor=e8c468`,
+              fallbackAvatar(profile.firstName || 'Bomavibes', 'e8c468'),
           },
           matchedAt,
           lastActivityAt,

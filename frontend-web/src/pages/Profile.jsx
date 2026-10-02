@@ -22,6 +22,7 @@ import {
   RELIGIONS,
 } from '../lib/onboardingOptions.js'
 import { inputClass, labelClass, chipClass } from '../lib/formStyles.js'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 const emptyForm = {
   firstName: '',
@@ -243,7 +244,7 @@ function Profile() {
               src={
                 photoSlots[0]?.previewUrl ||
                 photoSlots[0]?.url ||
-                `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(form.firstName || 'Vous')}&backgroundColor=8b5cf6`
+                fallbackAvatar(form.firstName || 'Vous', '8b5cf6')
               }
               alt="Avatar"
               className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"

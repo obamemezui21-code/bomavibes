@@ -18,8 +18,8 @@ export const POST_BACKGROUNDS = [
 ]
 
 export const POST_FONTS = [
-  { id: 'normal', label: 'Normal', family: 'Inter, ui-sans-serif, system-ui, sans-serif', weight: 500 },
-  { id: 'bold', label: 'Gras', family: 'Outfit, ui-sans-serif, system-ui, sans-serif', weight: 800 },
+  { id: 'normal', label: 'Normal', family: '"Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif', weight: 500 },
+  { id: 'bold', label: 'Gras', family: '"Outfit Variable", Outfit, ui-sans-serif, system-ui, sans-serif', weight: 800 },
   { id: 'elegant', label: 'Élégant', family: '"Playfair Display", Georgia, serif', weight: 600 },
   { id: 'script', label: 'Manuscrit', family: '"Dancing Script", cursive', weight: 700 },
   { id: 'typewriter', label: 'Machine', family: '"Courier Prime", "Courier New", monospace', weight: 700 },
@@ -50,15 +50,14 @@ export function backgroundTextSize(length) {
   return 'text-base leading-relaxed'
 }
 
-// The three decorative web fonts are only downloaded once someone actually
-// sees or writes a styled post, not on every page load.
+// The three decorative fonts are only downloaded once someone actually
+// sees or writes a styled post, not on every page load — from our own
+// server, not Google Fonts.
 let fontsRequested = false
 export function loadPostFonts() {
   if (fontsRequested || typeof document === 'undefined') return
   fontsRequested = true
-  const link = document.createElement('link')
-  link.rel = 'stylesheet'
-  link.href =
-    'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Dancing+Script:wght@700&family=Courier+Prime:wght@700&display=swap'
-  document.head.appendChild(link)
+  import('@fontsource/playfair-display/600.css')
+  import('@fontsource/dancing-script/700.css')
+  import('@fontsource/courier-prime/700.css')
 }

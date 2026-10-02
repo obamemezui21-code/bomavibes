@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Check, Heart } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 const NEW_PROFILE_MS = 7 * 24 * 60 * 60 * 1000
 
 function photoFor(profile) {
   return (
     photoVariant(profile.photos?.[0], 'medium') ||
-    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')
   )
 }
 

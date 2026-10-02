@@ -29,6 +29,7 @@ import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
 import SendToModal from '../components/shared/SendToModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 function PostDetail() {
   const { postId } = useParams()
@@ -227,7 +228,7 @@ function PostDetail() {
   const fullPhoto = author?.photos?.[0]
   const avatarUrl = fullPhoto
     ? photoVariant(fullPhoto, 'thumb')
-    : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(author?.firstName || post.authorId)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    : fallbackAvatar(author?.firstName || post.authorId, 'f3e8ff,fce7f3,ede9fe')
 
   const expandedProfile = expandedAuthorId ? authorsById[expandedAuthorId] : null
   const expandedMatch = expandedAuthorId ? conversations.find((c) => c.otherUid === expandedAuthorId) : null

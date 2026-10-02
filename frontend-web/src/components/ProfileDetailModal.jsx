@@ -32,6 +32,7 @@ import { useToast } from '../context/ToastContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import ReportModal from './ReportModal.jsx'
 import BlockConfirmModal from './BlockConfirmModal.jsx'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 function Chip({ Icon, label }) {
   return (
@@ -136,7 +137,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
   const navigate = useNavigate()
   const photos = profile.photos?.length
     ? profile.photos
-    : [`https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`]
+    : [fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')]
   const [index, setIndex] = useState(0)
   const [showMenu, setShowMenu] = useState(false)
   const [showReport, setShowReport] = useState(false)

@@ -54,7 +54,8 @@ const SECTIONS = [
   {
     title: '7. Cookies',
     body: [
-      'Nous utilisons uniquement des cookies/stockage technique nécessaires au fonctionnement du site (garder votre session connectée). Nous n\'utilisons pas de cookies publicitaires tiers.',
+      'Nous utilisons uniquement le stockage nécessaire au fonctionnement du site (session, sécurité, vos réglages). Aucune publicité, aucun pistage, aucune statistique de visite.',
+      'Les cartes (OpenStreetMap) ne s\'affichent qu\'avec votre accord. Détails et réglages : page « Politique de cookies » (bomavibes.tech/cookies).',
     ],
   },
   {

@@ -3,13 +3,14 @@ import { MapPin } from 'lucide-react'
 import LeafletMap from './LeafletMap.jsx'
 import { groupProfilesByCity } from '../../lib/nearby.js'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
+import { fallbackAvatar } from '../../lib/fallbackAvatar.js'
 
 const PIN_SIZE = 44
 
 function avatarFor(profile) {
   return (
     photoVariant(profile.photos?.[0], 'thumb') ||
-    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')
   )
 }
 

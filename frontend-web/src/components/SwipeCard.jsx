@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Check, Heart, Info, MapPin, Target } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 const SWIPE_THRESHOLD = 100
 const EXIT_X = 600
@@ -9,7 +10,7 @@ const EXIT_TRANSITION = { type: 'tween', duration: 0.22, ease: 'easeIn' }
 const STACK_TRANSITION = { type: 'spring', stiffness: 500, damping: 32 }
 const NEW_PROFILE_MS = 7 * 24 * 60 * 60 * 1000
 const FALLBACK_AVATAR_SEED = (profile) =>
-  `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+  fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')
 
 // Each interest/trait badge gets its own tint from this rotation so the
 // tag row reads as varied instead of one flat color block. Full literal

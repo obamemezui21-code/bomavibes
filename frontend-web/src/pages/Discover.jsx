@@ -36,6 +36,7 @@ import { INTEREST_ICONS, iconForInterest, matchPercent } from '../lib/interests.
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
 import { RELIGIONS } from '../lib/onboardingOptions.js'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
@@ -74,14 +75,14 @@ const GOAL_CHIPS = [NEARBY_CHIP, 'Relation sérieuse', 'Amitié', 'Sortie', 'Dis
 function avatarFor(profile) {
   return (
     photoVariant(profile.photos?.[0], 'thumb') ||
-    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')
   )
 }
 
 function fullPhotoFor(profile) {
   return (
     profile.photos?.[0] ||
-    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(profile.firstName || profile.id)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')
   )
 }
 

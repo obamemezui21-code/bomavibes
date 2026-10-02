@@ -1,5 +1,6 @@
 import { MapPin, Navigation } from 'lucide-react'
 import { mapsLink, tilesAround } from '../../lib/staticMap.js'
+import { saveConsent, useCookieConsent } from '../../lib/cookieConsent.js'
 
 const WIDTH = 240
 const HEIGHT = 140
@@ -9,7 +10,9 @@ const ZOOM = 16
 // opens the place (and the route to it) in the phone's maps app.
 function LocationMessage({ location, fromMe }) {
   const { lat, lng, accuracy } = location
-  const tiles = tilesAround(lat, lng, ZOOM, WIDTH, HEIGHT)
+  const { maps } = useCookieConsent()
+  // OpenStreetMap tiles only with the visitor's consent (cookie banner).
+  const tiles = maps ? tilesAround(lat, lng, ZOOM, WIDTH, HEIGHT) : []
 
   return (
     <a
@@ -38,7 +41,22 @@ function LocationMessage({ location, fromMe }) {
           fill="#ec4899"
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full text-white drop-shadow-md"
         />
-        <span className="absolute bottom-0.5 right-1 rounded bg-white/70 px-1 text-[8px] text-ink/60">© OpenStreetMap</span>
+        {maps ? (
+          <span className="absolute bottom-0.5 right-1 rounded bg-white/70 px-1 text-[8px] text-ink/60">© OpenStreetMap</span>
+        ) : (
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              saveConsent({ maps: true })
+            }}
+            className="absolute inset-x-0 bottom-1.5 mx-auto w-max rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-violet-600 shadow"
+          >
+            Afficher la carte
+          </span>
+        )}
       </div>
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <div className="min-w-0">

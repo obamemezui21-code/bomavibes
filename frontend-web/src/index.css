@@ -80,8 +80,8 @@
      treatments so both stay in sync instead of drifting independently. */
   --gradient-brand: linear-gradient(135deg, var(--color-violet-600) 0%, var(--color-pink-500) 55%, var(--color-pink-600) 100%);
 
-  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit Variable", "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: 0.75rem;
   --radius-md: 0.875rem;

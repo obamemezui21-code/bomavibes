@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mic, MicOff, Phone, PhoneOff, RefreshCw, Video, VideoOff } from 'lucide-react'
 import { useCall } from '../context/CallContext.jsx'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 function formatDuration(ms) {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -95,7 +96,7 @@ function CallScreen() {
   const showRemoteVideo = isVideo && call.phase === 'active' && remoteStream?.getVideoTracks().length > 0
   const avatar =
     other.photo ||
-    `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(other.firstName || 'BomaVibes')}&backgroundColor=ead5ea`
+    fallbackAvatar(other.firstName || 'BomaVibes', 'ead5ea')
 
   let statusText = ''
   if (call.phase === 'incoming') statusText = isVideo ? 'Appel vidéo entrant…' : 'Appel audio entrant…'

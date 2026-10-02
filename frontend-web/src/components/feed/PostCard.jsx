@@ -9,6 +9,7 @@ import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import PostText from './PostText.jsx'
+import { fallbackAvatar } from '../../lib/fallbackAvatar.js'
 
 const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
@@ -91,7 +92,7 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
   const fullPhoto = author?.photos?.[0]
   const avatarUrl = fullPhoto
     ? photoVariant(fullPhoto, 'thumb')
-    : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(author?.firstName || post.authorId)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    : fallbackAvatar(author?.firstName || post.authorId, 'f3e8ff,fce7f3,ede9fe')
 
   function handleToggleLike(e) {
     e.stopPropagation()

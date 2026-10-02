@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { doc, onSnapshot } from 'firebase/firestore'
 import SplashScreen from './components/SplashScreen.jsx'
+import CookieBanner from './components/CookieBanner.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
@@ -22,6 +23,7 @@ import { FullPageSpinner } from './components/ui/Spinner.jsx'
 const Landing = lazy(() => import('./pages/Landing.jsx'))
 const Events = lazy(() => import('./pages/Events.jsx'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy.jsx'))
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy.jsx'))
 const Terms = lazy(() => import('./pages/Terms.jsx'))
 const LegalNotice = lazy(() => import('./pages/LegalNotice.jsx'))
 const Safety = lazy(() => import('./pages/Safety.jsx'))
@@ -107,6 +109,7 @@ function App() {
   return (
     <>
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      {!showSplash && <CookieBanner />}
       <Suspense fallback={<FullPageSpinner />}>
         {showMaintenance ? (
           <Maintenance />
@@ -115,6 +118,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/evenements" element={<Events />} />
           <Route path="/confidentialite" element={<PrivacyPolicy />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/conditions" element={<Terms />} />
           <Route path="/mentions-legales" element={<LegalNotice />} />
           <Route path="/securite" element={<Safety />} />

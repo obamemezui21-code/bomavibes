@@ -130,7 +130,7 @@ function VideoCallMock() {
 
 function ColorPostsMock() {
   const posts = [
-    { text: 'Qui est chaud pour un resto ce week-end à Libreville ? 🍲', bg: 'linear-gradient(135deg, #4b164c 0%, #8a4d8b 100%)', color: '#fff', font: 'Outfit, sans-serif', weight: 800, who: 'Inès', photo: ines.photo },
+    { text: 'Qui est chaud pour un resto ce week-end à Libreville ? 🍲', bg: 'linear-gradient(135deg, #4b164c 0%, #8a4d8b 100%)', color: '#fff', font: '"Outfit Variable", Outfit, sans-serif', weight: 800, who: 'Inès', photo: ines.photo },
     { text: 'La vie est belle quand on sourit ☀️', bg: 'linear-gradient(135deg, #f2726c 0%, #f2bf4e 100%)', color: '#2b1a2c', font: '"Dancing Script", cursive', weight: 700, who: 'Serge', photo: serge.photo },
   ]
   return (

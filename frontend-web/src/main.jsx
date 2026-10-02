@@ -1,6 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+// Fonts served from our own server (not Google Fonts): no visitor IP sent to Google.
+import '@fontsource-variable/outfit'
+import '@fontsource-variable/inter'
 import './index.css'
 import 'flag-icons/css/flag-icons.min.css'
 import './i18n/index.js'

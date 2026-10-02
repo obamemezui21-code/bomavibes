@@ -17,6 +17,7 @@ import PlatformUpdatesSection from '../components/landing/PlatformUpdatesSection
 import SupportTeaserSection from '../components/landing/SupportTeaserSection.jsx'
 import Reveal from '../components/landing/Reveal.jsx'
 import SupportChatWidget from '../components/landing/SupportChatWidget.jsx'
+import { openCookieSettings } from '../lib/cookieConsent.js'
 
 const SOCIALS = [
   { label: 'Instagram', href: 'https://instagram.com/bomavibes' },
@@ -233,6 +234,19 @@ function Landing() {
           >
             Mentions légales
           </Link>
+          <Link
+            to="/cookies"
+            className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
+          >
+            Cookies
+          </Link>
+          <button
+            type="button"
+            onClick={openCookieSettings}
+            className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"
+          >
+            Gérer les cookies
+          </button>
           <Link
             to="/soutenir"
             className="text-xs font-medium text-white/50 underline-offset-4 transition hover:text-white/80 hover:underline"

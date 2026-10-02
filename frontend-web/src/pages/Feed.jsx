@@ -23,6 +23,7 @@ import FeedEmptyState from '../components/feed/FeedEmptyState.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
 function Feed() {
   const {
@@ -151,7 +152,7 @@ function Feed() {
   const myPhoto = publicProfile?.photos?.[0]
   const myAvatarUrl = myPhoto
     ? photoVariant(myPhoto, 'thumb')
-    : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(user?.firstName || user?.id || '')}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    : fallbackAvatar(user?.firstName || user?.id || '', 'f3e8ff,fce7f3,ede9fe')
 
   const myStories = useMemo(
     () => stories.filter((s) => s.authorId === user?.id).slice().reverse(),
@@ -272,7 +273,7 @@ function Feed() {
           const authorPhoto = g.author?.photos?.[0]
           const avatarUrl = authorPhoto
             ? photoVariant(authorPhoto, 'thumb')
-            : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(g.author?.firstName || 'Bomavibes')}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+            : fallbackAvatar(g.author?.firstName || 'Bomavibes', 'f3e8ff,fce7f3,ede9fe')
           return (
             <button
               key={g.stories[0]?.authorId || i}

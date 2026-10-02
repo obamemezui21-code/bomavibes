@@ -17,6 +17,7 @@ import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
 import SupportModal from '../components/SupportModal.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
+import { openCookieSettings } from '../lib/cookieConsent.js'
 
 function Toggle({ checked, onChange, disabled }) {
   return (
@@ -403,6 +404,11 @@ function Settings() {
                 className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
               >
                 <ShieldOff size={13} strokeWidth={2.25} />
+                Gérer
+              </button>
+            </Row>
+            <Row title="Cookies" subtitle="Choisir ce qui peut être chargé (cartes)">
+              <button type="button" onClick={openCookieSettings} className="text-xs font-semibold text-violet-600 hover:underline">
                 Gérer
               </button>
             </Row>

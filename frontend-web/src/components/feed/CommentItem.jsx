@@ -1,13 +1,14 @@
 import { Flag, Trash2 } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
+import { fallbackAvatar } from '../../lib/fallbackAvatar.js'
 
 function CommentRow({ comment, author, currentUserId, onReply, onDelete, onReport, onAuthorClick, isReply }) {
   const isOwn = comment.authorId === currentUserId
   const fullPhoto = author?.photos?.[0]
   const avatarUrl = fullPhoto
     ? photoVariant(fullPhoto, 'thumb')
-    : `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(author?.firstName || comment.authorId)}&backgroundColor=f3e8ff,fce7f3,ede9fe`
+    : fallbackAvatar(author?.firstName || comment.authorId, 'f3e8ff,fce7f3,ede9fe')
 
   return (
     <div className={`flex min-w-0 gap-2.5 ${isReply ? 'ml-10' : ''}`}>
