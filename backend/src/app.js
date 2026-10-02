@@ -28,6 +28,7 @@ const ngoriRunRoutes = require("./routes/ngoriRunRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
+const { startStoryCleanupScheduler } = require("./services/storyCleanupService");
 
 const app = express();
 
@@ -78,6 +79,7 @@ app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
 
 startCallCleanupScheduler();
+startStoryCleanupScheduler();
 startPaymentSweepScheduler();
 
 // Error handler
