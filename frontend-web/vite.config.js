@@ -16,6 +16,10 @@ export default defineConfig({
     },
   },
   build: {
+    // flag-icons' ~400 small SVG flags were all inlined into the main CSS
+    // (570 KB downloaded on every visit, flags shown or not). Kept as
+    // separate files instead, each fetched only when a flag is displayed.
+    assetsInlineLimit: (filePath) => (filePath.includes('flag-icons') ? false : undefined),
     rolldownOptions: {
       output: {
         // Firebase (auth+firestore+app-check) and framer-motion rarely
