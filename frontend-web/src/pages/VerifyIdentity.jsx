@@ -8,6 +8,7 @@ import { useToast } from '../context/ToastContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
 import { ID_TYPES, startVerification, submitIdentityVerification } from '../firebase/verification.js'
 import { compressImage } from '../lib/compressImage.js'
+import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
 
 const primaryButton =
   'flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:opacity-50'
@@ -44,11 +45,11 @@ function PrivacyNote() {
   )
 }
 
-// Mandatory identity verification for new members (and the optional
-// "Profil vérifié" badge for older ones): an identity document, then a
-// selfie doing a pose picked by the server, reviewed by a moderator.
+// Identity verification — an identity document, then a selfie doing a pose
+// picked by the server, reviewed by a moderator. Gives the "Profil vérifié"
+// ✓ badge; mandatory for new members only when IDENTITY_REQUIRED is on.
 function VerifyIdentity() {
-  const { logout } = useAuth()
+  const { logout, publicProfile } = useAuth()
   const { showToast } = useToast()
   const { status, request } = useIdentity()
   const navigate = useNavigate()
@@ -101,7 +102,7 @@ function VerifyIdentity() {
     }
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || request === undefined) {
     return (
       <AuthLayout title="Vérification d’identité">
         <div className="flex justify-center py-10">
@@ -111,12 +112,12 @@ function VerifyIdentity() {
     )
   }
 
-  if (status === 'ok') {
+  if (publicProfile?.verified) {
     return (
       <AuthLayout title="Identité vérifiée" subtitle="Merci de contribuer à une communauté sûre">
         <div className="space-y-4 text-center">
           <BadgeCheck size={44} className="mx-auto text-sky-500" />
-          <p className="text-sm text-ink-soft">Votre profil affiche le badge ✓ et vous avez accès à tout BomaVibes.</p>
+          <p className="text-sm text-ink-soft">Votre profil affiche le badge ✓ à côté de votre prénom.</p>
           <button type="button" onClick={() => navigate('/discover', { replace: true })} className={primaryButton}>
             Continuer
           </button>
@@ -125,7 +126,7 @@ function VerifyIdentity() {
     )
   }
 
-  if (status === 'pending' && step === 'intro') {
+  if (request?.status === 'pending' && step === 'intro') {
     return (
       <AuthLayout title="Vérification en cours" subtitle="Généralement en quelques heures">
         <div className="space-y-4 text-center">
@@ -133,9 +134,9 @@ function VerifyIdentity() {
             <Clock size={44} className="mx-auto text-violet-500" />
           </motion.div>
           <p className="text-sm leading-relaxed text-ink-soft">
-            Notre équipe examine votre pièce d’identité et votre selfie. En attendant, vous pouvez déjà découvrir les
-            profils et le fil d’actualité. Vous pourrez liker, écrire et publier dès que ce sera validé — vous recevrez
-            une notification.
+            {IDENTITY_REQUIRED
+              ? 'Notre équipe examine votre pièce d’identité et votre selfie. En attendant, vous pouvez déjà découvrir les profils et le fil d’actualité. Vous pourrez liker, écrire et publier dès que ce sera validé — vous recevrez une notification.'
+              : 'Notre équipe examine votre pièce d’identité et votre selfie. Vous recevrez une notification, et le badge ✓ apparaîtra sur votre profil dès que ce sera validé.'}
           </p>
           <button type="button" onClick={() => navigate('/discover', { replace: true })} className={primaryButton}>
             Découvrir BomaVibes
@@ -233,9 +234,14 @@ function VerifyIdentity() {
   }
 
   // Intro: first time, or after a refusal.
-  const wasRejected = status === 'rejected'
+  const wasRejected = request?.status === 'rejected'
+  // Mandatory only for new members while IDENTITY_REQUIRED is on.
+  const mandatory = IDENTITY_REQUIRED && status !== 'ok'
   return (
-    <AuthLayout title="Vérifions votre identité" subtitle="Pour la sécurité de tous nos membres">
+    <AuthLayout
+      title={mandatory ? 'Vérifions votre identité' : 'Faites vérifier votre identité'}
+      subtitle={mandatory ? 'Pour la sécurité de tous nos membres' : 'Obtenez le badge ✓ Profil vérifié'}
+    >
       <div className="space-y-4">
         {wasRejected && (
           <div className="flex gap-2.5 rounded-xl border border-coral-500/30 bg-coral-500/10 px-3 py-2.5 text-sm text-coral-500">
@@ -248,8 +254,9 @@ function VerifyIdentity() {
         <div className="flex items-start gap-3">
           <ShieldCheck size={36} className="shrink-0 text-sky-500" />
           <p className="text-sm leading-relaxed text-ink-soft">
-            Sur BomaVibes, chaque nouveau profil est vérifié par notre équipe : vous rencontrez de vraies personnes, et
-            elles savent que vous êtes vous. Cela prend 2 minutes.
+            {mandatory
+              ? 'Sur BomaVibes, chaque nouveau profil est vérifié par notre équipe : vous rencontrez de vraies personnes, et elles savent que vous êtes vous. Cela prend 2 minutes.'
+              : 'Facultatif mais recommandé : le badge ✓ montre aux autres membres que vous êtes bien la personne de vos photos. Cela prend 2 minutes.'}
           </p>
         </div>
         <ol className="space-y-2 rounded-2xl bg-ink/[0.03] p-4 text-sm text-ink">
@@ -267,16 +274,26 @@ function VerifyIdentity() {
           Commencer
         </button>
         <PrivacyNote />
-        <button
-          type="button"
-          onClick={async () => {
-            await logout()
-            navigate('/')
-          }}
-          className="mx-auto flex items-center gap-1.5 text-xs font-medium text-ink-soft/60 hover:underline"
-        >
-          <LogOut size={13} /> Se déconnecter
-        </button>
+        {mandatory ? (
+          <button
+            type="button"
+            onClick={async () => {
+              await logout()
+              navigate('/')
+            }}
+            className="mx-auto flex items-center gap-1.5 text-xs font-medium text-ink-soft/60 hover:underline"
+          >
+            <LogOut size={13} /> Se déconnecter
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="mx-auto block text-xs font-medium text-ink-soft/60 hover:underline"
+          >
+            Plus tard
+          </button>
+        )}
       </div>
     </AuthLayout>
   )

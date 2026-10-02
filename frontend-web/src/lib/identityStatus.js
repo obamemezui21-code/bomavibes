@@ -1,4 +1,11 @@
-// Where a member stands with the mandatory identity verification:
+// IDENTITY_REQUIRED: identity verification (ID document + selfie) is
+// OPTIONAL for now — it only gives the "Profil vérifié" ✓ badge. Set to
+// true (with IDENTITY_REQUIRED in backend/src/services/identityAccess.js
+// and identityRequired in firestore.rules) to make it mandatory for members
+// who joined after it was introduced (the others are legacyMember).
+export const IDENTITY_REQUIRED = false
+
+// Where a member stands with the identity verification:
 //   loading  — not known yet
 //   ok       — verified, or joined before it was mandatory (legacyMember)
 //   todo     — must send an ID document + selfie before using the app

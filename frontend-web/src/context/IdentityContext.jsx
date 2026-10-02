@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Clock, ShieldCheck } from 'lucide-react'
 import { useAuth } from './AuthContext.jsx'
 import { subscribeToMyVerification } from '../firebase/verification.js'
-import { identityStatus } from '../lib/identityStatus.js'
+import { IDENTITY_REQUIRED, identityStatus } from '../lib/identityStatus.js'
 
 const IdentityContext = createContext(null)
 
@@ -23,13 +23,15 @@ export function IdentityProvider({ children }) {
 
   // Call before liking, writing, calling or publishing: true when allowed,
   // otherwise explains why (and how to unlock it) and returns false.
+  const canInteract = !IDENTITY_REQUIRED || status === 'ok'
+
   function requireIdentity() {
-    if (status === 'ok') return true
+    if (canInteract) return true
     setGateOpen(true)
     return false
   }
 
-  const value = { status, request, canInteract: status === 'ok', requireIdentity }
+  const value = { status, request, canInteract, requireIdentity }
 
   return (
     <IdentityContext.Provider value={value}>

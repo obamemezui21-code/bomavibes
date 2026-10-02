@@ -55,9 +55,14 @@ service cloud.firestore {
     // document + selfie), except for members who joined before it became
     // mandatory (legacyMember, set by the backend). Mirrors
     // backend/src/services/identityAccess.js.
+    // identityRequired: OPTIONAL for now (only the ✓ badge) — set to true,
+    // with IDENTITY_REQUIRED in identityAccess.js and lib/identityStatus.js,
+    // to make it mandatory for new members.
     function canInteract() {
-      let p = get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
-      return p.get('verified', false) == true || p.get('legacyMember', false) == true;
+      let identityRequired = false;
+      return !identityRequired
+        || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('verified', false) == true
+        || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('legacyMember', false) == true;
     }
 
     // Two people blocked either way can't interact with each other's

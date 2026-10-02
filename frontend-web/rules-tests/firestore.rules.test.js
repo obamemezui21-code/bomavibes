@@ -328,7 +328,10 @@ describe('stories', () => {
   })
 })
 
-describe('mandatory identity verification', () => {
+// Identity verification is optional for now (identityRequired = false in
+// firestore.rules): these tests describe the mandatory mode, skipped until
+// it's switched back on.
+describe.skip('mandatory identity verification', () => {
   it('stops a new unverified member from writing, publishing or commenting', async () => {
     await assertFails(addDoc(collection(as('erin'), 'matches/bob_erin/messages'), { senderId: 'erin', text: 'Salut', type: 'text' }))
     await assertFails(addDoc(collection(as('erin'), 'posts'), { authorId: 'erin', type: 'text', text: 'Hello', likeCount: 0, commentCount: 0 }))
@@ -340,6 +343,13 @@ describe('mandatory identity verification', () => {
     await env.withSecurityRulesDisabled((ctx) => updateDoc(doc(ctx.firestore(), 'profiles/erin'), { verified: true }))
     await assertSucceeds(addDoc(collection(as('erin'), 'matches/bob_erin/messages'), { senderId: 'erin', text: 'Salut', type: 'text' }))
     await assertSucceeds(addDoc(collection(as('bob'), 'matches/bob_erin/messages'), { senderId: 'bob', text: 'Coucou', type: 'text' }))
+  })
+
+})
+
+describe('identity verification flags', () => {
+  it('lets a new unverified member write while verification is optional', async () => {
+    await assertSucceeds(addDoc(collection(as('erin'), 'matches/bob_erin/messages'), { senderId: 'erin', text: 'Salut', type: 'text' }))
   })
 
   it('never lets anyone grant or remove the legacy exemption themselves', async () => {

@@ -8,7 +8,7 @@ const SECTIONS = [
       'Informations de compte : prénom, email et mot de passe (ou votre compte Google si vous choisissez cette option).',
       'Informations de profil : âge, genre, photos, bio, centres d\'intérêt et préférences de rencontre (genre recherché, distance).',
       'Contenu que vous générez : messages échangés avec vos matchs, signalements que vous envoyez.',
-      'Vérification d\'identité : une photo de votre pièce d\'identité (carte d\'identité, passeport, permis de conduire ou titre de séjour) et un selfie. Obligatoire pour les comptes créés depuis octobre 2026.',
+      'Vérification d\'identité : une photo de votre pièce d\'identité (carte d\'identité, passeport, permis de conduire ou titre de séjour) et un selfie, si vous demandez le badge « Profil vérifié ». Cette vérification est facultative.',
       'Données techniques : type d\'appareil, navigateur, et le jeton de notification si vous activez les notifications push.',
     ],
   },

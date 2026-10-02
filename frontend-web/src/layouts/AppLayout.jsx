@@ -5,6 +5,7 @@ import { Clock, Compass, Heart, MessageCircle, Newspaper, Ticket } from 'lucide-
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 import AppTopBar from '../components/AppTopBar.jsx'
 import NgoriDailyReward from '../components/NgoriDailyReward.jsx'
@@ -129,7 +130,7 @@ function AppLayout() {
             viewport, while sticky headers inside pages keep working. */}
         <main className="min-h-[calc(100svh_-_3.5rem)] min-w-0 flex-1 overflow-x-clip pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
           {/* Identity under review: limited access (see IdentityContext). */}
-          {identity === 'pending' && (
+          {IDENTITY_REQUIRED && identity === 'pending' && (
             <div className="flex items-center gap-2 border-b border-sky-500/20 bg-sky-500/10 px-4 py-2 text-xs font-medium text-sky-700 dark:text-sky-300">
               <Clock size={14} className="shrink-0" />
               Vérification d’identité en cours : vous pourrez liker, écrire et publier dès qu’elle sera validée.

@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
 import { FullPageSpinner } from './ui/Spinner.jsx'
 
 // requireIdentity: new members must have sent their ID document + selfie
@@ -20,7 +21,7 @@ function RequireAuth({ children, requireVerified = true, requireOnboarded = fals
     if (!profile?.onboarded) return <Navigate to="/onboarding" replace />
   }
 
-  if (requireIdentity) {
+  if (requireIdentity && IDENTITY_REQUIRED) {
     if (identity === 'loading') return <FullPageSpinner />
     if (identity === 'todo' || identity === 'rejected') return <Navigate to="/verification" replace />
   }

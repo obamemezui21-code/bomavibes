@@ -1,5 +1,6 @@
 import { collection, getDocs, limit, query, startAfter, where } from 'firebase/firestore'
 import { db } from './config.js'
+import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
 import { fetchBlockedIds } from './safety.js'
 import { matchPercent } from '../lib/interests.js'
 
@@ -137,7 +138,7 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
       const data = docSnap.data()
       // New members only show up once their identity is verified (older
       // members, legacyMember, never had to).
-      if (!data.verified && !data.legacyMember) continue
+      if (IDENTITY_REQUIRED && !data.verified && !data.legacyMember) continue
       // Invisible mode (Jadéite Impériale): hidden from Discover while the plan runs.
       if (data.invisible && toMillis(data.visibilityUntil) > now) continue
       if (filters.minAge != null && data.age != null && data.age < filters.minAge) continue
