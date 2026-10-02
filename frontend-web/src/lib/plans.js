@@ -7,11 +7,16 @@
 // backend/src/config/plans.js (and freeCalls in firestore.rules).
 export const FREE_CALLS = true
 
+// Free plan likes per day, doubled for a verified identity — mirror of
+// backend/src/config/plans.js.
+export const FREE_LIKES_PER_DAY = 15
+export const VERIFIED_LIKES_PER_DAY = 30
+
 export const PLANS = {
   free: {
     id: 'free',
     label: 'Gratuit',
-    likesPerDay: 20,
+    likesPerDay: FREE_LIKES_PER_DAY,
     superlikes: { count: 1, period: 'week' },
     boosts: null,
     calls: FREE_CALLS,

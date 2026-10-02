@@ -8,7 +8,7 @@ import { useToast } from '../context/ToastContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
 import { ID_TYPES, startVerification, submitIdentityVerification } from '../firebase/verification.js'
 import { compressImage } from '../lib/compressImage.js'
-import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
+import { IDENTITY_REQUIRED, VERIFIED_PERKS } from '../lib/identityStatus.js'
 
 const primaryButton =
   'flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:opacity-50'
@@ -256,9 +256,19 @@ function VerifyIdentity() {
           <p className="text-sm leading-relaxed text-ink-soft">
             {mandatory
               ? 'Sur BomaVibes, chaque nouveau profil est vérifié par notre équipe : vous rencontrez de vraies personnes, et elles savent que vous êtes vous. Cela prend 2 minutes.'
-              : 'Facultatif mais recommandé : le badge ✓ montre aux autres membres que vous êtes bien la personne de vos photos. Cela prend 2 minutes.'}
+              : 'Facultatif, mais ça vaut le coup : 2 minutes pour montrer que vous êtes bien la personne de vos photos.'}
           </p>
         </div>
+        {!mandatory && (
+          <ul className="space-y-1.5 rounded-2xl bg-sky-500/[0.06] p-4 text-sm text-ink">
+            {VERIFIED_PERKS.map((p) => (
+              <li key={p.text} className="flex gap-2">
+                <span>{p.emoji}</span>
+                {p.text}
+              </li>
+            ))}
+          </ul>
+        )}
         <ol className="space-y-2 rounded-2xl bg-ink/[0.03] p-4 text-sm text-ink">
           <li>
             <strong>1.</strong> Une photo de votre pièce d’identité (carte d’identité, passeport, permis ou titre de séjour)

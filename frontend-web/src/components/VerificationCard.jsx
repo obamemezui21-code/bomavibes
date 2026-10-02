@@ -2,10 +2,11 @@ import { useNavigate } from 'react-router-dom'
 import { BadgeCheck, Clock, ShieldAlert } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import { VERIFIED_PERKS } from '../lib/identityStatus.js'
 
 // "Profil vérifié" status on the profile page. The verification itself
-// (identity document + pose selfie) happens on /verification — mandatory
-// for new members, optional (for the ✓ badge) for older ones.
+// (identity document + pose selfie) happens on /verification — optional,
+// rewarded with the ✓ badge and the VERIFIED_PERKS.
 function VerificationCard() {
   const { publicProfile } = useAuth()
   const { request } = useIdentity()
@@ -62,10 +63,20 @@ function VerificationCard() {
           <p className="text-sm text-ink-soft/70">
             {wasRejected
               ? `${request.rejectReason || ''} Vous pouvez réessayer.`
-              : 'Obtenez le badge ✓ : les autres sauront que vous êtes bien vous. Une pièce d’identité et un selfie suffisent.'}
+              : 'Une pièce d’identité et un selfie suffisent, et vous débloquez :'}
           </p>
         </div>
       </div>
+      {!wasRejected && (
+        <ul className="mt-3 space-y-1.5 rounded-xl bg-sky-500/[0.06] p-3 text-sm text-ink">
+          {VERIFIED_PERKS.map((p) => (
+            <li key={p.text} className="flex gap-2">
+              <span>{p.emoji}</span>
+              {p.text}
+            </li>
+          ))}
+        </ul>
+      )}
       <button
         type="button"
         onClick={() => navigate('/verification')}

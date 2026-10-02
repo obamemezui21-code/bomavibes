@@ -49,3 +49,11 @@ describe('activeStreakBadge', () => {
     expect(activeStreakBadge({}, day)).toBeNull()
   })
 })
+
+describe('verified identity perks', () => {
+  it('doubles the free daily likes, never lowers a bigger allowance', () => {
+    expect(effectivePlan({}, now).likesPerDay).toBe(15)
+    expect(effectivePlan({}, now, { verified: true }).likesPerDay).toBe(30)
+    expect(effectivePlan({ perks: { unlimitedLikesUntil: now + 1 } }, now, { verified: true }).likesPerDay).toBe(Infinity)
+  })
+})

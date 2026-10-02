@@ -8,9 +8,13 @@
 // ("2026-10-01", UTC) and perks.{unlimitedLikesUntil, seeLikesUntil,
 // callsUntil} (Timestamps).
 
-const { periodKey, planFor, toMillis } = require("./plans");
+const { VERIFIED_LIKES_PER_DAY, periodKey, planFor, toMillis } = require("./plans");
 
 const DAILY_REWARD = 1;
+// Verified identity perks: +1 Ngori on every daily claim, and a one-time
+// welcome bonus when the verification is approved.
+const VERIFIED_DAILY_BONUS = 1;
+const VERIFICATION_BONUS = 50;
 const STREAK_LENGTH = 7;
 const STREAK_BONUS = 3;
 
@@ -74,8 +78,12 @@ function withPerks(plan, userData, now = Date.now()) {
     return perked;
 }
 
-function effectivePlanFor(userData, now = Date.now()) {
-    return withPerks(planFor(userData, now), userData, now);
+// profileData: the member's public profile — a verified identity raises the
+// free plan's daily likes (never lowers a bigger allowance).
+function effectivePlanFor(userData, now = Date.now(), profileData = null) {
+    const plan = withPerks(planFor(userData, now), userData, now);
+    if (profileData?.verified && plan.likesPerDay < VERIFIED_LIKES_PER_DAY) plan.likesPerDay = VERIFIED_LIKES_PER_DAY;
+    return plan;
 }
 
-module.exports = { DAILY_REWARD, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };

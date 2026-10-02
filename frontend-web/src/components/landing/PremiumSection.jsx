@@ -27,7 +27,7 @@ const HIGHLIGHTS = [
   },
 ]
 
-const FREE_FOREVER = ['Créer votre profil', 'Matcher et discuter', '20 likes par jour', '1 Super Like par semaine', 'Recevoir des appels']
+const FREE_FOREVER = ['Créer votre profil', 'Matcher et discuter', '15 likes par jour (30 avec un profil vérifié)', '1 Super Like par semaine', 'Recevoir des appels']
 
 function PremiumSection() {
   return (

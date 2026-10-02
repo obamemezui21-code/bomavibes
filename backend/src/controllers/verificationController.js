@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const sharp = require("sharp");
 const admin = require("../config/firebaseAdmin");
 const { logAdminAction } = require("../services/adminLogService");
+const { VERIFICATION_BONUS } = require("../config/ngori");
 
 const db = admin.firestore();
 
@@ -248,8 +249,19 @@ async function reviewVerification(req, res) {
             reviewedBy: req.firebaseUser.uid,
             rejectReason,
         });
+        // Welcome bonus, once per account (not again after a revoke + re-approve).
+        let bonusGiven = false;
         if (decision === "approve") {
             batch.update(db.collection("profiles").doc(uid), { verified: true });
+            const userRef = db.collection("users").doc(uid);
+            const account = (await userRef.get()).data();
+            if (account && !account.verificationBonusAt) {
+                batch.update(userRef, {
+                    ngori: admin.firestore.FieldValue.increment(VERIFICATION_BONUS),
+                    verificationBonusAt: admin.firestore.FieldValue.serverTimestamp(),
+                });
+                bonusGiven = true;
+            }
         }
         await batch.commit();
         removeVerificationFiles(uid);
@@ -262,7 +274,13 @@ async function reviewVerification(req, res) {
         });
 
         if (decision === "approve") {
-            await notifyUser(uid, "Identité vérifiée ✓", "Bienvenue ! Vous avez maintenant accès à tout BomaVibes.");
+            await notifyUser(
+                uid,
+                "Identité vérifiée ✓",
+                bonusGiven
+                    ? `Badge ✓ activé et +${VERIFICATION_BONUS} Ngori offerts ! Profitez de vos nouveaux avantages.`
+                    : "Votre profil affiche maintenant le badge ✓.",
+            );
         } else {
             await notifyUser(uid, "Vérification non validée", `${rejectReason} Vous pouvez réessayer depuis votre profil.`);
         }

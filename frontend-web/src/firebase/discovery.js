@@ -94,6 +94,9 @@ function scoreCandidate(candidate, { mySwipe, hasSeenThisSession, myInterests, n
     score += 20 // priority 5
   }
 
+  // Verified identity (✓ badge): shown before unverified profiles.
+  if (candidate.verified) score += 30
+
   const compat = matchPercent(myInterests, candidate.interests)
   if (compat != null && compat >= 50) score += 25 // compatibility bonus
 

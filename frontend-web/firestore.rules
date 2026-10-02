@@ -102,7 +102,7 @@ service cloud.firestore {
           // Subscription: set only by an admin through the backend.
           && unchangedFields(['plan', 'planExpiresAt', 'planUpdatedAt', 'planUpdatedBy'])
           // Ngori wallet and the perks it buys: backend only (ngoriController.js).
-          && unchangedFields(['ngori', 'ngoriStreak', 'ngoriLastClaimDay', 'perks']);
+          && unchangedFields(['ngori', 'ngoriStreak', 'ngoriLastClaimDay', 'perks', 'verificationBonusAt']);
       }
 
       // Account deletion is a full erasure (see accountController.deleteAccount:

@@ -14,10 +14,16 @@ const UNLIMITED = Infinity;
 // firestore.rules) to make them subscriber-only again.
 const FREE_CALLS = true;
 
+// Free plan likes per day — doubled for a verified identity (ID document +
+// selfie, optional), to make verification worth it. Mirrored in
+// frontend-web/src/lib/plans.js.
+const FREE_LIKES_PER_DAY = 15;
+const VERIFIED_LIKES_PER_DAY = 30;
+
 const PLANS = {
     free: {
         label: "Gratuit",
-        likesPerDay: 20,
+        likesPerDay: FREE_LIKES_PER_DAY,
         superlikes: { count: 1, period: "week" },
         boosts: null,
         visibility: 0,
@@ -95,4 +101,4 @@ function periodKey(period, now = Date.now()) {
     return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
-module.exports = { PLANS, PAID_PLANS, UNLIMITED, BOOST_DURATION_MS, PLAN_PERIOD_DAYS, activePlanId, planFor, periodKey, toMillis };
+module.exports = { FREE_LIKES_PER_DAY, VERIFIED_LIKES_PER_DAY, PLANS, PAID_PLANS, UNLIMITED, BOOST_DURATION_MS, PLAN_PERIOD_DAYS, activePlanId, planFor, periodKey, toMillis };

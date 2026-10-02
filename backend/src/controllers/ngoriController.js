@@ -1,6 +1,6 @@
 const admin = require("../config/firebaseAdmin");
 const { UNLIMITED, planFor, toMillis } = require("../config/plans");
-const { REWARDS, STREAK_LENGTH, dailyClaim, streakBadgeFor } = require("../config/ngori");
+const { REWARDS, STREAK_LENGTH, VERIFIED_DAILY_BONUS, dailyClaim, streakBadgeFor } = require("../config/ngori");
 
 const db = admin.firestore();
 const { Timestamp } = admin.firestore;
@@ -42,15 +42,19 @@ async function claimDaily(req, res) {
     const now = Date.now();
     try {
         const result = await db.runTransaction(async (tx) => {
-            const snap = await tx.get(userRef);
+            const [snap, profileSnap] = await Promise.all([tx.get(userRef), tx.get(profileRef)]);
             if (!snap.exists) throw new NgoriError(404, "Utilisateur introuvable");
             const data = snap.data();
             const claim = dailyClaim(data, now);
             if (!claim) return { gained: 0, bonus: 0, ...walletOf(data, now) };
+            // Verified identity: one more Ngori every day (reported apart
+            // from the streak bonus).
+            const verifiedBonus = profileSnap.data()?.verified ? VERIFIED_DAILY_BONUS : 0;
+            claim.gained += verifiedBonus;
             const balance = (data.ngori || 0) + claim.gained;
             tx.update(userRef, { ngori: balance, ngoriStreak: claim.streak, ngoriLastClaimDay: claim.day });
             tx.set(profileRef, { streakBadge: streakBadgeFor(claim.streak), streakDay: claim.day }, { merge: true });
-            return { gained: claim.gained, bonus: claim.bonus, balance, streak: claim.streak, streakLength: STREAK_LENGTH, claimedToday: true };
+            return { gained: claim.gained, bonus: claim.bonus, verifiedBonus, balance, streak: claim.streak, streakLength: STREAK_LENGTH, claimedToday: true };
         });
         res.json(result);
     } catch (err) {

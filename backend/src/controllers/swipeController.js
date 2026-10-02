@@ -56,8 +56,13 @@ async function recordSwipe(req, res) {
         let plan = PLANS.free;
         let usageAfter = null;
         await db.runTransaction(async (tx) => {
-            const [userSnap, usageSnap, prevSwipe] = await Promise.all([tx.get(userRef), tx.get(usageRef), tx.get(swipeRef)]);
-            plan = effectivePlanFor(userSnap.data(), now);
+            const [userSnap, usageSnap, prevSwipe, mySnap] = await Promise.all([
+                tx.get(userRef),
+                tx.get(usageRef),
+                tx.get(swipeRef),
+                tx.get(db.collection("profiles").doc(uid)),
+            ]);
+            plan = effectivePlanFor(userSnap.data(), now, mySnap.data());
             const usage = usageSnap.data() || {};
             const wasLiked = LIKE_DIRECTIONS.includes(prevSwipe.data()?.direction);
             const update = {};
@@ -134,11 +139,12 @@ async function recordSwipe(req, res) {
 async function getQuota(req, res) {
     const uid = req.firebaseUser.uid;
     try {
-        const [userSnap, usageSnap] = await Promise.all([
+        const [userSnap, usageSnap, profileSnap] = await Promise.all([
             db.collection("users").doc(uid).get(),
             db.collection("usage").doc(uid).get(),
+            db.collection("profiles").doc(uid).get(),
         ]);
-        const plan = effectivePlanFor(userSnap.data());
+        const plan = effectivePlanFor(userSnap.data(), Date.now(), profileSnap.data());
         res.json({ remaining: remainingFor(plan, usageSnap.data(), Date.now()) });
     } catch (err) {
         console.error(err);

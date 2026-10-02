@@ -1,4 +1,4 @@
-import { activePlan } from './plans.js'
+import { activePlan, VERIFIED_LIKES_PER_DAY } from './plans.js'
 
 // Ngori rewards — DISPLAY copy of backend/src/config/ngori.js, which is what
 // the server actually charges and grants. Keep the numbers in sync with it.
@@ -59,8 +59,10 @@ export function perkUntil(account, perk, now = Date.now()) {
 
 // The plan with the running Ngori perks folded in — mirrors the backend's
 // effectivePlanFor, for UI gating (e.g. the call buttons).
-export function effectivePlan(account, now = Date.now()) {
+// profile: the public profile — a verified identity doubles the free likes.
+export function effectivePlan(account, now = Date.now(), profile = null) {
   const plan = { ...activePlan(account, now) }
+  if (profile?.verified && plan.likesPerDay < VERIFIED_LIKES_PER_DAY) plan.likesPerDay = VERIFIED_LIKES_PER_DAY
   if (perkUntil(account, 'unlimitedLikesUntil', now)) plan.likesPerDay = Infinity
   if (perkUntil(account, 'seeLikesUntil', now)) plan.seeLikes = true
   if (perkUntil(account, 'callsUntil', now)) plan.calls = true

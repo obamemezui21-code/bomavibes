@@ -64,6 +64,7 @@ function NgoriDailyReward() {
               +{reward.gained} Ngori
             </h2>
             <p className="mt-1 text-sm text-white/70">
+              {reward.verifiedBonus > 0 && <span className="block">+{reward.verifiedBonus} grâce à votre profil vérifié ✓</span>}
               {reward.bonus > 0
                 ? `Bonus de série : +${reward.bonus} pour ${reward.streakLength} jours d'affilée 🔥`
                 : 'Votre Ngori du jour. Revenez demain pour le suivant !'}

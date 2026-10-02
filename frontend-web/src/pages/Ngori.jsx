@@ -95,7 +95,7 @@ function Ngori() {
             </div>
           </div>
           <p className="mt-4 text-sm text-white/70">
-            Ouvrez BomaVibes chaque jour pour gagner 1 Ngori. Ne cassez pas votre série !
+            Ouvrez BomaVibes chaque jour pour gagner 1 Ngori (2 avec un profil vérifié ✓). Ne cassez pas votre série !
           </p>
         </div>
 
