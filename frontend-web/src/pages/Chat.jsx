@@ -73,6 +73,8 @@ const TYPING_STOP_DELAY_MS = 2500
 const MAX_RECORDING_SECONDS = 120
 const LONG_PRESS_MS = 450
 const LONG_PRESS_MOVE_TOLERANCE = 10
+const SWIPE_REPLY_PX = 56 // how far to drag a message to reply to it
+const SWIPE_MAX_PX = 80
 const TEXTAREA_MAX_HEIGHT = 140
 const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏']
 const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
@@ -423,6 +425,8 @@ function Chat() {
   const recordingSecondsRef = useRef(0)
   const textareaRef = useRef(null)
   const longPressTimerRef = useRef(null)
+  const swipeRef = useRef(null)
+  const swipedAtRef = useRef(0)
   const pointerStartRef = useRef({ x: 0, y: 0 })
 
   const activeId = conversationId || conversations[0]?.id
@@ -675,6 +679,7 @@ function Chat() {
     return (e) => {
       if (e.pointerType === 'mouse') return
       pointerStartRef.current = { x: e.clientX, y: e.clientY }
+      swipeRef.current = { message: m, bubble: e.currentTarget, active: false, offset: 0, armed: false }
       clearLongPressTimer()
       longPressTimerRef.current = setTimeout(() => {
         longPressTimerRef.current = null
@@ -684,11 +689,60 @@ function Chat() {
     }
   }
 
+  // Swipe a message to the right to reply to it, as on WhatsApp: the bubble
+  // follows the finger, a reply arrow appears behind it, and letting go past
+  // SWIPE_REPLY_PX answers that message. Vertical moves stay plain scrolling.
   function handleMessagePointerMove(e) {
-    if (!longPressTimerRef.current) return
-    const dx = Math.abs(e.clientX - pointerStartRef.current.x)
-    const dy = Math.abs(e.clientY - pointerStartRef.current.y)
-    if (dx > LONG_PRESS_MOVE_TOLERANCE || dy > LONG_PRESS_MOVE_TOLERANCE) clearLongPressTimer()
+    const dx = e.clientX - pointerStartRef.current.x
+    const dy = e.clientY - pointerStartRef.current.y
+    if (longPressTimerRef.current && (Math.abs(dx) > LONG_PRESS_MOVE_TOLERANCE || Math.abs(dy) > LONG_PRESS_MOVE_TOLERANCE)) {
+      clearLongPressTimer()
+    }
+    const swipe = swipeRef.current
+    if (!swipe) return
+    if (!swipe.active) {
+      if (dx < 12 || dx < Math.abs(dy) * 1.5) return
+      swipe.active = true
+      swipe.column = swipe.bubble.parentElement
+      swipe.icon = swipe.column.parentElement.querySelector('[data-swipe-icon]')
+      if (swipe.icon) swipe.icon.style.left = `${swipe.column.offsetLeft + 4}px`
+      swipe.column.style.transition = 'none'
+      swipe.bubble.setPointerCapture?.(e.pointerId)
+    }
+    swipe.offset = Math.max(0, Math.min(dx * 0.6, SWIPE_MAX_PX))
+    swipe.column.style.transform = `translateX(${swipe.offset}px)`
+    if (swipe.icon) {
+      const progress = Math.min(1, swipe.offset / SWIPE_REPLY_PX)
+      swipe.icon.style.opacity = String(progress)
+      swipe.icon.style.transform = `translateY(-50%) scale(${0.6 + progress * 0.4})`
+    }
+    // A little buzz the moment letting go would reply.
+    const armed = swipe.offset >= SWIPE_REPLY_PX
+    if (armed && !swipe.armed && navigator.vibrate) navigator.vibrate(10)
+    swipe.armed = armed
+  }
+
+  function handleMessagePointerEnd(e) {
+    clearLongPressTimer()
+    const swipe = swipeRef.current
+    swipeRef.current = null
+    if (!swipe?.active) return
+    swipe.column.style.transition = 'transform 0.2s ease-out'
+    swipe.column.style.transform = ''
+    if (swipe.icon) {
+      swipe.icon.style.opacity = '0'
+      swipe.icon.style.transform = 'translateY(-50%) scale(0.6)'
+    }
+    // The tap that ends a swipe must not also open an image, a post…
+    swipedAtRef.current = e.timeStamp
+    if (swipe.armed) handleReply(swipe.message)
+  }
+
+  function suppressClickAfterSwipe(e) {
+    if (e.timeStamp - swipedAtRef.current < 300) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
   }
 
   function handleMessageContextMenu(m) {
@@ -1296,15 +1350,24 @@ function Chat() {
                         initial={{ opacity: 0, y: 12, scale: 0.97 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         transition={{ duration: 0.25 }}
-                        className={`flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
+                        className={`relative flex items-center gap-1 ${m.fromMe ? 'justify-end' : 'justify-start'}`}
                       >
+                        <span
+                          data-swipe-icon
+                          aria-hidden="true"
+                          className="pointer-events-none absolute top-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-ink/8 text-ink-soft opacity-0 dark:bg-white/10"
+                          style={{ transform: 'translateY(-50%) scale(0.6)' }}
+                        >
+                          <Reply size={16} strokeWidth={2.5} />
+                        </span>
                         <div className={`flex min-w-0 max-w-[min(75%,32rem)] flex-col gap-0.5 ${m.fromMe ? 'items-end' : 'items-start'}`}>
                         <div
                           onPointerDown={handleMessagePointerDown(m)}
                           onPointerMove={handleMessagePointerMove}
-                          onPointerUp={clearLongPressTimer}
+                          onPointerUp={handleMessagePointerEnd}
                           onPointerLeave={clearLongPressTimer}
-                          onPointerCancel={clearLongPressTimer}
+                          onPointerCancel={handleMessagePointerEnd}
+                          onClickCapture={suppressClickAfterSwipe}
                           onContextMenu={handleMessageContextMenu(m)}
                           style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
                           className={`${bubbleClass} min-w-0 max-w-full ${
