@@ -9,6 +9,7 @@ import { matchPercent } from '../lib/interests.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import PaywallModal from '../components/PaywallModal.jsx'
+import { useIdentity } from '../context/IdentityContext.jsx'
 
 // "Qui t'a aimé·e": people who liked this user and are still waiting for an
 // answer. Subscribers see them (served by the backend only to them); free
@@ -17,6 +18,7 @@ function LikesYou() {
   const navigate = useNavigate()
   const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
+  const { requireIdentity } = useIdentity()
   const [data, setData] = useState(null) // { locked, count, likers }
   const [openProfile, setOpenProfile] = useState(null)
   const [paywall, setPaywall] = useState(null)
@@ -29,6 +31,7 @@ function LikesYou() {
   }, [user?.id])
 
   async function answer(profile, direction) {
+    if (direction !== 'pass' && !requireIdentity()) return
     setData((prev) => ({ ...prev, count: prev.count - 1, likers: prev.likers.filter((p) => p.id !== profile.id) }))
     try {
       const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName)

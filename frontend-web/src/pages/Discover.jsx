@@ -37,6 +37,7 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
 import { RELIGIONS } from '../lib/onboardingOptions.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
+import { useIdentity } from '../context/IdentityContext.jsx'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
@@ -90,6 +91,7 @@ function Discover() {
   const { user, publicProfile, hasUnseenAnnouncement, latestAnnouncement, markAnnouncementsSeen } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { requireIdentity } = useIdentity()
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [profiles, setProfiles] = useState([])
@@ -313,6 +315,8 @@ function Discover() {
   }
 
   async function handleSwipe(profile, direction) {
+    // Liking needs a verified identity; passing doesn't.
+    if (direction !== 'pass' && !requireIdentity()) return
     setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
     try {
       const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName)

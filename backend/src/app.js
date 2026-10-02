@@ -29,6 +29,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
 const { startStoryCleanupScheduler } = require("./services/storyCleanupService");
+const { markLegacyMembers } = require("./services/identityMigration");
 
 const app = express();
 
@@ -80,6 +81,7 @@ app.use("/api/admin/payments", paymentRoutes.adminRouter);
 
 startCallCleanupScheduler();
 startStoryCleanupScheduler();
+markLegacyMembers();
 startPaymentSweepScheduler();
 
 // Error handler

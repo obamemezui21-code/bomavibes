@@ -5,7 +5,8 @@ const requireFirebaseAuth = require("../middleware/firebaseAuthMiddleware");
 const requireModeration = require("../middleware/requireModerationMiddleware");
 const {
   startVerification,
-  submitSelfie,
+  submitVerification,
+  getIdDocument,
   listVerifications,
   getSelfie,
   reviewVerification,
@@ -24,13 +25,23 @@ const upload = multer({
 // User side — mounted at /api/verification
 const userRouter = express.Router();
 userRouter.post("/start", requireFirebaseAuth, startVerification);
-userRouter.post("/selfie", requireFirebaseAuth, upload.single("selfie"), submitSelfie);
+// Identity document + selfie, both required, sent together.
+userRouter.post(
+  "/submit",
+  requireFirebaseAuth,
+  upload.fields([
+    { name: "document", maxCount: 1 },
+    { name: "selfie", maxCount: 1 },
+  ]),
+  submitVerification,
+);
 
 // Moderation side — mounted at /api/admin/verifications (same access as
 // the Signalements tab: moderators, admins, super admins)
 const adminRouter = express.Router();
 adminRouter.get("/", requireFirebaseAuth, requireModeration, listVerifications);
 adminRouter.get("/:uid/selfie", requireFirebaseAuth, requireModeration, getSelfie);
+adminRouter.get("/:uid/id-document", requireFirebaseAuth, requireModeration, getIdDocument);
 adminRouter.patch("/:uid", requireFirebaseAuth, requireModeration, reviewVerification);
 adminRouter.delete("/:uid/badge", requireFirebaseAuth, requireModeration, revokeVerification);
 

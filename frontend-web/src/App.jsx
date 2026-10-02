@@ -45,6 +45,7 @@ const Profile = lazy(() => import('./pages/Profile.jsx'))
 const Settings = lazy(() => import('./pages/Settings.jsx'))
 const Support = lazy(() => import('./pages/Support.jsx'))
 const Onboarding = lazy(() => import('./pages/Onboarding.jsx'))
+const VerifyIdentity = lazy(() => import('./pages/VerifyIdentity.jsx'))
 const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
 const MyTickets = lazy(() => import('./pages/MyTickets.jsx'))
 const Venues = lazy(() => import('./pages/Venues.jsx'))
@@ -145,8 +146,17 @@ function App() {
           />
 
           <Route
+            path="/verification"
             element={
               <RequireAuth requireOnboarded>
+                <VerifyIdentity />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            element={
+              <RequireAuth requireOnboarded requireIdentity>
                 <AppLayout />
               </RequireAuth>
             }

@@ -8,6 +8,7 @@ const SECTIONS = [
       'Informations de compte : prénom, email et mot de passe (ou votre compte Google si vous choisissez cette option).',
       'Informations de profil : âge, genre, photos, bio, centres d\'intérêt et préférences de rencontre (genre recherché, distance).',
       'Contenu que vous générez : messages échangés avec vos matchs, signalements que vous envoyez.',
+      'Vérification d\'identité : une photo de votre pièce d\'identité (carte d\'identité, passeport, permis de conduire ou titre de séjour) et un selfie. Obligatoire pour les comptes créés depuis octobre 2026.',
       'Données techniques : type d\'appareil, navigateur, et le jeton de notification si vous activez les notifications push.',
     ],
   },
@@ -16,7 +17,7 @@ const SECTIONS = [
     body: [
       'Créer et afficher votre profil aux autres membres, et vous proposer des profils pertinents selon vos préférences.',
       'Permettre les matchs et la messagerie entre membres qui se sont mutuellement likés.',
-      'Vérifier l\'authenticité des profils et assurer la sécurité de la communauté (modération, lutte contre les faux comptes).',
+      'Vérifier l\'authenticité des profils et assurer la sécurité de la communauté (modération, lutte contre les faux comptes, vérification que chaque membre est majeur).',
       'Vous envoyer des notifications liées à l\'app (nouveau match, nouveau message) si vous les avez autorisées.',
     ],
   },
@@ -32,6 +33,7 @@ const SECTIONS = [
     title: '4. Combien de temps nous les conservons',
     body: [
       'Tant que votre compte est actif, pour vous fournir le service.',
+      'La photo de votre pièce d\'identité et votre selfie de vérification sont supprimés dès que notre équipe a pris sa décision. Nous gardons seulement le résultat (vérifié ou non) et le type de pièce présentée.',
       'Si vous supprimez votre compte depuis les Paramètres, toutes vos données (profil, photos, messages) sont définitivement effacées de nos systèmes.',
     ],
   },
@@ -41,6 +43,7 @@ const SECTIONS = [
       'Les mots de passe sont chiffrés et jamais stockés en clair.',
       'Les échanges avec l\'app sont chiffrés en transit (HTTPS).',
       'L\'accès à nos systèmes est limité à l\'équipe technique qui en a strictement besoin.',
+      'Les pièces d\'identité et selfies de vérification sont stockés hors de tout accès public et ne sont visibles que par notre équipe de modération, le temps de la vérification.',
     ],
   },
   {
@@ -82,7 +85,7 @@ function PrivacyPolicy() {
         <h1 className="mt-2 font-display text-3xl font-bold text-[#261b28] sm:text-4xl">
           Politique de confidentialité
         </h1>
-        <p className="mt-3 text-sm text-[#635a65]">Dernière mise à jour : août 2026</p>
+        <p className="mt-3 text-sm text-[#635a65]">Dernière mise à jour : octobre 2026</p>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#635a65]">
           Chez BomaVibes, nous savons que vous nous confiez des informations personnelles pour
           trouver des connexions authentiques. Cette page explique simplement quelles données nous

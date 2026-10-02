@@ -13,6 +13,7 @@ import { ToastProvider } from './context/ToastContext.jsx'
 import { ConversationsProvider } from './context/ConversationsContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { CallProvider } from './context/CallContext.jsx'
+import { IdentityProvider } from './context/IdentityContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -20,11 +21,13 @@ createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <ToastProvider>
           <AuthProvider>
-            <ConversationsProvider>
-              <CallProvider>
-                <App />
-              </CallProvider>
-            </ConversationsProvider>
+            <IdentityProvider>
+              <ConversationsProvider>
+                <CallProvider>
+                  <App />
+                </CallProvider>
+              </ConversationsProvider>
+            </IdentityProvider>
           </AuthProvider>
         </ToastProvider>
       </BrowserRouter>

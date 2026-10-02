@@ -13,8 +13,8 @@ function CommentComposer({ replyTarget, replyAuthorName, onCancelReply, onSubmit
     if (!trimmed || isSubmitting) return
     setIsSubmitting(true)
     try {
-      await onSubmit(trimmed)
-      setText('')
+      // onSubmit returns false when it didn't send (the text stays).
+      if ((await onSubmit(trimmed)) !== false) setText('')
     } finally {
       setIsSubmitting(false)
     }

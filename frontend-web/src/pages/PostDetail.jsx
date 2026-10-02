@@ -30,6 +30,7 @@ import ReportModal from '../components/ReportModal.jsx'
 import SendToModal from '../components/shared/SendToModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
+import { useIdentity } from '../context/IdentityContext.jsx'
 
 function PostDetail() {
   const { postId } = useParams()
@@ -38,6 +39,7 @@ function PostDetail() {
   const { conversations, sendPostMessage, blockedIds, refreshBlockedIds } = useConversations()
   const { deletePost, updatePost, toggleLikePost, likedPostIds, authorsById: feedAuthorsById } = useFeed()
   const { showToast } = useToast()
+  const { requireIdentity } = useIdentity()
 
   const [post, setPost] = useState(undefined) // undefined = loading, null = not found
   const [author, setAuthor] = useState(null)
@@ -107,13 +109,14 @@ function PostDetail() {
   }, [comments])
 
   async function handleToggleLike() {
-    if (!post) return
+    if (!post || !requireIdentity()) return
     setIsLikedLocal((v) => !v)
     await toggleLikePost({ ...post, id: postId })
   }
 
   async function handleAddComment(text) {
     if (!user?.id || !post) return
+    if (!requireIdentity()) return false // keeps the typed comment
     const parentCommentId = replyTarget ? replyTarget.parentCommentId || replyTarget.id : null
     await addComment(postId, user.id, text, parentCommentId)
     setReplyTarget(null)
@@ -142,6 +145,7 @@ function PostDetail() {
   }
 
   async function handleLike(profile) {
+    if (!requireIdentity()) return
     try {
       const matchId = await recordSwipeAndMatch(user.id, profile.id, 'like', user.firstName)
       if (matchId) showToast(`C'est un match avec ${profile.firstName} !`, 'success')

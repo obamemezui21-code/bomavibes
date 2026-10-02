@@ -1,9 +1,14 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useIdentity } from '../context/IdentityContext.jsx'
 import { FullPageSpinner } from './ui/Spinner.jsx'
 
-function RequireAuth({ children, requireVerified = true, requireOnboarded = false }) {
+// requireIdentity: new members must have sent their ID document + selfie
+// (see IdentityContext) — while it's being reviewed they get in, with
+// limited access.
+function RequireAuth({ children, requireVerified = true, requireOnboarded = false, requireIdentity = false }) {
   const { token, user, profile, isLoading, isProfileLoading } = useAuth()
+  const { status: identity } = useIdentity()
   const location = useLocation()
 
   if (isLoading) return <FullPageSpinner />
@@ -13,6 +18,11 @@ function RequireAuth({ children, requireVerified = true, requireOnboarded = fals
   if (requireOnboarded) {
     if (isProfileLoading) return <FullPageSpinner />
     if (!profile?.onboarded) return <Navigate to="/onboarding" replace />
+  }
+
+  if (requireIdentity) {
+    if (identity === 'loading') return <FullPageSpinner />
+    if (identity === 'todo' || identity === 'rejected') return <Navigate to="/verification" replace />
   }
 
   return children

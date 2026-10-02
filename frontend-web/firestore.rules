@@ -51,6 +51,15 @@ service cloud.firestore {
       return !request.resource.data.diff(resource == null ? {} : resource.data).affectedKeys().hasAny(fields);
     }
 
+    // Liking, writing, calling and publishing need a verified identity (ID
+    // document + selfie), except for members who joined before it became
+    // mandatory (legacyMember, set by the backend). Mirrors
+    // backend/src/services/identityAccess.js.
+    function canInteract() {
+      let p = get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
+      return p.get('verified', false) == true || p.get('legacyMember', false) == true;
+    }
+
     // Two people blocked either way can't interact with each other's
     // posts or stories (comment, like, react).
     function blockedWith(otherUid) {
@@ -128,7 +137,7 @@ service cloud.firestore {
       // and the 🔥 login-streak badge
       // are written by the backend only.
       function perksUnchanged() {
-        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible', 'streakBadge', 'streakDay']);
+        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible', 'streakBadge', 'streakDay', 'legacyMember']);
       }
 
       allow create: if isOwner(userId) && validPublicProfile() && perksUnchanged()
@@ -352,7 +361,8 @@ service cloud.firestore {
           && validLocation()
           // User-made sticker (POST /api/stickers): just its image URL.
           && isOptionalString('stickerUrl', 500)
-          && !isBlockedByRecipient(matchId);
+          && !isBlockedByRecipient(matchId)
+          && canInteract();
         allow update: if isMatchParticipant() && (isOwnTextEdit() || isOwnReaction());
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;
       }
@@ -375,6 +385,7 @@ service cloud.firestore {
         && request.resource.data.type in ['audio', 'video']
         && request.resource.data.status == 'ringing'
         && canPlaceCalls(request.auth.uid)
+        && canInteract()
         && request.resource.data.matchId is string
         && request.auth.uid in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users
         && request.resource.data.calleeId in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users
@@ -427,7 +438,7 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validPostCreate();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validPostCreate() && canInteract();
       allow update: if isSignedIn() && (
         (isOwner(resource.data.authorId)
           && request.resource.data.authorId == resource.data.authorId
@@ -454,7 +465,8 @@ service cloud.firestore {
 
         allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validComment()
-          && !blockedWith(get(/databases/$(database)/documents/posts/$(postId)).data.authorId);
+          && !blockedWith(get(/databases/$(database)/documents/posts/$(postId)).data.authorId)
+          && canInteract();
         allow update: if isSignedIn() && resource.data.authorId == request.auth.uid
           && request.resource.data.authorId == resource.data.authorId
           && request.resource.data.text is string && request.resource.data.text.size() > 0
@@ -465,7 +477,8 @@ service cloud.firestore {
       match /likes/{uid} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && uid == request.auth.uid
-          && !blockedWith(get(/databases/$(database)/documents/posts/$(postId)).data.authorId);
+          && !blockedWith(get(/databases/$(database)/documents/posts/$(postId)).data.authorId)
+          && canInteract();
         allow delete: if isSignedIn() && uid == request.auth.uid;
         allow update: if false;
       }
@@ -502,7 +515,7 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validStoryCreate();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validStoryCreate() && canInteract();
       allow update: if isSignedIn() && isViewMark();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
 
@@ -522,7 +535,8 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['emoji', 'createdAt'])
           && request.resource.data.emoji in ['❤️', '😂', '😮', '😢', '🔥', '👏']
           && request.resource.data.createdAt == request.time
-          && !blockedWithStoryAuthor();
+          && !blockedWithStoryAuthor()
+          && canInteract();
         allow delete: if isOwner(uid);
       }
 
@@ -536,7 +550,8 @@ service cloud.firestore {
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
           && request.resource.data.createdAt == request.time
-          && !blockedWithStoryAuthor();
+          && !blockedWithStoryAuthor()
+          && canInteract();
         allow update: if false;
         allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStoryAuthor());
       }

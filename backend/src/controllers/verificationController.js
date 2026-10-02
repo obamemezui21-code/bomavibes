@@ -7,21 +7,33 @@ const { logAdminAction } = require("../services/adminLogService");
 
 const db = admin.firestore();
 
-// Selfie verification (the "Profil vérifié" badge).
+// Identity verification (the "Profil vérifié" badge — mandatory for
+// accounts created since it became required, see identityMigration.js).
 //
 // 1. The user asks to start: the SERVER picks a random pose, so a selfie
 //    can't be an old photo prepared in advance.
-// 2. The user uploads a selfie doing that pose → request goes "pending".
-// 3. A moderator compares it with the profile photos and approves (sets
+// 2. The user sends a photo of an identity document + a selfie doing that
+//    pose → request goes "pending".
+// 3. A moderator checks the document (real, readable, 18+), that the selfie
+//    matches it and the profile photos, then approves (sets
 //    profiles/{uid}.verified — only the Admin SDK can) or rejects it.
 //
 // verificationRequests/{uid}: { status, pose, poseAssignedAt, submittedAt,
-//   reviewedAt, reviewedBy, rejectReason }
+//   idType, reviewedAt, reviewedBy, rejectReason }
 // status: awaiting_selfie → pending → approved | rejected
 //
-// Selfies are PRIVATE: stored outside the public uploads folder, only
-// streamed to moderators, and deleted as soon as a decision is made.
+// Selfies and identity documents are PRIVATE: stored outside the public
+// uploads folder, only streamed to moderators, and deleted as soon as a
+// decision is made (only "verified on … with a …" is kept).
 const SELFIE_DIR = path.join(__dirname, "..", "..", "private", "verification-selfies");
+const ID_DIR = path.join(__dirname, "..", "..", "private", "verification-ids");
+
+const ID_TYPES = {
+    cni: "Carte d'identité",
+    passport: "Passeport",
+    permis: "Permis de conduire",
+    sejour: "Titre de séjour",
+};
 const POSE_VALID_MS = 30 * 60 * 1000;
 
 const POSES = {
@@ -37,6 +49,11 @@ const REJECT_REASONS = {
     pose: "La pose demandée n'est pas visible.",
     mismatch: "Le selfie ne correspond pas aux photos du profil.",
     face: "Le visage n'est pas bien visible.",
+    id_unreadable: "La pièce d'identité est illisible ou incomplète.",
+    id_mismatch: "Le selfie ne correspond pas à la photo de la pièce d'identité.",
+    id_invalid: "La pièce d'identité n'est pas valide (expirée, modifiée ou non acceptée).",
+    underage: "BomaVibes est réservé aux personnes majeures (18 ans et plus).",
+    id_missing: "Une photo de votre pièce d'identité est nécessaire.",
     other: "La vérification n'a pas pu être validée.",
 };
 
@@ -46,8 +63,26 @@ function selfiePath(uid) {
     return path.join(SELFIE_DIR, `${String(uid).replace(/[^A-Za-z0-9_-]/g, "")}.jpg`);
 }
 
-function removeSelfie(uid) {
+function idPath(uid) {
+    return path.join(ID_DIR, `${String(uid).replace(/[^A-Za-z0-9_-]/g, "")}.jpg`);
+}
+
+// Selfie and identity document both go once a decision is made (and when
+// the account is deleted).
+function removeVerificationFiles(uid) {
     fs.unlink(selfiePath(uid), () => {});
+    fs.unlink(idPath(uid), () => {});
+}
+
+// Re-encode: fixes orientation, caps the size and drops EXIF (location
+// etc.) — sharp doesn't copy metadata unless asked.
+async function storePrivateImage(tmpPath, dest, maxSide) {
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    await sharp(tmpPath)
+        .rotate()
+        .resize({ width: maxSide, height: maxSide, fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toFile(dest);
 }
 
 // POST /api/verification/start
@@ -82,36 +117,43 @@ async function startVerification(req, res) {
     }
 }
 
-// POST /api/verification/selfie (multipart "selfie")
-async function submitSelfie(req, res) {
+// POST /api/verification/submit (multipart "document" + "selfie", field idType)
+async function submitVerification(req, res) {
     const uid = req.firebaseUser.uid;
-    if (!req.file) return res.status(400).json({ message: "Aucune photo reçue" });
+    const document = req.files?.document?.[0];
+    const selfie = req.files?.selfie?.[0];
+    const cleanup = () => [document, selfie].forEach((f) => f && fs.unlink(f.path, () => {}));
+    const idType = req.body?.idType;
+
+    if (!document || !selfie) {
+        cleanup();
+        return res.status(400).json({ message: "Envoyez la photo de votre pièce d'identité et votre selfie." });
+    }
+    if (!ID_TYPES[idType]) {
+        cleanup();
+        return res.status(400).json({ message: "Type de pièce d'identité invalide." });
+    }
 
     try {
         const ref = db.collection("verificationRequests").doc(uid);
         const request = (await ref.get()).data();
         const assignedAt = request?.poseAssignedAt?.toMillis?.() || 0;
         if (request?.status !== "awaiting_selfie" || Date.now() - assignedAt > POSE_VALID_MS) {
-            fs.unlink(req.file.path, () => {});
+            cleanup();
             return res.status(409).json({ message: "La pose a expiré, recommencez la vérification." });
         }
 
-        fs.mkdirSync(SELFIE_DIR, { recursive: true });
-        // Re-encode: fixes orientation, caps the size and drops EXIF
-        // (location etc.) — sharp doesn't copy metadata unless asked.
-        await sharp(req.file.path)
-            .rotate()
-            .resize({ width: 1080, height: 1080, fit: "inside", withoutEnlargement: true })
-            .jpeg({ quality: 85 })
-            .toFile(selfiePath(uid));
-        fs.unlink(req.file.path, () => {});
+        await storePrivateImage(document.path, idPath(uid), 1600);
+        await storePrivateImage(selfie.path, selfiePath(uid), 1080);
+        cleanup();
 
-        await ref.update({ status: "pending", submittedAt: admin.firestore.FieldValue.serverTimestamp() });
+        await ref.update({ status: "pending", idType, submittedAt: admin.firestore.FieldValue.serverTimestamp() });
         res.json({ status: "pending" });
     } catch (err) {
         console.error(err);
-        if (req.file) fs.unlink(req.file.path, () => {});
-        res.status(500).json({ message: "Impossible d'envoyer la photo" });
+        cleanup();
+        removeVerificationFiles(uid);
+        res.status(500).json({ message: "Impossible d'envoyer les photos" });
     }
 }
 
@@ -133,6 +175,9 @@ async function listVerifications(req, res) {
                     reviewedAt: data.reviewedAt?.toMillis?.() || null,
                     rejectReason: data.rejectReason || null,
                     hasSelfie: fs.existsSync(selfiePath(d.id)),
+                    hasIdDocument: fs.existsSync(idPath(d.id)),
+                    idType: data.idType || null,
+                    idTypeLabel: ID_TYPES[data.idType] || null,
                     profile: {
                         firstName: profile.firstName || "",
                         age: profile.age || null,
@@ -154,6 +199,14 @@ async function listVerifications(req, res) {
 function getSelfie(req, res) {
     const file = selfiePath(req.params.uid);
     if (!fs.existsSync(file)) return res.status(404).json({ message: "Selfie introuvable" });
+    res.set("Cache-Control", "private, no-store");
+    res.sendFile(file);
+}
+
+// GET /api/admin/verifications/:uid/id-document — moderators only
+function getIdDocument(req, res) {
+    const file = idPath(req.params.uid);
+    if (!fs.existsSync(file)) return res.status(404).json({ message: "Pièce d'identité introuvable" });
     res.set("Cache-Control", "private, no-store");
     res.sendFile(file);
 }
@@ -199,7 +252,7 @@ async function reviewVerification(req, res) {
             batch.update(db.collection("profiles").doc(uid), { verified: true });
         }
         await batch.commit();
-        removeSelfie(uid);
+        removeVerificationFiles(uid);
 
         await logAdminAction(req, {
             action: decision === "approve" ? "APPROVE_VERIFICATION" : "REJECT_VERIFICATION",
@@ -209,7 +262,7 @@ async function reviewVerification(req, res) {
         });
 
         if (decision === "approve") {
-            await notifyUser(uid, "Profil vérifié ✓", "Votre profil affiche maintenant le badge « vérifié ».");
+            await notifyUser(uid, "Identité vérifiée ✓", "Bienvenue ! Vous avez maintenant accès à tout BomaVibes.");
         } else {
             await notifyUser(uid, "Vérification non validée", `${rejectReason} Vous pouvez réessayer depuis votre profil.`);
         }
@@ -240,8 +293,11 @@ async function revokeVerification(req, res) {
 
 module.exports = {
     POSES,
+    ID_TYPES,
     startVerification,
-    submitSelfie,
+    submitVerification,
+    getIdDocument,
+    removeVerificationFiles,
     listVerifications,
     getSelfie,
     reviewVerification,

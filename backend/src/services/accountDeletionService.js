@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const admin = require("../config/firebaseAdmin");
+const { removeVerificationFiles } = require("../controllers/verificationController");
 
 const db = admin.firestore();
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "profile-photos");
@@ -54,6 +55,9 @@ async function eraseAccount(uid) {
     });
 
     fs.rmSync(path.join(UPLOAD_ROOT, uid), { recursive: true, force: true });
+    // Identity document and selfie, if a verification was still pending.
+    removeVerificationFiles(uid);
+    await db.collection("verificationRequests").doc(uid).delete().catch(() => {});
 
     await admin.auth().deleteUser(uid);
 }

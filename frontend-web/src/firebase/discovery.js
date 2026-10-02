@@ -135,6 +135,9 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
       const id = docSnap.id
       if (id === uid || id === SYSTEM_ACCOUNT_ID || blockedIds.has(id)) continue
       const data = docSnap.data()
+      // New members only show up once their identity is verified (older
+      // members, legacyMember, never had to).
+      if (!data.verified && !data.legacyMember) continue
       // Invisible mode (Jadéite Impériale): hidden from Discover while the plan runs.
       if (data.invisible && toMillis(data.visibilityUntil) > now) continue
       if (filters.minAge != null && data.age != null && data.age < filters.minAge) continue

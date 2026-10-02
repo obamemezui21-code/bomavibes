@@ -1,8 +1,16 @@
 import { doc, onSnapshot } from 'firebase/firestore'
 import { auth, db } from './config.js'
 
-// Selfie verification (the "Profil vérifié" badge) — see
-// backend/src/controllers/verificationController.js for the whole flow.
+// Identity verification (ID document + selfie, the "Profil vérifié" badge)
+// — see backend/src/controllers/verificationController.js for the flow.
+
+// Identity documents accepted (same keys as the backend's ID_TYPES).
+export const ID_TYPES = [
+  { value: 'cni', label: "Carte d'identité", emoji: '🪪' },
+  { value: 'passport', label: 'Passeport', emoji: '🛂' },
+  { value: 'permis', label: 'Permis de conduire', emoji: '🚗' },
+  { value: 'sejour', label: 'Titre de séjour', emoji: '📄' },
+]
 
 async function authHeader() {
   const idToken = await auth.currentUser?.getIdToken()
@@ -21,11 +29,14 @@ export async function startVerification() {
   return res.json() // { pose, instruction }
 }
 
-export async function submitVerificationSelfie(file) {
+// Both photos together: the identity document and the pose selfie.
+export async function submitIdentityVerification({ idType, document, selfie }) {
   const body = new FormData()
-  body.append('selfie', file)
-  const res = await fetch('/api/verification/selfie', { method: 'POST', headers: await authHeader(), body })
-  if (!res.ok) throw await readError(res, "Impossible d'envoyer la photo.")
+  body.append('idType', idType)
+  body.append('document', document)
+  body.append('selfie', selfie)
+  const res = await fetch('/api/verification/submit', { method: 'POST', headers: await authHeader(), body })
+  if (!res.ok) throw await readError(res, "Impossible d'envoyer les photos.")
   return res.json()
 }
 
@@ -51,6 +62,12 @@ export async function fetchVerificationRequests(status = 'pending') {
 export async function fetchVerificationSelfieUrl(uid) {
   const res = await fetch(`/api/admin/verifications/${encodeURIComponent(uid)}/selfie`, { headers: await authHeader() })
   if (!res.ok) throw await readError(res, 'Selfie introuvable.')
+  return URL.createObjectURL(await res.blob())
+}
+
+export async function fetchVerificationIdUrl(uid) {
+  const res = await fetch(`/api/admin/verifications/${encodeURIComponent(uid)}/id-document`, { headers: await authHeader() })
+  if (!res.ok) throw await readError(res, "Pièce d'identité introuvable.")
   return URL.createObjectURL(await res.blob())
 }
 

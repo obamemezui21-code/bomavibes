@@ -14,6 +14,7 @@ import { batchFetchAuthorProfiles } from '../../firebase/feed.js'
 import { fallbackToFullPhoto } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
 import { useConversations } from '../../context/ConversationsContext.jsx'
+import { useIdentity } from '../../context/IdentityContext.jsx'
 
 const MAX_COMMENT = 300
 
@@ -36,6 +37,7 @@ function StoryInteractions({ story, isOwn, currentUserId, onPause }) {
   const [reactions, setReactions] = useState({})
   const [allComments, setComments] = useState([])
   const { blockedIds } = useConversations()
+  const { requireIdentity } = useIdentity()
   const comments = allComments.filter((c) => !blockedIds.has(c.authorId))
   const [sheet, setSheet] = useState(null) // 'comments' | 'activity' | null
   const [showEmojis, setShowEmojis] = useState(false)
@@ -81,6 +83,7 @@ function StoryInteractions({ story, isOwn, currentUserId, onPause }) {
   }, [sheet, story.viewedBy, reactions])
 
   function handleReact(emoji) {
+    if (!requireIdentity()) return
     setShowEmojis(false)
     const next = myReaction === emoji ? null : emoji
     setMyReaction(next)
@@ -91,7 +94,7 @@ function StoryInteractions({ story, isOwn, currentUserId, onPause }) {
   async function send(e) {
     e?.preventDefault()
     const text = draft.trim()
-    if (!text || sending) return
+    if (!text || sending || !requireIdentity()) return
     setSending(true)
     try {
       await addStoryComment(story, currentUserId, text.slice(0, MAX_COMMENT))

@@ -43,7 +43,14 @@ beforeEach(async () => {
       email: 'alice@x.test', onboarded: true, plan: 'vip', planExpiresAt: Timestamp.fromMillis(Date.now() + 86400000),
     })
     await setDoc(doc(db, 'users/bob'), { email: 'bob@x.test', onboarded: true })
-    await setDoc(doc(db, 'profiles/bob'), { firstName: 'Bob', verified: false })
+    // Members who joined before identity verification became mandatory
+    // (legacyMember) keep full access; erin is a new, unverified member.
+    await setDoc(doc(db, 'profiles/bob'), { firstName: 'Bob', verified: false, legacyMember: true })
+    for (const uid of ['alice', 'carol', 'dave']) {
+      await setDoc(doc(db, `profiles/${uid}`), { firstName: uid, verified: false, legacyMember: true })
+    }
+    await setDoc(doc(db, 'profiles/erin'), { firstName: 'Erin', verified: false })
+    await setDoc(doc(db, 'matches/bob_erin'), { users: ['bob', 'erin'], lastMessage: null, seen: { bob: true, erin: true } })
     await setDoc(doc(db, 'posts/p1'), { authorId: 'alice', type: 'text', text: 'Bonjour', photoUrl: null, likeCount: 0, commentCount: 0 })
     await setDoc(doc(db, 'posts/styled'), {
       authorId: 'alice', type: 'text', text: 'Stylé', background: 'plum', font: 'script', likeCount: 0, commentCount: 0,
@@ -318,5 +325,25 @@ describe('stories', () => {
       await assertSucceeds(deleteDoc(doc(as('bob'), 'stories/s1/comments/c1')))
       await assertSucceeds(deleteDoc(doc(as('alice'), 'stories/s1/comments/c2')))
     })
+  })
+})
+
+describe('mandatory identity verification', () => {
+  it('stops a new unverified member from writing, publishing or commenting', async () => {
+    await assertFails(addDoc(collection(as('erin'), 'matches/bob_erin/messages'), { senderId: 'erin', text: 'Salut', type: 'text' }))
+    await assertFails(addDoc(collection(as('erin'), 'posts'), { authorId: 'erin', type: 'text', text: 'Hello', likeCount: 0, commentCount: 0 }))
+    await assertFails(addDoc(collection(as('erin'), 'posts/p1/comments'), { authorId: 'erin', text: 'Super' }))
+    await assertFails(setDoc(doc(as('erin'), 'posts/p1/likes/erin'), { createdAt: serverTimestamp() }))
+  })
+
+  it('lets them in once verified, and legacy members all along', async () => {
+    await env.withSecurityRulesDisabled((ctx) => updateDoc(doc(ctx.firestore(), 'profiles/erin'), { verified: true }))
+    await assertSucceeds(addDoc(collection(as('erin'), 'matches/bob_erin/messages'), { senderId: 'erin', text: 'Salut', type: 'text' }))
+    await assertSucceeds(addDoc(collection(as('bob'), 'matches/bob_erin/messages'), { senderId: 'bob', text: 'Coucou', type: 'text' }))
+  })
+
+  it('never lets anyone grant or remove the legacy exemption themselves', async () => {
+    await assertFails(updateDoc(doc(as('erin'), 'profiles/erin'), { legacyMember: true }))
+    await assertFails(updateDoc(doc(as('bob'), 'profiles/bob'), { legacyMember: false }))
   })
 })

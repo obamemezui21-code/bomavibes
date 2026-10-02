@@ -1,9 +1,10 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Compass, Heart, MessageCircle, Newspaper, Ticket } from 'lucide-react'
+import { Clock, Compass, Heart, MessageCircle, Newspaper, Ticket } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
+import { useIdentity } from '../context/IdentityContext.jsx'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 import AppTopBar from '../components/AppTopBar.jsx'
 import NgoriDailyReward from '../components/NgoriDailyReward.jsx'
@@ -49,6 +50,7 @@ function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const navItems = useNavItems()
+  const { status: identity } = useIdentity()
   const { t } = useTranslation()
 
   function handleLogout() {
@@ -126,6 +128,13 @@ function AppLayout() {
         {/* overflow-x-clip (not hidden): nothing a page does can widen the
             viewport, while sticky headers inside pages keep working. */}
         <main className="min-h-[calc(100svh_-_3.5rem)] min-w-0 flex-1 overflow-x-clip pb-[calc(5rem_+_env(safe-area-inset-bottom))] desktop:pb-0">
+          {/* Identity under review: limited access (see IdentityContext). */}
+          {identity === 'pending' && (
+            <div className="flex items-center gap-2 border-b border-sky-500/20 bg-sky-500/10 px-4 py-2 text-xs font-medium text-sky-700 dark:text-sky-300">
+              <Clock size={14} className="shrink-0" />
+              Vérification d’identité en cours : vous pourrez liker, écrire et publier dès qu’elle sera validée.
+            </div>
+          )}
           {/* Keyed by the top-level segment only (not the full pathname) so
               opening a chat thread (/chat -> /chat/:id) or a post
               (/feed -> /feed/:postId) doesn't retrigger a full-page fade —

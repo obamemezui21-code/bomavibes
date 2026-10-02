@@ -26,7 +26,7 @@ export default defineConfig([
       // the standard React pattern; fast refresh handles these fine.
       'react-refresh/only-export-components': [
         'error',
-        { allowExportNames: ['useAuth', 'useCall', 'useConversations', 'useFeed', 'useTheme', 'useToast'] },
+        { allowExportNames: ['useAuth', 'useCall', 'useConversations', 'useFeed', 'useIdentity', 'useTheme', 'useToast'] },
       ],
     },
   },

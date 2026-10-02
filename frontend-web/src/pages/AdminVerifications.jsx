@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { BadgeCheck, ShieldX, X } from 'lucide-react'
 import {
+  fetchVerificationIdUrl,
   fetchVerificationRequests,
   fetchVerificationSelfieUrl,
   reviewVerification,
@@ -15,6 +16,11 @@ const STATUS_TABS = [
 ]
 
 const REJECT_REASONS = [
+  { value: 'id_mismatch', label: 'Le selfie ne correspond pas à la pièce d’identité' },
+  { value: 'id_unreadable', label: 'Pièce d’identité illisible ou incomplète' },
+  { value: 'id_invalid', label: 'Pièce non valide (expirée, modifiée, refusée)' },
+  { value: 'underage', label: 'Personne mineure (moins de 18 ans)' },
+  { value: 'id_missing', label: 'Pièce d’identité manquante' },
   { value: 'mismatch', label: 'Ne correspond pas aux photos du profil' },
   { value: 'pose', label: 'Pose demandée non visible' },
   { value: 'blurry', label: 'Photo floue ou trop sombre' },
@@ -27,15 +33,16 @@ function formatDate(ms) {
   return new Date(ms).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-// The private selfie, loaded with the moderator's token (see verification.js).
-function PrivateSelfie({ uid }) {
+// A private verification image (selfie or identity document), loaded with
+// the moderator's token (see verification.js).
+function PrivateImage({ uid, fetchUrl, alt, contain }) {
   const [url, setUrl] = useState(null)
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     let objectUrl = null
     let cancelled = false
-    fetchVerificationSelfieUrl(uid)
+    fetchUrl(uid)
       .then((u) => {
         objectUrl = u
         if (!cancelled) setUrl(u)
@@ -45,17 +52,21 @@ function PrivateSelfie({ uid }) {
       cancelled = true
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [uid])
+  }, [uid, fetchUrl])
 
-  if (failed) return <div className="flex h-full items-center justify-center text-xs text-ink-soft/60">Selfie indisponible</div>
+  if (failed) return <div className="flex h-full items-center justify-center text-xs text-ink-soft/60">{alt} indisponible</div>
   if (!url) return <div className="h-full w-full animate-pulse bg-ink/8" />
-  return <img src={url} alt="Selfie de vérification" className="h-full w-full object-cover" />
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="block h-full w-full" title="Ouvrir en grand">
+      <img src={url} alt={alt} className={`h-full w-full ${contain ? 'bg-black object-contain' : 'object-cover'}`} />
+    </a>
+  )
 }
 
 function VerificationItem({ request, onDecided }) {
   const { showToast } = useToast()
   const [isRejecting, setIsRejecting] = useState(false)
-  const [reason, setReason] = useState('mismatch')
+  const [reason, setReason] = useState('id_mismatch')
   const [isBusy, setIsBusy] = useState(false)
   const { profile } = request
 
@@ -101,11 +112,23 @@ function VerificationItem({ request, onDecided }) {
           <p className="mt-2 rounded-xl bg-violet-950 px-3 py-2 text-sm font-medium text-white">
             Pose demandée : {request.instruction || request.pose}
           </p>
+          <div className="mt-3">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-sky-600">
+              Pièce d’identité{request.idTypeLabel ? ` · ${request.idTypeLabel}` : ''}
+            </p>
+            <div className="aspect-[16/10] overflow-hidden rounded-xl ring-2 ring-sky-500">
+              {request.hasIdDocument ? (
+                <PrivateImage uid={request.uid} fetchUrl={fetchVerificationIdUrl} alt="Pièce d’identité" contain />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-coral-500">Aucune pièce d’identité envoyée</div>
+              )}
+            </div>
+          </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="col-span-2 sm:col-span-1">
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-violet-600">Selfie</p>
               <div className="aspect-[3/4] overflow-hidden rounded-xl ring-2 ring-violet-500">
-                {request.hasSelfie ? <PrivateSelfie uid={request.uid} /> : null}
+                {request.hasSelfie ? <PrivateImage uid={request.uid} fetchUrl={fetchVerificationSelfieUrl} alt="Selfie" /> : null}
               </div>
             </div>
             {profile.photos.slice(0, 3).map((url, i) => (
@@ -219,10 +242,11 @@ function AdminVerifications() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 desktop:py-8">
-      <h2 className="font-display text-lg font-semibold text-ink">Vérifications de profil</h2>
+      <h2 className="font-display text-lg font-semibold text-ink">Vérifications d’identité</h2>
       <p className="mb-4 mt-1 text-sm text-ink-soft/70">
-        Comparez le selfie avec les photos du profil et vérifiez que la pose demandée est bien faite. Le selfie est
-        supprimé dès la décision prise.
+        Pour chaque demande, vérifiez : la pièce est lisible, valide et non modifiée ; la personne a 18 ans ou plus ;
+        le visage du selfie correspond à la photo de la pièce et aux photos du profil ; la pose demandée est bien faite.
+        La pièce et le selfie sont supprimés dès la décision prise.
       </p>
 
       <div className="mb-4 flex gap-1.5 overflow-x-auto">

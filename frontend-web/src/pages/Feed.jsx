@@ -24,6 +24,7 @@ import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
+import { useIdentity } from '../context/IdentityContext.jsx'
 
 function Feed() {
   const {
@@ -47,6 +48,7 @@ function Feed() {
   // Nothing from someone blocked either way shows up here.
   const posts = useMemo(() => allPosts.filter((p) => !blockedIds.has(p.authorId)), [allPosts, blockedIds])
   const { showToast } = useToast()
+  const { requireIdentity } = useIdentity()
   const navigate = useNavigate()
 
   const [showComposer, setShowComposer] = useState(false)
@@ -92,6 +94,7 @@ function Feed() {
   const expandedMatch = expandedAuthorId ? conversations.find((c) => c.otherUid === expandedAuthorId) : null
 
   async function handleLike(profile) {
+    if (!requireIdentity()) return
     try {
       const matchId = await recordSwipeAndMatch(user.id, profile.id, 'like', user.firstName)
       if (matchId) showToast(`C'est un match avec ${profile.firstName} !`, 'success')
@@ -144,7 +147,12 @@ function Feed() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  function openStoryComposer() {
+    if (requireIdentity()) setShowStoryComposer(true)
+  }
+
   function openComposer(type = 'text') {
+    if (!requireIdentity()) return
     setComposerType(type)
     setShowComposer(true)
   }
@@ -230,7 +238,7 @@ function Feed() {
           <div className="relative">
             <button
               type="button"
-              onClick={() => (myStories.length > 0 ? setViewerIndex(0) : setShowStoryComposer(true))}
+              onClick={() => (myStories.length > 0 ? setViewerIndex(0) : openStoryComposer())}
               className={`block rounded-full p-[2px] ${
                 myStories.length > 0
                   ? 'bg-gradient-to-br from-pink-500 to-violet-500'
@@ -255,7 +263,7 @@ function Feed() {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation()
-                  setShowStoryComposer(true)
+                  openStoryComposer()
                 }}
                 className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white ring-2 ring-surface-soft"
                 aria-label="Ajouter une story"
@@ -369,7 +377,7 @@ function Feed() {
               post={post}
               author={authorsById[post.authorId]}
               isLiked={likedPostIds.has(post.id)}
-              onToggleLike={() => toggleLikePost(post)}
+              onToggleLike={() => requireIdentity() && toggleLikePost(post)}
               onAuthorClick={() => setExpandedAuthorId(post.authorId)}
               onOpen={() => navigate(`/feed/${post.id}`)}
               currentUserId={user?.id}
