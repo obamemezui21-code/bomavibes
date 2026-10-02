@@ -35,9 +35,14 @@ service cloud.firestore {
     }
 
     // Subscribers, or anyone who unlocked calls with Ngori (perks.callsUntil).
+    // FREE_CALLS: calls temporarily open to everyone — set back to false
+    // (with FREE_CALLS in backend/src/config/plans.js and
+    // frontend-web/src/lib/plans.js) to make them subscriber-only again.
     function canPlaceCalls(uid) {
+      let freeCalls = true;
       let account = get(/databases/$(database)/documents/users/$(uid)).data;
-      return hasActivePlan(uid)
+      return freeCalls
+        || hasActivePlan(uid)
         || (account.get('perks', {}).get('callsUntil', null) != null && account.perks.callsUntil > request.time);
     }
 

@@ -9,6 +9,11 @@
 
 const UNLIMITED = Infinity;
 
+// Calls temporarily open to everyone, free plan included. Set back to
+// false (with FREE_CALLS in frontend-web/src/lib/plans.js and freeCalls in
+// firestore.rules) to make them subscriber-only again.
+const FREE_CALLS = true;
+
 const PLANS = {
     free: {
         label: "Gratuit",
@@ -16,7 +21,7 @@ const PLANS = {
         superlikes: { count: 1, period: "week" },
         boosts: null,
         visibility: 0,
-        calls: false,
+        calls: FREE_CALLS,
         seeLikes: false,
         invisible: false,
     },

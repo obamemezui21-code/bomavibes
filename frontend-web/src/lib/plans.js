@@ -3,6 +3,10 @@
 // super likes, boosts, calls, "voir qui vous aime", invisible mode). Keep
 // the numbers in sync with it.
 
+// Calls temporarily free for everyone — mirror of FREE_CALLS in
+// backend/src/config/plans.js (and freeCalls in firestore.rules).
+export const FREE_CALLS = true
+
 export const PLANS = {
   free: {
     id: 'free',
@@ -10,7 +14,7 @@ export const PLANS = {
     likesPerDay: 20,
     superlikes: { count: 1, period: 'week' },
     boosts: null,
-    calls: false,
+    calls: FREE_CALLS,
     seeLikes: false,
     invisible: false,
   },

@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { redeemNgori } from '../firebase/ngori.js'
-import { activePlan } from '../lib/plans.js'
+import { FREE_CALLS, activePlan } from '../lib/plans.js'
 import { REWARDS, STREAK_BONUS, STREAK_LENGTH, formatRemaining, includedInPlan, perkUntil } from '../lib/ngori.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 
@@ -150,7 +150,11 @@ function Ngori() {
 
                 <div className="mt-3">
                   {included ? (
-                    <p className="text-center text-xs font-medium text-mint-500">Déjà inclus dans votre forfait {plan.label}</p>
+                    <p className="text-center text-xs font-medium text-mint-500">
+                      {reward.id === 'calls' && FREE_CALLS
+                        ? 'Gratuits pour tout le monde en ce moment 🎉'
+                        : `Déjà inclus dans votre forfait ${plan.label}`}
+                    </p>
                   ) : isActive ? (
                     <div className="flex items-center gap-2">
                       <span className="flex-1 rounded-full bg-mint-500/12 py-2 text-center text-xs font-semibold text-mint-500">

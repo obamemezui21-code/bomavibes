@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { activeStreakBadge, effectivePlan, formatRemaining, includedInPlan, perkUntil } from './ngori.js'
+import { FREE_CALLS } from './plans.js'
 
 const now = 1_000_000
 
@@ -15,7 +16,8 @@ describe('effectivePlan', () => {
   it('folds running perks into the free plan', () => {
     const plan = effectivePlan({ perks: { unlimitedLikesUntil: now + 1, callsUntil: now - 1 } }, now)
     expect(plan.likesPerDay).toBe(Infinity)
-    expect(plan.calls).toBe(false)
+    // An expired callsUntil grants nothing (calls are only on while FREE_CALLS is).
+    expect(plan.calls).toBe(FREE_CALLS)
     expect(plan.seeLikes).toBe(false)
   })
 })
