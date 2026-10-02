@@ -13,6 +13,7 @@ import {
 import { batchFetchAuthorProfiles } from '../../firebase/feed.js'
 import { fallbackToFullPhoto } from '../../lib/photoVariants.js'
 import { formatRelativeTime } from '../../lib/relativeTime.js'
+import { useConversations } from '../../context/ConversationsContext.jsx'
 
 const MAX_COMMENT = 300
 
@@ -33,7 +34,9 @@ function Avatar({ profile, size = 'h-8 w-8' }) {
 function StoryInteractions({ story, isOwn, currentUserId, onPause }) {
   const [myReaction, setMyReaction] = useState(null)
   const [reactions, setReactions] = useState({})
-  const [comments, setComments] = useState([])
+  const [allComments, setComments] = useState([])
+  const { blockedIds } = useConversations()
+  const comments = allComments.filter((c) => !blockedIds.has(c.authorId))
   const [sheet, setSheet] = useState(null) // 'comments' | 'activity' | null
   const [showEmojis, setShowEmojis] = useState(false)
   const [draft, setDraft] = useState('')

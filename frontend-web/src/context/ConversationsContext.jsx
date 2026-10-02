@@ -590,6 +590,9 @@ export function ConversationsProvider({ children }) {
         showPushPrompt,
         acceptPushPrompt,
         dismissPushPrompt,
+        // Blocked either way (I blocked them, or they blocked me): hidden
+        // from each other in chat, Discover, the feed and stories.
+        blockedIds,
         refreshBlockedIds,
       }}
     >

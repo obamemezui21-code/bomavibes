@@ -34,13 +34,15 @@ function PostDetail() {
   const { postId } = useParams()
   const navigate = useNavigate()
   const { user, publicProfile } = useAuth()
-  const { conversations, sendPostMessage } = useConversations()
+  const { conversations, sendPostMessage, blockedIds, refreshBlockedIds } = useConversations()
   const { deletePost, updatePost, toggleLikePost, likedPostIds, authorsById: feedAuthorsById } = useFeed()
   const { showToast } = useToast()
 
   const [post, setPost] = useState(undefined) // undefined = loading, null = not found
   const [author, setAuthor] = useState(null)
-  const [comments, setComments] = useState([])
+  const [allComments, setComments] = useState([])
+  // Comments from someone blocked either way are hidden.
+  const comments = useMemo(() => allComments.filter((c) => !blockedIds.has(c.authorId)), [allComments, blockedIds])
   const [commentAuthorsById, setCommentAuthorsById] = useState({})
   const [replyTarget, setReplyTarget] = useState(null)
   const [expandedAuthorId, setExpandedAuthorId] = useState(null)
@@ -159,7 +161,10 @@ function PostDetail() {
     setIsSubmittingSafety(true)
     try {
       await reportUser(user.id, post.authorId, reason, description, { postId })
-      if (alsoBlock) await blockUser(user.id, post.authorId)
+      if (alsoBlock) {
+        await blockUser(user.id, post.authorId)
+        refreshBlockedIds()
+      }
       showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
       setReportTarget(null)
     } catch {
@@ -174,7 +179,10 @@ function PostDetail() {
     setIsSubmittingSafety(true)
     try {
       await reportUser(user.id, reportTarget.comment.authorId, reason, description, { postId, commentId: reportTarget.comment.id })
-      if (alsoBlock) await blockUser(user.id, reportTarget.comment.authorId)
+      if (alsoBlock) {
+        await blockUser(user.id, reportTarget.comment.authorId)
+        refreshBlockedIds()
+      }
       showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
       setReportTarget(null)
     } catch {
@@ -204,7 +212,7 @@ function PostDetail() {
     )
   }
 
-  if (post === null) {
+  if (post === null || blockedIds.has(post.authorId)) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 p-6 text-center">
         <p className="text-sm text-ink-soft/70">Cette publication n'existe plus.</p>

@@ -28,7 +28,7 @@ function Feed() {
   const {
     activeTab,
     setActiveTab,
-    posts,
+    posts: allPosts,
     authorsById,
     likedPostIds,
     hasMore,
@@ -42,7 +42,9 @@ function Feed() {
     refresh,
   } = useFeed()
   const { user, publicProfile } = useAuth()
-  const { conversations, sendPostMessage } = useConversations()
+  const { conversations, sendPostMessage, blockedIds, refreshBlockedIds } = useConversations()
+  // Nothing from someone blocked either way shows up here.
+  const posts = useMemo(() => allPosts.filter((p) => !blockedIds.has(p.authorId)), [allPosts, blockedIds])
   const { showToast } = useToast()
   const navigate = useNavigate()
 
@@ -110,7 +112,10 @@ function Feed() {
     setIsSubmittingSafety(true)
     try {
       await reportUser(user.id, reportTarget.authorId, reason, description, { postId: reportTarget.id })
-      if (alsoBlock) await blockUser(user.id, reportTarget.authorId)
+      if (alsoBlock) {
+        await blockUser(user.id, reportTarget.authorId)
+        refreshBlockedIds()
+      }
       showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
       setReportTarget(null)
     } catch {
@@ -156,7 +161,7 @@ function Feed() {
   const otherStoryGroups = useMemo(() => {
     const map = new Map()
     for (const s of stories) {
-      if (s.authorId === user?.id) continue
+      if (s.authorId === user?.id || blockedIds.has(s.authorId)) continue
       if (!map.has(s.authorId)) map.set(s.authorId, [])
       map.get(s.authorId).push(s)
     }
@@ -165,7 +170,7 @@ function Feed() {
       stories: [...list].reverse(),
       allViewed: list.every((s) => (s.viewedBy || []).includes(user?.id)),
     }))
-  }, [stories, storyAuthorsById, user])
+  }, [stories, storyAuthorsById, user, blockedIds])
 
   const storyGroups = useMemo(() => {
     if (myStories.length === 0) return otherStoryGroups
@@ -199,7 +204,10 @@ function Feed() {
     setIsSubmittingStorySafety(true)
     try {
       await reportUser(user.id, storyReportTarget.authorId, reason, description, { storyId: storyReportTarget.id })
-      if (alsoBlock) await blockUser(user.id, storyReportTarget.authorId)
+      if (alsoBlock) {
+        await blockUser(user.id, storyReportTarget.authorId)
+        refreshBlockedIds()
+      }
       showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
       setStoryReportTarget(null)
     } catch {

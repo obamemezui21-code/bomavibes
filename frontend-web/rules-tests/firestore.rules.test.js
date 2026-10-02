@@ -300,6 +300,15 @@ describe('stories', () => {
       await assertFails(addDoc(collection(as('bob'), 'stories/s1/comments'), comment('bob', '')))
     })
 
+    it('stops someone blocked by the author (or blocking them) from reacting or commenting', async () => {
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'blocks/alice_carol'), { blockerId: 'alice', blockedId: 'carol' })
+      })
+      await assertFails(setDoc(doc(as('carol'), 'stories/s1/reactions/carol'), reaction('❤️')))
+      await assertFails(addDoc(collection(as('carol'), 'stories/s1/comments'), comment('carol')))
+      await assertSucceeds(setDoc(doc(as('bob'), 'stories/s1/reactions/bob'), reaction('❤️')))
+    })
+
     it('lets the commenter or the story author delete a comment, nobody else', async () => {
       await env.withSecurityRulesDisabled(async (ctx) => {
         await setDoc(doc(ctx.firestore(), 'stories/s1/comments/c1'), { authorId: 'bob', text: 'Salut', createdAt: Timestamp.now() })

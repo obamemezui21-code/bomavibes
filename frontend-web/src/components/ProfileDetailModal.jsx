@@ -29,6 +29,7 @@ import { activeStreakBadge } from '../lib/ngori.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { useConversations } from '../context/ConversationsContext.jsx'
 import ReportModal from './ReportModal.jsx'
 import BlockConfirmModal from './BlockConfirmModal.jsx'
 
@@ -130,6 +131,7 @@ function MatchRing({ percent }) {
 
 function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked, matchId, isSelf }) {
   const { user, publicProfile } = useAuth()
+  const { refreshBlockedIds } = useConversations()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const photos = profile.photos?.length
@@ -145,7 +147,10 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
     setIsSubmitting(true)
     try {
       await reportUser(user.id, profile.id, reason, description)
-      if (alsoBlock) await blockUser(user.id, profile.id)
+      if (alsoBlock) {
+        await blockUser(user.id, profile.id)
+        refreshBlockedIds()
+      }
       showToast('Signalement envoyé. Merci de nous aider à garder BomaVibes sûr.', 'success')
       setShowReport(false)
       if (alsoBlock) {
@@ -163,6 +168,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
     setIsSubmitting(true)
     try {
       await blockUser(user.id, profile.id)
+      refreshBlockedIds()
       showToast(`Vous avez bloqué ${profile.firstName}.`, 'info')
       setShowBlock(false)
       onBlocked?.(profile)

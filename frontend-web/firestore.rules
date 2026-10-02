@@ -46,6 +46,13 @@ service cloud.firestore {
       return !request.resource.data.diff(resource == null ? {} : resource.data).affectedKeys().hasAny(fields);
     }
 
+    // Two people blocked either way can't interact with each other's
+    // posts or stories (comment, like, react).
+    function blockedWith(otherUid) {
+      return exists(/databases/$(database)/documents/blocks/$(otherUid + '_' + request.auth.uid))
+        || exists(/databases/$(database)/documents/blocks/$(request.auth.uid + '_' + otherUid));
+    }
+
     function isBlockedByRecipient(matchId) {
       let matchUsers = get(/databases/$(database)/documents/matches/$(matchId)).data.users;
       let otherUid = matchUsers[0] == request.auth.uid ? matchUsers[1] : matchUsers[0];
@@ -441,7 +448,8 @@ service cloud.firestore {
         }
 
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validComment();
+        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validComment()
+          && !blockedWith(get(/databases/$(database)/documents/posts/$(postId)).data.authorId);
         allow update: if isSignedIn() && resource.data.authorId == request.auth.uid
           && request.resource.data.authorId == resource.data.authorId
           && request.resource.data.text is string && request.resource.data.text.size() > 0
@@ -451,7 +459,8 @@ service cloud.firestore {
 
       match /likes/{uid} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() && uid == request.auth.uid;
+        allow create: if isSignedIn() && uid == request.auth.uid
+          && !blockedWith(get(/databases/$(database)/documents/posts/$(postId)).data.authorId);
         allow delete: if isSignedIn() && uid == request.auth.uid;
         allow update: if false;
       }
@@ -496,6 +505,10 @@ service cloud.firestore {
         return get(/databases/$(database)/documents/stories/$(storyId)).data.authorId == request.auth.uid;
       }
 
+      function blockedWithStoryAuthor() {
+        return blockedWith(get(/databases/$(database)/documents/stories/$(storyId)).data.authorId);
+      }
+
       // One reaction per viewer (❤️ is the "like"). Private, as on WhatsApp:
       // only the reacting person and the story's author can read it.
       match /reactions/{uid} {
@@ -503,7 +516,8 @@ service cloud.firestore {
         allow create, update: if isOwner(uid)
           && request.resource.data.keys().hasOnly(['emoji', 'createdAt'])
           && request.resource.data.emoji in ['❤️', '😂', '😮', '😢', '🔥', '👏']
-          && request.resource.data.createdAt == request.time;
+          && request.resource.data.createdAt == request.time
+          && !blockedWithStoryAuthor();
         allow delete: if isOwner(uid);
       }
 
@@ -516,7 +530,8 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['authorId', 'text', 'createdAt'])
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 300
-          && request.resource.data.createdAt == request.time;
+          && request.resource.data.createdAt == request.time
+          && !blockedWithStoryAuthor();
         allow update: if false;
         allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isStoryAuthor());
       }
