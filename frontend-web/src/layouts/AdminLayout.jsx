@@ -44,7 +44,7 @@ function buildTabs(role) {
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/verifications', label: 'Vérifications', icon: BadgeCheck, color: C.blue })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music, color: C.fuchsia })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/notifications', label: 'Notifications', icon: Bell, color: C.amber })
-  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/ai-partners', label: 'Studio IA', icon: Sparkles, color: C.purple })
+  if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/ai-partners', label: 'Affiliation', icon: Sparkles, color: C.purple })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/pages', label: 'Pages', icon: FileText, color: C.yellow })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/articles', label: 'Articles', icon: Newspaper, color: C.cyan })
   if (hasContentAccess(role)) tabs.push({ to: '/admin/content/faqs', label: 'FAQ', icon: HelpCircle, color: C.teal })

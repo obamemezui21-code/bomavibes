@@ -6,10 +6,14 @@ import { auth, db } from './config.js'
 // Firestore composite index this repo has no pipeline to deploy (same
 // lesson as events/tickets elsewhere in this app). Sorted by Firestore,
 // filtered to active partners in JS instead.
-export async function fetchActiveAiPartners() {
+// categorie: 'ia' (Studio IA) or 'streaming' (Ciné & Séries); partners
+// without one are older Studio IA entries.
+export async function fetchActiveAiPartners(categorie = 'ia') {
   const q = query(collection(db, 'aiPartners'), orderBy('ordre', 'asc'))
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((p) => p.actif)
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((p) => p.actif && (p.categorie || 'ia') === categorie)
 }
 
 // Fire-and-forget: never awaited before opening the affiliate link, and

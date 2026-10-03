@@ -10,6 +10,10 @@ const { logAdminAction } = require("../services/adminLogService");
 
 const db = admin.firestore();
 const COLLECTION = "aiPartners";
+// Which page a partner appears on: "ia" = Studio IA (AI video tools),
+// "streaming" = Ciné & Séries (film / series platforms). Partners created
+// before categories existed have none and count as "ia".
+const CATEGORIES = ["ia", "streaming"];
 
 function badRequest(message) {
     return Object.assign(new Error(message), { status: 400 });
@@ -67,6 +71,9 @@ function readFields(body, { partial = false } = {}) {
     if (!partial || "ordre" in body) {
         const ordre = Number(body.ordre);
         data.ordre = Number.isFinite(ordre) ? ordre : 0;
+    }
+    if (!partial || "categorie" in body) {
+        data.categorie = CATEGORIES.includes(body.categorie) ? body.categorie : "ia";
     }
     if (!partial || "actif" in body) {
         data.actif = body.actif === undefined ? true : !!body.actif;

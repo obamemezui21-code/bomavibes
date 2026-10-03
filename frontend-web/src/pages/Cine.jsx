@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Clapperboard } from 'lucide-react'
 import { fetchActiveAiPartners } from '../firebase/aiPartners.js'
 import AffiliatePartnerCard from '../components/AffiliatePartnerCard.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
-function StudioIA() {
+// "Ciné & Séries": film and series platforms, through affiliate links set
+// by an admin (Admin → Affiliation, category "Ciné & Séries"). BomaVibes
+// shows no video itself — members subscribe on the official platforms.
+function Cine() {
   const { showToast } = useToast()
   const [partners, setPartners] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    fetchActiveAiPartners('ia')
+    fetchActiveAiPartners('streaming')
       .then(setPartners)
-      .catch(() => showToast('Impossible de charger le Studio IA.', 'error'))
+      .catch(() => showToast('Impossible de charger les plateformes.', 'error'))
       .finally(() => setIsLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -20,12 +23,12 @@ function StudioIA() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25">
-          <Sparkles size={20} strokeWidth={2} />
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-orange-400 text-white shadow-md shadow-rose-500/25">
+          <Clapperboard size={20} strokeWidth={2} />
         </span>
         <div className="min-w-0">
-          <h1 className="font-display text-2xl font-semibold text-ink">Crée des vidéos avec l'IA</h1>
-          <p className="mt-0.5 text-sm text-ink-soft/70">Anime tes photos, crée des vidéos pour tes réseaux ✨</p>
+          <h1 className="font-display text-2xl font-semibold text-ink">Ciné & Séries</h1>
+          <p className="mt-0.5 text-sm text-ink-soft/70">Les meilleurs films et séries, pour vos soirées en duo 🍿</p>
         </div>
       </div>
 
@@ -33,15 +36,20 @@ function StudioIA() {
 
       {!isLoading && partners.length === 0 && (
         <div className="mt-10 flex flex-col items-center gap-2 py-10 text-center">
-          <Sparkles size={32} strokeWidth={1.5} className="text-ink-soft/30" />
-          <p className="text-sm font-medium text-ink-soft/60">Aucune plateforme disponible pour le moment.</p>
+          <Clapperboard size={32} strokeWidth={1.5} className="text-ink-soft/30" />
+          <p className="text-sm font-medium text-ink-soft/60">Les plateformes arrivent bientôt.</p>
         </div>
       )}
 
       {!isLoading && partners.length > 0 && (
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {partners.map((partner) => (
-            <AffiliatePartnerCard key={partner.id} partner={partner} />
+            <AffiliatePartnerCard
+              key={partner.id}
+              partner={partner}
+              ctaLabel={`Regarder sur ${partner.nom}`}
+              freeLabel="Essai gratuit"
+            />
           ))}
         </div>
       )}
@@ -56,4 +64,4 @@ function StudioIA() {
   )
 }
 
-export default StudioIA
+export default Cine

@@ -14,7 +14,15 @@ import Modal from '../components/ui/Modal.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
 
+// Which page a partner appears on (backend aiPartnersController CATEGORIES).
+const CATEGORIES = [
+  { value: 'ia', label: 'Studio IA', page: '/studio-ia' },
+  { value: 'streaming', label: 'Ciné & Séries', page: '/cine' },
+]
+const categoryLabel = (c) => CATEGORIES.find((x) => x.value === (c || 'ia'))?.label
+
 const EMPTY_FORM = {
+  categorie: 'ia',
   nom: '',
   description: '',
   idealPour: '',
@@ -28,6 +36,7 @@ const EMPTY_FORM = {
 
 function toFormValues(item) {
   return {
+    categorie: item.categorie || 'ia',
     nom: item.nom || '',
     description: item.description || '',
     idealPour: item.idealPour || '',
@@ -42,6 +51,7 @@ function toFormValues(item) {
 
 function toPayload(form) {
   return {
+    categorie: form.categorie,
     nom: form.nom.trim(),
     description: form.description.trim(),
     idealPour: form.idealPour.trim(),
@@ -71,6 +81,7 @@ function AdminAiPartners() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [togglingId, setTogglingId] = useState(null)
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [category, setCategory] = useState('ia')
   const logoInputRef = useRef(null)
 
   const load = useCallback(() => {
@@ -80,7 +91,7 @@ function AdminAiPartners() {
         setItems(partnersData.items)
         setStats(statsData.stats || {})
       })
-      .catch(() => showToast('Impossible de charger le Studio IA.', 'error'))
+      .catch(() => showToast('Impossible de charger les partenaires.', 'error'))
       .finally(() => setIsLoading(false))
   }, [showToast])
 
@@ -90,7 +101,7 @@ function AdminAiPartners() {
 
   function openNew() {
     setEditingItem({})
-    setForm(EMPTY_FORM)
+    setForm({ ...EMPTY_FORM, categorie: category })
   }
 
   function openEdit(item) {
@@ -176,7 +187,7 @@ function AdminAiPartners() {
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25">
             <Sparkles size={20} strokeWidth={2} />
           </span>
-          <h1 className="font-display text-xl font-semibold text-ink">Studio IA</h1>
+          <h1 className="font-display text-xl font-semibold text-ink">Affiliation</h1>
         </div>
         <Button onClick={openNew} className="flex items-center gap-1.5 px-4">
           <Plus size={16} strokeWidth={2.5} />
@@ -184,9 +195,23 @@ function AdminAiPartners() {
         </Button>
       </div>
       <p className="mb-4 text-xs text-ink-soft/60">
-        Répertoire de plateformes de génération vidéo IA en affiliation — BomaVibes ne gère ni le paiement ni la
-        génération, seulement le lien.
+        Plateformes partenaires en affiliation — BomaVibes ne gère ni le paiement ni le service, seulement le lien.
+        Studio IA : outils vidéo IA. Ciné &amp; Séries : plateformes de films et séries (Prime Video, Apple TV+, Canal+…).
       </p>
+      <div className="mb-4 flex gap-1.5">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => setCategory(c.value)}
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              category === c.value ? 'bg-ink text-surface' : 'bg-ink/6 text-ink-soft/60 hover:bg-ink/10'
+            }`}
+          >
+            {c.label} ({items.filter((it) => (it.categorie || 'ia') === c.value).length})
+          </button>
+        ))}
+      </div>
 
       {isLoading && <p className="py-8 text-center text-sm text-ink-soft/50">Chargement…</p>}
       {!isLoading && items.length === 0 && (
@@ -194,7 +219,7 @@ function AdminAiPartners() {
       )}
 
       <div className="space-y-2">
-        {items.map((item) => {
+        {items.filter((it) => (it.categorie || 'ia') === category).map((item) => {
           const s = stats[item.id] || { last7Days: 0, last30Days: 0, total: 0 }
           return (
             <div key={item.id} className="glass-panel rounded-2xl p-4">
@@ -210,7 +235,7 @@ function AdminAiPartners() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-ink">{item.nom}</p>
                     <p className="truncate text-xs text-ink-soft/50">
-                      Ordre {item.ordre} · Prix vérifié le {formatVerifiedDate(item.prixVerifieLe)}
+                      {categoryLabel(item.categorie)} · Ordre {item.ordre} · Prix vérifié le {formatVerifiedDate(item.prixVerifieLe)}
                     </p>
                   </div>
                 </div>
@@ -273,6 +298,23 @@ function AdminAiPartners() {
             {editingItem.id ? 'Modifier la plateforme' : 'Nouvelle plateforme'}
           </h2>
           <form onSubmit={handleSave} className="space-y-3">
+            <div>
+              <label className={labelClass} htmlFor="ai-categorie">
+                Rubrique
+              </label>
+              <select
+                id="ai-categorie"
+                value={form.categorie}
+                onChange={(e) => setForm((prev) => ({ ...prev, categorie: e.target.value }))}
+                className={inputClass}
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label} ({c.page})
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className={labelClass} htmlFor="ai-nom">
                 Nom *
@@ -424,7 +466,7 @@ function AdminAiPartners() {
       {deletingItem && (
         <ConfirmModal
           title="Supprimer cette plateforme ?"
-          description={`« ${deletingItem.nom} » ne sera plus visible dans le Studio IA. Cette action est irréversible.`}
+          description={`« ${deletingItem.nom} » ne sera plus visible dans l’app. Cette action est irréversible.`}
           confirmLabel="Supprimer"
           confirmingLabel="Suppression…"
           isConfirming={isDeleting}
