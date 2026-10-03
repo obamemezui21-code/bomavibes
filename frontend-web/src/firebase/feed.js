@@ -120,7 +120,7 @@ function subscribeToPost(postId, cb) {
   })
 }
 
-async function createPost(authorId, { type, text, photoUrl, photoThumbUrl, background, font }) {
+async function createPost(authorId, { type, text, photoUrl, photoThumbUrl, background, font, videoUrl, posterUrl, duration }) {
   const ref = await addDoc(collection(db, 'posts'), {
     authorId,
     type,
@@ -130,6 +130,9 @@ async function createPost(authorId, { type, text, photoUrl, photoThumbUrl, backg
     // Text posts only: style preset ids (see lib/postStyles.js)
     ...(background ? { background } : {}),
     ...(font ? { font } : {}),
+    // Video posts: the file from POST /api/feed-videos, its poster frame
+    // and length (s).
+    ...(type === 'video' ? { videoUrl, posterUrl: posterUrl || null, duration: duration || null } : {}),
     likeCount: 0,
     commentCount: 0,
     createdAt: serverTimestamp(),
@@ -242,6 +245,25 @@ async function uploadFeedPhoto(file) {
   return res.json()
 }
 
+// Sends the video file as is (plus its poster frame, if one could be
+// grabbed) — see backend/src/controllers/storyVideoController.js.
+// → { videoUrl, posterUrl }
+async function uploadFeedVideo(file, posterBlob) {
+  const idToken = await auth.currentUser?.getIdToken()
+  const formData = new FormData()
+  formData.append('video', file)
+  if (posterBlob) formData.append('poster', posterBlob, 'poster.jpg')
+
+  const res = await fetch('/api/feed-videos', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}` },
+    body: formData,
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(body?.message || (res.status === 413 ? 'Vidéo trop lourde (50 Mo maximum).' : 'Envoi impossible.'))
+  return body
+}
+
 export {
   addComment,
   batchFetchAuthorProfiles,
@@ -258,4 +280,5 @@ export {
   toggleLike,
   updatePost,
   uploadFeedPhoto,
+  uploadFeedVideo,
 }

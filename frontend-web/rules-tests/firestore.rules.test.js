@@ -166,10 +166,12 @@ describe('profile verification', () => {
 })
 
 describe('subscriptions', () => {
-  it('lets only subscribers place a call (a free account can still receive one)', async () => {
+  // FREE_CALLS (firestore.rules canPlaceCalls): calls are open to everyone
+  // for now. Back to subscriber-only → bob's call must fail again.
+  it('lets everyone place a call while calls are free', async () => {
     const call = (callerId, calleeId) => ({ callerId, calleeId, matchId: MATCH, type: 'audio', status: 'ringing' })
     await assertSucceeds(addDoc(collection(as('alice'), 'calls'), call('alice', 'bob')))
-    await assertFails(addDoc(collection(as('bob'), 'calls'), call('bob', 'alice')))
+    await assertSucceeds(addDoc(collection(as('bob'), 'calls'), call('bob', 'alice')))
   })
 
   it('never lets a user give themselves a plan or its perks', async () => {
@@ -355,5 +357,24 @@ describe('identity verification flags', () => {
   it('never lets anyone grant or remove the legacy exemption themselves', async () => {
     await assertFails(updateDoc(doc(as('erin'), 'profiles/erin'), { legacyMember: true }))
     await assertFails(updateDoc(doc(as('bob'), 'profiles/bob'), { legacyMember: false }))
+  })
+})
+
+describe('video posts', () => {
+  const video = (overrides) => ({
+    authorId: 'bob', type: 'video', text: null, likeCount: 0, commentCount: 0,
+    videoUrl: 'https://bomavibes.tech/uploads/feed-videos/bob/video-1.mp4',
+    posterUrl: 'https://bomavibes.tech/uploads/feed-videos/bob/video-1-poster.jpg',
+    duration: 42,
+    ...overrides,
+  })
+
+  it('publishes a video post of up to a minute, without a caption', async () => {
+    await assertSucceeds(addDoc(collection(as('bob'), 'posts'), video()))
+  })
+
+  it('rejects a video post without its file or longer than a minute', async () => {
+    await assertFails(addDoc(collection(as('bob'), 'posts'), video({ videoUrl: null })))
+    await assertFails(addDoc(collection(as('bob'), 'posts'), video({ duration: 300 })))
   })
 })

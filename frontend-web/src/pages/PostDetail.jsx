@@ -306,6 +306,19 @@ function PostDetail() {
               <PostText text={post.text} background={post.background} font={post.font} className="mt-3" />
             ))}
 
+          {post.type === 'video' && post.videoUrl && (
+            <div className="mt-3 w-full overflow-hidden rounded-xl bg-black">
+              <video
+                src={post.videoUrl}
+                poster={post.posterUrl || undefined}
+                controls
+                playsInline
+                preload="metadata"
+                className="max-h-[32rem] w-full"
+              />
+            </div>
+          )}
+
           {post.photoUrl && (
             <div className="mt-3 max-h-[32rem] w-full overflow-hidden rounded-xl bg-ink/5">
               <img src={post.photoUrl} alt="" className="max-h-[32rem] w-full object-cover" />
@@ -379,7 +392,7 @@ function PostDetail() {
               authorId: post.authorId,
               authorName: author?.firstName || '',
               text: (post.text || '').slice(0, 300),
-              photoUrl: post.photoThumbUrl || post.photoUrl || null,
+              photoUrl: post.photoThumbUrl || post.photoUrl || post.posterUrl || null,
             })
           }
           onClose={() => setIsSharing(false)}

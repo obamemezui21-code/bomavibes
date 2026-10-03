@@ -458,6 +458,20 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
           <PostText text={post.text} background={post.background} font={post.font} clamp className="mt-2" />
         ))}
 
+      {/* Video post: plays right in the feed (a tap on it doesn't open the post). */}
+      {post.type === 'video' && post.videoUrl && (
+        <div className="mt-2.5 overflow-hidden rounded-2xl bg-black" onClick={(e) => e.stopPropagation()}>
+          <video
+            src={post.videoUrl}
+            poster={post.posterUrl || undefined}
+            controls
+            playsInline
+            preload="none"
+            className="max-h-[28rem] w-full"
+          />
+        </div>
+      )}
+
       {renderActions()}
     </div>
   )

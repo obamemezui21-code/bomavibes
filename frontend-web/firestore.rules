@@ -422,7 +422,7 @@ service cloud.firestore {
       function validPostCreate() {
         let data = request.resource.data;
         return data.authorId is string
-          && data.type in ['text', 'photo', 'question']
+          && data.type in ['text', 'photo', 'question', 'video']
           && isOptionalString('text', 1000)
           // Text-post style preset ids (lib/postStyles.js)
           && isOptionalString('background', 30)
@@ -431,7 +431,12 @@ service cloud.firestore {
           && !('announcement' in data)
           && (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500))
           && (data.type != 'photo' || (data.photoUrl is string && data.photoUrl.size() > 0))
-          && (data.type == 'photo' || (data.text is string && data.text.size() > 0))
+          // Video posts: the file uploaded through POST /api/feed-videos (60 s max).
+          && (data.type != 'video' || (data.videoUrl is string && data.videoUrl.size() > 0 && data.videoUrl.size() <= 500))
+          && (!('videoUrl' in data) || data.videoUrl == null || (data.videoUrl is string && data.videoUrl.size() <= 500))
+          && isOptionalString('posterUrl', 500)
+          && (!('duration' in data) || data.duration == null || (data.duration is number && data.duration > 0 && data.duration <= 61))
+          && (data.type in ['photo', 'video'] || (data.text is string && data.text.size() > 0))
           && data.likeCount == 0 && data.commentCount == 0;
       }
 
@@ -449,6 +454,8 @@ service cloud.firestore {
           && request.resource.data.authorId == resource.data.authorId
           && request.resource.data.type == resource.data.type
           && request.resource.data.get('photoUrl', null) == resource.data.get('photoUrl', null)
+          && request.resource.data.get('videoUrl', null) == resource.data.get('videoUrl', null)
+          && request.resource.data.get('posterUrl', null) == resource.data.get('posterUrl', null)
           && request.resource.data.likeCount == resource.data.likeCount
           && request.resource.data.commentCount == resource.data.commentCount
           && request.resource.data.get('background', null) == resource.data.get('background', null)

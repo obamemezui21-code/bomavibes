@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowUp, Image as ImageIcon, Plus, Send } from 'lucide-react'
+import { Clapperboard, ArrowUp, Image as ImageIcon, Plus, Send } from 'lucide-react'
 import { useFeed } from '../context/FeedContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -330,6 +330,14 @@ function Feed() {
         </button>
         <button
           type="button"
+          onClick={() => openComposer('video')}
+          className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-violet-600"
+        >
+          <Clapperboard size={16} strokeWidth={2.25} className="text-rose-500" />
+          Vidéo
+        </button>
+        <button
+          type="button"
           onClick={() => openComposer('text')}
           className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-1.5 text-sm font-semibold text-ink-on-brand shadow-md shadow-violet-500/25"
         >
@@ -390,7 +398,7 @@ function Feed() {
                   authorId: post.authorId,
                   authorName: authorsById[post.authorId]?.firstName || '',
                   text: (post.text || '').slice(0, 300),
-                  photoUrl: post.photoThumbUrl || post.photoUrl || null,
+                  photoUrl: post.photoThumbUrl || post.photoUrl || post.posterUrl || null,
                 })
               }
             />

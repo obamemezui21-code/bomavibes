@@ -58,6 +58,7 @@ app.use("/api/voice", voiceRoutes);
 app.use("/api/chat-attachments", chatAttachmentRoutes);
 app.use("/api/feed-photos", feedPhotoRoutes);
 app.use("/api/story-videos", storyVideoRoutes);
+app.use("/api/feed-videos", storyVideoRoutes.feedVideoRouter);
 app.use("/api/stickers", stickerRoutes);
 app.use("/api/music", musicRoutes);
 app.use("/api/admin", adminRoutes);
