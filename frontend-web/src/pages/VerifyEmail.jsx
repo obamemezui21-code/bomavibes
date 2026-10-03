@@ -9,14 +9,35 @@ import { useToast } from '../context/ToastContext.jsx'
 const RESEND_COOLDOWN = 30
 
 function VerifyEmail() {
-  const { user, profile, logout, resendVerificationEmail, refreshEmailVerified } = useAuth()
+  const { user, profile, isProfileLoading, logout, resendVerificationEmail, refreshEmailVerified } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const [isChecking, setIsChecking] = useState(false)
   const [cooldown, setCooldown] = useState(0)
 
+  // Wait for the account doc before choosing: deciding on a profile that
+  // hasn't loaded yet sent finished profiles back to /onboarding.
   useEffect(() => {
-    if (user?.emailVerified) navigate(profile?.onboarded ? '/discover' : '/onboarding', { replace: true })
+    if (user?.emailVerified && !isProfileLoading) navigate(profile?.onboarded ? '/discover' : '/onboarding', { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.emailVerified, isProfileLoading])
+
+  // The link is usually opened in another tab or app (the mail app): notice
+  // it here on our own, without waiting for "J'ai vérifié mon email". The
+  // effect above then moves them on.
+  useEffect(() => {
+    if (user?.emailVerified) return undefined
+    const check = () => {
+      if (document.visibilityState === 'visible') refreshEmailVerified().catch(() => {})
+    }
+    const timer = setInterval(check, 5000)
+    document.addEventListener('visibilitychange', check)
+    window.addEventListener('focus', check)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', check)
+      window.removeEventListener('focus', check)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.emailVerified])
 
@@ -38,7 +59,9 @@ function VerifyEmail() {
     setIsChecking(false)
 
     if (verified) {
-      navigate(profile?.onboarded ? '/discover' : '/onboarding', { replace: true })
+      // /discover's guard sends a member without a profile to /onboarding
+      // once their account doc is loaded.
+      navigate('/discover', { replace: true })
     } else {
       showToast("Votre email n'est pas encore vérifié", 'info')
     }

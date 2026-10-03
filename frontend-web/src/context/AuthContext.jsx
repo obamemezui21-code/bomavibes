@@ -78,11 +78,13 @@ async function ensureUserDocument(firebaseUser) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [token, setToken] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [publicProfile, setPublicProfile] = useState(null)
+  // Each doc is kept with the uid it was read for: on a (re)login there is
+  // a render where uid is already set but the listener hasn't answered yet,
+  // and that must count as "loading" — not as "no profile", which sent
+  // members who had finished their profile back to /onboarding.
+  const [account, setAccount] = useState({ uid: null, data: null })
+  const [publicDoc, setPublicDoc] = useState({ uid: null, data: null })
   const [isLoading, setIsLoading] = useState(true)
-  const [isProfileLoading, setIsProfileLoading] = useState(true)
-  const [isPublicProfileLoading, setIsPublicProfileLoading] = useState(true)
   const [latestAnnouncement, setLatestAnnouncement] = useState(null)
   const { showToast } = useToast()
   const navigate = useNavigate()
@@ -96,7 +98,6 @@ export function AuthProvider({ children }) {
       } else {
         setUser(null)
         setToken(null)
-        setProfile(null)
       }
       setIsLoading(false)
     })
@@ -104,33 +105,27 @@ export function AuthProvider({ children }) {
   }, [])
 
   const uid = user?.id
+  const profile = uid && account.uid === uid ? account.data : null
+  const isProfileLoading = !!uid && account.uid !== uid
+  const publicProfile = uid && publicDoc.uid === uid ? publicDoc.data : null
+  const isPublicProfileLoading = !!uid && publicDoc.uid !== uid
 
   useEffect(() => {
-    if (!uid) {
-      setProfile(null)
-      return
-    }
-    setIsProfileLoading(true)
-    const ref = doc(db, 'users', uid)
-    const unsubscribe = onSnapshot(ref, (snap) => {
-      setProfile(snap.exists() ? snap.data() : null)
-      setIsProfileLoading(false)
-    })
-    return unsubscribe
+    if (!uid) return undefined
+    return onSnapshot(
+      doc(db, 'users', uid),
+      (snap) => setAccount({ uid, data: snap.exists() ? snap.data() : null }),
+      () => setAccount({ uid, data: null }),
+    )
   }, [uid])
 
   useEffect(() => {
-    if (!uid) {
-      setPublicProfile(null)
-      return
-    }
-    setIsPublicProfileLoading(true)
-    const ref = doc(db, 'profiles', uid)
-    const unsubscribe = onSnapshot(ref, (snap) => {
-      setPublicProfile(snap.exists() ? snap.data() : null)
-      setIsPublicProfileLoading(false)
-    })
-    return unsubscribe
+    if (!uid) return undefined
+    return onSnapshot(
+      doc(db, 'profiles', uid),
+      (snap) => setPublicDoc({ uid, data: snap.exists() ? snap.data() : null }),
+      () => setPublicDoc({ uid, data: null }),
+    )
   }, [uid])
 
   useEffect(() => {
@@ -233,8 +228,10 @@ export function AuthProvider({ children }) {
   async function refreshEmailVerified() {
     if (!auth.currentUser) return false
     await auth.currentUser.reload()
-    setUser(toAppUser(auth.currentUser))
-    return auth.currentUser.emailVerified
+    const verified = auth.currentUser.emailVerified
+    // Polled by VerifyEmail: only re-render the app when it actually changed.
+    setUser((prev) => (prev && prev.emailVerified === verified ? prev : toAppUser(auth.currentUser)))
+    return verified
   }
 
   async function resetPassword(email) {

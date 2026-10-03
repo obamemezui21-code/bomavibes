@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Mars, Minus, NonBinary, Plus, Venus, X } from 'lucide-react'
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
@@ -10,6 +10,7 @@ import { useToast } from '../context/ToastContext.jsx'
 import { findCountry, findRegion } from '../lib/geography.js'
 import CountryPicker from '../components/CountryPicker.jsx'
 import ProfileLaunchOverlay from '../components/ProfileLaunchOverlay.jsx'
+import { FullPageSpinner } from '../components/ui/Spinner.jsx'
 import {
   DATING_GOALS,
   LANGUAGES,
@@ -51,7 +52,7 @@ const STEPS = [
 ]
 
 function Onboarding() {
-  const { user, logout } = useAuth()
+  const { user, profile, isProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
@@ -234,6 +235,11 @@ function Onboarding() {
     setIsDone(true)
     setTimeout(() => navigate('/discover', { replace: true }), 1100)
   }
+
+  // A member whose profile is already done never sees this form again
+  // (except right after finishing it, for the celebration overlay).
+  if (isProfileLoading) return <FullPageSpinner />
+  if (profile?.onboarded && !isSaving) return <Navigate to="/discover" replace />
 
   const canContinue =
     step === 1

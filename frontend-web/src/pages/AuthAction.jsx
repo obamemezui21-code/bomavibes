@@ -14,7 +14,7 @@ const buttonClass =
 function AuthAction() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { resetPassword } = useAuth()
+  const { resetPassword, refreshEmailVerified } = useAuth()
   const mode = searchParams.get('mode')
   const oobCode = searchParams.get('oobCode')
 
@@ -72,6 +72,10 @@ function AuthAction() {
     setErrorMessage('')
     try {
       await applyActionCode(auth, oobCode)
+      // Signed in in this browser: pick up the new "verified" state now,
+      // otherwise the guards still see the old one and send them back to
+      // "Vérifiez votre email".
+      await refreshEmailVerified().catch(() => {})
       setStatus('verified')
     } catch {
       setStatus('error')
@@ -189,7 +193,11 @@ function AuthAction() {
       <AuthLayout title="Email vérifié !" subtitle="Votre adresse email est bien confirmée">
         <div className="space-y-4 text-center">
           <PartyPopper size={40} strokeWidth={1.5} className="mx-auto text-violet-500" />
-          <button type="button" onClick={() => navigate('/login')} className={buttonClass}>
+          <button
+            type="button"
+            onClick={() => navigate(auth.currentUser ? '/discover' : '/login', { replace: true })}
+            className={buttonClass}
+          >
             Continuer
           </button>
         </div>
