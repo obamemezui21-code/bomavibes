@@ -14,7 +14,7 @@ const buttonClass =
 function AuthAction() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { resetPassword, refreshEmailVerified } = useAuth()
+  const { resetPassword, refreshEmailVerified, resendVerificationEmail } = useAuth()
   const mode = searchParams.get('mode')
   const oobCode = searchParams.get('oobCode')
 
@@ -46,10 +46,7 @@ function AuthAction() {
       // real button click further down.
       checkActionCode(auth, oobCode)
         .then(() => setStatus('confirmEmail'))
-        .catch(() => {
-          setStatus('error')
-          setErrorMessage('Ce lien de vérification est invalide ou a expiré.')
-        })
+        .catch(showVerifyLinkError)
     } else if (mode === 'resetPassword') {
       checkActionCode(auth, oobCode)
         .then((info) => {
@@ -67,6 +64,30 @@ function AuthAction() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // A used or replaced link (each new verification email cancels the
+  // previous one). If this browser is signed in and the email is in fact
+  // verified already, say so instead of "invalid".
+  async function showVerifyLinkError() {
+    const verified = auth.currentUser ? await refreshEmailVerified().catch(() => false) : false
+    if (verified) {
+      setStatus('verified')
+      return
+    }
+    setStatus('error')
+    setErrorMessage(
+      'Ce lien n’est plus valable : il a déjà servi, ou un email plus récent l’a remplacé. Utilisez le lien du dernier email reçu.',
+    )
+  }
+
+  async function handleNewVerifyLink() {
+    setIsRetrying(true)
+    try {
+      if (await resendVerificationEmail()) setRetrySent(true)
+    } finally {
+      setIsRetrying(false)
+    }
+  }
+
   async function handleConfirmEmail() {
     setIsSubmitting(true)
     setErrorMessage('')
@@ -78,8 +99,7 @@ function AuthAction() {
       await refreshEmailVerified().catch(() => {})
       setStatus('verified')
     } catch {
-      setStatus('error')
-      setErrorMessage('Ce lien de vérification est invalide ou a expiré.')
+      await showVerifyLinkError()
     } finally {
       setIsSubmitting(false)
     }
@@ -153,6 +173,22 @@ function AuthAction() {
       <AuthLayout title="Lien invalide" subtitle={errorMessage}>
         <div className="space-y-5 text-center">
           <TriangleAlert size={40} strokeWidth={1.5} className="mx-auto text-coral-500" />
+
+          {mode === 'verifyEmail' &&
+            (retrySent ? (
+              <p className="rounded-2xl bg-ink/[0.03] p-4 text-sm text-ink-soft">
+                Nouvel email envoyé. Ouvrez <span className="font-semibold text-ink">ce dernier email</span> et cliquez
+                sur son lien.
+              </p>
+            ) : auth.currentUser ? (
+              <button type="button" onClick={handleNewVerifyLink} disabled={isRetrying} className={buttonClass}>
+                {isRetrying ? 'Envoi…' : 'Recevoir un nouveau lien'}
+              </button>
+            ) : (
+              <p className="text-sm text-ink-soft">
+                Connectez-vous : vous pourrez demander un nouvel email de vérification.
+              </p>
+            ))}
 
           {mode !== 'verifyEmail' && (
             <div className="rounded-2xl bg-ink/[0.03] p-4 text-left">

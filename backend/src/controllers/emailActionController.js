@@ -63,6 +63,14 @@ async function sendVerification(req, res) {
         await sendEmail({ from: FROM_ADDRESS, to: email, subject, html });
         res.json({ message: "Email de vérification envoyé" });
     } catch (err) {
+        // Firebase allows about one verification link per account per
+        // minute. Nothing was sent, so the previous email's link still works
+        // (each new link cancels the previous one).
+        if (String(err?.message).includes("TOO_MANY_ATTEMPTS_TRY_LATER")) {
+            return res.status(429).json({
+                message: "Un email vient déjà de partir : utilisez son lien, ou attendez une minute pour en demander un autre.",
+            });
+        }
         console.error(err);
         res.status(500).json({ message: "Impossible d'envoyer l'email de vérification" });
     }

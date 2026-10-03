@@ -6,7 +6,8 @@ import AuthLayout from '../components/AuthLayout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 
-const RESEND_COOLDOWN = 30
+// Firebase allows about one verification link a minute per account.
+const RESEND_COOLDOWN = 60
 
 function VerifyEmail() {
   const { user, profile, isProfileLoading, logout, resendVerificationEmail, refreshEmailVerified } = useAuth()
@@ -75,6 +76,10 @@ function VerifyEmail() {
           Nous avons envoyé un lien de vérification à{' '}
           <span className="font-semibold text-ink">{user?.email}</span>. Cliquez sur ce lien, puis
           revenez ici.
+        </p>
+        <p className="rounded-xl bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+          Pensez à regarder dans les spams. Si vous demandez un nouvel email, seul le lien du{' '}
+          <span className="font-semibold text-ink">dernier email reçu</span> fonctionne.
         </p>
 
         <motion.button

@@ -170,7 +170,12 @@ export function AuthProvider({ children }) {
       method: 'POST',
       headers: { Authorization: `Bearer ${idToken}` },
     })
-    if (!res.ok) throw new Error()
+    if (!res.ok) {
+      // 429: one email a minute (Firebase) or 5 an hour (our limiter) — the
+      // backend's message says which.
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.message || "Impossible d'envoyer l'email, réessaie.")
+    }
   }
 
   // The account is created by the backend, which first checks the Turnstile
@@ -216,12 +221,14 @@ export function AuthProvider({ children }) {
   }
 
   async function resendVerificationEmail() {
-    if (!auth.currentUser) return
+    if (!auth.currentUser) return false
     try {
       await sendVerificationEmailFor(auth.currentUser)
-      showToast('Email de vérification envoyé', 'success')
-    } catch {
-      showToast("Impossible d'envoyer l'email, réessaie.", 'error')
+      showToast('Nouvel email envoyé : utilisez le lien de ce dernier email.', 'success')
+      return true
+    } catch (error) {
+      showToast(error.message, 'error')
+      return false
     }
   }
 

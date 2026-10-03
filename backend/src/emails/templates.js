@@ -58,7 +58,10 @@ function verificationEmail(link, firstName) {
             `<p style="color:#6b5d4f;font-size:14px;line-height:1.6;">
               Plus qu'une étape avant de rejoindre la communauté : confirmez votre adresse email en cliquant sur le bouton ci-dessous.
             </p>
-            ${button(link, "Confirmer mon email")}`,
+            ${button(link, "Confirmer mon email")}
+            <p style="color:#9a8b7a;font-size:12px;line-height:1.6;">
+              Vous avez reçu plusieurs emails ? Seul le lien du plus récent fonctionne.
+            </p>`,
         ),
     };
 }
