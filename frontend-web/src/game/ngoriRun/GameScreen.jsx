@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Pause, Play, Volume2, VolumeX } from 'lucide-react'
 import { POWER_TICKS, TICK_RATE, createRun, scoreOf, step } from '../../../../shared/ngori-run/engine.mjs'
 import { createRenderer } from './renderer.js'
+import { loadRenderer3d } from './graphics.js'
 import { DISTRICTS, PHRASES, districtAt, pick, stallFor, stallIndexAt } from './libreville.js'
 import NgoriCoin from '../../components/NgoriCoin.jsx'
 
@@ -23,7 +24,9 @@ const VENDOR_CALL_GAP_MS = 9000
 // One run of NGORI RUN, full screen. Runs the shared simulation at a fixed
 // 60 ticks/s, records every gesture with the tick it was applied on, and
 // hands { inputs, endTick, claimed } to onEnd — the server replays it.
-function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, showButtons, onEnd }) {
+// graphics '3d' draws it with Three.js (renderer3d.js), falling back to the
+// 2D canvas if that can't start; the simulation is the same either way.
+function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, onToggleMute, showButtons, onEnd }) {
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
   const pendingRef = useRef([])
@@ -50,8 +53,30 @@ function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, show
   useEffect(() => {
     const canvas = canvasRef.current
     const wrap = wrapRef.current
-    const renderer = createRenderer(canvas, { runner })
-    rendererRef.current = renderer
+    // The 3D renderer loads during the countdown; until then nothing is drawn.
+    let renderer = null
+    let cancelled = false
+    function adopt(r) {
+      if (cancelled) {
+        r.dispose?.()
+        return
+      }
+      renderer = r
+      rendererRef.current = r
+      r.setBillboards(billboardsRef.current)
+      resize()
+    }
+    const start2d = () => adopt(createRenderer(canvas, { runner }))
+    if (graphics === '3d') {
+      loadRenderer3d()
+        .then(({ createRenderer3d }) => adopt(createRenderer3d(wrap, { runner })))
+        .catch((err) => {
+          console.warn('NGORI RUN 3D unavailable, back to 2D', err)
+          if (!cancelled) start2d()
+        })
+    } else {
+      start2d()
+    }
     const state = createRun(seed)
     const inputs = []
     let laneVis = state.lane
@@ -70,7 +95,9 @@ function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, show
     let lastStallCalled = -1
     let lastCallAt = 0
 
-    const resize = () => renderer.resize(wrap.clientWidth, wrap.clientHeight)
+    function resize() {
+      renderer?.resize(wrap.clientWidth, wrap.clientHeight)
+    }
     resize()
     const observer = new ResizeObserver(resize)
     observer.observe(wrap)
@@ -97,7 +124,7 @@ function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, show
       for (const e of state.events) {
         if (e.type === 'coin') {
           audio.play(e.gold ? 'gold' : 'coin')
-          renderer.popup(`+${e.value}`, e.gold ? '#ffd23f' : '#fde68a', laneVis, e.gold ? 32 : 24)
+          renderer?.popup(`+${e.value}`, e.gold ? '#ffd23f' : '#fde68a', laneVis, e.gold ? 32 : 24)
         } else if (e.type === 'bonus') {
           audio.play('bonus')
           showToast(`${pick(PHRASES.bonus, e.ngori)} ${BONUS_LABEL[e.reason]} +${e.ngori} Ngori`)
@@ -106,10 +133,10 @@ function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, show
           showToast(e.powerup === 'shield' ? '🛡️ Bouclier activé' : `${POWERUP_LABEL[e.powerup]} !`)
         } else if (e.type === 'shield') {
           audio.play('shield')
-          renderer.popup('Bouclier !', '#7dd3fc', laneVis, 28)
+          renderer?.popup('Bouclier !', '#7dd3fc', laneVis, 28)
         } else if (e.type === 'crash') {
           audio.play('crash')
-          renderer.crash()
+          renderer?.crash()
           crashAt = performance.now()
         }
       }
@@ -148,7 +175,7 @@ function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, show
         dt: dt / 1000,
         crashT: crashAt ? (now - crashAt) / 1000 : 0,
       }
-      renderer.render(state, view)
+      renderer?.render(state, view)
 
       const here = districtAt(Math.floor(state.dist / 100))
       if (here !== district) {
@@ -164,7 +191,7 @@ function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, show
 
       if (state.combo !== lastCombo) {
         if (state.combo >= 5 && state.combo % 5 === 0) {
-          renderer.popup(pick(PHRASES.combo, state.combo / 5 - 1), '#fbbf24', laneVis, 30)
+          renderer?.popup(pick(PHRASES.combo, state.combo / 5 - 1), '#fbbf24', laneVis, 30)
         }
         lastCombo = state.combo
       }
@@ -228,8 +255,11 @@ function GameScreen({ seed, runner, billboards, audio, muted, onToggleMute, show
       clearTimeout(toastTimer)
       document.removeEventListener('visibilitychange', onVisibility)
       audio.stopMusic()
+      cancelled = true
+      renderer?.dispose?.()
+      rendererRef.current = null
     }
-  }, [seed, runner, audio])
+  }, [seed, runner, graphics, audio])
 
   function act(action) {
     if (!pausedRef.current) pendingRef.current.push(action)

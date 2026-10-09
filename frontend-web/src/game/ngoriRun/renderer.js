@@ -45,11 +45,11 @@ const COLORS = {
   curb: '#e9467d',
   curbAlt: '#f4efe9',
 }
-const BUILDING_COLORS = ['#c46a4a', '#d99a4e', '#2f8f83', '#8a4f9e', '#e2b98f', '#4b6fa8']
-const CAR_COLORS = ['#f2bf4e', '#2dd4bf', '#e9467d', '#f5f5f4', '#7c3aed']
+export const BUILDING_COLORS = ['#c46a4a', '#d99a4e', '#2f8f83', '#8a4f9e', '#e2b98f', '#4b6fa8']
+export const CAR_COLORS = ['#f2bf4e', '#2dd4bf', '#e9467d', '#f5f5f4', '#7c3aed']
 // Libreville's taxis: red and white two-tone. Two cars in five are taxis.
-const TAXI = { upper: '#d62828', lower: '#f8fafc' }
-const isTaxi = (o) => o.id % 5 === 0 || o.id % 5 === 3
+export const TAXI = { upper: '#d62828', lower: '#f8fafc' }
+export const isTaxi = (o) => o.id % 5 === 0 || o.id % 5 === 3
 // Wax-print colour pairs for the stalls' parasols and the vendors' pagnes.
 const WAX = [
   ['#f59e0b', '#15803d'],
@@ -58,7 +58,7 @@ const WAX = [
   ['#7c3aed', '#22c55e'],
 ]
 const SKIN = '#5a3825'
-const POWERUP_STYLE = {
+export const POWERUP_STYLE = {
   shield: { color: '#38bdf8', icon: '🛡️' },
   magnet: { color: '#f43f5e', icon: '🧲' },
   multiplier: { color: '#a855f7', icon: '×2' },
@@ -70,7 +70,7 @@ const POWERUP_STYLE = {
 // man, rows 3–5 the woman; for each: 8 running frames, then jump take-off,
 // jump in the air, slide, fall. Until it has loaded, the runner is drawn
 // with plain shapes instead.
-const SHEET = { cellW: 232, cellH: 292, feetPad: 4, figureH: 270 }
+export const SHEET = { cellW: 232, cellH: 292, feetPad: 4, figureH: 270 }
 export const RUNNERS = { man: 0, woman: 3 } // first sheet row of each runner
 const sheetImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: runnersUrl })
 const sheetReady = () => !!sheetImage?.complete && sheetImage.naturalWidth > 0
@@ -79,7 +79,7 @@ const sheetReady = () => !!sheetImage?.complete && sheetImage.naturalWidth > 0
 // pictures, feet on its bottom edge. [x, y, w, h] in the strip, and the
 // real height (cm) each picture stands for — parasol, raised hand or basin
 // included. Indexes match libreville.js VENDOR_STALLS / PASSERSBY.
-const ROADSIDE = [
+export const ROADSIDE = [
   { rect: [0, 3, 293, 379], heightCm: 245 }, // manioc
   { rect: [295, 3, 283, 379], heightCm: 245 }, // plantain
   { rect: [580, 59, 296, 323], heightCm: 190 }, // coupé-coupé grill
@@ -90,7 +90,7 @@ const ROADSIDE = [
   { rect: [1722, 59, 170, 323], heightCm: 140 }, // seated mama, waving
 ]
 // A bit larger than life, so they still read on a phone screen.
-const ROADSIDE_SCALE = 1.35
+export const ROADSIDE_SCALE = 1.35
 const roadsideImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: roadsideUrl })
 const roadsideReady = () => !!roadsideImage?.complete && roadsideImage.naturalWidth > 0
 
@@ -98,22 +98,22 @@ const roadsideReady = () => !!roadsideImage?.complete && roadsideImage.naturalWi
 // wide bands, transparent sky): Libreville's skyline, the forested north
 // coast, the port of Owendo. Each district shows one; `mirror` puts the
 // forest on the right, on the side of the road where the forest stands.
-const HORIZONS = [
+export const HORIZONS = [
   { y: 0, h: 174 }, // city
   { y: 176, h: 250, mirror: true }, // forest coast
   { y: 428, h: 118 }, // port
 ]
-const HORIZONS_W = 1264
+export const HORIZONS_W = 1264
 const HORIZON_OF = { Angondjé: 1, 'Cap Estérias': 1, Owendo: 2 }
-const HORIZON_FADE_M = 150 // crossfade length after entering a district
+export const HORIZON_FADE_M = 150 // crossfade length after entering a district
 const horizonsImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: horizonsUrl })
 const horizonsReady = () => !!horizonsImage?.complete && horizonsImage.naturalWidth > 0
-const horizonAt = (metres) => HORIZON_OF[districtAt(metres)] ?? 0
+export const horizonAt = (metres) => HORIZON_OF[districtAt(metres)] ?? 0
 
 // Landmark buildings (assets/game/monuments.webp), indexed by a landmark's
 // `monument` in libreville.js: [x, y, w, h] in the strip and the real
 // height (cm) and width of ground (cm) each one takes on the city side.
-const MONUMENTS = [
+export const MONUMENTS = [
   { rect: [0, 0, 418, 251], heightCm: 2000, lengthCm: 4000 }, // Cathédrale Sainte-Marie
   { rect: [420, 46, 422, 205], heightCm: 1100, lengthCm: 4000 }, // Marché de Mont-Bouët
 ]
@@ -125,7 +125,7 @@ const MONUMENT_SPOTS = LANDMARKS.filter((l) => l.visual === 'monument').map((l) 
 }))
 
 // Stable pseudo-random from an integer — scenery only, never the game.
-function hash(n) {
+export function hash(n) {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b)
   x ^= x >>> 13
   x = Math.imul(x, 0xc2b2ae35)

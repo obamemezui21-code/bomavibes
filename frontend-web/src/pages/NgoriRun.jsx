@@ -9,6 +9,7 @@ import { REWARDS } from '../lib/ngori.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
+import { loadRenderer3d, webglSupported } from '../game/ngoriRun/graphics.js'
 import { districtAt, placeVenues } from '../game/ngoriRun/libreville.js'
 import { fetchPublishedVenues } from '../firebase/venues.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
@@ -17,6 +18,7 @@ import aichaPortrait from '../assets/game/aicha.webp'
 
 const BUTTONS_KEY = 'ngoriRun.buttons'
 const RUNNER_KEY = 'ngoriRun.runner'
+const GRAPHICS_3D_KEY = 'ngoriRun.3d'
 // The two heroes (their in-game sprites: renderer.js RUNNERS). Purely
 // cosmetic: both play by exactly the same rules.
 const RUNNER_CHOICES = [
@@ -363,6 +365,16 @@ function NgoriRun() {
   const [muted, setMuted] = useState(loadMuted)
   const [showButtons, setShowButtons] = useState(() => readFlag(BUTTONS_KEY))
   const [runner, setRunner] = useState(readRunner)
+  const [can3d] = useState(() => webglSupported())
+  const [use3d, setUse3d] = useState(() => {
+    try {
+      const saved = localStorage.getItem(GRAPHICS_3D_KEY)
+      if (saved === null) return !!webglSupported()
+      return saved === '1'
+    } catch {
+      return !!webglSupported()
+    }
+  })
   const [billboards, setBillboards] = useState([])
   const [tab, setTab] = useState('leaderboard')
   const [phase, setPhase] = useState('lobby') // lobby | starting | playing | result
@@ -375,6 +387,11 @@ function NgoriRun() {
   const balance = account?.ngori || 0
 
   useEffect(() => () => audio.close(), [audio])
+
+  // Fetch the 3D engine while the player is still in the lobby.
+  useEffect(() => {
+    if (can3d && use3d) loadRenderer3d().catch(() => {})
+  }, [can3d, use3d])
 
   // The Coins Chics venues become billboards along the route.
   useEffect(() => {
@@ -556,6 +573,20 @@ function NgoriRun() {
             />
             Afficher les boutons tactiles
           </label>
+          {can3d && (
+            <label className="relative mt-2 flex cursor-pointer items-center justify-center gap-2 text-xs text-white/75">
+              <input
+                type="checkbox"
+                checked={use3d}
+                onChange={(e) => {
+                  setUse3d(e.target.checked)
+                  writeFlag(GRAPHICS_3D_KEY, e.target.checked)
+                }}
+                className="accent-pink-500"
+              />
+              Graphismes 3D <span className="rounded-full bg-white/15 px-1.5 py-px text-[10px] font-bold uppercase">bêta</span>
+            </label>
+          )}
         </div>
 
         <div className="mt-6 grid grid-cols-4 gap-1 rounded-2xl bg-surface p-1">
@@ -586,6 +617,7 @@ function NgoriRun() {
           key={run.runId}
           seed={run.seed}
           runner={runner}
+          graphics={can3d && use3d ? '3d' : '2d'}
           billboards={billboards}
           audio={audio}
           muted={muted}
