@@ -4,6 +4,7 @@ import {
   MAX_TICKS,
   OBSTACLES,
   PLAYER_LEN,
+  baseSpeed,
   createRun,
   simulateRun,
   step,
@@ -97,6 +98,39 @@ describe('NGORI RUN engine', () => {
     step(state, ['U'])
     for (let i = 0; i < JUMP_TICKS; i++) step(state)
     expect(state.jump).toBe(0)
+  })
+
+  it('rides the black panther: twice the speed, obstacles knocked away, then a short grace', () => {
+    const state = createRun(3)
+    for (let i = 0; i < 10; i++) step(state)
+    state.powerups.push({ id: 9001, z: state.dist + PLAYER_LEN - 1, lane: state.lane, type: 'panther', taken: false })
+    step(state)
+    expect(state.panther).toBeGreaterThan(0)
+    step(state) // the new speed applies from the next tick
+    expect(state.speed).toBe(baseSpeed(state.tick) * 2)
+
+    state.obstacles.push({ id: 9002, z: state.dist + PLAYER_LEN + 10, lane: state.lane, type: 'car' })
+    for (let i = 0; i < 20; i++) step(state)
+    expect(state.crashed).toBe(false)
+    expect(state.obstacles.find((o) => o.id === 9002)?.hit).toBe(true)
+
+    while (state.panther && !state.over) step(state)
+    expect(state.grace).toBeGreaterThan(0)
+  })
+
+  it('places black panthers on the road, more rarely than the other power-ups', () => {
+    const state = createRun(11)
+    const seen = new Map()
+    while (state.tick < 60 * 60 * 10) {
+      state.dist += 400 // fly over the road: only the generated layout matters here
+      state.grace = 2
+      step(state)
+      for (const p of state.powerups) seen.set(p.id, p.type)
+    }
+    const counts = {}
+    for (const type of seen.values()) counts[type] = (counts[type] || 0) + 1
+    expect(counts.panther).toBeGreaterThan(0)
+    expect(counts.panther).toBeLessThan(counts.shield + counts.magnet + counts.multiplier + counts.boost)
   })
 
   it('rejects malformed gesture lists', () => {

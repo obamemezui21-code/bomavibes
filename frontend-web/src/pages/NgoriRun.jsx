@@ -237,7 +237,7 @@ function Help({ dailyCap }) {
     ['🪙 Ngori', 'Pièce normale +1, pièce dorée +3. Enchaîne-les sans en rater : 5 d’affilée = +1, 10 = +2, 20 = +5.'],
     ['📍 Le parcours', 'Tu longes la côte du Bord de mer jusqu’au Cap Estérias : Louis, Batterie IV, La Sablière, Les Charbonnages, Okala, Angondjé… Après 5 km, c’est le Tour de Libreville par Glass, Oloumi et Owendo !'],
     ['🏁 Distance', 'Bonus à 500 m (+1), 1 km (+2), 2 km (+3) et 5 km (+5). La vitesse augmente toutes les 30 secondes.'],
-    ['⚡ Bonus rares', '🛡️ Bouclier : encaisse un choc. 🧲 Aimant : attire les Ngori. ×2 : double les Ngori. ⚡ Boost : vitesse et invincibilité.'],
+    ['⚡ Bonus rares', '🛡️ Bouclier : encaisse un choc. 🧲 Aimant : attire les Ngori. ×2 : double les Ngori. ⚡ Boost : vitesse et invincibilité. 🐆 Panthère noire (très rare) : tu montes sur son dos, elle court 2 fois plus vite et renverse tout sur son passage pendant 6 secondes.'],
     ['💰 Gains', `Tes Ngori ramassés sont crédités sur ton solde, jusqu'à ${dailyCap} Ngori par jour grâce au jeu. Ensuite tu peux continuer à jouer pour le classement !`],
   ]
   return (

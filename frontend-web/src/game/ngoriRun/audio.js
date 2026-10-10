@@ -118,6 +118,12 @@ export function createGameAudio(initiallyMuted) {
     slide: () => noise({ dur: 0.22, vol: 0.12, filter: 'bandpass', freq: 900 }),
     lane: () => tone({ freq: 520, slideTo: 420, dur: 0.06, vol: 0.035, type: 'sine' }),
     powerup: () => tone({ freq: 400, slideTo: 1600, dur: 0.35, vol: 0.14, type: 'sawtooth' }),
+    // Mounting the black panther: a low growling roar.
+    panther: () => {
+      noise({ dur: 0.7, vol: 0.3, filter: 'lowpass', freq: 380 })
+      tone({ freq: 95, slideTo: 150, dur: 0.25, vol: 0.22, type: 'sawtooth' })
+      tone({ freq: 150, slideTo: 70, at: 0.22, dur: 0.5, vol: 0.2, type: 'sawtooth' })
+    },
     shield: () => {
       noise({ dur: 0.3, vol: 0.25, filter: 'highpass', freq: 2500 })
       tone({ freq: 220, slideTo: 110, dur: 0.3, vol: 0.15 })

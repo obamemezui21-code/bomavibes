@@ -15,7 +15,7 @@ const KEYS = {
   ArrowUp: 'U', w: 'U', z: 'U', ' ': 'U',
   ArrowDown: 'D', s: 'D',
 }
-const POWERUP_LABEL = { magnet: '🧲 Aimant', multiplier: '🔥 ×2', boost: '⚡ Boost' }
+const POWERUP_LABEL = { magnet: '🧲 Aimant', multiplier: '🔥 ×2', boost: '⚡ Boost', panther: '🐆 Panthère' }
 const BONUS_LABEL = { combo: 'Combo', distance: 'Distance' }
 const HONK_AHEAD = 2600 // cm: a taxi in your lane honks when this close
 const VENDOR_CALL_AHEAD = 12 // m: the vendor shouts just before you pass
@@ -129,8 +129,19 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
           audio.play('bonus')
           showToast(`${pick(PHRASES.bonus, e.ngori)} ${BONUS_LABEL[e.reason]} +${e.ngori} Ngori`)
         } else if (e.type === 'powerup') {
-          audio.play('powerup')
-          showToast(e.powerup === 'shield' ? '🛡️ Bouclier activé' : `${POWERUP_LABEL[e.powerup]} !`)
+          audio.play(e.powerup === 'panther' ? 'panther' : 'powerup')
+          showToast(
+            e.powerup === 'shield'
+              ? '🛡️ Bouclier activé'
+              : e.powerup === 'panther'
+                ? '🐆 En selle sur la panthère noire !'
+                : `${POWERUP_LABEL[e.powerup]} !`,
+          )
+        } else if (e.type === 'smash') {
+          audio.play('shield')
+          renderer?.popup('BAM !', '#d8b4fe', laneVis, 30)
+        } else if (e.type === 'panther-end') {
+          showToast('🐆 La panthère repart dans la forêt')
         } else if (e.type === 'shield') {
           audio.play('shield')
           renderer?.popup('Bouclier !', '#7dd3fc', laneVis, 28)
@@ -228,6 +239,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
             magnet: state.magnet / POWER_TICKS.magnet,
             multiplier: state.multiplier / POWER_TICKS.multiplier,
             boost: state.boost / POWER_TICKS.boost,
+            panther: state.panther / POWER_TICKS.panther,
           },
         })
         const left = Math.ceil((startAt - now) / 1000)

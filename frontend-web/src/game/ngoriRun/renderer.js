@@ -63,7 +63,10 @@ export const POWERUP_STYLE = {
   magnet: { color: '#f43f5e', icon: '🧲' },
   multiplier: { color: '#a855f7', icon: '×2' },
   boost: { color: '#f59e0b', icon: '⚡' },
+  panther: { color: '#a3e635', icon: '🐆' },
 }
+// How high the runner sits on the panther's back, in cm.
+export const PANTHER_SEAT = 95
 
 // The runners' sprite sheet (assets/game/runners.webp): a 4 × 6 grid of
 // 232 × 292 cells, feet 4 px above each cell's bottom. Rows 0–2 are the
@@ -1203,11 +1206,18 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.arc(0, -90 * u, 120 * u, 0, Math.PI * 2)
       ctx.stroke()
     }
+    // On the panther: its shoulders and head (further up the road) behind the
+    // runner, the runner seated on its back, then its rump in front.
+    if (state.panther) {
+      drawPanther(u, view.time, 'front')
+      ctx.translate(0, -PANTHER_SEAT * u)
+    }
 
     const run = state.jump || view.crashT > 0 ? 0 : Math.sin(phase)
     if (useSheet) {
       let frame
       if (view.crashT > 0) frame = 11
+      else if (state.panther) frame = 9 // knees tucked: astride the panther
       else if (sliding) frame = 10
       else if (state.jump) frame = jumpT < 0.22 || jumpT > 0.9 ? 8 : 9
       else frame = Math.floor(view.time * (8 + state.speed / 2.5)) % 8 // faster stride as speed grows
@@ -1256,6 +1266,11 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.fillText('BV', 0, -125 * u)
       drawHead(0, -172 * u, u)
     }
+    if (state.panther) {
+      ctx.translate(0, PANTHER_SEAT * u)
+      drawPanther(u, view.time, 'rear')
+      ctx.translate(0, -PANTHER_SEAT * u)
+    }
     if (state.multiplier) {
       ctx.fillStyle = '#c084fc'
       ctx.font = `900 ${26 * u}px system-ui, sans-serif`
@@ -1263,6 +1278,89 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.fillText('×2', 0, (sliding ? -150 : -215) * u)
     }
     ctx.restore()
+  }
+
+  // A black panther seen from behind, galloping. Drawn in two layers around
+  // the seated runner: 'front' is the far part (front legs, head, back),
+  // 'rear' the near part (hind legs, haunches, tail) that hides the runner's
+  // knees.
+  function drawPanther(scale, time, layer) {
+    const u = scale * 1.45
+    const gallop = Math.sin(time * 16)
+    const bob = Math.abs(gallop) * 6 * u
+    const fur = '#0d0b12'
+    const sheen = ctx.createLinearGradient(0, -130 * u, 0, -10 * u)
+    sheen.addColorStop(0, '#3b2f4f')
+    sheen.addColorStop(1, fur)
+
+    ctx.save()
+    ctx.translate(0, -bob)
+    if (layer === 'rear') {
+      drawPantherRear(u, time, gallop, fur, sheen)
+      ctx.restore()
+      return
+    }
+    // Front legs, glimpsed under the belly.
+    for (const side of [-1, 1]) {
+      roundRect(side * 16 * u - 6 * u, (-48 + side * gallop * 10) * u, 12 * u, 44 * u, 6 * u, fur)
+    }
+    // Head and ears, further ahead (so higher and smaller on screen).
+    ctx.fillStyle = fur
+    ctx.beginPath()
+    ctx.ellipse(0, -118 * u, 21 * u, 17 * u, 0, 0, Math.PI * 2)
+    ctx.fill()
+    for (const side of [-1, 1]) {
+      ctx.beginPath()
+      ctx.moveTo(side * 8 * u, -130 * u)
+      ctx.lineTo(side * 20 * u, -146 * u)
+      ctx.lineTo(side * 22 * u, -124 * u)
+      ctx.closePath()
+      ctx.fill()
+    }
+    // Back, narrowing towards the shoulders.
+    ctx.fillStyle = sheen
+    ctx.beginPath()
+    ctx.moveTo(-46 * u, -40 * u)
+    ctx.quadraticCurveTo(-40 * u, -112 * u, -16 * u, -116 * u)
+    ctx.lineTo(16 * u, -116 * u)
+    ctx.quadraticCurveTo(40 * u, -112 * u, 46 * u, -40 * u)
+    ctx.closePath()
+    ctx.fill()
+    ctx.restore()
+  }
+
+  function drawPantherRear(u, time, gallop, fur, sheen) {
+    // Hind legs, pushing alternately.
+    for (const side of [-1, 1]) {
+      const kick = side * gallop
+      roundRect(side * 30 * u - 9 * u, (-36 + kick * 12) * u, 18 * u, (36 - kick * 12) * u, 8 * u, fur)
+      roundRect(side * 30 * u - 11 * u, (-6 + kick * 12) * u, 22 * u, 8 * u, 4 * u, '#1c1726')
+    }
+    // Haunches.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = sheen
+      ctx.beginPath()
+      ctx.arc(side * 24 * u, -52 * u, 27 * u, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    // Tail, curling up and swaying.
+    const sway = Math.sin(time * 5) * 34 * u
+    ctx.strokeStyle = fur
+    ctx.lineCap = 'round'
+    ctx.lineWidth = 9 * u
+    ctx.beginPath()
+    ctx.moveTo(0, -60 * u)
+    ctx.bezierCurveTo(sway * 0.4, -20 * u, sway, -40 * u, sway * 1.3, -96 * u)
+    ctx.stroke()
+    ctx.lineCap = 'butt'
+    // Violet rim light, so the black cat reads against the night road.
+    ctx.strokeStyle = 'rgba(168,85,247,0.55)'
+    ctx.lineWidth = 2 * u
+    for (const side of [-1, 1]) {
+      ctx.beginPath()
+      ctx.arc(side * 24 * u, -52 * u, 27 * u, side < 0 ? Math.PI * 0.9 : Math.PI * 1.6, side < 0 ? Math.PI * 1.4 : Math.PI * 2.1)
+      ctx.stroke()
+    }
   }
 
   function drawHead(hx, hy, u) {
@@ -1289,7 +1387,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   }
 
   function drawSpeedLines(state, time) {
-    const intensity = state.boost ? 1 : Math.max(0, (state.speed - 24) / 10)
+    const intensity = state.panther ? 1.4 : state.boost ? 1 : Math.max(0, (state.speed - 24) / 10)
     if (intensity <= 0) return
     ctx.strokeStyle = `rgba(255,255,255,${0.25 * intensity})`
     ctx.lineWidth = 1.5
