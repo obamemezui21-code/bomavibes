@@ -12,6 +12,7 @@ import { inputClass, labelClass } from '../lib/formStyles.js'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Modal from '../components/ui/Modal.jsx'
 import Button from '../components/ui/Button.jsx'
+import StepForm from '../components/admin/StepForm.jsx'
 
 const AUDIENCES = [
   { value: 'all', label: 'Tous les utilisateurs' },
@@ -81,6 +82,8 @@ const EMPTY_EDIT_FORM = { title: '', description: '', ctaLabel: '', ctaLink: '' 
 function AdminNotifications() {
   const { showToast } = useToast()
   const [form, setForm] = useState(EMPTY_FORM)
+  // Bumped after a send (or Annuler) to restart the step form from step 1.
+  const [formKey, setFormKey] = useState(0)
   const [isConfirming, setIsConfirming] = useState(false)
   const [isSending, setIsSending] = useState(false)
   const [history, setHistory] = useState([])
@@ -124,6 +127,7 @@ function AdminNotifications() {
       })
       showToast(`Envoyé — ${result.pushSent} notification(s) push délivrée(s).`, 'success')
       setForm(EMPTY_FORM)
+      setFormKey((k) => k + 1)
       setIsConfirming(false)
       loadHistory()
     } catch (err) {
@@ -198,94 +202,123 @@ function AdminNotifications() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="glass-panel space-y-3 rounded-2xl p-4">
-        <div>
-          <label className={labelClass} htmlFor="notif-title">
-            Titre
-          </label>
-          <input
-            id="notif-title"
-            type="text"
-            value={form.title}
-            onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-            required
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="notif-message">
-            Message
-          </label>
-          <textarea
-            id="notif-message"
-            rows={4}
-            value={form.message}
-            onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
-            required
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor="notif-audience">
-            Audience
-          </label>
-          <select
-            id="notif-audience"
-            value={form.audience}
-            onChange={(e) => setForm((prev) => ({ ...prev, audience: e.target.value }))}
-            className={inputClass}
-          >
-            {AUDIENCES.map((a) => (
-              <option key={a.value} value={a.value}>
-                {a.label}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-ink-soft/50">
-            Seuls les appareils avec notifications activées reçoivent le push. L'annonce interne (ci-dessous) reste
-            visible pour tout le monde dans l'onglet Annonces, quelle que soit l'audience choisie ici.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClass} htmlFor="notif-cta-label">
-              Bouton (optionnel)
-            </label>
-            <input
-              id="notif-cta-label"
-              type="text"
-              value={form.ctaLabel}
-              onChange={(e) => setForm((prev) => ({ ...prev, ctaLabel: e.target.value }))}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass} htmlFor="notif-cta-link">
-              Lien du bouton
-            </label>
-            <input
-              id="notif-cta-link"
-              type="text"
-              value={form.ctaLink}
-              onChange={(e) => setForm((prev) => ({ ...prev, ctaLink: e.target.value }))}
-              className={inputClass}
-            />
-          </div>
-        </div>
-        <label className="flex items-center gap-2 text-sm text-ink/80">
-          <input
-            type="checkbox"
-            checked={form.publishAnnouncement}
-            onChange={(e) => setForm((prev) => ({ ...prev, publishAnnouncement: e.target.checked }))}
-            className="h-4 w-4 rounded border-ink/20"
-          />
-          Publier aussi comme annonce interne (onglet Annonces) + une publication dans le Feed
-        </label>
-        <Button type="submit" className="flex w-full items-center justify-center gap-2">
-          <Send size={15} strokeWidth={2.25} />
-          Envoyer
-        </Button>
-      </form>
+      <div className="glass-panel rounded-2xl p-4">
+        <StepForm
+          key={formKey}
+          title="Nouvelle notification"
+          onCancel={() => {
+            setForm(EMPTY_FORM)
+            setFormKey((k) => k + 1)
+          }}
+          onSubmit={handleSubmit}
+          submitLabel="Envoyer"
+          submitIcon={Send}
+          steps={[
+            {
+              title: 'Le message',
+              content: (
+                <>
+                  <div>
+                    <label className={labelClass} htmlFor="notif-title">
+                      Titre *
+                    </label>
+                    <input
+                      id="notif-title"
+                      type="text"
+                      value={form.title}
+                      onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="notif-message">
+                      Message *
+                    </label>
+                    <textarea
+                      id="notif-message"
+                      rows={4}
+                      value={form.message}
+                      onChange={(e) => setForm((prev) => ({ ...prev, message: e.target.value }))}
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                </>
+              ),
+            },
+            {
+              title: 'Audience',
+              hint: "Seuls les appareils avec notifications activées reçoivent le push. L'annonce interne reste visible pour tout le monde.",
+              content: (
+                <div className="space-y-2">
+                  {AUDIENCES.map((a) => (
+                    <button
+                      key={a.value}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, audience: a.value }))}
+                      className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm font-medium transition ${
+                        form.audience === a.value
+                          ? 'border-violet-500 bg-violet-500/10 text-violet-600'
+                          : 'border-ink/10 text-ink-soft/70 hover:bg-ink/5'
+                      }`}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              title: 'Bouton',
+              hint: 'Facultatif : un bouton qui ouvre un lien.',
+              content: (
+                <>
+                  <div>
+                    <label className={labelClass} htmlFor="notif-cta-label">
+                      Texte du bouton
+                    </label>
+                    <input
+                      id="notif-cta-label"
+                      type="text"
+                      value={form.ctaLabel}
+                      onChange={(e) => setForm((prev) => ({ ...prev, ctaLabel: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass} htmlFor="notif-cta-link">
+                      Lien du bouton
+                    </label>
+                    <input
+                      id="notif-cta-link"
+                      type="text"
+                      value={form.ctaLink}
+                      onChange={(e) => setForm((prev) => ({ ...prev, ctaLink: e.target.value }))}
+                      className={inputClass}
+                    />
+                  </div>
+                </>
+              ),
+            },
+            {
+              title: 'Diffusion',
+              hint: 'Dernière étape : un récapitulatif vous sera demandé avant l’envoi.',
+              content: (
+                <label className="flex items-start gap-2 text-sm text-ink/80">
+                  <input
+                    type="checkbox"
+                    checked={form.publishAnnouncement}
+                    onChange={(e) => setForm((prev) => ({ ...prev, publishAnnouncement: e.target.checked }))}
+                    className="mt-0.5 h-4 w-4 rounded border-ink/20"
+                  />
+                  Publier aussi comme annonce interne (onglet Annonces) + une publication dans le Feed
+                </label>
+              ),
+            },
+          ]}
+        />
+      </div>
 
       <h2 className="mb-3 mt-8 font-display text-base font-semibold text-ink">Historique</h2>
       {isHistoryLoading && <p className="py-6 text-center text-sm text-ink-soft/50">Chargement…</p>}

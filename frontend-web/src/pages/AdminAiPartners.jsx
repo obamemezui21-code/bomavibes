@@ -13,6 +13,7 @@ import { inputClass, labelClass } from '../lib/formStyles.js'
 import Modal from '../components/ui/Modal.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
+import StepForm from '../components/admin/StepForm.jsx'
 
 // Which page a partner appears on (backend aiPartnersController CATEGORIES).
 const CATEGORIES = [
@@ -293,175 +294,203 @@ function AdminAiPartners() {
       </div>
 
       {editingItem !== null && form && (
-        <Modal onClose={() => setEditingItem(null)} className="max-h-[85vh] max-w-lg overflow-y-auto text-left">
-          <h2 className="mb-4 font-display text-lg font-semibold text-ink">
-            {editingItem.id ? 'Modifier la plateforme' : 'Nouvelle plateforme'}
-          </h2>
-          <form onSubmit={handleSave} className="space-y-3">
-            <div>
-              <label className={labelClass} htmlFor="ai-categorie">
-                Rubrique
-              </label>
-              <select
-                id="ai-categorie"
-                value={form.categorie}
-                onChange={(e) => setForm((prev) => ({ ...prev, categorie: e.target.value }))}
-                className={inputClass}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label} ({c.page})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="ai-nom">
-                Nom *
-              </label>
-              <input
-                id="ai-nom"
-                type="text"
-                required
-                value={form.nom}
-                onChange={(e) => setForm((prev) => ({ ...prev, nom: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="ai-description">
-                Description
-              </label>
-              <textarea
-                id="ai-description"
-                rows={3}
-                value={form.description}
-                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="ai-ideal">
-                Idéal pour
-              </label>
-              <input
-                id="ai-ideal"
-                type="text"
-                placeholder="Ex : animer une photo, avatars qui parlent"
-                value={form.idealPour}
-                onChange={(e) => setForm((prev) => ({ ...prev, idealPour: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="ai-logo">
-                Logo
-              </label>
-              <div className="flex items-start gap-2">
-                {form.logoUrl ? (
-                  <img src={form.logoUrl} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-                ) : (
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-ink/6 text-ink-soft/30">
-                    <ImageIcon size={20} />
+        <Modal onClose={() => setEditingItem(null)} className="max-w-lg text-left">
+          <StepForm
+            title={editingItem.id ? 'Modifier la plateforme' : 'Nouvelle plateforme'}
+            isEditing={!!editingItem.id}
+            isSaving={isSaving}
+            onCancel={() => setEditingItem(null)}
+            onSubmit={handleSave}
+            steps={[
+              {
+                title: 'La plateforme',
+                hint: 'Sur quelle page elle apparaît, et son nom.',
+                content: (
+                  <>
+                    <div>
+                      <label className={labelClass} htmlFor="ai-categorie">
+                        Rubrique
+                      </label>
+                      <select
+                        id="ai-categorie"
+                        value={form.categorie}
+                        onChange={(e) => setForm((prev) => ({ ...prev, categorie: e.target.value }))}
+                        className={inputClass}
+                      >
+                        {CATEGORIES.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label} ({c.page})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass} htmlFor="ai-nom">
+                        Nom *
+                      </label>
+                      <input
+                        id="ai-nom"
+                        type="text"
+                        required
+                        value={form.nom}
+                        onChange={(e) => setForm((prev) => ({ ...prev, nom: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                  </>
+                ),
+              },
+              {
+                title: 'Présentation',
+                hint: 'Ce que les membres lisent sur la carte.',
+                content: (
+                  <>
+                    <div>
+                      <label className={labelClass} htmlFor="ai-description">
+                        Description
+                      </label>
+                      <textarea
+                        id="ai-description"
+                        rows={3}
+                        value={form.description}
+                        onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass} htmlFor="ai-ideal">
+                        Idéal pour
+                      </label>
+                      <input
+                        id="ai-ideal"
+                        type="text"
+                        placeholder={form.categorie === 'streaming' ? 'Ex : séries, films en famille' : 'Ex : animer une photo, avatars qui parlent'}
+                        value={form.idealPour}
+                        onChange={(e) => setForm((prev) => ({ ...prev, idealPour: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                  </>
+                ),
+              },
+              {
+                title: 'Logo',
+                hint: 'Un lien vers une image, ou un fichier depuis l’appareil.',
+                content: (
+                  <div className="flex items-start gap-3">
+                    {form.logoUrl ? (
+                      <img src={form.logoUrl} alt="" className="h-20 w-20 shrink-0 rounded-xl object-cover" />
+                    ) : (
+                      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-ink/6 text-ink-soft/30">
+                        <ImageIcon size={22} />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <input
+                        id="ai-logo"
+                        type="text"
+                        placeholder="URL du logo"
+                        value={form.logoUrl}
+                        onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={triggerLogoUpload}
+                        disabled={isUploadingLogo}
+                        className="flex items-center gap-1.5 rounded-full bg-ink/6 px-3 py-1.5 text-xs font-semibold text-ink-soft/70 transition hover:bg-ink/10 disabled:opacity-50"
+                      >
+                        <Upload size={13} strokeWidth={2.25} />
+                        {isUploadingLogo ? 'Envoi…' : 'Téléverser un logo'}
+                      </button>
+                    </div>
                   </div>
-                )}
-                <div className="flex-1 space-y-1.5">
-                  <input
-                    id="ai-logo"
-                    type="text"
-                    placeholder="URL du logo, ou téléverse un fichier"
-                    value={form.logoUrl}
-                    onChange={(e) => setForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
-                    className={inputClass}
-                  />
-                  <button
-                    type="button"
-                    onClick={triggerLogoUpload}
-                    disabled={isUploadingLogo}
-                    className="flex items-center gap-1.5 rounded-full bg-ink/6 px-3 py-1.5 text-xs font-semibold text-ink-soft/70 transition hover:bg-ink/10 disabled:opacity-50"
-                  >
-                    <Upload size={13} strokeWidth={2.25} />
-                    {isUploadingLogo ? 'Envoi…' : 'Téléverser un logo'}
-                  </button>
-                </div>
-              </div>
-              <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoFileChange} className="hidden" />
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="ai-lien">
-                Lien affilié *
-              </label>
-              <input
-                id="ai-lien"
-                type="text"
-                required
-                placeholder="https://..."
-                value={form.lienAffilie}
-                onChange={(e) => setForm((prev) => ({ ...prev, lienAffilie: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass} htmlFor="ai-prix">
-                  Prix à partir de
-                </label>
-                <input
-                  id="ai-prix"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0 = « Voir le prix »"
-                  value={form.prixAPartirDe}
-                  onChange={(e) => setForm((prev) => ({ ...prev, prixAPartirDe: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="ai-devise">
-                  Devise
-                </label>
-                <input
-                  id="ai-devise"
-                  type="text"
-                  value={form.devise}
-                  onChange={(e) => setForm((prev) => ({ ...prev, devise: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-            <div>
-              <label className={labelClass} htmlFor="ai-ordre">
-                Ordre d'affichage
-              </label>
-              <input
-                id="ai-ordre"
-                type="number"
-                value={form.ordre}
-                onChange={(e) => setForm((prev) => ({ ...prev, ordre: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
-            <label className="flex items-center gap-2 text-sm text-ink/80">
-              <input
-                type="checkbox"
-                checked={form.planGratuit}
-                onChange={(e) => setForm((prev) => ({ ...prev, planGratuit: e.target.checked }))}
-                className="h-4 w-4 rounded border-ink/20"
-              />
-              Plan gratuit disponible
-            </label>
-            <div className="flex gap-3 pt-2">
-              <Button type="button" variant="secondary" className="flex-1" onClick={() => setEditingItem(null)}>
-                Annuler
-              </Button>
-              <Button type="submit" className="flex-1" disabled={isSaving}>
-                {isSaving ? 'Enregistrement…' : 'Enregistrer'}
-              </Button>
-            </div>
-          </form>
+                ),
+              },
+              {
+                title: 'Lien et prix',
+                content: (
+                  <>
+                    <div>
+                      <label className={labelClass} htmlFor="ai-lien">
+                        Lien affilié *
+                      </label>
+                      <input
+                        id="ai-lien"
+                        type="text"
+                        required
+                        placeholder="https://..."
+                        value={form.lienAffilie}
+                        onChange={(e) => setForm((prev) => ({ ...prev, lienAffilie: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className={labelClass} htmlFor="ai-prix">
+                          Prix à partir de
+                        </label>
+                        <input
+                          id="ai-prix"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0 = « Voir le prix »"
+                          value={form.prixAPartirDe}
+                          onChange={(e) => setForm((prev) => ({ ...prev, prixAPartirDe: e.target.value }))}
+                          className={inputClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass} htmlFor="ai-devise">
+                          Devise
+                        </label>
+                        <input
+                          id="ai-devise"
+                          type="text"
+                          value={form.devise}
+                          onChange={(e) => setForm((prev) => ({ ...prev, devise: e.target.value }))}
+                          className={inputClass}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ),
+              },
+              {
+                title: 'Affichage',
+                hint: 'Dernière étape : vérifiez puis enregistrez.',
+                content: (
+                  <>
+                    <div>
+                      <label className={labelClass} htmlFor="ai-ordre">
+                        Ordre d'affichage
+                      </label>
+                      <input
+                        id="ai-ordre"
+                        type="number"
+                        value={form.ordre}
+                        onChange={(e) => setForm((prev) => ({ ...prev, ordre: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-ink/80">
+                      <input
+                        type="checkbox"
+                        checked={form.planGratuit}
+                        onChange={(e) => setForm((prev) => ({ ...prev, planGratuit: e.target.checked }))}
+                        className="h-4 w-4 rounded border-ink/20"
+                      />
+                      {form.categorie === 'streaming' ? 'Essai gratuit disponible' : 'Plan gratuit disponible'}
+                    </label>
+                  </>
+                ),
+              },
+            ]}
+          />
         </Modal>
       )}
+      <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoFileChange} className="hidden" />
 
       {deletingItem && (
         <ConfirmModal

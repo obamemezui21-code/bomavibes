@@ -14,6 +14,7 @@ import Modal from '../components/ui/Modal.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
 import LeafletMap from '../components/map/LeafletMap.jsx'
+import StepForm from '../components/admin/StepForm.jsx'
 
 // Mirrors backend/src/services/contentService.js's CONTENT_TYPES — the
 // backend is the source of truth for validation, this only drives the form.
@@ -114,6 +115,49 @@ const CONTENT_TYPE_CONFIG = {
       { key: 'instagramUrl', label: 'Lien Instagram', kind: 'text' },
     ],
   },
+}
+
+// The form, one short step at a time (StepForm) — field keys from
+// CONTENT_TYPE_CONFIG, then a last "Publication" step for the status.
+const CONTENT_STEPS = {
+  pages: [
+    { title: 'Titre et résumé', keys: ['title', 'summary'] },
+    { title: 'Contenu', keys: ['content'] },
+    { title: 'Image', keys: ['image'], hint: 'Facultatif.' },
+  ],
+  articles: [
+    { title: 'Titre et résumé', keys: ['title', 'summary'] },
+    { title: 'Contenu', keys: ['content'] },
+    { title: 'Image', keys: ['image'], hint: 'Facultatif.' },
+    { title: 'Classement', keys: ['category', 'tags'] },
+    { title: 'Référencement (SEO)', keys: ['seoTitle', 'seoDescription'], hint: 'Facultatif : ce que Google affiche.' },
+  ],
+  faqs: [
+    { title: 'Question et réponse', keys: ['question', 'answer'] },
+    { title: 'Classement', keys: ['category', 'order'] },
+  ],
+  banners: [
+    { title: 'Titre et description', keys: ['title', 'description'] },
+    { title: 'Image', keys: ['image'] },
+    { title: 'Bouton', keys: ['buttonLabel', 'buttonUrl'], hint: 'Facultatif.' },
+    { title: 'Emplacement et dates', keys: ['position', 'startDate', 'endDate'] },
+  ],
+  events: [
+    { title: 'L’essentiel', keys: ['title', 'category', 'date'] },
+    { title: 'Description', keys: ['description'] },
+    { title: 'Lieu et organisateur', keys: ['location', 'organizer'] },
+    { title: 'Image', keys: ['image'] },
+    { title: 'Billetterie', keys: ['price', 'capacity'] },
+    { title: 'Carte', keys: ['lat'], hint: 'Facultatif : un repère pour s’y rendre.' },
+  ],
+  venues: [
+    { title: 'Le lieu', keys: ['name', 'category'] },
+    { title: 'Description', keys: ['description'] },
+    { title: 'Adresse', keys: ['address', 'city'] },
+    { title: 'Position sur la carte', keys: ['lat'] },
+    { title: 'Photo', keys: ['image'] },
+    { title: 'Contact', keys: ['phone', 'instagramUrl'], hint: 'Facultatif.' },
+  ],
 }
 
 const STATUS_TABS = [
@@ -335,6 +379,105 @@ function AdminContent() {
     )
   }
 
+  // One form field, by kind (see CONTENT_TYPE_CONFIG).
+  function renderField(field) {
+    return (
+      <div key={field.key}>
+        <label className={labelClass} htmlFor={field.key}>
+          {field.label}
+          {field.required && ' *'}
+        </label>
+        {field.kind === 'textarea' ? (
+          <textarea
+            id={field.key}
+            rows={field.rows || 4}
+            value={form[field.key]}
+            onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+            required={field.required}
+            className={inputClass}
+          />
+        ) : field.kind === 'image' ? (
+          <div className="flex items-start gap-2">
+            {form[field.key] ? (
+              <img src={form[field.key]} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+            ) : (
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-ink/6 text-ink-soft/30">
+                <ImageIcon size={20} />
+              </div>
+            )}
+            <div className="flex-1 space-y-1.5">
+              <input
+                id={field.key}
+                type="text"
+                placeholder="URL de l'image, ou téléverse un fichier"
+                value={form[field.key]}
+                onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={() => triggerImageUpload(field.key)}
+                disabled={uploadingField === field.key}
+                className="flex items-center gap-1.5 rounded-full bg-ink/6 px-3 py-1.5 text-xs font-semibold text-ink-soft/70 transition hover:bg-ink/10 disabled:opacity-50"
+              >
+                <Upload size={13} strokeWidth={2.25} />
+                {uploadingField === field.key ? 'Envoi…' : 'Téléverser une image'}
+              </button>
+            </div>
+          </div>
+        ) : field.kind === 'geopoint' ? (
+          <>
+            <button
+              type="button"
+              onClick={() => handleUseCurrentLocation(field)}
+              disabled={locatingField === field.key}
+              className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-violet-500/10 py-2 text-xs font-semibold text-violet-600 transition hover:bg-violet-500/15 disabled:opacity-50"
+            >
+              <LocateFixed size={14} strokeWidth={2.25} />
+              {locatingField === field.key ? 'Localisation…' : 'Utiliser ma position actuelle'}
+            </button>
+            <LeafletMap
+              height="220px"
+              zoom={form[field.key] != null ? 14 : 12}
+              center={form[field.key] != null ? [form[field.key], form[field.lngKey]] : undefined}
+              draggableMarker={form[field.key] != null ? { lat: form[field.key], lng: form[field.lngKey] } : null}
+              onMapClick={({ lat, lng }) => setForm((prev) => ({ ...prev, [field.key]: lat, [field.lngKey]: lng }))}
+            />
+            <p className="mt-1 text-xs text-ink-soft/50">
+              {form[field.key] != null
+                ? `Repère placé — ${form[field.key].toFixed(5)}, ${form[field.lngKey].toFixed(5)} (cliquez ou faites glisser pour ajuster)`
+                : 'Utilise ta position ou clique sur la carte pour placer un repère.'}
+            </p>
+          </>
+        ) : field.kind === 'select' ? (
+          <select
+            id={field.key}
+            value={form[field.key]}
+            onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+            required={field.required}
+            className={inputClass}
+          >
+            <option value="">—</option>
+            {field.options.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            id={field.key}
+            type={field.kind === 'number' ? 'number' : field.kind === 'date' ? 'date' : 'text'}
+            value={form[field.key]}
+            onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
+            required={field.required}
+            className={inputClass}
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 desktop:py-8">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -404,133 +547,58 @@ function AdminContent() {
       </div>
 
       {editingItem !== null && form && (
-        <Modal onClose={() => setEditingItem(null)} className="max-w-lg max-h-[85vh] overflow-y-auto text-left">
-          <h2 className="mb-4 font-display text-lg font-semibold text-ink">
-            {editingItem.id ? `Modifier ${config.singular}` : `Nouveau — ${config.singular}`}
-          </h2>
-          <form onSubmit={handleSave} className="space-y-3">
-            {config.fields.map((field) => (
-              <div key={field.key}>
-                <label className={labelClass} htmlFor={field.key}>
-                  {field.label}
-                  {field.required && ' *'}
-                </label>
-                {field.kind === 'textarea' ? (
-                  <textarea
-                    id={field.key}
-                    rows={field.rows || 4}
-                    value={form[field.key]}
-                    onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    required={field.required}
-                    className={inputClass}
-                  />
-                ) : field.kind === 'image' ? (
-                  <div className="flex items-start gap-2">
-                    {form[field.key] ? (
-                      <img src={form[field.key]} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-                    ) : (
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-ink/6 text-ink-soft/30">
-                        <ImageIcon size={20} />
-                      </div>
-                    )}
-                    <div className="flex-1 space-y-1.5">
-                      <input
-                        id={field.key}
-                        type="text"
-                        placeholder="URL de l'image, ou téléverse un fichier"
-                        value={form[field.key]}
-                        onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                        className={inputClass}
-                      />
+        <Modal onClose={() => setEditingItem(null)} className="max-w-lg text-left">
+          <StepForm
+            title={editingItem.id ? `Modifier ${config.singular}` : `Nouveau — ${config.singular}`}
+            isEditing={!!editingItem.id}
+            isSaving={isSaving}
+            onCancel={() => setEditingItem(null)}
+            onSubmit={handleSave}
+            steps={[
+              ...CONTENT_STEPS[type].map((s) => {
+                const fields = s.keys.map((k) => config.fields.find((f) => f.key === k))
+                return {
+                  title: s.title,
+                  hint: s.hint,
+                  content: fields.map(renderField),
+                  validate: () =>
+                    fields.some((f) => f.kind === 'geopoint' && f.required && form[f.key] == null)
+                      ? 'Placez le repère sur la carte (ou utilisez votre position).'
+                      : null,
+                }
+              }),
+              {
+                title: 'Publication',
+                hint: 'Dernière étape : choisissez le statut puis enregistrez.',
+                content: (
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'draft', label: 'Brouillon', hint: 'Invisible' },
+                      { value: 'published', label: 'Publié', hint: 'Visible par tous' },
+                      { value: 'archived', label: 'Archivé', hint: 'Retiré' },
+                    ].map((s) => (
                       <button
+                        key={s.value}
                         type="button"
-                        onClick={() => triggerImageUpload(field.key)}
-                        disabled={uploadingField === field.key}
-                        className="flex items-center gap-1.5 rounded-full bg-ink/6 px-3 py-1.5 text-xs font-semibold text-ink-soft/70 transition hover:bg-ink/10 disabled:opacity-50"
+                        onClick={() => setForm((prev) => ({ ...prev, status: s.value }))}
+                        className={`rounded-xl border px-2 py-3 text-center transition ${
+                          form.status === s.value
+                            ? 'border-violet-500 bg-violet-500/10 text-violet-600'
+                            : 'border-ink/10 text-ink-soft/70 hover:bg-ink/5'
+                        }`}
                       >
-                        <Upload size={13} strokeWidth={2.25} />
-                        {uploadingField === field.key ? 'Envoi…' : 'Téléverser une image'}
+                        <span className="block text-sm font-semibold">{s.label}</span>
+                        <span className="block text-[11px] opacity-70">{s.hint}</span>
                       </button>
-                    </div>
-                  </div>
-                ) : field.kind === 'geopoint' ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleUseCurrentLocation(field)}
-                      disabled={locatingField === field.key}
-                      className="mb-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-violet-500/10 py-2 text-xs font-semibold text-violet-600 transition hover:bg-violet-500/15 disabled:opacity-50"
-                    >
-                      <LocateFixed size={14} strokeWidth={2.25} />
-                      {locatingField === field.key ? 'Localisation…' : 'Utiliser ma position actuelle'}
-                    </button>
-                    <LeafletMap
-                      height="220px"
-                      zoom={form[field.key] != null ? 14 : 12}
-                      center={form[field.key] != null ? [form[field.key], form[field.lngKey]] : undefined}
-                      draggableMarker={form[field.key] != null ? { lat: form[field.key], lng: form[field.lngKey] } : null}
-                      onMapClick={({ lat, lng }) => setForm((prev) => ({ ...prev, [field.key]: lat, [field.lngKey]: lng }))}
-                    />
-                    <p className="mt-1 text-xs text-ink-soft/50">
-                      {form[field.key] != null
-                        ? `Repère placé — ${form[field.key].toFixed(5)}, ${form[field.lngKey].toFixed(5)} (cliquez ou faites glisser pour ajuster)`
-                        : 'Utilise ta position ou clique sur la carte pour placer un repère.'}
-                    </p>
-                  </>
-                ) : field.kind === 'select' ? (
-                  <select
-                    id={field.key}
-                    value={form[field.key]}
-                    onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    required={field.required}
-                    className={inputClass}
-                  >
-                    <option value="">—</option>
-                    {field.options.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
                     ))}
-                  </select>
-                ) : (
-                  <input
-                    id={field.key}
-                    type={field.kind === 'number' ? 'number' : field.kind === 'date' ? 'date' : 'text'}
-                    value={form[field.key]}
-                    onChange={(e) => setForm((prev) => ({ ...prev, [field.key]: e.target.value }))}
-                    required={field.required}
-                    className={inputClass}
-                  />
-                )}
-              </div>
-            ))}
-            <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageFileChange} className="hidden" />
-            <div>
-              <label className={labelClass} htmlFor="status">
-                Statut
-              </label>
-              <select
-                id="status"
-                value={form.status}
-                onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}
-                className={inputClass}
-              >
-                <option value="draft">Brouillon</option>
-                <option value="published">Publié</option>
-                <option value="archived">Archivé</option>
-              </select>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <Button type="button" variant="secondary" className="flex-1" onClick={() => setEditingItem(null)}>
-                Annuler
-              </Button>
-              <Button type="submit" className="flex-1" disabled={isSaving}>
-                {isSaving ? 'Enregistrement…' : 'Enregistrer'}
-              </Button>
-            </div>
-          </form>
+                  </div>
+                ),
+              },
+            ]}
+          />
         </Modal>
       )}
+      <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageFileChange} className="hidden" />
 
       {deletingItem && (
         <ConfirmModal
