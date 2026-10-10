@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, Clapperboard, Gamepad2, LayoutGrid, MapPin, Menu, Moon, ShieldCheck, Sparkles, Sun } from 'lucide-react'
+import { Bell, Bike, Clapperboard, Gamepad2, LayoutGrid, MapPin, Menu, Moon, ShieldCheck, Sparkles, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -58,6 +58,7 @@ function AppTopBar() {
     { to: '/studio-ia', label: 'Studio IA', icon: Sparkles, tint: 'bg-sky-500/15 text-sky-500 hover:bg-sky-500/25' },
     { to: '/cine', label: 'Ciné & Séries', icon: Clapperboard, tint: 'bg-rose-500/15 text-rose-500 hover:bg-rose-500/25' },
     { to: '/ngori-run', label: 'Ngori Run', icon: Gamepad2, tint: 'bg-gold/20 text-amber-600 hover:bg-gold/30 dark:text-gold' },
+    { to: '/moto-boma', label: 'Moto Boma', icon: Bike, tint: 'bg-cyan-500/15 text-cyan-600 hover:bg-cyan-500/25 dark:text-cyan-300' },
   ]
 
   return (

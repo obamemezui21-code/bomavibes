@@ -1528,7 +1528,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     const sliding = state.slide > 0 && state.slide < SLIDE_TICKS
     runnerGroup.position.set(x, 0, RUNNER_Z)
     // On the motorbike its picture replaces the runner, leaning into lane changes.
-    const riding = !!state.moto && motoLoaded
+    const riding = !!(state.moto || state.riding) && motoLoaded
     motoSprite.visible = riding
     runnerSprite.visible = sheetLoaded && !riding
     runnerFallback.visible = !sheetLoaded && !riding

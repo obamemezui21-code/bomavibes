@@ -42,6 +42,15 @@ const NGORI_RUN = {
     minTimeRatio: 0.9,
 };
 
+// MOTO BOMA, the motorbike race: its own daily cap, same safeguards.
+const MOTO_BOMA = {
+    dailyCap: 5,
+    maxStartsPerDay: 40,
+    minStartIntervalMs: 3000,
+    maxRunMs: 15 * 60 * 1000,
+    minTimeRatio: 0.9,
+};
+
 // 🔥 badge shown on the profile for a login streak of at least N days.
 const STREAK_BADGES = [30, 14, 7, 3];
 
@@ -86,4 +95,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };

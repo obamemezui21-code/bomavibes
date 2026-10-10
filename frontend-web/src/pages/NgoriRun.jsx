@@ -15,6 +15,8 @@ import { fetchPublishedVenues } from '../firebase/venues.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
+import motoKevin from '../assets/game/moto-kevin.webp'
+import motoAicha from '../assets/game/moto-aicha.webp'
 
 const BUTTONS_KEY = 'ngoriRun.buttons'
 const RUNNER_KEY = 'ngoriRun.runner'
@@ -588,6 +590,20 @@ function NgoriRun() {
             </label>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => navigate('/moto-boma')}
+          className="mt-4 flex w-full items-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-[#12081f] to-[#3b0f5c] p-3 text-left text-white shadow-md transition active:scale-[0.98]"
+        >
+          <img src={runner === 'woman' ? motoAicha : motoKevin} alt="" className="h-16 w-10 shrink-0 object-contain" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-bold uppercase tracking-wide text-cyan-300">Nouveau jeu</span>
+            <span className="block font-display text-base font-bold">Moto Boma</span>
+            <span className="block text-xs text-white/70">Course de moto dans Libreville : nitro, taxis et chrono.</span>
+          </span>
+          <Play size={18} fill="currentColor" className="shrink-0 text-cyan-300" />
+        </button>
 
         <div className="mt-6 grid grid-cols-4 gap-1 rounded-2xl bg-surface p-1">
           {TABS.map((t) => (

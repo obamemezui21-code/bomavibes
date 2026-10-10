@@ -66,6 +66,7 @@ export const POWERUP_STYLE = {
   multiplier: { color: '#a855f7', icon: '×2' },
   boost: { color: '#f59e0b', icon: '⚡' },
   moto: { color: '#ec4899', icon: '🏍️' },
+  nitro: { color: '#22d3ee', icon: '🔥' }, // MOTO BOMA
 }
 // The runner on the motorbike (power-up), seen from behind: one picture per
 // hero, bike and rider together, about MOTO_HEIGHT_CM tall.
@@ -1217,8 +1218,9 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.arc(0, -90 * u, 120 * u, 0, Math.PI * 2)
       ctx.stroke()
     }
-    // On the motorbike: its picture (bike and rider) replaces the runner.
-    if (state.moto && motoReady()) {
+    // On the motorbike (NGORI RUN power-up, or a MOTO BOMA race: state.riding):
+    // its picture (bike and rider) replaces the runner.
+    if ((state.moto || state.riding) && motoReady()) {
       const h = MOTO_HEIGHT_CM * u
       const w = (h * motoImage.naturalWidth) / motoImage.naturalHeight
       ctx.rotate(motoTilt({ ...view, laneTarget: state.lane }))
