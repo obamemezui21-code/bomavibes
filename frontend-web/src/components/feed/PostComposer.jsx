@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Ban, Clapperboard, HelpCircle, Image as ImageIcon, MessageSquareText, X } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { useFeed } from '../../context/FeedContext.jsx'
 import { useToast } from '../../context/ToastContext.jsx'
 import { uploadFeedPhoto, uploadFeedVideo } from '../../firebase/feed.js'
 import { readVideoFile } from '../../lib/videoFile.js'
 import { canTrimVideo, trimVideo } from '../../lib/videoTrim.js'
 import VideoTrimmer from './VideoTrimmer.jsx'
+import ProfileLaunchOverlay from '../ProfileLaunchOverlay.jsx'
 import { MAX_BACKGROUND_TEXT, POST_BACKGROUNDS, POST_FONTS, loadPostFonts, postBackground, postFont } from '../../lib/postStyles.js'
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024
@@ -18,6 +21,10 @@ const MAX_VIDEO_BYTES = 50 * 1024 * 1024
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm']
 const MAX_TEXT_LENGTH = 1000
 
+// Rotating lines on the publishing animation (ProfileLaunchOverlay).
+const PUBLISH_MESSAGES = ['On prépare ta publication…', 'On partage tes vibes…', 'Presque en ligne…']
+const VIDEO_MESSAGES = ['Envoi de ta vidéo…', 'On prépare la lecture…', 'Encore un instant…']
+
 const TYPES = [
   { id: 'text', label: 'Texte', icon: MessageSquareText },
   { id: 'photo', label: 'Photo', icon: ImageIcon },
@@ -27,6 +34,7 @@ const TYPES = [
 
 function PostComposer({ onClose, initialType = 'text' }) {
   const { createPost } = useFeed()
+  const { publicProfile } = useAuth()
   const { showToast } = useToast()
   const fileInputRef = useRef(null)
   const [type, setType] = useState(initialType)
@@ -40,6 +48,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
   const [trimProgress, setTrimProgress] = useState(null)
   const videoInputRef = useRef(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isPublished, setIsPublished] = useState(false)
   // Text posts only: coloured background + font (preset ids, see postStyles.js)
   const [background, setBackground] = useState(null)
   const [font, setFont] = useState('normal')
@@ -142,49 +151,62 @@ function PostComposer({ onClose, initialType = 'text' }) {
         font: activeFont && activeFont.id !== 'normal' ? activeFont.id : null,
         ...videoFields,
       })
-      showToast('Publication envoyée.', 'success')
-      onClose()
+      // A short celebration on the animation, then back to the feed.
+      setIsPublished(true)
+      setTimeout(() => {
+        showToast('Publication envoyée.', 'success')
+        onClose()
+      }, 1100)
     } catch (err) {
       showToast(type === 'video' && err?.message ? err.message : 'Impossible de publier, réessayez.', 'error')
+      setIsSubmitting(false)
     } finally {
       setTrimProgress(null)
-      setIsSubmitting(false)
     }
   }
 
+  // Not while publishing: the post is on its way.
+  function close() {
+    if (!isSubmitting) onClose()
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm md:items-center md:p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-6" onClick={close}>
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 40 }}
         transition={{ type: 'spring', stiffness: 320, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
-        className="glass-panel w-full max-w-lg rounded-t-[28px] p-5 md:rounded-[28px]"
+        className="max-h-[92svh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl bg-white px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-2 text-ink shadow-2xl dark:bg-surface-tint sm:rounded-3xl sm:pt-5"
       >
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-ink/15 sm:hidden" />
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold text-ink">Créer une publication</h2>
+          <h2 className="font-display text-xl font-semibold text-ink">Créer une publication</h2>
           <button
             type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-ink-soft/60 hover:bg-ink/10"
+            onClick={close}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-ink/70 transition hover:bg-ink/5"
             aria-label="Fermer"
           >
-            <X size={16} strokeWidth={2.25} />
+            <X size={18} />
           </button>
         </div>
 
-        <div className="mt-4 flex gap-1.5">
+        <div className="mt-4 grid grid-cols-4 gap-1 rounded-2xl bg-surface-soft p-1">
           {TYPES.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setType(t.id)}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                type === t.id ? 'border-violet-400 bg-violet-500/15 text-violet-600' : 'border-ink/12 text-ink-soft/60 hover:bg-ink/5'
+              aria-pressed={type === t.id}
+              className={`flex flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-semibold transition ${
+                type === t.id
+                  ? 'bg-white text-violet-600 shadow-sm dark:bg-ink/10 dark:text-violet-300'
+                  : 'text-ink-soft/60 hover:text-ink'
               }`}
             >
-              <t.icon size={14} strokeWidth={2.25} />
+              <t.icon size={18} strokeWidth={2.25} />
               {t.label}
             </button>
           ))}
@@ -220,7 +242,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
                 ? `min-h-[200px] w-full resize-none rounded-2xl border-0 px-6 py-8 text-center outline-none placeholder:text-current placeholder:opacity-60 focus:ring-4 focus:ring-violet-400/25 ${
                     text.length <= 60 ? 'text-[26px] leading-tight' : text.length <= 120 ? 'text-[22px] leading-snug' : 'text-lg leading-snug'
                   }`
-                : `w-full resize-none rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06] ${
+                : `w-full resize-none rounded-2xl border border-ink/12 bg-ink/[0.03] px-4 py-3 text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06] ${
                     activeFont && activeFont.id !== 'normal' ? 'text-[17px]' : 'text-sm'
                   }`
             }
@@ -310,9 +332,9 @@ function PostComposer({ onClose, initialType = 'text' }) {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink/15 py-8 text-sm font-medium text-ink-soft/60 transition hover:border-violet-400 hover:text-violet-600"
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-violet-400/40 bg-violet-500/[0.04] py-8 text-sm font-semibold text-violet-600 transition hover:border-violet-400 hover:bg-violet-500/[0.08] dark:text-violet-300"
                 >
-                  <ImageIcon size={22} strokeWidth={1.75} />
+                  <ImageIcon size={24} strokeWidth={1.75} />
                   Choisir une photo
                 </button>
               )}
@@ -375,11 +397,11 @@ function PostComposer({ onClose, initialType = 'text' }) {
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
                   disabled={isReadingVideo}
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-ink/15 py-8 text-sm font-medium text-ink-soft/60 transition hover:border-violet-400 hover:text-violet-600 disabled:opacity-60"
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-violet-400/40 bg-violet-500/[0.04] py-8 text-sm font-semibold text-violet-600 transition hover:border-violet-400 hover:bg-violet-500/[0.08] disabled:opacity-60 dark:text-violet-300"
                 >
-                  <Clapperboard size={22} strokeWidth={1.75} />
+                  <Clapperboard size={24} strokeWidth={1.75} />
                   {isReadingVideo ? 'Lecture de la vidéo…' : 'Choisir une vidéo'}
-                  <span className="text-[11px] font-normal">Plus longue ? Vous choisirez les 60 secondes à publier.</span>
+                  <span className="text-[11px] font-normal text-ink-soft/60">Plus longue ? Vous choisirez les 60 secondes à publier.</span>
                 </button>
               )}
             </div>
@@ -388,7 +410,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
-            className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             {isSubmitting
               ? type === 'video'
@@ -400,6 +422,23 @@ function PostComposer({ onClose, initialType = 'text' }) {
           </button>
         </form>
       </motion.div>
+      {createPortal(
+        <AnimatePresence>
+          {isSubmitting && (
+            <div key="publishing" className="relative z-[120]">
+              <ProfileLaunchOverlay
+                photoUrl={photoPreview || publicProfile?.photos?.[0]}
+                done={isPublished}
+                messages={type === 'video' ? VIDEO_MESSAGES : PUBLISH_MESSAGES}
+                status={trimProgress !== null ? `Découpage de la vidéo… ${Math.round(trimProgress * 100)} %` : null}
+                doneTitle="C’est publié ! 🎉"
+                doneSubtitle="Ta publication est en ligne"
+              />
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   )
 }

@@ -27,18 +27,28 @@ function makeBurst() {
   })
 }
 
-// Full-screen, centred animation shown while the onboarding profile is saved.
-// `done` switches it to a short celebration before the caller navigates away.
-function ProfileLaunchOverlay({ photoUrl, firstName, done }) {
+// Full-screen, centred animation shown while something takes a moment: the
+// onboarding profile being saved, a post being published… `done` switches
+// it to a short celebration before the caller moves on. `messages` rotate
+// while waiting, unless `status` (e.g. a progress line) is given.
+function ProfileLaunchOverlay({
+  photoUrl,
+  firstName,
+  done,
+  messages = MESSAGES,
+  status = null,
+  doneTitle = null,
+  doneSubtitle = 'Bienvenue sur BomaVibes',
+}) {
   const reduceMotion = useReducedMotion()
   const [messageIndex, setMessageIndex] = useState(0)
   const [burst] = useState(makeBurst)
 
   useEffect(() => {
     if (done) return undefined
-    const id = setInterval(() => setMessageIndex((i) => (i + 1) % MESSAGES.length), 1600)
+    const id = setInterval(() => setMessageIndex((i) => (i + 1) % messages.length), 1600)
     return () => clearInterval(id)
-  }, [done])
+  }, [done, messages.length])
 
   return (
     <motion.div
@@ -152,19 +162,21 @@ function ProfileLaunchOverlay({ photoUrl, firstName, done }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 18 }}
             >
-              <p className="text-2xl font-bold text-white">C&apos;est parti{firstName ? `, ${firstName}` : ''} ! 🎉</p>
-              <p className="mt-1 text-sm text-white/70">Bienvenue sur BomaVibes</p>
+              <p className="text-2xl font-bold text-white">
+                {doneTitle || <>C&apos;est parti{firstName ? `, ${firstName}` : ''} ! 🎉</>}
+              </p>
+              {doneSubtitle && <p className="mt-1 text-sm text-white/70">{doneSubtitle}</p>}
             </motion.div>
           ) : (
             <motion.p
-              key={messageIndex}
+              key={status ?? messageIndex}
               className="text-lg font-semibold text-white"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
             >
-              {MESSAGES[messageIndex]}
+              {status ?? messages[messageIndex % messages.length]}
             </motion.p>
           )}
         </AnimatePresence>
