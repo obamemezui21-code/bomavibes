@@ -37,3 +37,19 @@ export function getMotoLeaderboard(course) {
 export function getMyMotoStats() {
   return api('/api/moto-boma/me')
 }
+
+// Ghost duels between matches (see motoBomaController.js).
+// → { challengeId } — posts the challenge card in the chat.
+export function createMotoChallenge(raceId, matchId, runner) {
+  return api('/api/moto-boma/challenges', { method: 'POST', body: JSON.stringify({ raceId, matchId, runner }) })
+}
+
+// → { id, mine, fromName, toName, course, runner, finishTick, status, opponentTicks, winner: 'me'|'them'|'draw'|null }
+export function getMotoChallenge(id) {
+  return api(`/api/moto-boma/challenges/${encodeURIComponent(id)}`)
+}
+
+// → { raceId, seed, course, ghost: { inputs, runner, name, finishTick } } — one attempt.
+export function acceptMotoChallenge(id) {
+  return api(`/api/moto-boma/challenges/${encodeURIComponent(id)}/accept`, { method: 'POST' })
+}

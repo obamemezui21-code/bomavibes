@@ -265,6 +265,16 @@ export function validateInputs(inputs, endTick) {
   return true
 }
 
+// Gestures as a compact string, to keep a race for duels: "0R,14S,90N".
+export function encodeInputs(inputs) {
+  return inputs.map(([tick, action]) => `${tick}${action}`).join(',')
+}
+
+export function decodeInputs(text) {
+  if (!text) return []
+  return text.split(',').map((entry) => [Number(entry.slice(0, -1)), entry.slice(-1)])
+}
+
 export function simulateRace(seed, courseId, inputs, endTick) {
   const state = createRace(seed, courseId)
   let i = 0

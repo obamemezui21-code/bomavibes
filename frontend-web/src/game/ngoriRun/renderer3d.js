@@ -596,6 +596,55 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   motoSprite.visible = false
   motoSprite.renderOrder = 5
   runnerGroup.add(motoSprite)
+
+  // MOTO BOMA duel: the challenger's replayed race, as a see-through bike
+  // with their first name above it.
+  const ghostMats = Object.fromEntries(
+    Object.entries(MOTO_SPRITES).map(([id, src]) => {
+      const mat = keep(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.5, depthWrite: false, fog: false }))
+      mat.map = load(src, (tex) => (mat.userData.aspect = tex.image.naturalWidth / tex.image.naturalHeight))
+      return [id, mat]
+    }),
+  )
+  const ghostSprite = new THREE.Mesh(keep(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0)), ghostMats.man)
+  ghostSprite.visible = false
+  ghostSprite.renderOrder = 4
+  scene.add(ghostSprite)
+  const ghostLabel = new THREE.Sprite(keep(new THREE.SpriteMaterial({ transparent: true, depthTest: false, fog: false })))
+  ghostLabel.renderOrder = 16
+  ghostLabel.visible = false
+  scene.add(ghostLabel)
+  let ghostLabelName = null
+
+  function updateGhost(ghost) {
+    const mat = ghost && (ghostMats[ghost.runner] || ghostMats.man)
+    const shown = !!mat?.userData.aspect
+    ghostSprite.visible = shown
+    ghostLabel.visible = shown
+    if (!shown) return
+    ghostSprite.material = mat
+    const h = MOTO_HEIGHT_CM * M
+    ghostSprite.scale.set(h * mat.userData.aspect, h, 1)
+    ghostSprite.position.set((ghost.lane - 1) * LANE_W, 0, RUNNER_Z - ghost.zr * M)
+    ghostSprite.quaternion.copy(camera.quaternion)
+    if (ghostLabelName !== ghost.name) {
+      ghostLabelName = ghost.name
+      ghostLabel.material.map?.dispose()
+      ghostLabel.material.map = paint(512, 96, (ctx, w, hh) => {
+        ctx.font = '800 56px system-ui, sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.lineWidth = 8
+        ctx.strokeStyle = 'rgba(0,0,0,0.45)'
+        ctx.strokeText(`👻 ${ghost.name}`, w / 2, hh / 2)
+        ctx.fillStyle = '#67e8f9'
+        ctx.fillText(`👻 ${ghost.name}`, w / 2, hh / 2)
+      })
+      ghostLabel.material.needsUpdate = true
+    }
+    ghostLabel.scale.set(1.6, 0.3, 1)
+    ghostLabel.position.set(ghostSprite.position.x, h + 0.25, ghostSprite.position.z)
+  }
   const timesTwo = new THREE.Sprite(
     keep(
       new THREE.SpriteMaterial({
@@ -1700,6 +1749,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     updateScenery(view.dist, view.time)
     updateItems(state, view)
     updateRunner(state, view)
+    updateGhost(state.ghost)
     updatePopups(now)
     updateImpact(now, view.dt)
     sweep()

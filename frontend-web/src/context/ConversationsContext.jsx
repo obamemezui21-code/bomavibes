@@ -242,6 +242,7 @@ export function ConversationsProvider({ children }) {
             call: data.call || null,
             post: data.post || null,
             venue: data.venue || null,
+            challenge: data.challenge || null,
             reactions: data.reactions || null,
             time: formatTime(date),
             date,

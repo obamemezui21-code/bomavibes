@@ -1,10 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Flag, Play, Trophy, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, Flag, Play, Swords, Trophy, Volume2, VolumeX, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { finishMotoRace, getMotoLeaderboard, getMyMotoStats, startMotoRace } from '../firebase/motoBoma.js'
+import { useConversations } from '../context/ConversationsContext.jsx'
+import {
+  acceptMotoChallenge,
+  createMotoChallenge,
+  finishMotoRace,
+  getMotoChallenge,
+  getMotoLeaderboard,
+  getMyMotoStats,
+  startMotoRace,
+} from '../firebase/motoBoma.js'
 import { COURSES, DEFAULT_COURSE, MEDAL_BONUS } from '../../../shared/moto-boma/engine.mjs'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
@@ -95,9 +104,16 @@ function Leaderboard({ course, refreshKey }) {
   )
 }
 
-function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, hero }) {
+const DUEL_TEXT = {
+  me: (name) => `🏆 Tu as battu ${name} !`,
+  them: (name) => `😅 ${name} reste devant… revanche ?`,
+  draw: (name) => `🤝 Égalité parfaite avec ${name} !`,
+}
+
+function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, onChallenge, hero }) {
   const r = outcome?.result || local
   const medal = r.medal
+  const duel = outcome?.duel
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -120,6 +136,15 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, h
               ? 'Pas de médaille cette fois : vise la nitro et évite les taxis !'
               : `${r.distance.toLocaleString('fr-FR')} m parcourus`}
         </p>
+        {duel && (
+          <div className="mt-3 rounded-2xl bg-cyan-400/15 p-3 ring-1 ring-cyan-300/40">
+            <p className="font-display text-base font-bold text-cyan-100">{DUEL_TEXT[duel.outcome](duel.theirName)}</p>
+            <p className="mt-0.5 text-xs text-white/70 tabular-nums">
+              Son temps : {formatTicks(duel.theirTicks)}
+              {duel.bonus ? `· +${duel.bonus} Ngori pour ${duel.outcome === 'me' ? 'toi' : duel.theirName}` : ''}
+            </p>
+          </div>
+        )}
         {outcome?.newBest && (
           <p className="mt-2">
             <span className="rounded-full bg-gold/20 px-3 py-1 text-xs font-bold text-amber-200">🏆 Nouveau record perso !</span>
@@ -171,9 +196,67 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, h
         >
           <Play size={16} fill="currentColor" /> Nouvelle course
         </button>
+        {onChallenge && (
+          <button
+            type="button"
+            onClick={onChallenge}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-sky-500 py-3 text-sm font-bold text-white"
+          >
+            <Swords size={16} /> Défier un match avec ce temps
+          </button>
+        )}
         <button type="button" onClick={onClose} className="mt-2 w-full rounded-full border border-white/25 py-2.5 text-sm font-semibold">
           Fermer
         </button>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// Pick a match to send the race to as a ghost duel.
+function ChallengePicker({ onPick, onClose, sending }) {
+  const { conversations } = useConversations()
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 sm:items-center sm:p-6"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ y: 40 }}
+        animate={{ y: 0 }}
+        exit={{ y: 40 }}
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[80svh] w-full max-w-md flex-col rounded-t-3xl bg-white pb-[env(safe-area-inset-bottom)] text-ink shadow-2xl dark:bg-surface-tint sm:rounded-3xl"
+      >
+        <div className="flex items-center gap-2 px-5 pb-2 pt-4">
+          <p className="flex-1 font-display text-lg font-semibold">Qui veux-tu défier ?</p>
+          <button type="button" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-ink/5" aria-label="Fermer">
+            <X size={18} />
+          </button>
+        </div>
+        <p className="px-5 text-xs text-ink-soft/70">Ton match recevra le défi dans votre conversation et courra contre ton fantôme, sur le même parcours.</p>
+        <ul className="mt-3 min-h-0 flex-1 overflow-y-auto px-3 pb-4">
+          {conversations.length === 0 && (
+            <li className="px-3 py-8 text-center text-sm text-ink-soft/60">Pas encore de match : likez des profils dans Découvrir !</li>
+          )}
+          {conversations.map((c) => (
+            <li key={c.id}>
+              <button
+                type="button"
+                disabled={sending}
+                onClick={() => onPick(c)}
+                className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-ink/5 disabled:opacity-50"
+              >
+                <img src={c.profile.photo} alt="" className="h-11 w-11 rounded-full object-cover" />
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold">{c.profile.firstName}</span>
+                <Swords size={16} className="text-cyan-500" />
+              </button>
+            </li>
+          ))}
+        </ul>
       </motion.div>
     </motion.div>
   )
@@ -183,6 +266,8 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, h
 // after replaying the race (see firebase/motoBoma.js).
 function MotoBoma() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const challengeId = searchParams.get('defi')
   const { profile: account } = useAuth()
   const { showToast } = useToast()
   const [audio] = useState(() => createGameAudio(loadMuted()))
@@ -198,6 +283,9 @@ function MotoBoma() {
   const [saveError, setSaveError] = useState(null)
   const [stats, setStats] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [challenge, setChallenge] = useState(null) // the duel opened from the chat (?defi=)
+  const [picking, setPicking] = useState(false)
+  const [sending, setSending] = useState(false)
   const balance = account?.ngori || 0
   const hero = HEROES.find((h) => h.id === runner) || HEROES[0]
   const info = COURSES[course]
@@ -207,6 +295,16 @@ function MotoBoma() {
   useEffect(() => {
     if (can3d && use3d) loadRenderer3d().catch(() => {})
   }, [can3d, use3d])
+  useEffect(() => {
+    if (!challengeId) return undefined
+    let cancelled = false
+    getMotoChallenge(challengeId)
+      .then((c) => !cancelled && setChallenge(c))
+      .catch(() => !cancelled && setChallenge({ failed: true }))
+    return () => {
+      cancelled = true
+    }
+  }, [challengeId, refreshKey])
   useEffect(() => {
     getMyMotoStats()
       .then(setStats)
@@ -242,6 +340,37 @@ function MotoBoma() {
     } catch (err) {
       showToast(err.message === 'request failed' ? 'Impossible de lancer la course, réessaie.' : err.message, 'error')
       setPhase('lobby')
+    }
+  }
+
+  // Relever un défi: one attempt, on the challenger's seed, against their ghost.
+  async function acceptDuel() {
+    audio.unlock()
+    setPhase('starting')
+    setOutcome(null)
+    setSaveError(null)
+    setPayload(null)
+    try {
+      const r = await acceptMotoChallenge(challengeId)
+      setRace({ raceId: r.raceId, seed: r.seed, course: r.course, ghost: r.ghost })
+      setPhase('racing')
+    } catch (err) {
+      showToast(err.message === 'request failed' ? 'Impossible de relever le défi, réessaie.' : err.message, 'error')
+      setPhase('lobby')
+      setRefreshKey((k) => k + 1)
+    }
+  }
+
+  async function sendChallenge(conversation) {
+    setSending(true)
+    try {
+      await createMotoChallenge(race.raceId, conversation.id, runner)
+      showToast(`Défi envoyé à ${conversation.profile.firstName} ! 🏍️`, 'success')
+      setPicking(false)
+    } catch (err) {
+      showToast(err.message === 'request failed' ? 'Impossible d’envoyer le défi.' : err.message, 'error')
+    } finally {
+      setSending(false)
     }
   }
 
@@ -306,6 +435,41 @@ function MotoBoma() {
       <div className="mx-auto max-w-lg px-4 pt-5">
         <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#12081f] via-[#3b0f5c] to-[#e9467d] p-5 text-white shadow-xl shadow-violet-900/20">
           <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-cyan-400/25 blur-2xl" />
+          {challengeId && challenge && !challenge.failed && (
+            <div className="relative mb-4 rounded-2xl bg-cyan-400/15 p-3 ring-1 ring-cyan-300/40">
+              <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-cyan-200">
+                <Swords size={14} /> Duel fantôme
+              </p>
+              <p className="mt-1 font-display text-base font-bold">
+                {challenge.mine
+                  ? `Ton défi à ${challenge.toName || 'ton match'} : ${formatTicks(challenge.finishTick)}`
+                  : `${challenge.fromName} te défie : ${formatTicks(challenge.finishTick)}`}
+              </p>
+              <p className="mt-0.5 text-xs text-white/75">
+                {challenge.status === 'pending'
+                  ? challenge.mine
+                    ? 'En attente de sa course…'
+                    : 'Même parcours, même circulation, face à son fantôme. Une seule tentative !'
+                  : challenge.status === 'expired'
+                    ? 'Ce défi a expiré.'
+                    : challenge.status === 'accepted'
+                      ? 'Course en cours…'
+                      : challenge.winner === 'draw'
+                        ? `Égalité : ${formatTicks(challenge.opponentTicks)}`
+                        : `Résultat : ${challenge.winner === 'me' ? 'victoire !' : 'défaite'} (${challenge.opponentTicks ? formatTicks(challenge.opponentTicks) : 'abandon'})`}
+              </p>
+              {challenge.status === 'pending' && !challenge.mine && (
+                <button
+                  type="button"
+                  onClick={acceptDuel}
+                  disabled={phase === 'starting'}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-cyan-300 py-3 font-display text-sm font-black text-cyan-950 disabled:opacity-70"
+                >
+                  <Swords size={16} /> {phase === 'starting' ? 'PRÉPARATION…' : 'RELEVER LE DÉFI'}
+                </button>
+              )}
+            </div>
+          )}
           <p className="relative text-xs font-bold uppercase tracking-[0.25em] text-white/70">BomaVibes présente</p>
           <h2 className="relative mt-1 font-display text-4xl font-black italic tracking-tight">
             MOTO <span className="text-cyan-300">BOMA</span>
@@ -398,6 +562,7 @@ function MotoBoma() {
           course={race.course}
           runner={runner}
           graphics={can3d && use3d ? '3d' : '2d'}
+          ghost={race.ghost || null}
           audio={audio}
           muted={muted}
           onToggleMute={toggleMute}
@@ -413,9 +578,13 @@ function MotoBoma() {
             onRetrySave={saveError && payload ? () => save(payload) : null}
             onReplay={start}
             onClose={() => setPhase('lobby')}
+            onChallenge={outcome && !outcome.anomaly && outcome.result.finished && !race?.ghost ? () => setPicking(true) : null}
             hero={hero}
           />
         )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {picking && <ChallengePicker onPick={sendChallenge} onClose={() => setPicking(false)} sending={sending} />}
       </AnimatePresence>
     </div>
   )

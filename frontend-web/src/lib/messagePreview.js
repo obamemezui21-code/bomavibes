@@ -13,5 +13,6 @@ export function messagePreviewText(message) {
   if (message.type === 'post') return '📌 Publication partagée'
   if (message.type === 'venue-invite') return '📍 Invitation à un rendez-vous'
   if (message.type === 'location') return '📍 Position'
+  if (message.type === 'moto-challenge') return message.challenge?.result ? '🏁 Résultat du duel Moto Boma' : '🏍️ Défi Moto Boma'
   return message.text || ''
 }

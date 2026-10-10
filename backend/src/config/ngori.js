@@ -49,6 +49,10 @@ const MOTO_BOMA = {
     minStartIntervalMs: 3000,
     maxRunMs: 15 * 60 * 1000,
     minTimeRatio: 0.9,
+    // Ghost duels between matches: the winner's bonus (within the daily cap)
+    // and how long a challenge stays open.
+    duelWinBonus: 2,
+    challengeTtlMs: 7 * 24 * 60 * 60 * 1000,
 };
 
 // 🔥 badge shown on the profile for a login streak of at least N days.

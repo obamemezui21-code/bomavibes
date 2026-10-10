@@ -65,6 +65,7 @@ import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import LocationMessage from '../components/chat/LocationMessage.jsx'
 import StickerMaker from '../components/chat/StickerMaker.jsx'
+import MotoChallengeCard from '../components/chat/MotoChallengeCard.jsx'
 import { deleteSticker, listMyStickers } from '../firebase/stickers.js'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
@@ -1328,7 +1329,8 @@ function Chat() {
                   const isVenueInvite = m.type === 'venue-invite' && !!m.venue
                   const isCall = m.type === 'call'
                   const isLocation = m.type === 'location' && !!m.location
-                  const isCard = isSticker || isPost || isVenueInvite || isCall || isLocation
+                  const isMotoChallenge = m.type === 'moto-challenge' && !!m.challenge
+                  const isCard = isSticker || isPost || isVenueInvite || isCall || isLocation || isMotoChallenge
                   const callMissed = isCall && isMissedCall(m.call, m.fromMe)
                   const bubbleClass = isCard
                     ? 'cursor-pointer select-none'
@@ -1501,6 +1503,11 @@ function Chat() {
                                 )}
                               </div>
                             </button>
+                          ) : isMotoChallenge ? (
+                            <MotoChallengeCard
+                              challenge={m.challenge}
+                              onOpen={() => navigate(`/moto-boma?defi=${encodeURIComponent(m.challenge.id)}`)}
+                            />
                           ) : (
                             <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{m.text}</p>
                           )}

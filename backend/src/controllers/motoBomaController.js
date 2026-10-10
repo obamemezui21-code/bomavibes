@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const admin = require("../config/firebaseAdmin");
 const { periodKey } = require("../config/plans");
 const { MOTO_BOMA } = require("../config/ngori");
+const { sendPushToUser } = require("../services/pushService");
 
 const db = admin.firestore();
 const { FieldValue } = admin.firestore;
@@ -121,19 +122,55 @@ async function finishRace(req, res) {
         const payable = anomaly === null || anomaly === "mismatch";
         const profile = (await db.collection("profiles").doc(uid).get()).data() || {};
         const boardRef = leaderboardDoc(week, race.course).collection("entries").doc(uid);
+        // A duel race (accepted challenge): its challenger is credited too if they win.
+        const challengeRef = race.challengeId ? db.collection("motoChallenges").doc(race.challengeId) : null;
+        const challengeFrom = challengeRef ? (await challengeRef.get()).data()?.from : null;
+        const fromUserRef = challengeFrom ? db.collection("users").doc(challengeFrom) : null;
+        const fromUsageRef = challengeFrom ? db.collection("usage").doc(challengeFrom) : null;
 
         const outcome = await db.runTransaction(async (tx) => {
-            const [freshRace, userSnap, usageSnap, statsSnap, boardSnap] = await Promise.all([
+            const [freshRace, userSnap, usageSnap, statsSnap, boardSnap, challengeSnap, fromUserSnap, fromUsageSnap] = await Promise.all([
                 tx.get(raceRef),
                 tx.get(userRef),
                 tx.get(usageRef),
                 tx.get(statsRef),
                 tx.get(boardRef),
+                challengeRef ? tx.get(challengeRef) : null,
+                fromUserRef ? tx.get(fromUserRef) : null,
+                fromUsageRef ? tx.get(fromUsageRef) : null,
             ]);
             if (freshRace.data()?.status !== "running") throw new RaceError(409, "Cette course a déjà été enregistrée.");
 
             const { earned } = todayUsage(usageSnap.data(), today);
-            const credited = payable ? Math.max(0, Math.min(result.total, MOTO_BOMA.dailyCap - earned)) : 0;
+            let credited = payable ? Math.max(0, Math.min(result.total, MOTO_BOMA.dailyCap - earned)) : 0;
+
+            // Duel: the faster finish wins (a tie is a draw; not finishing loses).
+            let duel = null;
+            const challenge = challengeSnap?.data();
+            if (challenge && challenge.status === "accepted" && challenge.to === uid) {
+                const myTicks = payable && result.finished ? result.finishTick : null;
+                const outcomeOf = myTicks === null ? "them" : myTicks < challenge.finishTick ? "me" : myTicks === challenge.finishTick ? "draw" : "them";
+                let bonus = 0;
+                if (outcomeOf === "me") {
+                    bonus = Math.max(0, Math.min(MOTO_BOMA.duelWinBonus, MOTO_BOMA.dailyCap - earned - credited));
+                    credited += bonus;
+                } else if (outcomeOf === "them") {
+                    const fromEarned = todayUsage(fromUsageSnap?.data(), today).earned;
+                    bonus = Math.max(0, Math.min(MOTO_BOMA.duelWinBonus, MOTO_BOMA.dailyCap - fromEarned));
+                    if (bonus) {
+                        tx.update(fromUserRef, { ngori: (fromUserSnap.data()?.ngori || 0) + bonus });
+                        tx.set(fromUsageRef, { motoEarnDay: today, motoEarned: fromEarned + bonus }, { merge: true });
+                    }
+                }
+                tx.update(challengeRef, {
+                    status: "done",
+                    opponentTicks: myTicks,
+                    winner: outcomeOf === "me" ? uid : outcomeOf === "them" ? challenge.from : null,
+                    winnerBonus: bonus,
+                    finishedAt: now,
+                });
+                duel = { outcome: outcomeOf, theirTicks: challenge.finishTick, theirName: challenge.fromName, bonus, matchId: challenge.matchId, from: challenge.from, course: challenge.course, runner: challenge.runner };
+            }
             const balance = (userSnap.data()?.ngori || 0) + credited;
             const stats = statsSnap.data() || {};
             const bestTicks = stats.bestTicks?.[race.course] || null;
@@ -141,7 +178,15 @@ async function finishRace(req, res) {
             const timed = payable && result.finished;
             const newBest = timed && (!bestTicks || result.finishTick < bestTicks);
 
-            tx.update(raceRef, { status: payable ? "finished" : "rejected", result, credited, anomaly, finishedAt: now });
+            tx.update(raceRef, {
+                status: payable ? "finished" : "rejected",
+                result,
+                credited,
+                anomaly,
+                finishedAt: now,
+                // Kept so the race can be sent as a duel ghost.
+                ...(payable && result.finished ? { ghostInputs: engine.encodeInputs(inputs) } : {}),
+            });
             if (credited) tx.update(userRef, { ngori: balance });
             tx.set(usageRef, { motoEarnDay: today, motoEarned: earned + credited }, { merge: true });
             tx.set(
@@ -170,12 +215,180 @@ async function finishRace(req, res) {
                     updatedAt: now,
                 });
             }
-            return { credited, balance, earnedToday: earned + credited, newBest };
+            return { credited, balance, earnedToday: earned + credited, newBest, duel };
         });
+
+        if (outcome.duel) {
+            const { duel } = outcome;
+            postChallengeMessage({
+                matchId: duel.matchId,
+                senderId: uid,
+                to: duel.from,
+                challenge: { id: race.challengeId, course: duel.course, finishTick: duel.theirTicks, runner: duel.runner, firstName: duel.theirName, result: true },
+                preview: "🏁 Résultat du duel Moto Boma",
+                push: {
+                    title: duel.outcome === "them" ? "🏆 Tu as gagné ton duel Moto Boma !" : "🏁 Ton défi Moto Boma a été relevé",
+                    body: `${profile.firstName || "Ton match"} a couru contre ton fantôme. Viens voir le résultat !`,
+                },
+            }).catch((err) => console.error("[moto-boma] message de résultat non envoyé", err));
+            delete outcome.duel.matchId;
+            delete outcome.duel.from;
+        }
 
         res.json({ result, anomaly: payable ? null : anomaly, dailyCap: MOTO_BOMA.dailyCap, ...outcome });
     } catch (err) {
         sendError(res, err, "Impossible d'enregistrer la course");
+    }
+}
+
+// ---- Ghost duels between matches --------------------------------------------
+// A finished race is sent to a match as a challenge: they race the same
+// course on the same seed (same traffic) against its replay, once. Firestore:
+//   motoChallenges/{id}  from, to, matchId, course, seed, ghostInputs,
+//                        finishTick, runner, fromName, status (pending →
+//                        accepted → done | expired), opponentTicks, winner
+// The chat card is posted by the server (Admin SDK), between matched people only.
+
+const RUNNERS = ["man", "woman"];
+
+async function postChallengeMessage({ matchId, senderId, to, challenge, preview, push }) {
+    const matchRef = db.collection("matches").doc(matchId);
+    await matchRef.collection("messages").add({
+        senderId,
+        text: "",
+        type: "moto-challenge",
+        challenge,
+        createdAt: FieldValue.serverTimestamp(),
+    });
+    await matchRef.update({ lastMessage: preview, lastMessageAt: FieldValue.serverTimestamp(), [`seen.${to}`]: false });
+    sendPushToUser(to, { ...push, path: `/chat/${matchId}`, prefField: "notifyMessages" }).catch(() => {});
+}
+
+function challengeView(c, id, uid) {
+    return {
+        id,
+        mine: c.from === uid,
+        fromName: c.fromName,
+        toName: c.toName,
+        course: c.course,
+        runner: c.runner,
+        finishTick: c.finishTick,
+        status: c.status === "pending" && Date.now() - c.createdAt > MOTO_BOMA.challengeTtlMs ? "expired" : c.status,
+        opponentTicks: c.opponentTicks ?? null,
+        winner: c.winner === undefined ? null : c.winner === null ? "draw" : c.winner === uid ? "me" : "them",
+    };
+}
+
+// POST /api/moto-boma/challenges { raceId, matchId, runner } → { challengeId }
+async function createChallenge(req, res) {
+    const uid = req.firebaseUser.uid;
+    const { raceId, matchId, runner } = req.body || {};
+    if (typeof raceId !== "string" || typeof matchId !== "string" || !/^[A-Za-z0-9_-]{6,80}$/.test(matchId)) {
+        return res.status(400).json({ message: "Défi invalide" });
+    }
+    try {
+        const [raceSnap, matchSnap] = await Promise.all([
+            db.collection("motoRaces").doc(raceId).get(),
+            db.collection("matches").doc(matchId).get(),
+        ]);
+        const race = raceSnap.data();
+        if (!race || race.uid !== uid || race.status !== "finished" || !race.result?.finished || race.anomaly || !race.ghostInputs) {
+            throw new RaceError(400, "Seule une course terminée et validée peut servir de défi.");
+        }
+        if (race.challengeId) throw new RaceError(400, "Cette course était déjà un duel : lance une nouvelle course pour défier quelqu'un.");
+        const users = matchSnap.data()?.users || [];
+        if (!users.includes(uid)) throw new RaceError(404, "Conversation introuvable");
+        const to = users.find((u) => u !== uid);
+        if (!to) throw new RaceError(400, "Défi invalide");
+
+        const [fromProfile, toProfile, blocked] = await Promise.all([
+            db.collection("profiles").doc(uid).get(),
+            db.collection("profiles").doc(to).get(),
+            db.collection("blocks").doc(`${to}_${uid}`).get(),
+        ]);
+        if (blocked.exists) throw new RaceError(403, "Impossible d'envoyer ce défi.");
+        const fromName = fromProfile.data()?.firstName || "Ton match";
+        const ref = db.collection("motoChallenges").doc();
+        await ref.set({
+            from: uid,
+            to,
+            matchId,
+            course: race.course,
+            seed: race.seed,
+            ghostInputs: race.ghostInputs,
+            finishTick: race.result.finishTick,
+            runner: RUNNERS.includes(runner) ? runner : "man",
+            fromName,
+            toName: toProfile.data()?.firstName || "",
+            status: "pending",
+            createdAt: Date.now(),
+        });
+        await postChallengeMessage({
+            matchId,
+            senderId: uid,
+            to,
+            challenge: { id: ref.id, course: race.course, finishTick: race.result.finishTick, runner: RUNNERS.includes(runner) ? runner : "man", firstName: fromName },
+            preview: "🏍️ Défi Moto Boma",
+            push: { title: `🏍️ ${fromName} te défie à Moto Boma !`, body: "Bats son temps sur le même parcours, face à son fantôme." },
+        });
+        res.json({ challengeId: ref.id });
+    } catch (err) {
+        sendError(res, err, "Impossible d'envoyer le défi");
+    }
+}
+
+// GET /api/moto-boma/challenges/:id → the challenge as either player sees it.
+async function getChallenge(req, res) {
+    const uid = req.firebaseUser.uid;
+    try {
+        const snap = await db.collection("motoChallenges").doc(String(req.params.id)).get();
+        const c = snap.data();
+        if (!c || (c.from !== uid && c.to !== uid)) throw new RaceError(404, "Défi introuvable");
+        res.json(challengeView(c, snap.id, uid));
+    } catch (err) {
+        sendError(res, err, "Impossible de charger le défi");
+    }
+}
+
+// POST /api/moto-boma/challenges/:id/accept → { raceId, seed, course, ghost: { inputs, runner, name, finishTick } }
+// One attempt: the race starts on the challenger's seed, with their ghost.
+async function acceptChallenge(req, res) {
+    const uid = req.firebaseUser.uid;
+    const challengeRef = db.collection("motoChallenges").doc(String(req.params.id));
+    const usageRef = db.collection("usage").doc(uid);
+    const raceRef = db.collection("motoRaces").doc();
+    const now = Date.now();
+    const today = periodKey("day", now);
+    try {
+        const engine = await loadEngine();
+        const challenge = await db.runTransaction(async (tx) => {
+            const [snap, usageSnap] = await Promise.all([tx.get(challengeRef), tx.get(usageRef)]);
+            const c = snap.data();
+            if (!c || c.to !== uid) throw new RaceError(404, "Défi introuvable");
+            if (c.status !== "pending") throw new RaceError(409, "Ce défi a déjà été relevé.");
+            if (now - c.createdAt > MOTO_BOMA.challengeTtlMs) throw new RaceError(410, "Ce défi a expiré.");
+            const { starts } = todayUsage(usageSnap.data(), today);
+            if (starts >= MOTO_BOMA.maxStartsPerDay) {
+                throw new RaceError(429, "Beaucoup de courses aujourd'hui ! Revenez demain pour reprendre la route.");
+            }
+            tx.set(usageRef, { motoDay: today, motoStarts: starts + 1, motoLastStartAt: now }, { merge: true });
+            tx.set(raceRef, { uid, seed: c.seed, course: c.course, challengeId: snap.id, startedAt: now, status: "running" });
+            tx.update(challengeRef, { status: "accepted", acceptedAt: now, raceId: raceRef.id });
+            return c;
+        });
+        res.json({
+            raceId: raceRef.id,
+            seed: challenge.seed,
+            course: challenge.course,
+            ghost: {
+                inputs: engine.decodeInputs(challenge.ghostInputs),
+                runner: challenge.runner,
+                name: challenge.fromName,
+                finishTick: challenge.finishTick,
+            },
+        });
+    } catch (err) {
+        sendError(res, err, "Impossible de relever le défi");
     }
 }
 
@@ -230,4 +443,4 @@ async function getMyStats(req, res) {
     }
 }
 
-module.exports = { startRace, finishRace, getLeaderboard, getMyStats, anomalyOf, loadEngine };
+module.exports = { startRace, finishRace, getLeaderboard, getMyStats, createChallenge, getChallenge, acceptChallenge, anomalyOf, loadEngine };

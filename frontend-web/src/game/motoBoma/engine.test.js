@@ -4,6 +4,8 @@ import {
   NITRO_TICKS,
   PLAYER_LEN,
   createRace,
+  decodeInputs,
+  encodeInputs,
   medalFor,
   simulateRace,
   step,
@@ -78,6 +80,15 @@ describe('MOTO BOMA engine', () => {
     expect(medalFor('bord-de-mer', 5400)).toBe('silver')
     expect(medalFor('bord-de-mer', 6000)).toBe('bronze')
     expect(medalFor('bord-de-mer', 7000)).toBe(null)
+  })
+
+  it('stores a race compactly and replays it as the same ghost', () => {
+    const { state, inputs, result } = play(2024)
+    const stored = encodeInputs(inputs)
+    expect(typeof stored).toBe('string')
+    expect(decodeInputs(stored)).toEqual(inputs)
+    expect(simulateRace(2024, 'bord-de-mer', decodeInputs(stored), state.tick)).toEqual(result)
+    expect(decodeInputs('')).toEqual([])
   })
 
   it('rejects malformed gesture lists', () => {

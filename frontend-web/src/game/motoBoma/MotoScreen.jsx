@@ -20,7 +20,10 @@ const HONK_AHEAD = 2200
 //
 // Controls: hold the left or right half of the screen (or ← →) to steer,
 // the NITRO button (or ↑ / space) to boost.
-function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onToggleMute, onEnd }) {
+//
+// ghost (duel): { inputs, runner, name } — the challenger's race on the same
+// seed, replayed tick for tick alongside and drawn as a see-through bike.
+function MotoScreen({ seed, course, runner, graphics = '2d', ghost = null, audio, muted, onToggleMute, onEnd }) {
   const canvasRef = useRef(null)
   const wrapRef = useRef(null)
   const pendingRef = useRef([])
@@ -28,7 +31,7 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
   const onEndRef = useRef(onEnd)
   const endRef = useRef(null)
   const steerRef = useRef({ pointers: new Map(), keys: [], current: 0 })
-  const [hud, setHud] = useState({ ticks: 0, progress: 0, speed: 0, coins: 0, nitroCharges: 1, nitro: false })
+  const [hud, setHud] = useState({ ticks: 0, progress: 0, speed: 0, coins: 0, nitroCharges: 1, nitro: false, gap: null })
   const [countdown, setCountdown] = useState(3)
   const [paused, setPaused] = useState(false)
   const [toast, setToast] = useState(null)
@@ -63,6 +66,8 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
 
     const state = createRace(seed, course)
     const inputs = []
+    const ghostState = ghost ? createRace(seed, course) : null
+    let ghostIndex = 0
     let acc = 0
     let last = performance.now()
     let startAt = last + 3000
@@ -135,6 +140,11 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
           const actions = pendingRef.current.splice(0)
           for (const a of actions) inputs.push([state.tick, a])
           step(state, actions)
+          if (ghostState && !ghostState.over) {
+            const ghostActions = []
+            while (ghostIndex < ghost.inputs.length && ghost.inputs[ghostIndex][0] === ghostState.tick) ghostActions.push(ghost.inputs[ghostIndex++][1])
+            step(ghostState, ghostActions)
+          }
           handleEvents(state.x / 100)
           acc -= SIM_MS
         }
@@ -144,6 +154,8 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
 
       const alpha = state.over ? 0 : acc / SIM_MS
       const laneVis = (state.x - state.steer * 6 * (1 - alpha)) / 100
+      const viewDist = state.prevDist + (state.dist - state.prevDist) * alpha
+      const ghostDist = ghostState ? ghostState.prevDist + (ghostState.dist - ghostState.prevDist) * alpha : 0
       // What NGORI RUN's renderers expect to draw (see renderer.js).
       const scene = {
         lane: laneVis + state.steer * 0.6, // leans the bike into the turn
@@ -160,9 +172,15 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
         obstacles: state.vehicles,
         coinsOnRoad: state.coinsOnRoad,
         powerups: state.pickups,
+        ghost: ghostState && {
+          lane: (ghostState.x - ghostState.steer * 6 * (1 - alpha)) / 100,
+          zr: ghostDist - viewDist,
+          runner: ghost.runner,
+          name: ghost.name,
+        },
       }
       renderer?.render(scene, {
-        dist: state.prevDist + (state.dist - state.prevDist) * alpha,
+        dist: viewDist,
         laneVis,
         alpha,
         time: now / 1000,
@@ -193,6 +211,7 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
           coins: state.coins,
           nitroCharges: state.nitroCharges,
           nitro: state.nitro > 0,
+          gap: ghostState ? Math.round((ghostState.dist - state.dist) / 100) : null,
         })
         const left = Math.ceil((startAt - now) / 1000)
         setCountdown(left > 0 ? left : 0)
@@ -220,7 +239,7 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
       cancelled = true
       renderer?.dispose?.()
     }
-  }, [seed, course, runner, graphics, audio])
+  }, [seed, course, runner, graphics, ghost, audio])
 
   // Steering is held: the latest finger (or key) pressed wins; a gesture is
   // recorded only when the direction actually changes.
@@ -333,6 +352,13 @@ function MotoScreen({ seed, course, runner, graphics = '2d', audio, muted, onTog
             <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-amber-300" style={{ width: `${hud.progress * 100}%` }} />
           </div>
           <p className="mt-1 text-center text-[11px] font-semibold text-white/75">{courseInfo.name}</p>
+          {hud.gap !== null && ghost && (
+            <p className="mt-1.5 text-center">
+              <span className={`rounded-full px-3 py-1 text-xs font-bold backdrop-blur-md ${hud.gap > 0 ? 'bg-rose-500/70' : 'bg-emerald-500/70'}`}>
+                👻 {ghost.name} {hud.gap > 0 ? `devant de ${hud.gap} m` : hud.gap < 0 ? `derrière de ${-hud.gap} m` : 'à ta hauteur'}
+              </span>
+            </p>
+          )}
         </div>
       </div>
 

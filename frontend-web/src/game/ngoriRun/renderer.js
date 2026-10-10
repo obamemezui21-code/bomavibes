@@ -149,6 +149,11 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   // Loaded up front so it's ready the moment a motorbike is picked up.
   const motoImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: MOTO_SPRITES[runner] ?? MOTO_SPRITES.man })
   const motoReady = () => !!motoImage?.complete && motoImage.naturalWidth > 0
+  // MOTO BOMA duels draw the challenger's bike too, whichever hero they ride.
+  const ghostImages =
+    typeof Image === 'undefined'
+      ? {}
+      : Object.fromEntries(Object.entries(MOTO_SPRITES).map(([id, src]) => [id, Object.assign(new Image(), { src })]))
   // Coins Chics billboards ([{ at (m), name, category, image }]), set once
   // the venues have loaded; their photos load lazily on first sight.
   let billboards = []
@@ -1354,6 +1359,27 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.globalAlpha = 1
   }
 
+  // The duel ghost: { lane, zr (cm ahead of the player), runner, name }.
+  function drawGhost(ghost, zr, time) {
+    const image = ghostImages[ghost.runner] || ghostImages.man
+    if (!image?.complete || !image.naturalWidth) return
+    const p = project(laneX(ghost.lane), 0, zr)
+    const h = MOTO_HEIGHT_CM * p.s
+    const w = (h * image.naturalWidth) / image.naturalHeight
+    ctx.save()
+    ctx.globalAlpha = 0.5 * fogAlpha(zr)
+    ctx.translate(p.x, p.y)
+    ctx.rotate(Math.sin(time * 38) * 0.008)
+    ctx.drawImage(image, -w / 2, -h, w, h)
+    ctx.globalAlpha = Math.min(1, fogAlpha(zr) * 1.2)
+    ctx.font = `800 ${Math.max(9, 34 * p.s)}px system-ui, sans-serif`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    ctx.fillStyle = '#67e8f9'
+    ctx.fillText(`👻 ${ghost.name}`, 0, -h - 6 * p.s)
+    ctx.restore()
+  }
+
   function render(state, view) {
     const now = performance.now()
     const playerX = (view.laneVis - 1) * LANE_W
@@ -1374,6 +1400,8 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     for (const c of state.coinsOnRoad) if (!c.taken) items.push({ zr: c.z - view.dist, draw: (zr) => drawCoin(c, zr, view.time) })
     for (const p of state.powerups) if (!p.taken) items.push({ zr: p.z - view.dist, draw: (zr) => drawPowerup(p, zr, view.time) })
     items.push({ zr: 30, draw: () => drawRunner(state, view) })
+    // MOTO BOMA duel: the challenger's replayed race, as a see-through bike.
+    if (state.ghost) items.push({ zr: 30 + state.ghost.zr, draw: (zr) => drawGhost(state.ghost, zr, view.time) })
     for (const [from, name] of DISTRICTS) {
       if (from > 0) items.push({ zr: from * 100 - view.dist, draw: (zr) => drawArch(zr, name) })
     }
