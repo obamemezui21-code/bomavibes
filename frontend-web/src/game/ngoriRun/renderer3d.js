@@ -11,7 +11,8 @@ import {
   HORIZONS,
   HORIZON_FADE_M,
   MONUMENTS,
-  PANTHER_SEAT,
+  MOTO_HEIGHT_CM,
+  MOTO_SPRITES,
   POWERUP_STYLE,
   ROADSIDE,
   ROADSIDE_SCALE,
@@ -21,6 +22,7 @@ import {
   hash,
   horizonAt,
   isTaxi,
+  motoTilt,
 } from './renderer.js'
 import {
   DIRECTION_SIGNS,
@@ -514,7 +516,9 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     layoutHorizons()
   })
 
+  let sheetLoaded = false
   const sheetTex = load(runnersUrl, () => {
+    sheetLoaded = true
     runnerSprite.visible = true
     runnerFallback.visible = false
   })
@@ -577,61 +581,21 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   boostGlow.position.y = 0.9
   runnerGroup.add(boostGlow)
 
-  // The black panther the runner rides (power-up): body along -z (up the
-  // road), legs that gallop, a swaying tail, a violet glow so it reads at
-  // night. The runner sits PANTHER_SEAT above the ground meanwhile.
-  const pantherFur = keep(new THREE.MeshLambertMaterial({ color: '#16121d', emissive: '#2a1740', emissiveIntensity: 0.35 }))
-  const panther = new THREE.Group()
-  const pantherBody = new THREE.Mesh(keep(new THREE.CapsuleGeometry(0.3, 1.0, 6, 14).rotateX(Math.PI / 2)), pantherFur)
-  pantherBody.position.set(0, 0.62, -0.32)
-  pantherBody.scale.set(1.05, 0.9, 1)
-  const pantherHead = new THREE.Mesh(keep(new THREE.SphereGeometry(0.24, 16, 12)), pantherFur)
-  pantherHead.scale.set(1, 0.85, 1.15)
-  pantherHead.position.set(0, 0.86, -1.14)
-  const earGeo = keep(new THREE.ConeGeometry(0.08, 0.16, 8))
-  const ears = [-1, 1].map((side) => {
-    const ear = new THREE.Mesh(earGeo, pantherFur)
-    ear.position.set(side * 0.13, 1.08, -1.1)
-    return ear
+  // On the motorbike (power-up): its picture (bike and rider together, see
+  // MOTO_SPRITES) stands in for the runner, facing the camera like it.
+  let motoLoaded = false
+  const motoTex = load(MOTO_SPRITES[runner] ?? MOTO_SPRITES.man, (tex) => {
+    motoLoaded = true
+    const h = MOTO_HEIGHT_CM * M
+    motoSprite.scale.set((h * tex.image.naturalWidth) / tex.image.naturalHeight, h, 1)
   })
-  const eyeGlow = basic('#bef264')
-  const eyes = [-1, 1].map((side) => {
-    const eye = new THREE.Mesh(keep(new THREE.SphereGeometry(0.035, 8, 6)), eyeGlow)
-    eye.position.set(side * 0.1, 0.9, -1.37)
-    return eye
-  })
-  // Legs pivot at the hip: the geometry hangs below its origin.
-  const legGeo = keep(new THREE.CylinderGeometry(0.055, 0.04, 0.6, 8).translate(0, -0.3, 0))
-  const pantherLegs = [
-    [-0.2, 0.22],
-    [0.2, 0.22],
-    [-0.18, -0.82],
-    [0.18, -0.82],
-  ].map(([x, z], i) => {
-    const leg = new THREE.Mesh(legGeo, pantherFur)
-    leg.position.set(x, 0.62, z)
-    leg.userData.phase = i < 2 ? 0 : Math.PI // hind and front pairs push in turn
-    leg.userData.side = x < 0 ? 1 : -1
-    return leg
-  })
-  const tailPivot = new THREE.Group()
-  tailPivot.position.set(0, 0.72, 0.24)
-  const tail = new THREE.Mesh(keep(new THREE.CylinderGeometry(0.035, 0.06, 0.9, 8).translate(0, 0.45, 0)), pantherFur)
-  tail.rotation.x = 0.9 // up and back towards the camera
-  tailPivot.add(tail)
-  // Rounded haunches, nearest the camera.
-  const haunchGeo = keep(new THREE.SphereGeometry(0.2, 14, 10))
-  const haunches = [-1, 1].map((side) => {
-    const h = new THREE.Mesh(haunchGeo, pantherFur)
-    h.position.set(side * 0.16, 0.6, 0.12)
-    return h
-  })
-  const pantherGlow = glow('#a855f7', 2.6, 0.35)
-  pantherGlow.position.set(0, 0.6, -0.32)
-  panther.add(pantherBody, pantherHead, ...ears, ...eyes, ...pantherLegs, ...haunches, tailPivot, pantherGlow)
-  panther.scale.setScalar(1.3)
-  panther.visible = false
-  runnerGroup.add(panther)
+  const motoSprite = new THREE.Mesh(
+    keep(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0)),
+    keep(new THREE.MeshBasicMaterial({ map: motoTex, transparent: true, alphaTest: 0.05, fog: false })),
+  )
+  motoSprite.visible = false
+  motoSprite.renderOrder = 5
+  runnerGroup.add(motoSprite)
   const timesTwo = new THREE.Sprite(
     keep(
       new THREE.SpriteMaterial({
@@ -1563,26 +1527,24 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     const y = state.jump ? 4 * 1.3 * jumpT * (1 - jumpT) : 0
     const sliding = state.slide > 0 && state.slide < SLIDE_TICKS
     runnerGroup.position.set(x, 0, RUNNER_Z)
-    // Riding the panther: it carries the runner, both leaving the ground on a jump.
-    const riding = !!state.panther
-    const seat = riding ? (PANTHER_SEAT / 100) + Math.abs(Math.sin(view.time * 16)) * 0.05 : 0
-    panther.visible = riding
+    // On the motorbike its picture replaces the runner, leaning into lane changes.
+    const riding = !!state.moto && motoLoaded
+    motoSprite.visible = riding
+    runnerSprite.visible = sheetLoaded && !riding
+    runnerFallback.visible = !sheetLoaded && !riding
     if (riding) {
-      panther.position.y = y
-      const gallop = view.time * 16
-      for (const leg of pantherLegs) leg.rotation.x = Math.sin(gallop + leg.userData.phase) * 0.7
-      pantherBody.rotation.x = Math.sin(gallop) * 0.05
-      tailPivot.rotation.z = Math.sin(view.time * 5) * 0.6
+      motoSprite.position.y = y
+      motoSprite.quaternion.copy(camera.quaternion)
+      motoSprite.rotateZ(motoTilt({ ...view, laneTarget: state.lane }))
     }
-    runnerSprite.position.y = y + seat
-    runnerFallback.position.y = y + seat
+    runnerSprite.position.y = y
+    runnerFallback.position.y = y
     runnerFallback.scale.y = sliding ? 0.5 : 1
     runnerFallback.rotation.z = view.crashT > 0 ? Math.min(1, view.crashT * 2.5) * 1.2 : 0
     runnerSprite.quaternion.copy(camera.quaternion)
 
     let frame
     if (view.crashT > 0) frame = 11
-    else if (riding) frame = 9 // knees tucked: astride the panther
     else if (sliding) frame = 10
     else if (state.jump) frame = jumpT < 0.22 || jumpT > 0.9 ? 8 : 9
     else frame = Math.floor(view.time * (8 + state.speed / 2.5)) % 8 // faster stride as speed grows
@@ -1634,7 +1596,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     motes.material.opacity = 0.28 + night * 0.3
     sunLight.intensity = 2.8 - night * 1.3
     fillLight.intensity = 1.1 + night * 0.45
-    const intensity = Math.min(1.5, state.panther ? 1.5 : state.boost ? 1.35 : Math.max(0, (state.speed - 24) / 10))
+    const intensity = Math.min(1.5, state.moto ? 1.5 : state.boost ? 1.35 : Math.max(0, (state.speed - 24) / 10))
     speedLines.visible = intensity > 0
     if (!speedLines.visible) return
     speedLines.material.opacity = Math.min(0.42, 0.28 * intensity)
@@ -1723,7 +1685,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     const lookY = 0.78 + Math.sin(view.time * 1.6) * 0.08 + (state.jump ? 0.16 : 0)
     camera.lookAt(lookX, lookY, RUNNER_Z - 16)
     camera.rotation.z += THREE.MathUtils.clamp(-laneVelocity * 0.006, -0.035, 0.035)
-    const targetFov = baseFov + (state.panther ? 8 : state.boost ? 5 : Math.min(2, Math.max(0, (state.speed - 25) * 0.18)))
+    const targetFov = baseFov + (state.moto ? 8 : state.boost ? 5 : Math.min(2, Math.max(0, (state.speed - 25) * 0.18)))
     camera.fov += (targetFov - camera.fov) * Math.min(1, view.dt * 3)
     camera.updateProjectionMatrix()
     camBackCm = camBack * 100

@@ -37,15 +37,15 @@ export const OBSTACLES = {
 const OBSTACLE_TYPES = Object.keys(OBSTACLES)
 const OBSTACLE_WEIGHT_TOTAL = OBSTACLE_TYPES.reduce((sum, t) => sum + OBSTACLES[t].weight, 0)
 
-export const POWERUPS = ['shield', 'magnet', 'multiplier', 'boost', 'panther']
+export const POWERUPS = ['shield', 'magnet', 'multiplier', 'boost', 'moto']
 const CLASSIC_POWERUPS = POWERUPS.slice(0, 4)
-// panther: the runner rides a black panther for a few seconds — twice the
-// speed, obstacles knocked out of the way. Rarer than the others
-// (PANTHER_CHANCE % of the power-ups).
-const PANTHER_CHANCE = 15
-// Invulnerable for a moment after getting off the panther.
-const PANTHER_GRACE_TICKS = 45
-export const POWER_TICKS = { magnet: 8 * TICK_RATE, multiplier: 8 * TICK_RATE, boost: 4 * TICK_RATE, panther: 6 * TICK_RATE }
+// moto: the runner hops on a motorbike for a few seconds — twice the speed,
+// obstacles knocked out of the way. Rarer than the others (MOTO_CHANCE % of
+// the power-ups).
+const MOTO_CHANCE = 15
+// Invulnerable for a moment after getting off the bike.
+const MOTO_GRACE_TICKS = 45
+export const POWER_TICKS = { magnet: 8 * TICK_RATE, multiplier: 8 * TICK_RATE, boost: 4 * TICK_RATE, moto: 6 * TICK_RATE }
 
 // Combo = Ngori picked up in a row; missing one resets it.
 // [combo reached, bonus Ngori]; then +5 every further 20 coins.
@@ -110,7 +110,7 @@ export function createRun(seed) {
     magnet: 0,
     multiplier: 0,
     boost: 0,
-    panther: 0,
+    moto: 0,
     combo: 0,
     bestCombo: 0,
     coins: 0, // Ngori picked up on the road
@@ -169,7 +169,7 @@ function generateRow(state) {
   } else if (randomInt(state, 100) < 9) {
     // Rare power-up, alone in a free lane (or on top of a jumpable row).
     const lane = freeLanes.length ? freeLanes[randomInt(state, freeLanes.length)] : randomInt(state, 3)
-    const type = randomInt(state, 100) < PANTHER_CHANCE ? 'panther' : CLASSIC_POWERUPS[randomInt(state, CLASSIC_POWERUPS.length)]
+    const type = randomInt(state, 100) < MOTO_CHANCE ? 'moto' : CLASSIC_POWERUPS[randomInt(state, CLASSIC_POWERUPS.length)]
     state.powerups.push({ id: state.nextId++, z: z + Math.floor(gap / 2), lane, type, taken: false })
   }
 
@@ -208,7 +208,7 @@ export function step(state, actions = []) {
   if (state.slide) state.slide = state.slide >= SLIDE_TICKS ? 0 : state.slide + 1
 
   const base = baseSpeed(state.tick)
-  state.speed = state.panther ? base * 2 : state.boost ? base + (base >> 1) : base
+  state.speed = state.moto ? base * 2 : state.boost ? base + (base >> 1) : base
   state.prevDist = state.dist
   state.dist += state.speed
   state.scoreAcc += state.speed * (levelAt(state.tick) + 1)
@@ -224,8 +224,8 @@ export function step(state, actions = []) {
     const def = OBSTACLES[o.type]
     if (o.z >= front || o.z + def.len <= state.dist) continue
     if ((def.clear === 'jump' && airborne) || (def.clear === 'slide' && state.slide)) continue
-    if (state.panther) {
-      // The panther knocks it out of the way.
+    if (state.moto) {
+      // The bike knocks it out of the way.
       o.hit = true
       state.events.push({ type: 'smash', obstacle: o.type })
       continue
@@ -285,9 +285,9 @@ export function step(state, actions = []) {
   if (state.magnet) state.magnet--
   if (state.multiplier) state.multiplier--
   if (state.boost) state.boost--
-  if (state.panther && --state.panther === 0) {
-    state.grace = PANTHER_GRACE_TICKS
-    state.events.push({ type: 'panther-end' })
+  if (state.moto && --state.moto === 0) {
+    state.grace = MOTO_GRACE_TICKS
+    state.events.push({ type: 'moto-end' })
   }
 
   // Forget what's behind the runner.
