@@ -26,13 +26,14 @@ import DiscoverProfileCard from '../components/DiscoverProfileCard.jsx'
 import FilterSheet from '../components/FilterSheet.jsx'
 import Confetti from '../components/Confetti.jsx'
 import SupportPromptCard from '../components/SupportPromptCard.jsx'
+import InterestCard from '../components/InterestCard.jsx'
 import { TIERS } from '../lib/pricingTiers.js'
 import { fetchDiscoverCandidates, getCachedCandidates, setCachedCandidates } from '../firebase/discovery.js'
 import { isQuotaError, recordSwipeAndMatch } from '../firebase/swipes.js'
 import PaywallModal from '../components/PaywallModal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { INTEREST_ICONS, iconForInterest, matchPercent } from '../lib/interests.js'
+import { INTEREST_ICONS, matchPercent } from '../lib/interests.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
 import { RELIGIONS } from '../lib/onboardingOptions.js'
@@ -47,7 +48,6 @@ const VIEW_MODES = [
   { id: 'swipe', label: 'Swipe', icon: Layers },
 ]
 const VIEW_MODE_KEY = 'bv:discoverViewMode'
-const INTERESTS_PREVIEW = 6
 const INTERESTS_HIDDEN_KEY = 'bv:discoverInterestsHidden'
 const HEADER_ICON_BUTTON =
   'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600'
@@ -222,11 +222,14 @@ function Discover() {
     })
   }
 
-  const visibleInterests = interestsHidden
-    ? []
-    : showAllInterests
-      ? interestChips
-      : interestChips.slice(0, INTERESTS_PREVIEW)
+  const visibleInterests = interestsHidden ? [] : interestChips
+  // How many of the loaded profiles share each interest (shown on the cards).
+  const interestCounts = useMemo(() => {
+    const counts = {}
+    for (const p of profiles) for (const i of p.interests || []) counts[i] = (counts[i] || 0) + 1
+    return counts
+  }, [profiles])
+  const profilesLabel = (n) => `${n.toLocaleString('fr-FR')} profil${n > 1 ? 's' : ''}`
   const interestsSection = (
     <div>
       <div className="flex items-baseline justify-between gap-3 px-1">
@@ -252,27 +255,28 @@ function Discover() {
           </button>
         </div>
       </div>
-      <div className={`flex flex-wrap gap-2 ${interestsHidden && !interestFilter ? '' : 'mt-3'}`}>
-        {visibleInterests.map((interest) => {
-          const Icon = iconForInterest(interest)
-          const isActive = interestFilter === interest
-          return (
-            <button
+      {visibleInterests.length > 0 && (
+        <div
+          className={
+            showAllInterests
+              ? 'mt-3 grid grid-cols-3 gap-3 px-1 pb-1 sm:grid-cols-4'
+              : '-mx-1 mt-3 flex snap-x gap-3 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]'
+          }
+        >
+          {visibleInterests.map((interest) => (
+            <InterestCard
               key={interest}
-              type="button"
+              interest={interest}
+              subtitle={profilesLabel(interestCounts[interest] || 0)}
+              active={interestFilter === interest}
               onClick={() => setInterestFilter((prev) => (prev === interest ? '' : interest))}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                isActive
-                  ? 'border-transparent bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
-                  : 'border-ink/12 bg-white text-ink-soft/80 hover:border-violet-400/50 dark:bg-surface-tint'
-              }`}
-            >
-              <Icon size={13} strokeWidth={2.25} className={isActive ? '' : 'text-violet-500'} />
-              {interest}
-            </button>
-          )
-        })}
-        {/* Keep an active filter visible (and removable) even when hidden or outside the preview */}
+              className={showAllInterests ? '' : 'w-[8.5rem] shrink-0 snap-start'}
+            />
+          ))}
+        </div>
+      )}
+      <div className={`flex flex-wrap gap-2 ${interestsHidden && interestFilter ? 'mt-3' : ''}`}>
+        {/* Keep an active filter visible (and removable) while the cards are hidden */}
         {interestFilter && !visibleInterests.includes(interestFilter) && (
           <button
             type="button"

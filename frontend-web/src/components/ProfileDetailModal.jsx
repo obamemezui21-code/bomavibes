@@ -22,7 +22,7 @@ import {
   Target,
   X,
 } from 'lucide-react'
-import { iconForInterest } from '../lib/interests.js'
+import InterestCard from './InterestCard.jsx'
 import { LIFESTYLE_GROUPS } from '../lib/onboardingOptions.js'
 import { distanceKmBetween } from '../lib/nearby.js'
 import { activeStreakBadge } from '../lib/ngori.js'
@@ -378,7 +378,25 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               </div>
             )}
 
-            <InfoSection icon={Heart} title="Centres d'intérêt" items={profile.interests} iconFor={iconForInterest} />
+            {profile.interests?.length > 0 && (
+              <div className="mt-6">
+                <p className="flex items-center gap-1.5 font-display text-sm font-semibold text-ink">
+                  <Heart size={14} strokeWidth={2.25} className="text-pink-500" />
+                  Centres d'intérêt
+                </p>
+                <div className="mt-2.5 grid grid-cols-3 gap-2.5">
+                  {profile.interests.map((interest) => (
+                    <InterestCard
+                      key={interest}
+                      interest={interest}
+                      subtitle={
+                        profile.id !== user?.id && publicProfile?.interests?.includes(interest) ? '💜 En commun' : null
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
             <InfoSection icon={Sparkles} title="Personnalité" items={profile.personalityTraits} />
             <InfoSection
               icon={Leaf}
