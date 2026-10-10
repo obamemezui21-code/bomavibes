@@ -1,4 +1,4 @@
-import { ExternalLink, Landmark } from 'lucide-react'
+import { ExternalLink, Globe2, Landmark, Music2, Newspaper } from 'lucide-react'
 import FlagIcon from '../FlagIcon.jsx'
 
 function formatDate(ts) {
@@ -8,25 +8,36 @@ function formatDate(ts) {
     : null
 }
 
-// A news article imported from an official site (backend govNewsService.js):
+// A news article imported from a news site (backend newsService.js):
 // its photo, source and date, headline, opening lines, and a link to read the
 // whole article on the source site. `compact` clamps the text (Feed).
 function NewsCard({ news, photoUrl, compact = true, children }) {
   const date = formatDate(news.publishedAt)
+  // "Actu Gabon", "Musique Gabon" or "Afrique" (the first imports had none).
+  const category = news.category || 'Actu Gabon'
   return (
     <article className="min-w-0 max-w-full overflow-hidden rounded-[28px] bg-white text-ink shadow-[0_18px_40px_-20px_rgba(0,0,0,0.35)] ring-1 ring-ink/6 dark:bg-surface-tint">
       {photoUrl && (
         <div className="relative aspect-[16/9] bg-ink/10">
           <img src={photoUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
           <span className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-black/45 px-3 py-1 text-[11px] font-bold text-white backdrop-blur-md">
-            <FlagIcon code="GA" className="!h-3 !w-4 rounded-[2px]" />
-            Actu Gabon
+            {category === 'Afrique' ? (
+              <Globe2 size={12} strokeWidth={2.5} />
+            ) : (
+              <FlagIcon code="GA" className="!h-3 !w-4 rounded-[2px]" />
+            )}
+            {category === 'Musique Gabon' && <Music2 size={12} strokeWidth={2.5} />}
+            {category}
           </span>
         </div>
       )}
       <div className="p-4">
         <p className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-300">
-          <Landmark size={13} strokeWidth={2.25} className="shrink-0" />
+          {news.sourceSite === 'interieur.gouv.ga' ? (
+            <Landmark size={13} strokeWidth={2.25} className="shrink-0" />
+          ) : (
+            <Newspaper size={13} strokeWidth={2.25} className="shrink-0" />
+          )}
           <span className="truncate">
             {news.source}
             {date && <span className="font-medium text-ink-soft/60"> · {date}</span>}

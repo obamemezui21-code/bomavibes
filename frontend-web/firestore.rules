@@ -429,7 +429,7 @@ service cloud.firestore {
           && isOptionalString('font', 30)
           // Official announcement cards are published by the backend only.
           && !('announcement' in data)
-          // So are the news imported from official sites (govNewsService.js).
+          // So are the news imported from news sites (newsService.js).
           && !('news' in data)
           && (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 500))
           && (data.type != 'photo' || (data.photoUrl is string && data.photoUrl.size() > 0))

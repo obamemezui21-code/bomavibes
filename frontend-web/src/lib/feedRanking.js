@@ -34,8 +34,8 @@ export function sortForYou(posts, authorsById, myInterests) {
   )
 }
 
-// Posts as a Feed tab shows them. The news imported from official sites
-// (post.news, backend govNewsService.js) live under Populaire, newest first
+// Posts as a Feed tab shows them. The news imported from news sites
+// (post.news, backend newsService.js) live under Populaire, newest first
 // on top; the other tabs keep to members' posts.
 export function sortFeedTab(tab, posts, authorsById, myInterests) {
   const members = posts.filter((p) => !p.news)
