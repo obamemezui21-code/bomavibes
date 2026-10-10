@@ -4,6 +4,7 @@ import roadsideUrl from '../../assets/game/roadside.webp'
 import horizonsUrl from '../../assets/game/horizons.webp'
 import monumentsUrl from '../../assets/game/monuments.webp'
 import motoKevinUrl from '../../assets/game/moto-kevin.webp'
+import motoAichaUrl from '../../assets/game/moto-aicha.webp'
 import {
   DIRECTION_SIGNS,
   DISTRICTS,
@@ -67,9 +68,8 @@ export const POWERUP_STYLE = {
   moto: { color: '#ec4899', icon: '🏍️' },
 }
 // The runner on the motorbike (power-up), seen from behind: one picture per
-// hero, bike and rider together, about MOTO_HEIGHT_CM tall. Aïcha's isn't
-// drawn yet: she borrows Kévin's meanwhile.
-export const MOTO_SPRITES = { man: motoKevinUrl, woman: motoKevinUrl }
+// hero, bike and rider together, about MOTO_HEIGHT_CM tall.
+export const MOTO_SPRITES = { man: motoKevinUrl, woman: motoAichaUrl }
 export const MOTO_HEIGHT_CM = 190
 // Lean (radians) per lane of gap while changing lane, and the engine's shake.
 export function motoTilt(view) {
