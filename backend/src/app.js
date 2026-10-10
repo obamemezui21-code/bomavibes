@@ -29,6 +29,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
 const { startStoryCleanupScheduler } = require("./services/storyCleanupService");
+const { startGovNewsScheduler } = require("./services/govNewsService");
 const { markLegacyMembers } = require("./services/identityMigration");
 
 const app = express();
@@ -84,6 +85,7 @@ startCallCleanupScheduler();
 startStoryCleanupScheduler();
 markLegacyMembers();
 startPaymentSweepScheduler();
+startGovNewsScheduler();
 
 // Error handler
 app.use((err, req, res, next) => {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { collection, getDocs, limit, query, where } from 'firebase/firestore'
 import { db } from '../../firebase/config.js'
 import AnnouncementCard from '../AnnouncementCard.jsx'
+import NewsCard from './NewsCard.jsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import { BadgeCheck, Flag, Heart, MessageCircle, MoreVertical, Pencil, Send, Sparkles, Trash2 } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
@@ -269,6 +270,23 @@ function PostCard({ post, author, isLiked, onToggleLike, onAuthorClick, onOpen, 
   }
 
   const authorName = author?.firstName || 'Quelqu’un'
+
+  // News imported from an official site: article card, actions inside it.
+  if (post.news) {
+    return (
+      <div
+        onClick={onOpen}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && onOpen?.()}
+        className="min-w-0 max-w-full cursor-pointer"
+      >
+        <NewsCard news={post.news} photoUrl={post.photoThumbUrl || post.photoUrl}>
+          {renderActions()}
+        </NewsCard>
+      </div>
+    )
+  }
 
   // Official announcement: centred card over the logo, actions below.
   if (announcement) {

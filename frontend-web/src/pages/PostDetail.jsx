@@ -29,6 +29,7 @@ import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ReportModal from '../components/ReportModal.jsx'
 import SendToModal from '../components/shared/SendToModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
+import NewsCard from '../components/feed/NewsCard.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { useIdentity } from '../context/IdentityContext.jsx'
 
@@ -299,7 +300,14 @@ function PostDetail() {
             </div>
           </div>
 
-          {post.text &&
+          {post.news && (
+            <div className="mt-3">
+              <NewsCard news={post.news} photoUrl={post.photoUrl} compact={false} />
+            </div>
+          )}
+
+          {!post.news &&
+            post.text &&
             (post.photoUrl || post.type === 'question' ? (
               <p className="mt-3 min-w-0 whitespace-pre-wrap text-sm leading-relaxed text-ink [overflow-wrap:anywhere]">{post.text}</p>
             ) : (
@@ -319,7 +327,7 @@ function PostDetail() {
             </div>
           )}
 
-          {post.photoUrl && (
+          {post.photoUrl && !post.news && (
             <div className="mt-3 max-h-[32rem] w-full overflow-hidden rounded-xl bg-ink/5">
               <img src={post.photoUrl} alt="" className="max-h-[32rem] w-full object-cover" />
             </div>
