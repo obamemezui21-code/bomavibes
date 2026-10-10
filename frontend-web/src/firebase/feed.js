@@ -103,7 +103,8 @@ function subscribeToNewPostsCount(since, tab, cb) {
   const constraints = [where('createdAt', '>', since), orderBy('createdAt', 'desc'), limit(NEW_POSTS_LIMIT)]
   if (tab === 'questions') constraints.unshift(where('type', '==', 'question'))
   const q = query(collection(db, 'posts'), ...constraints)
-  return onSnapshot(q, (snap) => cb(snap.size))
+  // Imported news only show under Populaire (sortFeedTab): not counted elsewhere.
+  return onSnapshot(q, (snap) => cb(tab === 'popular' ? snap.size : snap.docs.filter((d) => !d.data().news).length))
 }
 
 async function getPost(postId) {

@@ -8,7 +8,7 @@ import {
   toggleLike as toggleLikeDoc,
   updatePost as updatePostDoc,
 } from '../firebase/feed.js'
-import { sortForYou, sortPopular } from '../lib/feedRanking.js'
+import { sortFeedTab } from '../lib/feedRanking.js'
 import { sendPushNotification } from '../firebase/notify.js'
 import { useAuth } from './AuthContext.jsx'
 
@@ -33,7 +33,7 @@ function FeedProvider({ children }) {
       setIsLoading(true)
       try {
         const { posts: fetched, authorsById: authors, nextCursor } = await fetchFeedPage({ tab })
-        const ranked = tab === 'foryou' ? sortForYou(fetched, authors, myInterests) : tab === 'popular' ? sortPopular(fetched) : fetched
+        const ranked = sortFeedTab(tab, fetched, authors, myInterests)
         setPosts(ranked)
         setAuthorsById((prev) => ({ ...prev, ...authors }))
         setCursor(nextCursor)
@@ -79,7 +79,7 @@ function FeedProvider({ children }) {
     setIsLoadingMore(true)
     try {
       const { posts: fetched, authorsById: authors, nextCursor } = await fetchFeedPage({ tab: activeTab, cursor })
-      setPosts((prev) => [...prev, ...fetched])
+      setPosts((prev) => [...prev, ...sortFeedTab(activeTab, fetched)])
       setAuthorsById((prev) => ({ ...prev, ...authors }))
       setCursor(nextCursor)
       setHasMore(!!nextCursor)
