@@ -1,11 +1,13 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Clock, Compass, Heart, MessageCircle, Newspaper, Ticket } from 'lucide-react'
+import { Clock, Compass, Heart, ImageUp, MessageCircle, Newspaper, Ticket } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import { usePhotoQuality } from '../context/PhotoQualityContext.jsx'
 import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
+import { formatDeadline } from '../lib/photoQuality.js'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 import AppTopBar from '../components/AppTopBar.jsx'
 import NgoriDailyReward from '../components/NgoriDailyReward.jsx'
@@ -52,6 +54,8 @@ function AppLayout() {
   const navigate = useNavigate()
   const navItems = useNavItems()
   const { status: identity } = useIdentity()
+  const { status: photoQuality, lowRes } = usePhotoQuality()
+  const lowResCount = lowRes.length
   const { t } = useTranslation()
 
   function handleLogout() {
@@ -135,6 +139,21 @@ function AppLayout() {
               <Clock size={14} className="shrink-0" />
               Vérification d’identité en cours : vous pourrez liker, écrire et publier dès qu’elle sera validée.
             </div>
+          )}
+          {/* Photos that aren't HD: to replace before the deadline (see PhotoQualityContext). */}
+          {photoQuality === 'todo' && location.pathname !== '/profile' && (
+            <NavLink
+              to="/profile"
+              className="flex items-center gap-2 border-b border-amber-500/25 bg-amber-500/12 px-4 py-2 text-xs font-medium text-amber-800 dark:text-amber-200"
+            >
+              <ImageUp size={14} className="shrink-0" />
+              <span className="flex-1">
+                Les photos HD deviennent obligatoires : remplace{' '}
+                {lowResCount > 1 ? `tes ${lowResCount} photos trop petites` : 'ta photo trop petite'} avant le{' '}
+                {formatDeadline()}.
+              </span>
+              <span className="shrink-0 font-semibold underline">Mettre à jour</span>
+            </NavLink>
           )}
           {/* Keyed by the top-level segment only (not the full pathname) so
               opening a chat thread (/chat -> /chat/:id) or a post

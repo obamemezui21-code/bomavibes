@@ -157,7 +157,7 @@ function App() {
 
           <Route
             element={
-              <RequireAuth requireOnboarded requireIdentity>
+              <RequireAuth requireOnboarded requireIdentity requireHdPhotos>
                 <AppLayout />
               </RequireAuth>
             }

@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
+const admin = require("../config/firebaseAdmin");
+const { MIN_PHOTO_SIDE, isHdOriginal, isHdStored } = require("../config/photoQuality");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "profile-photos");
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://bomavibes.tech";
@@ -29,6 +31,16 @@ async function uploadPhoto(req, res) {
   }
 
   try {
+    // HD photos only (see config/photoQuality.js).
+    const { width, height } = await sharp(req.file.path).metadata();
+    if (!width || !height || !isHdOriginal(width, height)) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(422).json({
+        code: "photo-not-hd",
+        message: `Photo trop petite : il faut une photo HD d'au moins ${MIN_PHOTO_SIDE} pixels de côté. Prends-en une nouvelle avec ton téléphone plutôt qu'une capture d'écran ou une image reçue sur WhatsApp.`,
+      });
+    }
+
     const dir = path.join(UPLOAD_ROOT, uid);
     fs.mkdirSync(dir, { recursive: true });
 
@@ -60,4 +72,33 @@ async function uploadPhoto(req, res) {
   }
 }
 
-module.exports = { uploadPhoto };
+// Which of the member's current profile photos are not HD — those uploaded
+// before HD became mandatory. Measured on the stored files: a photo that
+// isn't one of ours, or whose file is gone, has to be replaced as well.
+const STORED_PHOTO = /\/uploads\/profile-photos\/([^/]+)\/(photo-\d+\.jpg)(?:\?|$)/;
+
+async function storedPhotoIsHd(uid, url) {
+  const match = typeof url === "string" && url.match(STORED_PHOTO);
+  if (!match || match[1] !== uid) return false;
+  try {
+    const { width, height } = await sharp(path.join(UPLOAD_ROOT, uid, match[2])).metadata();
+    return Boolean(width && height && isHdStored(width, height));
+  } catch {
+    return false;
+  }
+}
+
+async function photoQuality(req, res) {
+  const uid = req.firebaseUser.uid;
+  try {
+    const snap = await admin.firestore().collection("profiles").doc(uid).get();
+    const photos = (snap.exists && snap.data().photos) || [];
+    const hd = await Promise.all(photos.map((url) => storedPhotoIsHd(uid, url)));
+    res.json({ minSide: MIN_PHOTO_SIDE, lowRes: photos.filter((_, i) => !hd[i]) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Impossible de vérifier les photos" });
+  }
+}
+
+module.exports = { uploadPhoto, photoQuality };

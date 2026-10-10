@@ -8,7 +8,9 @@ import { uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { findCountry, findRegion } from '../lib/geography.js'
+import { MIN_PHOTO_SIDE, PHOTO_NOT_HD_MESSAGE, isHdPhoto } from '../lib/photoQuality.js'
 import CountryPicker from '../components/CountryPicker.jsx'
+import SearchSelect from '../components/SearchSelect.jsx'
 import ProfileLaunchOverlay from '../components/ProfileLaunchOverlay.jsx'
 import { FullPageSpinner } from '../components/ui/Spinner.jsx'
 import {
@@ -94,8 +96,13 @@ function Onboarding() {
     return upload
   }
 
-  function handleAddPhotos(e) {
-    const files = Array.from(e.target.files || []).slice(0, 3 - form.photos.length)
+  async function handleAddPhotos(e) {
+    const picked = Array.from(e.target.files || []).slice(0, 3 - form.photos.length)
+    e.target.value = ''
+    const hd = await Promise.all(picked.map(isHdPhoto))
+    const files = picked.filter((_, i) => hd[i])
+    if (files.length < picked.length) showToast(PHOTO_NOT_HD_MESSAGE, 'error')
+    if (!files.length) return
     const freeSlots = [0, 1, 2].filter((slot) => !form.photos.some((p) => p.slot === slot))
     const entries = files.map((file, i) => ({
       file,
@@ -104,7 +111,6 @@ function Onboarding() {
       upload: startUpload(freeSlots[i], file),
     }))
     setForm((f) => ({ ...f, photos: [...f.photos, ...entries].slice(0, 3) }))
-    e.target.value = ''
   }
 
   function removePhoto(index) {
@@ -310,6 +316,10 @@ function Onboarding() {
                   <p className="mt-1 text-sm text-ink-soft/60">
                     Un profil avec au moins une photo reçoit bien plus de matchs.
                   </p>
+                  <p className="mt-1 text-xs text-ink-soft/50">
+                    Photos HD uniquement (au moins {MIN_PHOTO_SIDE} pixels de côté) : pas de capture d’écran ni d’image
+                    compressée.
+                  </p>
 
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     {[0, 1, 2].map((i) => {
@@ -437,45 +447,48 @@ function Onboarding() {
                   <h2 className="font-display text-xl font-semibold text-ink">Où vous êtes</h2>
                   <p className="mt-1 text-sm text-ink-soft/60">Choisissez votre pays, puis votre région et votre ville.</p>
 
-                  <CountryPicker
-                    value={form.country}
-                    onSelect={selectCountry}
-                    className="mt-4 max-h-72 overflow-y-auto pr-1"
-                  />
+                  <div className="mt-4">
+                    <label htmlFor="country" className={labelClass}>
+                      Pays
+                    </label>
+                    <CountryPicker id="country" value={form.country} onSelect={selectCountry} />
+                  </div>
 
                   {form.country && findCountry(form.country)?.regions.length > 0 && (
                     <div className="mt-5">
-                      <p className={labelClass}>Région</p>
-                      <div className="flex flex-wrap gap-2">
-                        {findCountry(form.country).regions.map((r) => (
-                          <button
-                            key={r.name}
-                            type="button"
-                            onClick={() => selectRegion(r.name)}
-                            className={chipClass(form.region === r.name)}
-                          >
-                            {r.name}
-                          </button>
-                        ))}
-                      </div>
+                      <label htmlFor="region" className={labelClass}>
+                        Région
+                      </label>
+                      <SearchSelect
+                        id="region"
+                        value={form.region}
+                        options={findCountry(form.country).regions.map((r) => ({ value: r.name, label: r.name }))}
+                        onSelect={selectRegion}
+                        title="Choisir une région"
+                        placeholder="Choisir une région"
+                        searchPlaceholder="Rechercher une région…"
+                      />
                     </div>
                   )}
 
                   {form.region && findRegion(form.country, form.region)?.cities.length > 0 && (
                     <div className="mt-5">
-                      <p className={labelClass}>Ville</p>
-                      <div className="flex flex-wrap gap-2">
-                        {findRegion(form.country, form.region).cities.map((city) => (
-                          <button
-                            key={city}
-                            type="button"
-                            onClick={() => selectCity(city)}
-                            className={chipClass(form.city === city)}
-                          >
-                            {city}
-                          </button>
-                        ))}
-                      </div>
+                      <label htmlFor="city" className={labelClass}>
+                        Ville
+                      </label>
+                      <SearchSelect
+                        id="city"
+                        value={form.city}
+                        options={findRegion(form.country, form.region).cities.map((city) => ({
+                          value: city,
+                          label: city,
+                        }))}
+                        onSelect={selectCity}
+                        title="Choisir une ville"
+                        placeholder="Choisir une ville"
+                        searchPlaceholder="Rechercher ou saisir une ville…"
+                        allowCustom
+                      />
                     </div>
                   )}
                 </div>

@@ -14,6 +14,7 @@ import { ConversationsProvider } from './context/ConversationsContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { CallProvider } from './context/CallContext.jsx'
 import { IdentityProvider } from './context/IdentityContext.jsx'
+import { PhotoQualityProvider } from './context/PhotoQualityContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -22,11 +23,13 @@ createRoot(document.getElementById('root')).render(
         <ToastProvider>
           <AuthProvider>
             <IdentityProvider>
-              <ConversationsProvider>
-                <CallProvider>
-                  <App />
-                </CallProvider>
-              </ConversationsProvider>
+              <PhotoQualityProvider>
+                <ConversationsProvider>
+                  <CallProvider>
+                    <App />
+                  </CallProvider>
+                </ConversationsProvider>
+              </PhotoQualityProvider>
             </IdentityProvider>
           </AuthProvider>
         </ToastProvider>

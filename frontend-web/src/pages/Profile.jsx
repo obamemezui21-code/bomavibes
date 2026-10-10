@@ -7,8 +7,11 @@ import { db } from '../firebase/config.js'
 import { uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
+import { usePhotoQuality } from '../context/PhotoQualityContext.jsx'
 import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
+import { MIN_PHOTO_SIDE, PHOTO_NOT_HD_MESSAGE, formatDeadline, isHdPhoto } from '../lib/photoQuality.js'
 import CountryPicker from '../components/CountryPicker.jsx'
+import SearchSelect from '../components/SearchSelect.jsx'
 import SupportModal from '../components/SupportModal.jsx'
 import VerificationCard from '../components/VerificationCard.jsx'
 import SubscriptionCard from '../components/SubscriptionCard.jsx'
@@ -50,6 +53,7 @@ const emptyForm = {
 function Profile() {
   const { user, publicProfile, isPublicProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
+  const { lowRes, blocked: photosBlocked } = usePhotoQuality()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
   const [countryCode, setCountryCode] = useState('')
@@ -133,12 +137,22 @@ function Profile() {
     setForm((f) => ({ ...f, lifestyle: { ...f.lifestyle, [key]: value } }))
   }
 
-  function handlePhotoSelect(index, e) {
+  async function handlePhotoSelect(index, e) {
     const file = e.target.files?.[0]
-    if (!file) return
-    setPhotoSlots((slots) => slots.map((s, i) => (i === index ? { file, previewUrl: URL.createObjectURL(file) } : s)))
     e.target.value = ''
+    if (!file) return
+    if (!(await isHdPhoto(file))) {
+      setError(PHOTO_NOT_HD_MESSAGE)
+      showToast(PHOTO_NOT_HD_MESSAGE, 'error')
+      return
+    }
+    setError('')
+    setPhotoSlots((slots) => slots.map((s, i) => (i === index ? { file, previewUrl: URL.createObjectURL(file) } : s)))
   }
+
+  // A photo already on the profile that isn't HD (see PhotoQualityContext).
+  const isLowRes = (slot) => Boolean(slot?.url && !slot.file && lowRes.includes(slot.url))
+  const lowResCount = photoSlots.filter(isLowRes).length
 
   function removePhotoSlot(index) {
     setPhotoSlots((slots) => slots.map((s, i) => (i === index ? null : s)))
@@ -161,6 +175,10 @@ function Profile() {
     const parsedHeight = form.height === '' ? null : Number(form.height)
     if (parsedHeight !== null && (!Number.isInteger(parsedHeight) || parsedHeight < 120 || parsedHeight > 230)) {
       setError('La taille doit être en centimètres (entre 120 et 230)')
+      return
+    }
+    if (lowResCount) {
+      setError('Remplace ou retire les photos marquées « Pas en HD » avant d’enregistrer.')
       return
     }
 
@@ -208,9 +226,10 @@ function Profile() {
       setSuccess(true)
       showToast('Profil mis à jour avec succès.', 'success')
       setTimeout(() => setSuccess(false), 2500)
-    } catch {
-      setError('Impossible de mettre à jour votre profil')
-      showToast('Impossible de mettre à jour votre profil', 'error')
+    } catch (err) {
+      const message = err?.code === 'photo-not-hd' ? err.message : 'Impossible de mettre à jour votre profil'
+      setError(message)
+      showToast(message, 'error')
     } finally {
       setIsSaving(false)
     }
@@ -303,17 +322,39 @@ function Profile() {
 
           <div>
             <label className={labelClass}>Photos</label>
+            {lowResCount > 0 && (
+              <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+                <p className="font-semibold">
+                  {photosBlocked
+                    ? 'Remplace tes photos pour continuer à utiliser BomaVibes'
+                    : `Les photos HD deviennent obligatoires le ${formatDeadline()}`}
+                </p>
+                <p className="mt-1 text-xs">
+                  {lowResCount > 1 ? `${lowResCount} de tes photos sont trop petites` : 'Une de tes photos est trop petite'}{' '}
+                  (moins de {MIN_PHOTO_SIDE} pixels de côté). Retire-{lowResCount > 1 ? 'les' : 'la'} avec la croix et
+                  ajoute une photo HD prise avec ton téléphone, puis enregistre.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               {[0, 1, 2].map((i) => {
                 const src = photoSlots[i]?.previewUrl || photoSlots[i]?.url
+                const lowResSlot = isLowRes(photoSlots[i])
                 return (
                   <div
                     key={i}
-                    className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-dashed border-ink/15 bg-ink/[0.03]"
+                    className={`relative aspect-[3/4] overflow-hidden rounded-2xl border bg-ink/[0.03] ${
+                      lowResSlot ? 'border-2 border-amber-500' : 'border-dashed border-ink/15'
+                    }`}
                   >
                     {src ? (
                       <>
                         <img src={src} alt="" className="h-full w-full object-cover" />
+                        {lowResSlot && (
+                          <span className="absolute inset-x-0 bottom-0 bg-amber-500 py-1 text-center text-[11px] font-bold text-white">
+                            Pas en HD
+                          </span>
+                        )}
                         <button
                           type="button"
                           onClick={() => removePhotoSlot(i)}
@@ -397,8 +438,10 @@ function Profile() {
           </div>
 
           <div>
-            <label className={labelClass}>Pays</label>
-            <CountryPicker value={countryCode} onSelect={selectCountry} className="max-h-60 overflow-y-auto pr-1" />
+            <label htmlFor="country" className={labelClass}>
+              Pays
+            </label>
+            <CountryPicker id="country" value={countryCode} onSelect={selectCountry} />
             {!countryCode && form.country && (
               <p className="mt-2 text-xs text-ink-soft/50">Actuel : {form.country}</p>
             )}
@@ -406,37 +449,36 @@ function Profile() {
 
           {countryCode && findCountry(countryCode)?.regions.length > 0 && (
             <div>
-              <label className={labelClass}>Région</label>
-              <div className="flex flex-wrap gap-2">
-                {findCountry(countryCode).regions.map((r) => (
-                  <button
-                    key={r.name}
-                    type="button"
-                    onClick={() => selectRegion(r.name)}
-                    className={chipClass(form.region === r.name)}
-                  >
-                    {r.name}
-                  </button>
-                ))}
-              </div>
+              <label htmlFor="region" className={labelClass}>
+                Région
+              </label>
+              <SearchSelect
+                id="region"
+                value={form.region}
+                options={findCountry(countryCode).regions.map((r) => ({ value: r.name, label: r.name }))}
+                onSelect={selectRegion}
+                title="Choisir une région"
+                placeholder="Choisir une région"
+                searchPlaceholder="Rechercher une région…"
+              />
             </div>
           )}
 
           {form.region && findRegion(countryCode, form.region)?.cities.length > 0 ? (
             <div>
-              <label className={labelClass}>Ville</label>
-              <div className="flex flex-wrap gap-2">
-                {findRegion(countryCode, form.region).cities.map((city) => (
-                  <button
-                    key={city}
-                    type="button"
-                    onClick={() => selectCity(city)}
-                    className={chipClass(form.city === city)}
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
+              <label htmlFor="city" className={labelClass}>
+                Ville
+              </label>
+              <SearchSelect
+                id="city"
+                value={form.city}
+                options={findRegion(countryCode, form.region).cities.map((city) => ({ value: city, label: city }))}
+                onSelect={selectCity}
+                title="Choisir une ville"
+                placeholder="Choisir une ville"
+                searchPlaceholder="Rechercher ou saisir une ville…"
+                allowCustom
+              />
             </div>
           ) : (
             <div>
