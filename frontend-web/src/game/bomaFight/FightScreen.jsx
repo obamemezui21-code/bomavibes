@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Pause, Play, Shield, Volume2, VolumeX, Zap } from 'lucide-react'
 import { FIGHTERS, MAX_ENERGY, ROUND_TICKS, TICK_RATE, createFight, step } from '../../../../shared/boma-fight/engine.mjs'
-import { createFightRenderer } from './renderer.js'
-import { PORTRAITS } from './portraits.js'
+import { LOOKS, createFightRenderer } from './renderer.js'
+import { SPRITES } from './portraits.js'
 
 const SIM_MS = 1000 / TICK_RATE
 const CONTROLS_H = 190 // px kept under the floor for the buttons
@@ -11,15 +11,25 @@ const MOVE_KEYS = { ArrowLeft: -1, q: -1, a: -1, ArrowRight: 1, d: 1 }
 const ATTACK_KEYS = { j: 'P', k: 'K', i: 'X', ' ': 'X' }
 const GUARD_KEYS = new Set(['l', 'Shift', 'ArrowDown', 's'])
 
+// The fighter's face, zoomed in on their cut-out.
+function FaceBadge({ fighter, className = '' }) {
+  const look = LOOKS[fighter]
+  const zoom = 3.3
+  const y = Math.max(0, Math.min(1, (look.face - 0.5 / zoom) / (1 - 1 / zoom)))
+  return (
+    <span
+      className={`block shrink-0 bg-gradient-to-b from-amber-200/40 to-violet-900/60 bg-no-repeat ring-2 ring-white/70 ${className}`}
+      style={{ backgroundImage: `url(${SPRITES[fighter]})`, backgroundSize: `auto ${zoom * 100}%`, backgroundPosition: `${look.cx * 100}% ${y * 100}%` }}
+    />
+  )
+}
+
 function HealthBar({ fighter, hp, maxHp, energy, wins, side }) {
   const right = side === 'right'
   const share = Math.max(0, hp / maxHp)
   return (
     <div className={`flex min-w-0 flex-1 items-center gap-2 ${right ? 'flex-row-reverse' : ''}`}>
-      {/* The face: the top of the full-length portrait, zoomed in. */}
-      <span className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-black/40 ring-2 ring-white/70">
-        <img src={PORTRAITS[fighter]} alt="" className="w-full origin-top scale-[1.6]" />
-      </span>
+      <FaceBadge fighter={fighter} className="h-11 w-11 rounded-xl" />
       <div className="min-w-0 flex-1">
         <div className={`flex items-center gap-1.5 ${right ? 'flex-row-reverse' : ''}`}>
           <p className="truncate font-display text-sm font-bold uppercase leading-none">{FIGHTERS[fighter].name}</p>

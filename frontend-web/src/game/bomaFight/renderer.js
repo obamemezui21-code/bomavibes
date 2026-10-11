@@ -1,421 +1,84 @@
 // BOMA FIGHT's 2D canvas renderer: the stage photo, the floor, and the two
-// fighters drawn as posed figures in their own colours and gear (see LOOKS).
-// Purely visual — the fight itself is shared/boma-fight/engine.mjs.
+// fighters — each one the very warrior of the roster picture, cut out
+// (assets/game/fight/sprites/), animated like a puppet: breathing, lunging
+// into a blow with a swoosh trail, recoiling, falling. Purely visual — the
+// fight itself is shared/boma-fight/engine.mjs.
 import { ARENA, MOVES, FIGHTERS } from '../../../../shared/boma-fight/engine.mjs'
+import { SPRITES } from './portraits.js'
 
-// How each fighter looks (portraits: assets/game/fight/<id>.webp).
-//   skin, wrap: [main, stripe] cloth at the hips, top (women), gear on the
-//   head, weapon in the front hand, size (1 = average build), glow (aura).
+// Per fighter: where their body's centre sits in the cut-out (cx, share of
+// its width), which side their weapon sticks out on in the picture (-1 left,
+// 1 right, 0 none: the sprite is mirrored so it points at the opponent), the
+// colour of their blows' trail and of their special's aura; face: how far
+// down the cut-out their face is (share of its height), for the HUD.
 export const LOOKS = {
-  nzeang: { skin: '#6b4429', wrap: ['#b8322a', '#1f4e9a'], head: 'mask', weapon: 'club', size: 1.12, beads: '#e8dcc0' },
-  bikoulou: { skin: '#5a3a22', wrap: ['#1f8f4e', '#e2b33c'], top: '#1f8f4e', head: 'braids', size: 0.94, wraps: '#1f8f4e' },
-  ondo: { skin: '#4b3020', wrap: ['#2457a6', '#f1f1f1'], robe: '#2457a6', head: 'cap', weapon: 'spear', size: 1 },
-  amissa: { skin: '#5d3b23', wrap: ['#a87b45', '#6b4a28'], top: '#a87b45', head: 'bun', size: 0.96 },
-  mebale: { skin: '#5a3820', wrap: ['#7a5a3a', '#3b2a1c'], head: 'shaved', weapon: 'shield', size: 1.08, tattoo: true },
-  luku: { skin: '#4f3220', wrap: ['#7b5a3a', '#1b1b1b'], head: 'headband', weapon: 'machete', size: 1, beads: '#f1f1f1' },
-  kassa: { skin: '#5a3922', wrap: ['#6d4c35', '#c0392b'], top: '#8a5a3a', head: 'crown', weapon: 'swords', size: 0.97, beads: '#2ecc71' },
-  nzame: { skin: '#3d2a1e', wrap: ['#8a6e4b', '#5a4630'], head: 'headband', size: 1.04, glow: '#ffd34d', lines: '#4fc3ff' },
-  obame: { skin: '#4e3220', wrap: ['#7d2f3a', '#2b3f8f'], head: 'shaved', weapon: 'gloves', gloves: '#c8a24a', size: 1.12, belt: '#d4af37' },
-  sally: { skin: '#5a3a24', wrap: ['#2b8a3e', '#f2c230'], top: '#141414', head: 'bun', weapon: 'gloves', gloves: '#f3f3f3', size: 0.96 },
-  biyogo: { skin: '#4a2f1f', wrap: ['#e2a23b', '#2f6db5'], head: 'short', weapon: 'gloves', gloves: '#1b1b1b', size: 0.92 },
-  essono: { skin: '#4a3020', wrap: ['#6e5236', '#4a3826'], head: 'short', weapon: 'armor', armor: '#8a6a44', size: 1.08 },
+  nzeang: { cx: 0.645, face: 0.12, weaponSide: -1, trail: '#c89b62', aura: '#ff7a3d' },
+  bikoulou: { cx: 0.532, face: 0.1, weaponSide: 0, trail: '#ffffff', aura: '#3ddc84' },
+  ondo: { cx: 0.532, face: 0.27, weaponSide: -1, trail: '#dfe6ea', aura: '#5aa0ff' },
+  amissa: { cx: 0.575, face: 0.1, weaponSide: 0, trail: '#ffffff', aura: '#ffb03d' },
+  mebale: { cx: 0.511, face: 0.08, weaponSide: 1, trail: '#e1d0aa', aura: '#d9a35b' },
+  luku: { cx: 0.583, face: 0.12, weaponSide: -1, trail: '#e3e9ed', aura: '#ff4d4d' },
+  kassa: { cx: 0.524, face: 0.08, weaponSide: 1, trail: '#e3e9ed', aura: '#2ee6a6' },
+  nzame: { cx: 0.48, face: 0.08, weaponSide: 0, trail: '#ffe27a', aura: '#ffd34d' },
+  obame: { cx: 0.465, face: 0.07, weaponSide: 0, trail: '#ffe7a3', aura: '#ffcf3d' },
+  sally: { cx: 0.525, face: 0.07, weaponSide: 0, trail: '#ffffff', aura: '#ff5fa2' },
+  biyogo: { cx: 0.577, face: 0.08, weaponSide: 0, trail: '#ffffff', aura: '#7c5cff' },
+  essono: { cx: 0.437, face: 0.07, weaponSide: 0, trail: '#c9a46a', aura: '#c0c7cf' },
 }
+// The cut-outs' common scale: a fighter of this many pixels is "standard" height.
+const STANDARD_H = 380
 
 const lerp = (a, b, t) => a + (b - a) * t
 const clamp01 = (t) => Math.max(0, Math.min(1, t))
 const ease = (t) => 1 - (1 - t) * (1 - t)
 
-// Joint angles, in radians from straight down, positive = toward the opponent.
-//   lean: torso; fa / ba: front / back arm [upper, forearm]; fl / bl: legs [thigh, shin].
-const GUARD = { lean: 0.08, fa: [0.55, 2.5], ba: [0.25, 2.65], fl: [0.32, 0.1], bl: [-0.32, -0.12], drop: 0, lift: 0 }
-
-function attackPose(f) {
+// How far an attack is: < 0 winding up, 1 fully out, back to 0 on recovery.
+function attackProgress(f) {
   const m = MOVES[f.move]
   const startup = Math.max(2, m.startup - FIGHTERS[f.id].quick)
   const t = f.t
-  // 0 → wind-up, 1 → fully out, then back to guard.
-  const out = t < startup ? -0.35 * ease(t / startup) : t < startup + m.active ? 1 : 1 - ease((t - startup - m.active) / m.recovery)
-  const k = Math.max(0, out)
-  const wind = Math.min(0, out)
-  if (f.move === 'punch') {
-    return { ...GUARD, lean: 0.08 + 0.2 * k, fa: [lerp(0.55, 1.57, k) + wind, lerp(2.5, 1.57, k)], ba: [0.15, 2.7] }
-  }
-  if (f.move === 'kick') {
-    return { ...GUARD, lean: 0.08 - 0.3 * k, fl: [lerp(0.32, 1.45, k) + wind, lerp(0.1, 1.6, k)], bl: [-0.15, -0.1], fa: [0.3, 2.2], ba: [-0.4, 1.8] }
-  }
-  // special: a lunge, both arms (and the weapon) thrown forward.
-  return { ...GUARD, lean: 0.1 + 0.35 * k, fa: [lerp(0.55, 1.6, k) + wind, lerp(2.5, 1.6, k)], ba: [lerp(0.25, 1.45, k), lerp(2.65, 1.5, k)], fl: [0.6 * k + 0.3, 0.2], bl: [-0.6, -0.4] }
+  if (t < startup) return { out: -0.6 * ease(t / startup), active: false }
+  if (t < startup + m.active) return { out: 1, active: true }
+  return { out: 1 - ease(clamp01((t - startup - m.active) / m.recovery)), active: false }
 }
 
+// The puppet's pose: lean (rad, + toward the opponent), shift (share of the
+// fighter's height, + toward the opponent), lift (share of height, up),
+// sx / sy (squash), fall (0 standing → 1 lying), plus what to draw around.
 export function poseOf(f, time) {
-  const breath = Math.sin(time * 3 + (f.id.length % 3)) * 0.03
+  const base = { lean: 0, shift: 0, lift: 0, sx: 1, sy: 1, fall: 0 }
   switch (f.state) {
     case 'walk': {
-      const s = Math.sin(f.t * 0.25)
-      return { ...GUARD, fl: [0.25 + s * 0.35, 0.05 + Math.max(0, s) * 0.3], bl: [-0.25 - s * 0.35, -0.1 + Math.max(0, -s) * 0.3], drop: Math.abs(s) * 2 }
+      const s = Math.sin(f.t * 0.28)
+      return { ...base, lift: Math.abs(s) * 0.025, lean: 0.04 * Math.sign(f.walkDir * f.facing) }
     }
-    case 'attack':
-      return attackPose(f)
+    case 'attack': {
+      const { out, active } = attackProgress(f)
+      const k = Math.max(0, out)
+      const wind = Math.min(0, out)
+      if (f.move === 'punch') return { ...base, lean: 0.13 * k - 0.1 * wind, shift: 0.12 * k + 0.04 * wind, sx: 1 + 0.04 * k, swoosh: active ? 'punch' : null }
+      if (f.move === 'kick') return { ...base, lean: -0.1 * k - 0.06 * wind, shift: 0.16 * k, lift: 0.04 * k, sy: 1 - 0.03 * k, swoosh: active ? 'kick' : null }
+      return { ...base, lean: 0.2 * k - 0.15 * wind, shift: 0.3 * k + 0.06 * wind, sx: 1 + 0.06 * k, aura: true, trail: k > 0.2, swoosh: active ? 'special' : null }
+    }
     case 'block':
-      return { ...GUARD, lean: 0.02, fa: [0.95, 2.95], ba: [0.75, 3.0], drop: 4 }
-    case 'hit':
-      return { ...GUARD, lean: -0.4, fa: [-0.2, 0.6], ba: [-0.5, 0.3], fl: [0.45, 0.2], bl: [-0.15, -0.05], drop: 3 }
-    case 'down':
+      return { ...base, lean: -0.07, shift: -0.02, sx: 0.96, sy: 0.98, guard: true }
+    case 'hit': {
+      const k = 1 - clamp01(f.t / Math.max(1, f.stun))
+      return { ...base, lean: -0.22 * k, shift: -0.05 * k, sx: 1 - 0.04 * k }
+    }
+    case 'down': {
+      // Knocked flat, then back up at the end.
+      const fallT = clamp01(f.t / 10)
+      const rise = clamp01((f.t - 43) / 12)
+      return { ...base, fall: ease(fallT) * (1 - rise) }
+    }
     case 'ko':
-      return { ...GUARD, lean: -0.15, fa: [-1.2, -1.4], ba: [-0.9, -1.2], fl: [0.15, 0.1], bl: [-0.1, 0], lying: true }
+      return { ...base, fall: ease(clamp01(f.t / 14)) }
     case 'win':
-      return { ...GUARD, lean: -0.05, fa: [0.4, 2.2], ba: [2.9, 3.05], fl: [0.18, 0.05], bl: [-0.18, -0.05] }
+      return { ...base, lift: Math.abs(Math.sin(f.t * 0.12)) * 0.05, sy: 1 + Math.abs(Math.sin(f.t * 0.12)) * 0.02 }
     default:
-      return { ...GUARD, lean: GUARD.lean + breath, fa: [0.55 + breath, 2.5], drop: 2 + breath * 40 }
+      return { ...base, sy: 1 + Math.sin(time * 3.2 + f.id.length) * 0.012, lean: Math.sin(time * 1.6 + f.id.length) * 0.012 }
   }
-}
-
-// A point `len` away from (x, y) at `angle` (0 = down), facing `dir`.
-const from = (x, y, angle, len, dir) => [x + Math.sin(angle) * len * dir, y + Math.cos(angle) * len]
-
-const OUTLINE = '#1a0f0a'
-
-// A limb (or any thick line) with a dark outline, cel-shaded style.
-function limb(ctx, pts, width, color, outline = true) {
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-  const path = () => {
-    ctx.beginPath()
-    ctx.moveTo(pts[0][0], pts[0][1])
-    for (const p of pts.slice(1)) ctx.lineTo(p[0], p[1])
-  }
-  if (outline) {
-    ctx.strokeStyle = OUTLINE
-    ctx.lineWidth = width + Math.max(2, width * 0.22)
-    path()
-    ctx.stroke()
-  }
-  ctx.strokeStyle = color
-  ctx.lineWidth = width
-  path()
-  ctx.stroke()
-}
-
-// A tapered limb: thick at the joint it starts from, thinner at its end.
-function taper(ctx, a, b, w1, w2, color) {
-  const dx = b[0] - a[0]
-  const dy = b[1] - a[1]
-  const len = Math.hypot(dx, dy) || 1
-  const nx = -dy / len
-  const ny = dx / len
-  const shape = (grow) => {
-    ctx.beginPath()
-    ctx.moveTo(a[0] + nx * (w1 / 2 + grow), a[1] + ny * (w1 / 2 + grow))
-    ctx.lineTo(b[0] + nx * (w2 / 2 + grow), b[1] + ny * (w2 / 2 + grow))
-    ctx.arc(b[0], b[1], w2 / 2 + grow, Math.atan2(ny, nx), Math.atan2(ny, nx) + Math.PI, true)
-    ctx.lineTo(a[0] - nx * (w1 / 2 + grow), a[1] - ny * (w1 / 2 + grow))
-    ctx.arc(a[0], a[1], w1 / 2 + grow, Math.atan2(-ny, -nx), Math.atan2(-ny, -nx) + Math.PI, true)
-    ctx.closePath()
-  }
-  ctx.fillStyle = OUTLINE
-  shape(Math.max(1.2, w1 * 0.12))
-  ctx.fill()
-  ctx.fillStyle = color
-  shape(0)
-  ctx.fill()
-}
-
-function blob(ctx, x, y, rx, ry, color, outline = true) {
-  if (outline) {
-    ctx.fillStyle = OUTLINE
-    ctx.beginPath()
-    ctx.ellipse(x, y, rx + Math.max(1.2, rx * 0.12), ry + Math.max(1.2, ry * 0.12), 0, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  ctx.fillStyle = color
-  ctx.beginPath()
-  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2)
-  ctx.fill()
-}
-
-function shade(hex, amount) {
-  const n = parseInt(hex.slice(1), 16)
-  const c = (v) => Math.max(0, Math.min(255, Math.round(v + amount)))
-  return `rgb(${c(n >> 16)}, ${c((n >> 8) & 255)}, ${c(n & 255)})`
-}
-
-function drawWeapon(ctx, look, hand, forearmAngle, dir, u, front) {
-  const [hx, hy] = hand
-  const a = forearmAngle
-  if (look.weapon === 'club') {
-    const tip = from(hx, hy, a + 0.25, u * 1.1, dir)
-    taper(ctx, [hx, hy], tip, u * 0.12, u * 0.3, '#7a5532')
-    blob(ctx, tip[0], tip[1], u * 0.2, u * 0.2, '#6b4a2b')
-  } else if (look.weapon === 'spear') {
-    const back = from(hx, hy, a + Math.PI, u * 0.95, dir)
-    const tip = from(hx, hy, a, u * 1.55, dir)
-    limb(ctx, [back, tip], u * 0.07, '#9a7444')
-    const head = from(tip[0], tip[1], a, u * 0.35, dir)
-    taper(ctx, tip, head, u * 0.16, u * 0.02, '#d7dee4')
-  } else if (look.weapon === 'machete' || look.weapon === 'swords') {
-    const grip = from(hx, hy, a, u * 0.16, dir)
-    limb(ctx, [[hx, hy], grip], u * 0.11, '#3b2a1c')
-    const tip = from(hx, hy, a + 0.05, look.weapon === 'machete' ? u * 1.0 : u * 0.95, dir)
-    taper(ctx, grip, tip, look.weapon === 'machete' ? u * 0.2 : u * 0.12, u * 0.04, '#e3e9ed')
-  }
-  if (look.weapon === 'gloves') blob(ctx, hx, hy, u * 0.17, u * 0.17, look.gloves)
-  else if (front || look.weapon !== 'swords') blob(ctx, hx, hy, u * 0.11, u * 0.11, look.skin)
-}
-
-function drawHead(ctx, look, x, y, u, dir) {
-  const r = u * 0.3
-  const hair = '#17110c'
-  // Hair behind the head.
-  if (look.head === 'bun' || look.head === 'braids') blob(ctx, x - dir * r * 0.3, y - r * 1.05, r * 0.45, r * 0.42, hair)
-  blob(ctx, x, y, r * 0.86, r, look.skin)
-  // Ear and jaw shading, away from the opponent.
-  ctx.fillStyle = shade(look.skin, -25)
-  ctx.beginPath()
-  ctx.ellipse(x - dir * r * 0.35, y + r * 0.05, r * 0.16, r * 0.22, 0, 0, Math.PI * 2)
-  ctx.fill()
-  if (look.head === 'mask') {
-    blob(ctx, x + dir * r * 0.18, y + r * 0.12, r * 0.72, r * 1.08, '#eadfc4')
-    ctx.fillStyle = '#2a1d14'
-    for (const ex of [-0.1, 0.48]) {
-      ctx.beginPath()
-      ctx.ellipse(x + dir * r * ex, y - r * 0.08, r * 0.18, r * 0.07, 0, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.fillStyle = '#b8322a'
-    ctx.fillRect(x + dir * r * 0.1 - r * 0.2, y + r * 0.55, r * 0.4, r * 0.08)
-    limb(ctx, [[x - r * 0.75, y - r * 1.05], [x - r * 0.3, y - r * 1.6], [x + r * 0.3, y - r * 1.6], [x + r * 0.75, y - r * 1.05]], u * 0.06, '#3b2a1c')
-    return
-  }
-  // Eye, brow and mouth on the side facing the opponent.
-  ctx.fillStyle = '#f5efe6'
-  ctx.beginPath()
-  ctx.ellipse(x + dir * r * 0.45, y - r * 0.08, r * 0.14, r * 0.1, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = '#1a120c'
-  ctx.beginPath()
-  ctx.arc(x + dir * r * 0.5, y - r * 0.08, r * 0.07, 0, Math.PI * 2)
-  ctx.fill()
-  limb(ctx, [[x + dir * r * 0.28, y - r * 0.3], [x + dir * r * 0.66, y - r * 0.22]], r * 0.09, hair, false)
-  limb(ctx, [[x + dir * r * 0.45, y + r * 0.45], [x + dir * r * 0.7, y + r * 0.42]], r * 0.07, '#3a2016', false)
-  if (look.head === 'cap') {
-    ctx.fillStyle = '#eef2f7'
-    ctx.beginPath()
-    ctx.ellipse(x, y - r * 0.62, r * 0.9, r * 0.5, 0, Math.PI, Math.PI * 2)
-    ctx.fill()
-    ctx.fillStyle = '#2457a6'
-    ctx.fillRect(x - r * 0.9, y - r * 0.66, r * 1.8, r * 0.14)
-  } else if (look.head === 'headband' || look.head === 'crown') {
-    ctx.fillStyle = hair
-    ctx.beginPath()
-    ctx.ellipse(x, y - r * 0.5, r * 0.86, r * 0.55, 0, Math.PI, Math.PI * 2)
-    ctx.fill()
-    ctx.fillStyle = look.head === 'crown' ? '#d4af37' : look.glow ? '#ffd34d' : '#b8322a'
-    ctx.fillRect(x - r * 0.86, y - r * 0.62, r * 1.72, r * 0.2)
-    if (look.head === 'crown') blob(ctx, x, y - r * 0.72, r * 0.12, r * 0.12, '#e74c3c', false)
-  } else if (look.head === 'bun' || look.head === 'braids' || look.head === 'short') {
-    ctx.fillStyle = hair
-    ctx.beginPath()
-    ctx.ellipse(x, y - r * 0.45, r * 0.88, r * 0.6, 0, Math.PI, Math.PI * 2)
-    ctx.fill()
-  }
-}
-
-// One fighter, feet at (x, floor), `h` tall.
-function drawFighter(ctx, f, x, floor, h, time, flash) {
-  const look = LOOKS[f.id] || LOOKS.nzame
-  const pose = poseOf(f, time)
-  const dir = f.facing
-  const u = (h / 3.3) * look.size // one "head-and-a-bit" unit
-  const bulk = look.size // broader shoulders for the big ones
-  ctx.save()
-  // Struck: a white flash (where canvas filters exist).
-  if (flash && 'filter' in ctx) ctx.filter = `brightness(${1 + flash * 1.6})`
-  if (pose.lying) {
-    // On the floor, head away from the opponent.
-    const px = x
-    const py = floor - u * 0.3
-    ctx.translate(px, py)
-    ctx.rotate(-dir * (Math.PI / 2) * Math.min(1, f.t / 12))
-    ctx.translate(-px, -py)
-  }
-  const hipY = floor - u * 1.68 + (pose.drop || 0)
-  const hip = [x, hipY]
-
-  if (look.glow) {
-    const g = ctx.createRadialGradient(x, hipY - u * 0.6, u * 0.3, x, hipY - u * 0.6, u * 2.3)
-    g.addColorStop(0, `rgba(255, 211, 77, ${0.3 + Math.sin(time * 4) * 0.08})`)
-    g.addColorStop(1, 'rgba(79, 195, 255, 0)')
-    ctx.fillStyle = g
-    ctx.beginPath()
-    ctx.arc(x, hipY - u * 0.6, u * 2.3, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  const neck = from(hip[0], hip[1], Math.PI - pose.lean, u * 1.3, dir)
-  const sw = u * 0.42 * bulk // half shoulder width
-  const shoulderF = [neck[0] + dir * sw * 0.55, neck[1] + u * 0.14]
-  const shoulderB = [neck[0] - dir * sw * 0.55, neck[1] + u * 0.14]
-  const leg = (angles) => {
-    const knee = from(hip[0], hip[1], angles[0], u * 0.86, dir)
-    return [hip, knee, from(knee[0], knee[1], angles[1], u * 0.84, dir)]
-  }
-  const arm = (shoulder, angles) => {
-    const elbow = from(shoulder[0], shoulder[1], angles[0], u * 0.58, dir)
-    return [shoulder, elbow, from(elbow[0], elbow[1], angles[1], u * 0.55, dir)]
-  }
-  const fl = leg(pose.fl)
-  const bl = leg(pose.bl)
-  const fa = arm(shoulderF, pose.fa)
-  const ba = arm(shoulderB, pose.ba)
-  const skin = look.skin
-  const skinDark = shade(skin, -26)
-  const armW = u * 0.3 * bulk
-  const legW = u * 0.36 * bulk
-  const foot = (l, color) => {
-    const toe = [l[2][0] + dir * u * 0.22, l[2][1]]
-    limb(ctx, [l[2], toe], u * 0.14, color)
-  }
-
-  // Back limbs first, in a darker tone.
-  taper(ctx, ba[0], ba[1], armW, armW * 0.85, skinDark)
-  taper(ctx, ba[1], ba[2], armW * 0.85, armW * 0.7, skinDark)
-  if (look.weapon === 'swords' || look.weapon === 'gloves') drawWeapon(ctx, look, ba[2], pose.ba[1], dir, u, false)
-  else blob(ctx, ba[2][0], ba[2][1], u * 0.11, u * 0.11, skinDark)
-  taper(ctx, bl[0], bl[1], legW, legW * 0.8, skinDark)
-  taper(ctx, bl[1], bl[2], legW * 0.8, legW * 0.55, skinDark)
-  foot(bl, skinDark)
-  if (look.wraps) taper(ctx, from(bl[2][0], bl[2][1], Math.PI, u * 0.28, dir), bl[2], legW * 0.6, legW * 0.6, look.wraps)
-  if (look.armor) taper(ctx, from(bl[2][0], bl[2][1], Math.PI, u * 0.5, dir), bl[2], legW * 0.7, legW * 0.62, shade(look.armor, -20))
-
-  // Torso: broad at the shoulders, narrower at the waist.
-  const torso = (grow, color) => {
-    ctx.fillStyle = color
-    ctx.beginPath()
-    // Sloping shoulders, a broad chest, then in to the waist (a V).
-    const top = neck[1] - grow
-    const chest = neck[1] + u * 0.45
-    const waist = hip[0]
-    ctx.moveTo(neck[0] - dir * (sw * 0.35 + grow), top)
-    ctx.quadraticCurveTo(neck[0] - dir * (sw + grow), top, neck[0] - dir * (sw + grow), neck[1] + u * 0.25)
-    ctx.quadraticCurveTo(neck[0] - dir * (sw * 0.95 + grow), chest, waist - dir * (u * 0.28 * bulk + grow), hip[1] + grow)
-    ctx.lineTo(waist + dir * (u * 0.28 * bulk + grow), hip[1] + grow)
-    ctx.quadraticCurveTo(neck[0] + dir * (sw * 0.95 + grow), chest, neck[0] + dir * (sw + grow), neck[1] + u * 0.25)
-    ctx.quadraticCurveTo(neck[0] + dir * (sw + grow), top, neck[0] + dir * (sw * 0.35 + grow), top)
-    ctx.closePath()
-    ctx.fill()
-  }
-  torso(Math.max(1.5, u * 0.05), OUTLINE)
-  torso(0, look.robe || skin)
-  if (!look.robe && !look.armor) {
-    // Chest and belly, lit from the front.
-    ctx.fillStyle = shade(skin, 14)
-    ctx.beginPath()
-    ctx.ellipse(neck[0] + dir * sw * 0.25, neck[1] + u * 0.42, sw * 0.55, u * 0.22, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.strokeStyle = shade(skin, -30)
-    ctx.lineWidth = Math.max(1, u * 0.03)
-    ctx.beginPath()
-    ctx.moveTo(neck[0] + dir * sw * 0.05, neck[1] + u * 0.3)
-    ctx.lineTo(hip[0] + dir * sw * 0.08, hip[1] - u * 0.2)
-    ctx.stroke()
-  }
-  if (look.robe) {
-    ctx.fillStyle = '#f1f1f1'
-    ctx.fillRect(neck[0] - u * 0.06, neck[1] + u * 0.1, u * 0.12, hip[1] - neck[1])
-  }
-  if (look.armor) {
-    ctx.save()
-    torso(-u * 0.04, look.armor)
-    ctx.strokeStyle = shade(look.armor, -45)
-    ctx.lineWidth = Math.max(1, u * 0.045)
-    for (let i = 1; i < 5; i++) {
-      const yy = neck[1] + ((hip[1] - neck[1]) * i) / 5
-      ctx.beginPath()
-      ctx.moveTo(hip[0] - sw * 0.85, yy)
-      ctx.lineTo(hip[0] + sw * 0.85, yy)
-      ctx.stroke()
-    }
-    blob(ctx, shoulderF[0], shoulderF[1], u * 0.24, u * 0.18, look.armor)
-    ctx.restore()
-  }
-  if (look.top) {
-    ctx.fillStyle = look.top
-    const ty = neck[1] + u * 0.22
-    ctx.beginPath()
-    ctx.ellipse(neck[0] + dir * sw * 0.1, ty + u * 0.18, sw * 0.85, u * 0.24, 0, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  if (look.lines) {
-    limb(ctx, [[neck[0], neck[1] + u * 0.25], [hip[0], hip[1] - u * 0.15]], u * 0.05, look.lines, false)
-    limb(ctx, [[neck[0] - sw * 0.8, neck[1] + u * 0.2], [neck[0], neck[1] + u * 0.45], [neck[0] + sw * 0.8, neck[1] + u * 0.2]], u * 0.045, look.lines, false)
-  }
-  if (look.tattoo) {
-    limb(ctx, [[neck[0] - dir * sw * 0.8, neck[1] + u * 0.15], [neck[0] - dir * sw * 0.2, neck[1] + u * 0.45]], u * 0.05, shade(skin, -45), false)
-  }
-  if (look.beads) {
-    ctx.strokeStyle = look.beads
-    ctx.lineWidth = u * 0.07
-    ctx.beginPath()
-    ctx.arc(neck[0], neck[1] + u * 0.05, u * 0.2, 0.25, Math.PI - 0.25)
-    ctx.stroke()
-  }
-
-  // Cloth at the hips (a long robe for the elder).
-  const clothLen = look.robe ? u * 1.45 : u * 0.62
-  const flare = dir * Math.max(0, pose.fl[0] - 0.3) * u * 0.35
-  const cloth = (grow, color) => {
-    ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.moveTo(hip[0] - u * 0.34 * bulk - grow, hip[1] - u * 0.14 - grow)
-    ctx.lineTo(hip[0] + u * 0.34 * bulk + grow, hip[1] - u * 0.14 - grow)
-    ctx.lineTo(hip[0] + u * 0.4 * bulk + flare + grow, hip[1] + clothLen + grow)
-    ctx.lineTo(hip[0] - u * 0.4 * bulk + grow * -1, hip[1] + clothLen + grow)
-    ctx.closePath()
-    ctx.fill()
-  }
-  cloth(Math.max(1.2, u * 0.04), OUTLINE)
-  cloth(0, look.wrap[0])
-  ctx.fillStyle = look.wrap[1]
-  for (let i = 0; i < 3; i++) ctx.fillRect(hip[0] - u * 0.34 * bulk, hip[1] - u * 0.04 + i * clothLen * 0.3, u * 0.68 * bulk, Math.max(1.5, u * 0.06))
-  if (look.belt) {
-    blob(ctx, hip[0] + dir * u * 0.05, hip[1] - u * 0.1, u * 0.22, u * 0.13, look.belt)
-  }
-
-  taper(ctx, fl[0], fl[1], legW, legW * 0.8, skin)
-  taper(ctx, fl[1], fl[2], legW * 0.8, legW * 0.55, skin)
-  foot(fl, skin)
-  if (look.wraps) taper(ctx, from(fl[2][0], fl[2][1], Math.PI, u * 0.28, dir), fl[2], legW * 0.6, legW * 0.6, look.wraps)
-  if (look.armor) taper(ctx, from(fl[2][0], fl[2][1], Math.PI, u * 0.5, dir), fl[2], legW * 0.7, legW * 0.62, look.armor)
-
-  // Neck and head.
-  taper(ctx, [neck[0], neck[1] + u * 0.12], [neck[0] + dir * u * 0.04, neck[1] - u * 0.14], u * 0.24, u * 0.2, skin)
-  drawHead(ctx, look, neck[0] + dir * u * 0.06, neck[1] - u * 0.36, u, dir)
-
-  taper(ctx, fa[0], fa[1], armW, armW * 0.85, skin)
-  taper(ctx, fa[1], fa[2], armW * 0.85, armW * 0.7, skin)
-  if (look.weapon === 'shield') {
-    const [hx, hy] = fa[2]
-    blob(ctx, hx + dir * u * 0.08, hy, u * 0.34, u * 0.8, '#5b4330')
-    ctx.fillStyle = '#e1d0aa'
-    ctx.beginPath()
-    ctx.ellipse(hx + dir * u * 0.08, hy, u * 0.1, u * 0.7, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.fillStyle = '#3b2a1c'
-    for (let i = -2; i <= 2; i++) ctx.fillRect(hx + dir * u * 0.08 - u * 0.13, hy + i * u * 0.24, u * 0.26, u * 0.05)
-  } else {
-    drawWeapon(ctx, look, fa[2], pose.fa[1], dir, u, true)
-  }
-
-  ctx.restore()
-}
-
-// Drawn first, under both fighters.
-function drawShadow(ctx, x, floor, h, size) {
-  const u = (h / 3.3) * size
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.32)'
-  ctx.beginPath()
-  ctx.ellipse(x, floor + 2, u * 0.8, u * 0.14, 0, 0, Math.PI * 2)
-  ctx.fill()
 }
 
 export function createFightRenderer(canvas, { stage }) {
@@ -426,15 +89,100 @@ export function createFightRenderer(canvas, { stage }) {
   let inset = 0 // room kept under the floor for the on-screen controls
   const bg = new Image()
   bg.src = stage
+  const images = {}
+  for (const [id, src] of Object.entries(SPRITES)) {
+    images[id] = new Image()
+    images[id].src = src
+  }
   const sparks = [] // { x, y, vx, vy, life, color }
   const popups = [] // { text, x, y, life, color, size }
   const flashes = [0, 0]
+  const ghosts = [[], []] // afterimages of a special: { x, life }
   let shake = 0
 
   // Arena units → screen x: the whole ring fits the width.
   const toX = (x) => (x / ARENA) * W
   const floorY = () => Math.min(H * 0.86, H - inset)
-  const fighterH = () => Math.min(floorY() * 0.5, W * 0.32)
+  const standardH = () => Math.min(floorY() * 0.6, W * 0.46)
+
+  // One fighter, body centre at (x, floor).
+  function drawFighter(f, x, floor, time, flash, ghostsOf) {
+    const look = LOOKS[f.id] || LOOKS.nzame
+    const img = images[f.id]
+    if (!img?.complete || !img.naturalWidth) return
+    const pose = poseOf(f, time)
+    const dir = f.facing
+    const scale = standardH() / STANDARD_H
+    const h = img.naturalHeight * scale
+    const w = img.naturalWidth * scale
+    // Mirror the picture so the weapon points at the opponent.
+    const flip = look.weaponSide ? look.weaponSide !== dir : dir < 0
+    const anchor = flip ? 1 - look.cx : look.cx
+    const bx = x + dir * pose.shift * standardH()
+    const by = floor - pose.lift * standardH()
+
+    const draw = (alpha, ox = 0, glow = null) => {
+      ctx.save()
+      ctx.globalAlpha = alpha
+      ctx.translate(bx + ox, by)
+      // Falling: the whole body tips over backwards, away from the opponent.
+      ctx.rotate(dir * (pose.lean - pose.fall * (Math.PI / 2)))
+      ctx.scale((flip ? -1 : 1) * pose.sx, pose.sy)
+      if (glow) {
+        ctx.shadowColor = glow
+        ctx.shadowBlur = 24
+      }
+      if (flash && 'filter' in ctx) ctx.filter = `brightness(${1 + flash * 1.8})`
+      ctx.drawImage(img, -anchor * w, -h + (pose.fall ? h * 0.06 * pose.fall : 0), w, h)
+      ctx.restore()
+    }
+
+    // Afterimages trailing a special.
+    for (const g of ghostsOf) draw(0.22 * g.life, g.x - bx, look.aura)
+    if (pose.aura) {
+      const gr = ctx.createRadialGradient(bx, by - h * 0.5, h * 0.1, bx, by - h * 0.5, h * 0.75)
+      gr.addColorStop(0, `${look.aura}66`)
+      gr.addColorStop(1, `${look.aura}00`)
+      ctx.fillStyle = gr
+      ctx.beginPath()
+      ctx.arc(bx, by - h * 0.5, h * 0.75, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    draw(1, 0, pose.aura || f.id === 'nzame' ? look.aura : null)
+
+    // The blow's trail, in front of the body.
+    if (pose.swoosh) {
+      const sh = standardH()
+      const y = by - sh * (pose.swoosh === 'kick' ? 0.32 : pose.swoosh === 'special' ? 0.55 : 0.68)
+      const reach = (MOVES[pose.swoosh].range + FIGHTERS[f.id].reach) / ARENA * W
+      const cx = bx + dir * reach * 0.45
+      const r = reach * (pose.swoosh === 'special' ? 0.7 : 0.5)
+      ctx.save()
+      ctx.translate(cx, y)
+      ctx.scale(dir, 1)
+      ctx.lineCap = 'round'
+      for (const [width, alpha] of [[sh * 0.07, 0.25], [sh * 0.035, 0.85]]) {
+        ctx.strokeStyle = look.trail
+        ctx.globalAlpha = alpha
+        ctx.lineWidth = width
+        ctx.beginPath()
+        ctx.arc(0, 0, r, -0.9, 0.9)
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+    if (pose.guard) {
+      ctx.save()
+      ctx.globalAlpha = 0.55
+      ctx.strokeStyle = '#8fd3ff'
+      ctx.lineWidth = Math.max(3, standardH() * 0.03)
+      ctx.beginPath()
+      ctx.ellipse(bx + dir * standardH() * 0.2, by - h * 0.55, standardH() * 0.12, h * 0.42, 0, -Math.PI / 2, Math.PI / 2, dir < 0)
+      ctx.stroke()
+      ctx.restore()
+    }
+    return { bx, special: pose.trail }
+  }
 
   return {
     resize(width, height, bottomInset = 0) {
@@ -448,17 +196,17 @@ export function createFightRenderer(canvas, { stage }) {
     // A blow landed: sparks where it hit, the struck fighter flashes.
     hit(e, target) {
       const x = toX(e.x)
-      const y = floorY() - fighterH() * (e.move === 'kick' ? 0.45 : 0.68)
+      const y = floorY() - standardH() * (e.move === 'kick' ? 0.38 : 0.66)
       const heavy = e.move === 'special'
-      const n = heavy ? 26 : e.guarded ? 6 : 12
+      const n = heavy ? 30 : e.guarded ? 8 : 14
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2
-        const s = (heavy ? 7 : 4) * (0.4 + Math.random())
+        const s = (heavy ? 8 : 4.5) * (0.4 + Math.random())
         sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1.5, life: 1, color: e.guarded ? '#9ad7ff' : heavy ? '#ffd34d' : '#fff3c4' })
       }
-      popups.push({ text: e.guarded ? 'GARDE' : `-${e.damage}`, x, y: y - 20, life: 1, color: e.guarded ? '#9ad7ff' : '#ffe066', size: heavy ? 34 : 24 })
-      if (!e.guarded) flashes[target] = 0.7
-      shake = heavy ? 14 : e.guarded ? 2 : 5
+      popups.push({ text: e.guarded ? 'GARDE' : `-${e.damage}`, x, y: y - 20, life: 1, color: e.guarded ? '#9ad7ff' : '#ffe066', size: heavy ? 36 : 24 })
+      if (!e.guarded) flashes[target] = 0.8
+      shake = heavy ? 16 : e.guarded ? 2 : 6
     },
     render(state, { alpha, prev, time }) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -506,13 +254,22 @@ export function createFightRenderer(canvas, { stage }) {
       ctx.fillStyle = 'rgba(255, 220, 180, 0.12)'
       ctx.fillRect(-20, skyH, W + 40, 3)
 
-      const h = fighterH()
-      const order = state.fighters[0].state === 'attack' ? [1, 0] : [0, 1] // the attacker on top
       const xs = state.fighters.map((f, i) => toX(prev ? lerp(prev[i], f.x, alpha) : f.x))
-      for (const [i, f] of state.fighters.entries()) drawShadow(ctx, xs[i], floor, h, (LOOKS[f.id] || LOOKS.nzame).size)
+      // Shadows first, under both.
+      for (const [i, f] of state.fighters.entries()) {
+        const fall = poseOf(f, time).fall
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
+        ctx.beginPath()
+        ctx.ellipse(xs[i] - f.facing * fall * standardH() * 0.4, floor + 2, standardH() * (0.2 + fall * 0.3), standardH() * 0.04, 0, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      const order = state.fighters[0].state === 'attack' ? [1, 0] : [0, 1] // the attacker on top
       for (const i of order) {
-        drawFighter(ctx, state.fighters[i], xs[i], floor, h, time, flashes[i])
+        const drawn = drawFighter(state.fighters[i], xs[i], floor, time, flashes[i], ghosts[i])
         flashes[i] = Math.max(0, flashes[i] - 0.08)
+        for (const gh of ghosts[i]) gh.life -= 0.08
+        ghosts[i] = ghosts[i].filter((gh) => gh.life > 0)
+        if (drawn?.special && Math.random() < 0.6) ghosts[i].push({ x: drawn.bx, life: 1 })
       }
 
       for (const s of sparks) {
