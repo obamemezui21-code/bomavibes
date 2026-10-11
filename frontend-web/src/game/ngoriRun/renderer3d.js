@@ -19,10 +19,14 @@ import {
   RUNNERS,
   SHEET,
   TAXI,
+  TRAFFIC_CARS,
+  TRAFFIC_CAR_WIDTH_CM,
+  TRAFFIC_URL,
   hash,
   horizonAt,
   isTaxi,
   motoTilt,
+  trafficCarFor,
 } from './renderer.js'
 import {
   DIRECTION_SIGNS,
@@ -496,6 +500,19 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       w,
     }
   }
+
+  // Cars seen from behind: the picture on the back, a body in their colour behind it.
+  let traffic = null
+  load(TRAFFIC_URL, (tex) => {
+    traffic = TRAFFIC_CARS.map(({ rect }) => standee(tex, rect, ((TRAFFIC_CAR_WIDTH_CM * rect[3]) / rect[2]) * M))
+    // Cars already on the road were built as plain boxes: rebuild them.
+    for (const [key, o] of live) {
+      if (key.startsWith('o')) {
+        release(o)
+        live.delete(key)
+      }
+    }
+  })
 
   let roadside = null
   load(roadsideUrl, (tex) => {
@@ -1285,6 +1302,14 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       banner.scale.set(1.7, 0.9, 0.08)
       banner.position.set(0, 1.65, -0.3)
       return group(cube(0.1, 2.2, 0.1, post, -0.82, 0, -0.3), cube(0.1, 2.2, 0.1, post, 0.82, 0, -0.3), banner)
+    }
+    if (o.type === 'car' && !isTaxi(o) && traffic) {
+      const car = trafficCarFor(o)
+      const picture = traffic[TRAFFIC_CARS.indexOf(car)]
+      const back = new THREE.Mesh(picture.geo, picture.mat)
+      back.position.z = 0.02
+      const height = picture.geo.parameters.height
+      return group(back, cube(picture.w * 0.82, height * 0.62, 4.0, lambert(car.color), 0, height * 0.12, -2.02))
     }
     if (o.type === 'car') {
       const taxi = isTaxi(o)

@@ -5,6 +5,7 @@ import horizonsUrl from '../../assets/game/horizons.webp'
 import monumentsUrl from '../../assets/game/monuments.webp'
 import motoKevinUrl from '../../assets/game/moto-kevin.webp'
 import motoAichaUrl from '../../assets/game/moto-aicha.webp'
+import trafficUrl from '../../assets/game/traffic.webp'
 import {
   DIRECTION_SIGNS,
   DISTRICTS,
@@ -51,7 +52,8 @@ export const BUILDING_COLORS = ['#c46a4a', '#d99a4e', '#2f8f83', '#8a4f9e', '#e2
 export const CAR_COLORS = ['#f2bf4e', '#2dd4bf', '#e9467d', '#f5f5f4', '#7c3aed']
 // Libreville's taxis: red and white two-tone. Two cars in five are taxis.
 export const TAXI = { upper: '#d62828', lower: '#f8fafc' }
-export const isTaxi = (o) => o.id % 5 === 0 || o.id % 5 === 3
+// One car in five is one of Libreville's red-and-white taxis.
+export const isTaxi = (o) => o.id % 5 === 3
 // Wax-print colour pairs for the stalls' parasols and the vendors' pagnes.
 const WAX = [
   ['#f59e0b', '#15803d'],
@@ -86,6 +88,32 @@ export const SHEET = { cellW: 232, cellH: 292, feetPad: 4, figureH: 270 }
 export const RUNNERS = { man: 0, woman: 3 } // first sheet row of each runner
 const sheetImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: runnersUrl })
 const sheetReady = () => !!sheetImage?.complete && sheetImage.naturalWidth > 0
+
+// Cars seen from behind (assets/game/traffic.webp): one strip, bottoms
+// aligned. [x, y, w, h] in the strip and the body colour (for the 3D sides).
+// Libreville's red-and-white taxis are still drawn by hand (isTaxi).
+export const TRAFFIC_URL = trafficUrl
+export const TRAFFIC_CARS = [
+  [[0, 16, 220, 209], '#a82529'],
+  [[220, 37, 220, 188], '#999ca3'],
+  [[440, 35, 220, 190], '#365a8b'],
+  [[660, 17, 220, 208], '#232327'],
+  [[880, 19, 220, 206], '#646a72'],
+  [[1100, 0, 220, 225], '#9da1a8'],
+  [[1320, 21, 220, 204], '#466694'],
+  [[1540, 28, 220, 197], '#3e2227'],
+  [[1760, 41, 220, 184], '#1f2126'],
+  [[1980, 40, 220, 185], '#1e2025'],
+  [[2200, 29, 220, 196], '#a5a097'],
+  [[2420, 37, 220, 188], '#626872'],
+  [[2640, 39, 220, 186], '#202226'],
+  [[2860, 8, 220, 217], '#8e939d'],
+  [[3080, 24, 220, 201], '#8f8678'],
+].map(([rect, color]) => ({ rect, color }))
+export const TRAFFIC_CAR_WIDTH_CM = 185
+export const trafficCarFor = (o) => TRAFFIC_CARS[o.id % TRAFFIC_CARS.length]
+const trafficImage = typeof Image === 'undefined' ? null : Object.assign(new Image(), { src: trafficUrl })
+const trafficReady = () => !!trafficImage?.complete && trafficImage.naturalWidth > 0
 
 // Street vendors and passers-by (assets/game/roadside.webp): one strip of
 // pictures, feet on its bottom edge. [x, y, w, h] in the strip, and the
@@ -1072,6 +1100,13 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('BOMA ↓', (banner.left + banner.right) / 2, (banner.top + banner.bottom) / 2)
+    } else if (o.type === 'car' && !isTaxi(o) && trafficReady()) {
+      // A real car picture, seen from behind.
+      const { rect } = trafficCarFor(o)
+      const p = project(xc, 0, zr)
+      const w = TRAFFIC_CAR_WIDTH_CM * p.s
+      const h = (w * rect[3]) / rect[2]
+      ctx.drawImage(trafficImage, rect[0], rect[1], rect[2], rect[3], p.x - w / 2, p.y - h, w, h)
     } else if (o.type === 'car') {
       const taxi = isTaxi(o)
       const color = taxi ? TAXI.upper : CAR_COLORS[1 + (o.id % (CAR_COLORS.length - 1))]
