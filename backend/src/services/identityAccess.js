@@ -6,9 +6,9 @@ const db = admin.firestore();
 // verified — or if they joined before verification became mandatory
 // (legacyMember, see identityMigration.js). Mirrors canInteract() in
 // firestore.rules and identityStatus() in the app.
-// Mandatory since 2026-10-11 — the switch is mirrored in IDENTITY_REQUIRED
-// in frontend-web/src/lib/identityStatus.js and identityRequired in firestore.rules.
-const IDENTITY_REQUIRED = true;
+// Optional for now (only the ✓ badge): see IDENTITY_REQUIRED in
+// frontend-web/src/lib/identityStatus.js and identityRequired in firestore.rules.
+const IDENTITY_REQUIRED = false;
 
 function profileCanInteract(profile) {
     return !IDENTITY_REQUIRED || profile?.verified === true || profile?.legacyMember === true;

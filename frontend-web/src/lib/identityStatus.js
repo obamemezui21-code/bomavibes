@@ -1,9 +1,9 @@
 // IDENTITY_REQUIRED: identity verification (ID document + selfie) is
-// mandatory for members who joined after it was switched on (the others
-// are legacyMember). Set to false (with IDENTITY_REQUIRED in
-// backend/src/services/identityAccess.js and identityRequired in
-// firestore.rules) to make it optional again — only the ✓ badge.
-export const IDENTITY_REQUIRED = true
+// OPTIONAL for now — it only gives the "Profil vérifié" ✓ badge. Set to
+// true (with IDENTITY_REQUIRED in backend/src/services/identityAccess.js
+// and identityRequired in firestore.rules) to make it mandatory for members
+// who joined after it was introduced (the others are legacyMember).
+export const IDENTITY_REQUIRED = false
 
 // What a verified identity brings (shown wherever verification is offered).
 // Keep in line with VERIFIED_LIKES_PER_DAY (lib/plans.js), the Discover
