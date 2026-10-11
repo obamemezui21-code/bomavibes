@@ -94,21 +94,21 @@ const sheetReady = () => !!sheetImage?.complete && sheetImage.naturalWidth > 0
 // Libreville's red-and-white taxis are still drawn by hand (isTaxi).
 export const TRAFFIC_URL = trafficUrl
 export const TRAFFIC_CARS = [
-  [[0, 16, 220, 209], '#a82529'],
-  [[220, 37, 220, 188], '#999ca3'],
-  [[440, 35, 220, 190], '#365a8b'],
-  [[660, 17, 220, 208], '#232327'],
-  [[880, 19, 220, 206], '#646a72'],
-  [[1100, 0, 220, 225], '#9da1a8'],
-  [[1320, 21, 220, 204], '#466694'],
-  [[1540, 28, 220, 197], '#3e2227'],
-  [[1760, 41, 220, 184], '#1f2126'],
-  [[1980, 40, 220, 185], '#1e2025'],
-  [[2200, 29, 220, 196], '#a5a097'],
-  [[2420, 37, 220, 188], '#626872'],
-  [[2640, 39, 220, 186], '#202226'],
-  [[2860, 8, 220, 217], '#8e939d'],
-  [[3080, 24, 220, 201], '#8f8678'],
+  [[0, 0, 220, 214], '#8d1f21'],
+  [[220, 21, 220, 193], '#60676f'],
+  [[440, 27, 220, 187], '#234e89'],
+  [[660, 14, 220, 200], '#15171c'],
+  [[880, 23, 220, 191], '#5d646c'],
+  [[1100, 33, 220, 181], '#545b64'],
+  [[1320, 45, 220, 169], '#2a4b85'],
+  [[1540, 38, 220, 176], '#45373d'],
+  [[1760, 58, 220, 156], '#2f3338'],
+  [[1980, 54, 220, 160], '#343a40'],
+  [[2200, 16, 220, 198], '#856735'],
+  [[2420, 67, 220, 147], '#73777d'],
+  [[2640, 68, 220, 146], '#414750'],
+  [[2860, 39, 220, 175], '#2d2f34'],
+  [[3080, 31, 220, 183], '#55585e'],
 ].map(([rect, color]) => ({ rect, color }))
 export const TRAFFIC_CAR_WIDTH_CM = 185
 export const trafficCarFor = (o) => TRAFFIC_CARS[o.id % TRAFFIC_CARS.length]
@@ -1136,6 +1136,35 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
         ctx.textBaseline = 'middle'
         ctx.fillText('TAXI', (sign.left + sign.right) / 2, (sign.top + sign.bottom) / 2)
       }
+    } else if (o.type === 'bus') {
+      // MOTO BOMA's city bus, seen from behind: green and white, long roof.
+      const len = 1100
+      // Being overtaken: its back is already behind the camera, only the roof shows.
+      const near = -CAM_BACK + 60
+      if (zr < near) {
+        top(xc, 172, 300, near, zr + len, '#0b5d55')
+        ctx.globalAlpha = 1
+        return
+      }
+      top(xc, 172, 300, zr, zr + len, '#0b5d55')
+      const body = face(xc, 172, 0, 300, zr, '#0f766e')
+      const bw = body.right - body.left
+      const bh = body.bottom - body.top
+      ctx.fillStyle = '#f8fafc'
+      ctx.fillRect(body.left, body.top + bh * 0.52, bw, bh * 0.1)
+      ctx.fillStyle = 'rgba(20,24,36,0.9)'
+      ctx.fillRect(body.left + bw * 0.08, body.top + bh * 0.1, bw * 0.84, bh * 0.34)
+      ctx.fillStyle = '#ef4444'
+      ctx.fillRect(body.left + bw * 0.04, body.top + bh * 0.68, bw * 0.12, bh * 0.08)
+      ctx.fillRect(body.right - bw * 0.16, body.top + bh * 0.68, bw * 0.12, bh * 0.08)
+      ctx.fillStyle = '#facc15'
+      ctx.font = `800 ${Math.max(5, 30 * body.s)}px system-ui, sans-serif`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('BUS', (body.left + body.right) / 2, body.top + bh * 0.06)
+      ctx.fillStyle = '#111'
+      ctx.fillRect(body.left + bw * 0.06, body.bottom - bh * 0.06, bw * 0.2, bh * 0.06)
+      ctx.fillRect(body.right - bw * 0.26, body.bottom - bh * 0.06, bw * 0.2, bh * 0.06)
     } else if (o.type === 'works') {
       top(xc, 160, 140, zr, zr + def.len, '#c2410c')
       const panel = face(xc, 160, 0, 140, zr, '#f97316')
@@ -1431,7 +1460,10 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     drawScenery(view.dist, view.time)
 
     const items = []
-    for (const o of state.obstacles) items.push({ zr: o.z - view.dist, draw: (zr) => drawObstacle(o, zr) })
+    // A long bus stays drawn until its front has passed, not just its back.
+    for (const o of state.obstacles) {
+      items.push({ zr: o.z - view.dist, far: o.type === 'bus' ? o.z - view.dist + 1100 : null, draw: (zr) => drawObstacle(o, zr) })
+    }
     for (const c of state.coinsOnRoad) if (!c.taken) items.push({ zr: c.z - view.dist, draw: (zr) => drawCoin(c, zr, view.time) })
     for (const p of state.powerups) if (!p.taken) items.push({ zr: p.z - view.dist, draw: (zr) => drawPowerup(p, zr, view.time) })
     items.push({ zr: 30, draw: () => drawRunner(state, view) })
@@ -1441,7 +1473,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       if (from > 0) items.push({ zr: from * 100 - view.dist, draw: (zr) => drawArch(zr, name) })
     }
     items
-      .filter((it) => it.zr > -CAM_BACK + 40 && it.zr < VIEW_DEPTH)
+      .filter((it) => (it.far ?? it.zr) > -CAM_BACK + 40 && it.zr < VIEW_DEPTH)
       .sort((a, b) => b.zr - a.zr)
       .forEach((it) => it.draw(it.zr))
 

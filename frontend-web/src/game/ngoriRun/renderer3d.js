@@ -1336,6 +1336,24 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       for (const z of [-0.8, -len + 0.8]) for (const x of [-0.7, 0.7]) g.add(cube(0.22, 0.42, 0.62, tyre, x, 0, z))
       return g
     }
+    if (o.type === 'bus') {
+      // MOTO BOMA's city bus: 11 m long, green and white.
+      const len = 11
+      const g = group(
+        cube(1.75, 2.75, len, lambert('#0f766e'), 0, 0.3, -len / 2),
+        cube(1.77, 0.28, len + 0.02, lambert('#f8fafc'), 0, 1.45, -len / 2),
+        cube(1.5, 0.95, 0.04, lambert('#141824'), 0, 1.85, 0.01),
+        new THREE.Mesh(planeGeo, textMat('bus|label', 'BUS', '#0f766e', '#facc15', 192, 64)),
+      )
+      const label = g.children[3]
+      label.scale.set(0.7, 0.24, 1)
+      label.position.set(0, 2.9, 0.03)
+      const light = basic('#ef4444')
+      g.add(cube(0.24, 0.16, 0.04, light, -0.68, 0.95, 0.01), cube(0.24, 0.16, 0.04, light, 0.68, 0.95, 0.01))
+      const tyre = lambert('#111111')
+      for (const z of [-1.4, -len + 2]) for (const x of [-0.8, 0.8]) g.add(cube(0.24, 0.6, 0.9, tyre, x, 0, z))
+      return g
+    }
     if (o.type === 'works') {
       const orange = lambert('#c2410c')
       const stripes = stripesMat('works', '#f97316', '#fff7ed', 8)
@@ -1577,7 +1595,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     const { dist, time } = view
     for (const o of state.obstacles) {
       const zr = o.z - dist
-      if (!inView(zr)) continue
+      if (!inView(zr, zr + (o.type === 'bus' ? 1100 : 420))) continue
       const obj = place(`o${o.id}`, () => buildObstacle(o), zr, laneX(o.lane))
       obj.visible = !o.hit
     }

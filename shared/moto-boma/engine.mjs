@@ -32,20 +32,25 @@ const BUMP_GRACE_TICKS = 45 // can't hit another car meanwhile
 
 // Half-widths, in hundredths of a lane, for "is the bike over it".
 const CAR_HALF = 56
+const BUS_HALF = 62
 const HOLE_HALF = 48
 const PICKUP_HALF = 55
 
 export const VEHICLES = {
   car: { len: 420 },
+  bus: { len: 1100 },
   hole: { len: 120 },
 }
+// Traffic speed by lane (cm per tick): slow on the left, quicker on the right.
+// Fixed per lane so a car never drives through the bus ahead of it.
+const LANE_SPEEDS = [12, 15, 18]
 
 // Courses, in cm. Medals: finish ticks for gold, silver, bronze.
 export const COURSES = {
   'bord-de-mer': {
     name: 'Bord de mer → Akanda',
     length: 200000, // 2 km
-    medals: { gold: 5100, silver: 5500, bronze: 6100 }, // 1:25, 1:32, 1:42
+    medals: { gold: 5350, silver: 5800, bronze: 6400 }, // 1:29, 1:37, 1:47
   },
 }
 export const DEFAULT_COURSE = 'bord-de-mer'
@@ -100,20 +105,22 @@ function generateRow(state) {
   const progress = Math.min(1, z / state.length)
   const roll = randomInt(state, 100)
   // Busier as the race goes on; there's always at least one free lane.
-  const count = roll < 70 - Math.floor(progress * 25) ? 1 : 2
+  const count = roll < 64 - Math.floor(progress * 20) ? 1 : 2
   const lanes = [0, 1, 2]
   for (let i = 2; i > 0; i--) {
     const j = randomInt(state, i + 1)
     ;[lanes[i], lanes[j]] = [lanes[j], lanes[i]]
   }
   for (let i = 0; i < count; i++) {
-    const pothole = randomInt(state, 100) < 15
+    // Mostly small cars; now and then a long bus or a pothole.
+    const kind = randomInt(state, 100)
+    const type = kind < 10 ? 'hole' : kind < 18 ? 'bus' : 'car'
     state.vehicles.push({
       id: state.nextId++,
       lane: lanes[i],
       z: z + randomInt(state, 300),
-      speed: pothole ? 0 : 12 + randomInt(state, 8), // 7–11 m/s
-      type: pothole ? 'hole' : 'car',
+      speed: type === 'hole' ? 0 : LANE_SPEEDS[lanes[i]],
+      type,
       hit: false,
     })
   }
@@ -128,7 +135,7 @@ function generateRow(state) {
   } else if (randomInt(state, 100) < 14) {
     state.pickups.push({ id: state.nextId++, lane: free[randomInt(state, free.length)], z: z + 900, type: 'nitro', taken: false })
   }
-  state.nextRowZ = z + 2300 + randomInt(state, 900) - Math.floor(progress * 500)
+  state.nextRowZ = z + 2200 + randomInt(state, 800) - Math.floor(progress * 400)
 }
 
 function applyAction(state, action) {
@@ -174,7 +181,8 @@ export function step(state, actions = []) {
   while (state.nextRowZ < state.dist + GENERATE_AHEAD && state.nextRowZ < state.length) generateRow(state)
 
   for (const v of state.vehicles) {
-    if (v.hit || !overlaps(state, v.lane, v.type === 'hole' ? HOLE_HALF : CAR_HALF, v.z, VEHICLES[v.type].len)) continue
+    const half = v.type === 'hole' ? HOLE_HALF : v.type === 'bus' ? BUS_HALF : CAR_HALF
+    if (v.hit || !overlaps(state, v.lane, half, v.z, VEHICLES[v.type].len)) continue
     if (v.type === 'hole') {
       v.hit = true
       state.speed = Math.floor((state.speed * 6) / 10)
