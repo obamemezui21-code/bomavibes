@@ -3,23 +3,23 @@ const admin = require("../config/firebaseAdmin");
 const db = admin.firestore();
 
 // Identity verification (ID document + selfie) is mandatory only for
-// accounts created after it was introduced. The first time the server runs
-// this code, it records that moment in settings/identity and flags every
-// existing member's public profile with legacyMember: true — they keep
-// full access without verifying. Only the Admin SDK can write that flag
-// (see firestore.rules), so a new member can't grant it to themselves.
+// accounts created after REQUIRED_SINCE, the moment it was switched on.
+// The first time the server runs with that date, it records it in
+// settings/identity and flags every member who joined before it with
+// legacyMember: true — they keep full access without verifying. Only the
+// Admin SDK can write that flag (see firestore.rules), so a new member
+// can't grant it to themselves.
+const REQUIRED_SINCE = Date.parse("2026-10-11T20:00:00+02:00");
 const SETTINGS_REF = db.collection("settings").doc("identity");
 const BATCH_LIMIT = 400;
 
 async function markLegacyMembers() {
     try {
         const settings = (await SETTINGS_REF.get()).data();
-        if (settings?.legacyMarkedAt) return;
+        if (settings?.legacyMarkedAt && settings?.requiredSince?.toMillis?.() === REQUIRED_SINCE) return;
 
-        const requiredSince = settings?.requiredSince?.toMillis?.() || Date.now();
-        if (!settings?.requiredSince) {
-            await SETTINGS_REF.set({ requiredSince: admin.firestore.Timestamp.fromMillis(requiredSince) }, { merge: true });
-        }
+        const requiredSince = REQUIRED_SINCE;
+        await SETTINGS_REF.set({ requiredSince: admin.firestore.Timestamp.fromMillis(requiredSince) }, { merge: true });
 
         // Every account created before that moment.
         const legacyIds = [];
