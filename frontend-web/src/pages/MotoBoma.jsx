@@ -542,9 +542,9 @@ function MotoBoma() {
 
         <div className="mt-4 space-y-2.5">
           {[
-            ['👆 Piloter', 'Maintiens le doigt sur la moitié gauche ou droite de l’écran pour te déplacer (← → au clavier). Tu peux rouler entre les voies.'],
-            ['🔥 Nitro', 'Le bouton NITRO (↑ ou espace) donne une pointe à 125 km/h pendant 2,5 s. Tu en as une au départ ; ramasse les bidons 🔥 pour en avoir jusqu’à 3.'],
-            ['🚕 Circulation', 'Taxis et voitures roulent moins vite que toi : double-les. Un accrochage te ralentit fort, un nid-de-poule un peu.'],
+            ['👆 Piloter', 'Touche la moitié gauche ou droite de l’écran pour changer de voie (← → au clavier) : la moto se place toute seule au milieu de la voie.'],
+            ['🔥 Nitro', 'Le bouton NITRO (↑ ou espace) donne une pointe à 108 km/h pendant 2,5 s. Tu en as une au départ ; ramasse les bidons 🔥 pour en avoir jusqu’à 3.'],
+            ['🚕 Circulation', 'Taxis et voitures roulent moins vite que toi : double-les. Un accrochage te ralentit un peu, un nid-de-poule à peine.'],
             ['🪙 Gains', `Chaque Ngori ramassé compte, plus un bonus selon ta médaille. Jusqu’à ${stats?.dailyCap ?? 5} Ngori par jour en moto.`],
           ].map(([title, text]) => (
             <div key={title} className="rounded-2xl bg-surface p-3.5">
