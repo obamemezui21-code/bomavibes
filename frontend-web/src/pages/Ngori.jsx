@@ -101,13 +101,13 @@ function Ngori() {
 
         <button
           type="button"
-          onClick={() => navigate('/ngori-run')}
+          onClick={() => navigate('/jeux')}
           className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-[#5b1f6e] to-[#e9467d] p-4 text-left text-white shadow-lg shadow-pink-500/20 transition active:scale-[0.98]"
         >
-          <span className="text-3xl">🏃</span>
+          <span className="text-3xl">🎮</span>
           <span className="flex-1">
-            <span className="block font-display text-base font-black italic">NGORI RUN</span>
-            <span className="block text-xs text-white/80">Cours, esquive, ramasse des Ngori : jusqu'à 5 de plus chaque jour.</span>
+            <span className="block font-display text-base font-black italic">JEUX</span>
+            <span className="block text-xs text-white/80">NGORI RUN, Moto Boma… : gagne encore plus de Ngori chaque jour en jouant.</span>
           </span>
           <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-violet-950">Jouer</span>
         </button>

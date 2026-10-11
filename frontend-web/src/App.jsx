@@ -54,6 +54,7 @@ const Cine = lazy(() => import('./pages/Cine.jsx'))
 const Ngori = lazy(() => import('./pages/Ngori.jsx'))
 const NgoriRun = lazy(() => import('./pages/NgoriRun.jsx'))
 const MotoBoma = lazy(() => import('./pages/MotoBoma.jsx'))
+const Games = lazy(() => import('./pages/Games.jsx'))
 const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
@@ -182,6 +183,7 @@ function App() {
             <Route path="/cine" element={<Cine />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/ngori" element={<Ngori />} />
+            <Route path="/jeux" element={<Games />} />
             <Route path="/ngori-run" element={<NgoriRun />} />
             <Route path="/moto-boma" element={<MotoBoma />} />
             <Route path="/annonces" element={<Announcements />} />

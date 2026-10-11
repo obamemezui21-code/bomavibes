@@ -107,11 +107,11 @@ function NgoriDailyReward() {
               type="button"
               onClick={() => {
                 close()
-                navigate('/ngori-run')
+                navigate('/jeux')
               }}
               className="mt-2 w-full rounded-full border border-white/25 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              🏃 Gagner plus en jouant à Ngori Run
+              🎮 Gagner plus en jouant
             </button>
             <button type="button" onClick={close} className="mt-2 w-full py-2 text-sm text-white/70 hover:text-white">
               Continuer
