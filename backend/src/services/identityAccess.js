@@ -22,4 +22,21 @@ async function canInteract(uid) {
 
 const IDENTITY_REQUIRED_MESSAGE = "Votre identité doit être vérifiée pour faire cela.";
 
-module.exports = { IDENTITY_REQUIRED, canInteract, profileCanInteract, IDENTITY_REQUIRED_MESSAGE };
+// Super likes (and, in firestore.rules, calls and publishing) are kept for
+// verified profiles even while verification is optional — legacy members
+// included. Mirrors VERIFIED_ONLY in frontend-web/src/lib/identityStatus.js.
+async function isVerified(uid) {
+    const snap = await db.collection("profiles").doc(uid).get();
+    return snap.data()?.verified === true;
+}
+
+const VERIFIED_ONLY_MESSAGE = "Réservé aux profils vérifiés (pièce d'identité + selfie).";
+
+module.exports = {
+    IDENTITY_REQUIRED,
+    canInteract,
+    profileCanInteract,
+    IDENTITY_REQUIRED_MESSAGE,
+    isVerified,
+    VERIFIED_ONLY_MESSAGE,
+};

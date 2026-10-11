@@ -11,11 +11,22 @@ export const IDENTITY_REQUIRED = false
 // VERIFIED_DAILY_BONUS (backend/src/config/ngori.js).
 export const VERIFIED_PERKS = [
   { emoji: '✅', text: 'Le badge ✓ à côté de votre prénom' },
+  { emoji: '📞', text: 'Les appels audio et vidéo' },
+  { emoji: '⭐', text: 'Les super likes' },
+  { emoji: '📝', text: 'Publier dans le fil et les stories' },
   { emoji: '❤️', text: '30 likes par jour au lieu de 15 (compte gratuit)' },
   { emoji: '🚀', text: 'Votre profil mis en avant dans Découvrir' },
   { emoji: '🪙', text: '+50 Ngori offerts, puis 2 Ngori par jour au lieu de 1' },
   { emoji: '🛡️', text: 'Visible par ceux qui filtrent « Vérifiés uniquement »' },
 ]
+
+// Features kept for verified profiles (requireVerified in IdentityContext),
+// whether verification is mandatory or not — legacy members included.
+export const VERIFIED_ONLY = {
+  calls: 'Les appels audio et vidéo sont réservés aux profils vérifiés.',
+  superlike: 'Les super likes sont réservés aux profils vérifiés.',
+  publish: 'Publier dans le fil et les stories est réservé aux profils vérifiés.',
+}
 
 // Where a member stands with the identity verification:
 //   loading  — not known yet

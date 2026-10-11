@@ -91,7 +91,7 @@ function Discover() {
   const { user, publicProfile, hasUnseenAnnouncement, latestAnnouncement, markAnnouncementsSeen } = useAuth()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const { requireIdentity } = useIdentity()
+  const { requireIdentity, requireVerified } = useIdentity()
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [profiles, setProfiles] = useState([])
@@ -365,6 +365,7 @@ function Discover() {
   }
 
   function handleSuperlike(profile) {
+    if (!requireVerified('superlike')) return undefined
     return triggerSwipe(profile, 'superlike')
   }
 

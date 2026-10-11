@@ -48,6 +48,7 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useCall } from '../context/CallContext.jsx'
+import { useIdentity } from '../context/IdentityContext.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachments.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
@@ -381,6 +382,7 @@ function Chat() {
   const { showToast } = useToast()
   const { theme } = useTheme()
   const { startCall } = useCall()
+  const { requireVerified } = useIdentity()
   const [draft, setDraft] = useState('')
   const [listSearch, setListSearch] = useState('')
   const [likesCount, setLikesCount] = useState(null)
@@ -899,6 +901,12 @@ function Chat() {
 
   function handleStartCall(type) {
     if (!active?.otherUid) return
+    // Calls are kept for verified profiles, on both ends (see firestore.rules).
+    if (!requireVerified('calls')) return
+    if (!active.profile.verified) {
+      showToast(`${active.profile.firstName} n’a pas encore vérifié son profil : les appels se font entre profils vérifiés.`, 'info')
+      return
+    }
     // Placing a call is a subscriber (or Ngori) perk, also enforced by the rules;
     // receiving one stays free.
     if (!effectivePlan(account).calls) {

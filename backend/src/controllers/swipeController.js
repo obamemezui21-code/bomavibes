@@ -1,5 +1,5 @@
 const admin = require("../config/firebaseAdmin");
-const { canInteract, IDENTITY_REQUIRED_MESSAGE } = require("../services/identityAccess");
+const { canInteract, IDENTITY_REQUIRED_MESSAGE, isVerified, VERIFIED_ONLY_MESSAGE } = require("../services/identityAccess");
 const { PLANS, UNLIMITED, periodKey } = require("../config/plans");
 const { effectivePlanFor } = require("../config/ngori");
 const { sendPushToUser } = require("../services/pushService");
@@ -49,6 +49,9 @@ async function recordSwipe(req, res) {
         // Likes need a verified identity (passing a profile doesn't).
         if (LIKE_DIRECTIONS.includes(direction) && !(await canInteract(uid))) {
             return res.status(403).json({ message: IDENTITY_REQUIRED_MESSAGE, code: "identity_required" });
+        }
+        if (direction === "superlike" && !(await isVerified(uid))) {
+            return res.status(403).json({ message: VERIFIED_ONLY_MESSAGE, code: "verified_only" });
         }
         const targetProfile = await db.collection("profiles").doc(targetId).get();
         if (!targetProfile.exists) return res.status(404).json({ message: "Profil introuvable" });

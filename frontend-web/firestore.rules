@@ -65,6 +65,13 @@ service cloud.firestore {
         || get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('legacyMember', false) == true;
     }
 
+    // Calls and publishing (posts, stories) are kept for verified profiles
+    // (ID document + selfie), even while verification is optional — legacy
+    // members included. Mirrors VERIFIED_ONLY in lib/identityStatus.js.
+    function isVerified(uid) {
+      return get(/databases/$(database)/documents/profiles/$(uid)).data.get('verified', false) == true;
+    }
+
     // Two people blocked either way can't interact with each other's
     // posts or stories (comment, like, react).
     function blockedWith(otherUid) {
@@ -391,6 +398,8 @@ service cloud.firestore {
         && request.resource.data.status == 'ringing'
         && canPlaceCalls(request.auth.uid)
         && canInteract()
+        && isVerified(request.auth.uid)
+        && isVerified(request.resource.data.calleeId)
         && request.resource.data.matchId is string
         && request.auth.uid in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users
         && request.resource.data.calleeId in get(/databases/$(database)/documents/matches/$(request.resource.data.matchId)).data.users
@@ -450,7 +459,8 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validPostCreate() && canInteract();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validPostCreate() && canInteract()
+        && isVerified(request.auth.uid);
       allow update: if isSignedIn() && (
         (isOwner(resource.data.authorId)
           && request.resource.data.authorId == resource.data.authorId
@@ -529,7 +539,8 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validStoryCreate() && canInteract();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid && validStoryCreate() && canInteract()
+        && isVerified(request.auth.uid);
       allow update: if isSignedIn() && isViewMark();
       allow delete: if isSignedIn() && isOwner(resource.data.authorId);
 

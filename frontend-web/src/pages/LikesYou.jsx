@@ -18,7 +18,7 @@ function LikesYou() {
   const navigate = useNavigate()
   const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
-  const { requireIdentity } = useIdentity()
+  const { requireIdentity, requireVerified } = useIdentity()
   const [data, setData] = useState(null) // { locked, count, likers }
   const [openProfile, setOpenProfile] = useState(null)
   const [paywall, setPaywall] = useState(null)
@@ -32,6 +32,7 @@ function LikesYou() {
 
   async function answer(profile, direction) {
     if (direction !== 'pass' && !requireIdentity()) return
+    if (direction === 'superlike' && !requireVerified('superlike')) return
     setData((prev) => ({ ...prev, count: prev.count - 1, likers: prev.likers.filter((p) => p.id !== profile.id) }))
     try {
       const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName)

@@ -48,7 +48,7 @@ function Feed() {
   // Nothing from someone blocked either way shows up here.
   const posts = useMemo(() => allPosts.filter((p) => !blockedIds.has(p.authorId)), [allPosts, blockedIds])
   const { showToast } = useToast()
-  const { requireIdentity } = useIdentity()
+  const { requireIdentity, requireVerified } = useIdentity()
   const navigate = useNavigate()
 
   const [showComposer, setShowComposer] = useState(false)
@@ -148,11 +148,11 @@ function Feed() {
   }
 
   function openStoryComposer() {
-    if (requireIdentity()) setShowStoryComposer(true)
+    if (requireIdentity() && requireVerified('publish')) setShowStoryComposer(true)
   }
 
   function openComposer(type = 'text') {
-    if (!requireIdentity()) return
+    if (!requireIdentity() || !requireVerified('publish')) return
     setComposerType(type)
     setShowComposer(true)
   }
@@ -376,7 +376,7 @@ function Feed() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
         </div>
       ) : posts.length === 0 ? (
-        <FeedEmptyState onCreate={() => setShowComposer(true)} />
+        <FeedEmptyState onCreate={() => openComposer('text')} />
       ) : (
         <div className="mt-4 space-y-3">
           {posts.map((post) => (

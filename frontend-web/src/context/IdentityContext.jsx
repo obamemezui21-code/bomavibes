@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Clock, ShieldCheck } from 'lucide-react'
 import { useAuth } from './AuthContext.jsx'
 import { subscribeToMyVerification } from '../firebase/verification.js'
-import { IDENTITY_REQUIRED, identityStatus } from '../lib/identityStatus.js'
+import { IDENTITY_REQUIRED, VERIFIED_ONLY, identityStatus } from '../lib/identityStatus.js'
 
 const IdentityContext = createContext(null)
 
@@ -13,6 +13,8 @@ export function IdentityProvider({ children }) {
   const navigate = useNavigate()
   const [request, setRequest] = useState(undefined)
   const [gateOpen, setGateOpen] = useState(false)
+  // Set when the gate is opened for a verified-only feature (VERIFIED_ONLY key).
+  const [gateFeature, setGateFeature] = useState(null)
 
   useEffect(() => {
     if (!user?.id) return undefined
@@ -27,11 +29,24 @@ export function IdentityProvider({ children }) {
 
   function requireIdentity() {
     if (canInteract) return true
+    setGateFeature(null)
     setGateOpen(true)
     return false
   }
 
-  const value = { status, request, canInteract, requireIdentity }
+  // Calls, super likes and publishing are kept for verified profiles, even
+  // while verification itself is optional. Mirrors isVerified() in
+  // firestore.rules and the super like check in swipeController.js.
+  const isVerified = publicProfile?.verified === true
+
+  function requireVerified(feature) {
+    if (isVerified) return true
+    setGateFeature(feature)
+    setGateOpen(true)
+    return false
+  }
+
+  const value = { status, request, canInteract, requireIdentity, isVerified, requireVerified }
 
   return (
     <IdentityContext.Provider value={value}>
@@ -55,12 +70,18 @@ export function IdentityProvider({ children }) {
                 {status === 'pending' ? <Clock size={26} /> : <ShieldCheck size={26} />}
               </span>
               <p className="mt-4 font-display text-lg font-semibold">
-                {status === 'pending' ? 'Vérification en cours' : 'Vérifiez votre identité'}
+                {status === 'pending'
+                  ? 'Vérification en cours'
+                  : gateFeature
+                    ? 'Réservé aux profils vérifiés'
+                    : 'Vérifiez votre identité'}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-ink-soft">
                 {status === 'pending'
                   ? 'Notre équipe examine votre pièce d’identité et votre selfie, généralement en quelques heures. Vous pourrez liker, écrire, appeler et publier dès que ce sera validé.'
-                  : 'Pour la sécurité de tous nos membres, chaque nouveau profil est vérifié avec une pièce d’identité et un selfie.'}
+                  : gateFeature
+                    ? `${VERIFIED_ONLY[gateFeature]} Vérifiez votre profil avec une pièce d’identité et un selfie pour en profiter.`
+                    : 'Pour la sécurité de tous nos membres, chaque nouveau profil est vérifié avec une pièce d’identité et un selfie.'}
               </p>
               {status === 'pending' ? (
                 <button
