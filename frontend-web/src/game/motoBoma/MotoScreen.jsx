@@ -18,7 +18,8 @@ const HONK_AHEAD = 2200
 // { inputs, endTick, claimed } for the server to replay. Drawn by NGORI RUN's
 // renderers (2D or 3D): traffic as its cars, the rider as its motorbike.
 //
-// Controls: hold the left or right half of the screen (or ← →) to steer,
+// Controls: tap the left or right half of the screen (or ← →) to change
+// lane — hold to keep going; the engine's lane assist finishes the move —
 // the NITRO button (or ↑ / space) to boost.
 //
 // ghost (duel): { inputs, runner, name } — the challenger's race on the same
@@ -432,7 +433,7 @@ function MotoScreen({ seed, course, runner, graphics = '2d', ghost = null, audio
             {countdown}
           </motion.span>
           <p className="mt-4 max-w-xs rounded-2xl bg-black/40 px-4 py-2 text-center text-sm text-white/85 backdrop-blur-md">
-            Maintiens le doigt à gauche ou à droite de l’écran pour te déplacer · NITRO pour accélérer
+            Touche à gauche ou à droite de l’écran pour changer de voie · NITRO pour accélérer
           </p>
         </div>
       )}

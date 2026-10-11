@@ -50,7 +50,25 @@ describe('MOTO BOMA engine', () => {
     state.vehicles.push({ id: 9001, lane: 1, z: state.dist + PLAYER_LEN - 10, speed: 0, type: 'car', hit: false })
     step(state)
     expect(state.bumps).toBe(1)
-    expect(state.speed).toBeLessThan(before / 2)
+    expect(state.speed).toBeLessThanOrEqual(before / 2)
+  })
+
+  it('finishes a lane change on its own after a short tap (lane assist)', () => {
+    const state = createRace(1)
+    const ride = (n, actions) => {
+      for (let i = 0; i < n; i++) {
+        state.vehicles = []
+        step(state, i === 0 ? actions : [])
+      }
+    }
+    ride(1, ['R'])
+    ride(2, ['S'])
+    expect(state.x).toBeGreaterThan(100)
+    ride(30)
+    expect(state.x).toBe(200)
+    ride(1, ['L'])
+    ride(40, ['S'])
+    expect(state.x).toBe(100)
   })
 
   it('fires a nitro on demand, faster for a while, and only with a charge left', () => {
@@ -78,7 +96,7 @@ describe('MOTO BOMA engine', () => {
   it('awards medals by finish time', () => {
     expect(medalFor('bord-de-mer', 5000)).toBe('gold')
     expect(medalFor('bord-de-mer', 5400)).toBe('silver')
-    expect(medalFor('bord-de-mer', 6000)).toBe('bronze')
+    expect(medalFor('bord-de-mer', 5600)).toBe('bronze')
     expect(medalFor('bord-de-mer', 7000)).toBe(null)
   })
 

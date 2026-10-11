@@ -5,9 +5,11 @@
 // action). The server replays them with the same seed to get the real finish
 // time and the Ngori picked up, so a time typed into the request is worthless.
 //
-// The rider steers freely across the road (not lane to lane): `x` is the
-// position in hundredths of a lane, 0 = left lane, 200 = right lane. Traffic
-// drives the same way, slower; the race ends at the course's finish line.
+// The rider steers across the road while holding a side: `x` is the
+// position in hundredths of a lane, 0 = left lane, 200 = right lane. On
+// letting go, the bike glides on to the next lane's centre (lane assist), so
+// a short tap is one lane change and the bike never stays between two lanes.
+// Traffic drives the same way, slower; the race ends at the course's finish line.
 
 export const TICK_RATE = 60
 export const LANES = 3
@@ -17,7 +19,7 @@ export const ACTIONS = ['L', 'R', 'S', 'N']
 
 const X_MIN = -25 // a little shoulder on each side
 const X_MAX = 225
-const STEER_SPEED = 6 // hundredths of a lane per tick: a lane in ~0.3 s
+const STEER_SPEED = 7 // hundredths of a lane per tick: a lane in ~0.25 s
 export const PLAYER_LEN = 180 // cm of bike
 const GENERATE_AHEAD = 14000
 
@@ -27,13 +29,13 @@ export const NITRO_SPEED = 58 // ≈ 125 km/h
 const ACCEL_EVERY = 4 // +1 cm/tick every N ticks up to cruise
 export const NITRO_TICKS = 150 // 2.5 s
 export const MAX_NITRO = 3
-const BUMP_STUN_TICKS = 40 // no throttle right after hitting a car
+const BUMP_STUN_TICKS = 25 // no throttle right after hitting a car
 const BUMP_GRACE_TICKS = 45 // can't hit another car meanwhile
 
 // Half-widths, in hundredths of a lane, for "is the bike over it".
-const CAR_HALF = 56
-const BUS_HALF = 62
-const HOLE_HALF = 48
+const CAR_HALF = 46
+const BUS_HALF = 52
+const HOLE_HALF = 40
 const PICKUP_HALF = 55
 
 export const VEHICLES = {
@@ -50,7 +52,7 @@ export const COURSES = {
   'bord-de-mer': {
     name: 'Bord de mer → Akanda',
     length: 200000, // 2 km
-    medals: { gold: 5350, silver: 5800, bronze: 6400 }, // 1:29, 1:37, 1:47
+    medals: { gold: 5160, silver: 5400, bronze: 5700 }, // 1:26, 1:30, 1:35
   },
 }
 export const DEFAULT_COURSE = 'bord-de-mer'
@@ -82,6 +84,7 @@ export function createRace(seed, courseId = DEFAULT_COURSE) {
     speed: 0,
     x: 100, // middle lane
     steer: 0, // -1, 0, 1
+    target: null, // lane centre the bike glides to after letting go
     nitro: 0, // ticks left
     nitroCharges: 1, // one to start with
     stun: 0,
@@ -105,7 +108,7 @@ function generateRow(state) {
   const progress = Math.min(1, z / state.length)
   const roll = randomInt(state, 100)
   // Busier as the race goes on; there's always at least one free lane.
-  const count = roll < 64 - Math.floor(progress * 20) ? 1 : 2
+  const count = roll < 80 - Math.floor(progress * 16) ? 1 : 2
   const lanes = [0, 1, 2]
   for (let i = 2; i > 0; i--) {
     const j = randomInt(state, i + 1)
@@ -126,7 +129,7 @@ function generateRow(state) {
   }
   const free = lanes.slice(count)
   // Coins stay rare: each one is a real Ngori (~10 on a whole course).
-  if (randomInt(state, 100) < 9) {
+  if (randomInt(state, 100) < 11) {
     const lane = free[randomInt(state, free.length)]
     const n = 2 + randomInt(state, 3)
     for (let i = 0; i < n; i++) {
@@ -135,14 +138,20 @@ function generateRow(state) {
   } else if (randomInt(state, 100) < 14) {
     state.pickups.push({ id: state.nextId++, lane: free[randomInt(state, free.length)], z: z + 900, type: 'nitro', taken: false })
   }
-  state.nextRowZ = z + 2200 + randomInt(state, 800) - Math.floor(progress * 400)
+  state.nextRowZ = z + 2500 + randomInt(state, 800) - Math.floor(progress * 400)
 }
 
 function applyAction(state, action) {
-  if (action === 'L') state.steer = -1
-  else if (action === 'R') state.steer = 1
-  else if (action === 'S') state.steer = 0
-  else if (action === 'N' && state.nitroCharges > 0 && !state.nitro) {
+  if (action === 'L' || action === 'R') {
+    state.steer = action === 'L' ? -1 : 1
+    state.target = null
+  } else if (action === 'S') {
+    if (state.steer) {
+      const lane = state.steer > 0 ? Math.ceil(state.x / 100) : Math.floor(state.x / 100)
+      state.target = Math.max(0, Math.min(LANES - 1, lane)) * 100
+    }
+    state.steer = 0
+  } else if (action === 'N' && state.nitroCharges > 0 && !state.nitro) {
     state.nitroCharges--
     state.nitro = NITRO_TICKS
     state.events.push({ type: 'nitro' })
@@ -161,7 +170,13 @@ export function step(state, actions = []) {
   for (const action of actions) applyAction(state, action)
   state.tick++
 
-  state.x = Math.max(X_MIN, Math.min(X_MAX, state.x + state.steer * STEER_SPEED))
+  if (state.steer) {
+    state.x = Math.max(X_MIN, Math.min(X_MAX, state.x + state.steer * STEER_SPEED))
+  } else if (state.target !== null) {
+    const gap = state.target - state.x
+    state.x += Math.sign(gap) * Math.min(STEER_SPEED, Math.abs(gap))
+    if (state.x === state.target) state.target = null
+  }
 
   if (state.stun) {
     state.stun--
@@ -189,7 +204,7 @@ export function step(state, actions = []) {
       state.events.push({ type: 'pothole' })
     } else if (!state.grace) {
       v.hit = true
-      state.speed = Math.floor((state.speed * 3) / 10)
+      state.speed = Math.floor(state.speed / 2)
       state.nitro = 0
       state.stun = BUMP_STUN_TICKS
       state.grace = BUMP_GRACE_TICKS
