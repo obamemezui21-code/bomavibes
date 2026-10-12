@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, BarChart3, Gift, HelpCircle, Play, Trophy, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, BarChart3, Dumbbell, Gift, HelpCircle, Play, Trophy, Volume2, VolumeX } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { finishNgoriRun, getMyNgoriRunStats, getNgoriRunLeaderboard, startNgoriRun } from '../firebase/ngoriRun.js'
@@ -12,6 +12,8 @@ import GameScreen from '../game/ngoriRun/GameScreen.jsx'
 import { loadRenderer3d, webglSupported } from '../game/ngoriRun/graphics.js'
 import { districtAt, placeVenues } from '../game/ngoriRun/libreville.js'
 import { fetchPublishedVenues } from '../firebase/venues.js'
+import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
+import { practiceId, practiceSeed } from '../game/practice.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
@@ -257,7 +259,8 @@ function Help({ dailyCap }) {
 function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, balance, hero }) {
   const navigate = useNavigate()
   const r = outcome?.result || local
-  const capped = outcome && outcome.credited < r.total && !outcome.anomaly
+  const practice = !!outcome?.practice
+  const capped = outcome && !practice && outcome.credited < r.total && !outcome.anomaly
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -271,7 +274,9 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
         className="w-full max-w-sm rounded-[28px] bg-violet-950 p-6 text-white shadow-2xl"
       >
         <img src={hero.portrait} alt="" className={`mx-auto mb-3 h-16 w-16 rounded-full object-cover ring-2 ${hero.ring}`} />
-        <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-pink-300">Course terminée</p>
+        <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-pink-300">
+          {practice ? 'Entraînement terminé' : 'Course terminée'}
+        </p>
         <h2 className="mt-1 text-center font-display text-2xl font-bold">
           {r.distance >= 1000
             ? `🔥 Belle course, ${hero.name} !`
@@ -305,37 +310,48 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
           ))}
         </dl>
 
-        <div className="mt-4 rounded-2xl bg-white/8 p-4 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Total</p>
-          <p className="mt-1 flex items-center justify-center gap-2 font-display text-3xl font-bold">
-            {outcome ? outcome.credited : '…'} <NgoriCoin size={30} />
-          </p>
-          {outcome && (
-            <p className="mt-1 text-xs text-white/70">
-              {outcome.anomaly
-                ? 'Course non validée : aucun Ngori crédité.'
-                : capped
-                  ? `${r.total} ramassés · limite du jeu atteinte aujourd'hui (${outcome.earnedToday}/${outcome.dailyCap}). Reviens demain !`
-                  : `crédités sur ton solde · ${outcome.earnedToday}/${outcome.dailyCap} gagnés en jouant aujourd'hui`}
+        {practice ? (
+          <div className="mt-4 rounded-2xl bg-white/8 p-4 text-center">
+            <p className="flex items-center justify-center gap-1.5 text-sm font-semibold">
+              <Dumbbell size={16} /> Mode entraînement
             </p>
-          )}
-          {error && (
-            <div className="mt-2">
-              <p className="text-xs text-coral-400">{error}</p>
-              {onRetrySave && (
-                <button type="button" onClick={onRetrySave} className="mt-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold">
-                  Réessayer d'enregistrer
-                </button>
-              )}
-            </div>
-          )}
-          {!outcome && !error && <p className="mt-1 text-xs text-white/60">Vérification de la course…</p>}
-        </div>
+            <p className="mt-1 text-xs text-white/70">Aucun Ngori gagné, rien ne compte pour le classement. Lance une vraie course quand tu te sens prêt·e !</p>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl bg-white/8 p-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Total</p>
+            <p className="mt-1 flex items-center justify-center gap-2 font-display text-3xl font-bold">
+              {outcome ? outcome.credited : '…'} <NgoriCoin size={30} />
+            </p>
+            {outcome && (
+              <p className="mt-1 text-xs text-white/70">
+                {outcome.anomaly
+                  ? 'Course non validée : aucun Ngori crédité.'
+                  : capped
+                    ? `${r.total} ramassés · limite du jeu atteinte aujourd'hui (${outcome.earnedToday}/${outcome.dailyCap}). Reviens demain !`
+                    : `crédités sur ton solde · ${outcome.earnedToday}/${outcome.dailyCap} gagnés en jouant aujourd'hui`}
+              </p>
+            )}
+            {error && (
+              <div className="mt-2">
+                <p className="text-xs text-coral-400">{error}</p>
+                {onRetrySave && (
+                  <button type="button" onClick={onRetrySave} className="mt-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold">
+                    Réessayer d'enregistrer
+                  </button>
+                )}
+              </div>
+            )}
+            {!outcome && !error && <p className="mt-1 text-xs text-white/60">Vérification de la course…</p>}
+          </div>
+        )}
 
-        <div className="mt-4">
-          <p className="mb-2 text-center text-sm font-semibold">Tu es maintenant à {balance} Ngori</p>
-          <GoalBar balance={balance} dark />
-        </div>
+        {!practice && (
+          <div className="mt-4">
+            <p className="mb-2 text-center text-sm font-semibold">Tu es maintenant à {balance} Ngori</p>
+            <GoalBar balance={balance} dark />
+          </div>
+        )}
 
         <button
           type="button"
@@ -419,12 +435,18 @@ function NgoriRun() {
     audio.setMuted(next)
   }
 
-  async function start() {
+  async function start(practice = false) {
     audio.unlock() // must happen inside the tap
-    setPhase('starting')
     setOutcome(null)
     setSaveError(null)
     setPayload(null)
+    if (practice) {
+      // Training: nothing goes through the server (see game/practice.js).
+      setRun({ runId: practiceId(), seed: practiceSeed(), practice: true })
+      setPhase('playing')
+      return
+    }
+    setPhase('starting')
     try {
       const r = await startNgoriRun()
       setRun({ runId: r.runId, seed: r.seed })
@@ -461,7 +483,8 @@ function NgoriRun() {
     }
     setPayload(data)
     setPhase('result')
-    save(data)
+    if (run.practice) setOutcome({ practice: true, result: simulateRun(run.seed, data.inputs, data.endTick) })
+    else save(data)
   }
 
   // Shown while the server replays the run; its own figures replace these.
@@ -556,13 +579,21 @@ function NgoriRun() {
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
-            onClick={start}
+            onClick={() => start()}
             disabled={phase === 'starting'}
             className="relative mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-white py-4 font-display text-base font-black tracking-wide text-violet-950 shadow-lg disabled:opacity-70"
           >
             <Play size={18} fill="currentColor" />
             {phase === 'starting' ? 'PRÉPARATION…' : 'COMMENCER LA COURSE'}
           </motion.button>
+          <button
+            type="button"
+            onClick={() => start(true)}
+            disabled={phase === 'starting'}
+            className="relative mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-white/40 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:opacity-70"
+          >
+            <Dumbbell size={16} /> S’ENTRAÎNER <span className="font-normal text-white/70">· sans Ngori, sans limite</span>
+          </button>
           <label className="relative mt-3 flex cursor-pointer items-center justify-center gap-2 text-xs text-white/75">
             <input
               type="checkbox"
@@ -649,7 +680,7 @@ function NgoriRun() {
             local={local}
             error={saveError}
             onRetrySave={saveError && payload ? () => save(payload) : null}
-            onReplay={start}
+            onReplay={() => start(!!run?.practice)}
             onClose={() => setPhase('lobby')}
             balance={balance}
             hero={RUNNER_CHOICES.find((c) => c.id === runner) || RUNNER_CHOICES[0]}

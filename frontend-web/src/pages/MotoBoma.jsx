@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Flag, Play, Swords, Trophy, Volume2, VolumeX, X } from 'lucide-react'
+import { ArrowLeft, Dumbbell, Flag, Play, Swords, Trophy, Volume2, VolumeX, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -14,7 +14,8 @@ import {
   getMyMotoStats,
   startMotoRace,
 } from '../firebase/motoBoma.js'
-import { COURSES, DEFAULT_COURSE, MEDAL_BONUS } from '../../../shared/moto-boma/engine.mjs'
+import { COURSES, DEFAULT_COURSE, MEDAL_BONUS, simulateRace } from '../../../shared/moto-boma/engine.mjs'
+import { practiceId, practiceSeed } from '../game/practice.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import { loadRenderer3d, webglSupported } from '../game/ngoriRun/graphics.js'
@@ -114,6 +115,7 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, o
   const r = outcome?.result || local
   const medal = r.medal
   const duel = outcome?.duel
+  const practice = !!outcome?.practice
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -127,7 +129,10 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, o
         className="w-full max-w-sm rounded-[28px] bg-violet-950 p-6 text-center text-white shadow-2xl"
       >
         <img src={hero.picture} alt="" className="mx-auto h-28 object-contain drop-shadow-[0_8px_20px_rgba(236,72,153,0.45)]" />
-        <p className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-pink-300">{r.finished ? 'Arrivée' : 'Course abandonnée'}</p>
+        <p className="mt-2 text-xs font-bold uppercase tracking-[0.2em] text-pink-300">
+          {practice ? 'Entraînement · ' : ''}
+          {r.finished ? 'Arrivée' : 'Course abandonnée'}
+        </p>
         <h2 className="mt-1 font-display text-4xl font-black tabular-nums">{r.finished ? formatTicks(r.finishTick) : '—'}</h2>
         <p className="mt-1 text-sm text-white/75">
           {medal
@@ -164,30 +169,39 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, o
           ))}
         </dl>
 
-        <div className="mt-4 rounded-2xl bg-white/8 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Crédités</p>
-          <p className="mt-1 flex items-center justify-center gap-2 font-display text-3xl font-bold">
-            {outcome ? outcome.credited : '…'} <NgoriCoin size={30} />
-          </p>
-          {outcome && (
-            <p className="mt-1 text-xs text-white/70">
-              {outcome.anomaly
-                ? 'Course non validée : aucun Ngori crédité.'
-                : `${outcome.earnedToday}/${outcome.dailyCap} gagnés en moto aujourd’hui`}
+        {practice ? (
+          <div className="mt-4 rounded-2xl bg-white/8 p-4">
+            <p className="flex items-center justify-center gap-1.5 text-sm font-semibold">
+              <Dumbbell size={16} /> Mode entraînement
             </p>
-          )}
-          {error && (
-            <div className="mt-2">
-              <p className="text-xs text-coral-400">{error}</p>
-              {onRetrySave && (
-                <button type="button" onClick={onRetrySave} className="mt-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold">
-                  Réessayer d’enregistrer
-                </button>
-              )}
-            </div>
-          )}
-          {!outcome && !error && <p className="mt-1 text-xs text-white/60">Vérification de la course…</p>}
-        </div>
+            <p className="mt-1 text-xs text-white/70">Aucun Ngori gagné, rien ne compte pour le classement. Lance une vraie course quand tu te sens prêt·e !</p>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl bg-white/8 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/60">Crédités</p>
+            <p className="mt-1 flex items-center justify-center gap-2 font-display text-3xl font-bold">
+              {outcome ? outcome.credited : '…'} <NgoriCoin size={30} />
+            </p>
+            {outcome && (
+              <p className="mt-1 text-xs text-white/70">
+                {outcome.anomaly
+                  ? 'Course non validée : aucun Ngori crédité.'
+                  : `${outcome.earnedToday}/${outcome.dailyCap} gagnés en moto aujourd’hui`}
+              </p>
+            )}
+            {error && (
+              <div className="mt-2">
+                <p className="text-xs text-coral-400">{error}</p>
+                {onRetrySave && (
+                  <button type="button" onClick={onRetrySave} className="mt-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold">
+                    Réessayer d’enregistrer
+                  </button>
+                )}
+              </div>
+            )}
+            {!outcome && !error && <p className="mt-1 text-xs text-white/60">Vérification de la course…</p>}
+          </div>
+        )}
 
         <button
           type="button"
@@ -327,12 +341,18 @@ function MotoBoma() {
     }
   }
 
-  async function start() {
+  async function start(practice = false) {
     audio.unlock() // must happen inside the tap
-    setPhase('starting')
     setOutcome(null)
     setSaveError(null)
     setPayload(null)
+    if (practice) {
+      // Training: nothing goes through the server (see game/practice.js).
+      setRace({ raceId: practiceId(), seed: practiceSeed(), course, practice: true })
+      setPhase('racing')
+      return
+    }
+    setPhase('starting')
     try {
       const r = await startMotoRace(course)
       setRace({ raceId: r.raceId, seed: r.seed, course: r.course })
@@ -396,7 +416,8 @@ function MotoBoma() {
     }
     setPayload(data)
     setPhase('result')
-    save(data)
+    if (race.practice) setOutcome({ practice: true, result: simulateRace(race.seed, race.course, data.inputs, data.endTick) })
+    else save(data)
   }
 
   // Shown while the server replays the race; its own figures replace these.
@@ -519,13 +540,21 @@ function MotoBoma() {
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
-            onClick={start}
+            onClick={() => start()}
             disabled={phase === 'starting'}
             className="relative mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-white py-4 font-display text-base font-black tracking-wide text-violet-950 shadow-lg disabled:opacity-70"
           >
             <Play size={18} fill="currentColor" />
             {phase === 'starting' ? 'PRÉPARATION…' : 'LANCER LA COURSE'}
           </motion.button>
+          <button
+            type="button"
+            onClick={() => start(true)}
+            disabled={phase === 'starting'}
+            className="relative mt-2 flex w-full items-center justify-center gap-2 rounded-full border border-white/40 py-3 text-sm font-bold text-white transition hover:bg-white/10 disabled:opacity-70"
+          >
+            <Dumbbell size={16} /> S’ENTRAÎNER <span className="font-normal text-white/70">· sans Ngori, sans limite</span>
+          </button>
           <p className="relative mt-3 flex items-center justify-center gap-1.5 text-xs text-white/70">
             <NgoriCoin size={16} /> Solde : {balance} Ngori
           </p>
@@ -576,9 +605,9 @@ function MotoBoma() {
             local={local}
             error={saveError}
             onRetrySave={saveError && payload ? () => save(payload) : null}
-            onReplay={start}
+            onReplay={() => start(!!race?.practice)}
             onClose={() => setPhase('lobby')}
-            onChallenge={outcome && !outcome.anomaly && outcome.result.finished && !race?.ghost ? () => setPicking(true) : null}
+            onChallenge={outcome && !outcome.practice && !outcome.anomaly && outcome.result.finished && !race?.ghost ? () => setPicking(true) : null}
             hero={hero}
           />
         )}
