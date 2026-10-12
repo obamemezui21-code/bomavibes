@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { usePhotoQuality } from '../context/PhotoQualityContext.jsx'
 import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
-import { MIN_PHOTO_SIDE, PHOTO_NOT_HD_MESSAGE, formatDeadline, isHdPhoto } from '../lib/photoQuality.js'
+import { MIN_PHOTO_SIDE, MIN_PROFILE_PHOTOS, PHOTO_NOT_HD_MESSAGE, formatDeadline, isHdPhoto } from '../lib/photoQuality.js'
 import CountryPicker from '../components/CountryPicker.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 import SupportModal from '../components/SupportModal.jsx'
@@ -181,13 +181,24 @@ function Profile() {
       setError('Remplace ou retire les photos marquées « Pas en HD » avant d’enregistrer.')
       return
     }
+    if (photoSlots.filter(Boolean).length < MIN_PROFILE_PHOTOS) {
+      setError(`Ton profil doit avoir au moins ${MIN_PROFILE_PHOTOS} photos de toi.`)
+      return
+    }
 
     setIsSaving(true)
     try {
       const photoUrls = (
         await Promise.all(
           photoSlots.map((slot, i) => {
-            if (slot?.file) return uploadProfilePhoto(user.id, i, slot.file)
+            // Each new photo is checked by the server (a real photo of a
+            // person): say which one was refused.
+            if (slot?.file) {
+              return uploadProfilePhoto(user.id, i, slot.file).catch((err) => {
+                if (err?.code?.startsWith('photo-')) err.message = `Photo ${i + 1} : ${err.message}`
+                throw err
+              })
+            }
             if (slot?.url) return slot.url
             return null
           }),
@@ -227,7 +238,7 @@ function Profile() {
       showToast('Profil mis à jour avec succès.', 'success')
       setTimeout(() => setSuccess(false), 2500)
     } catch (err) {
-      const message = err?.code === 'photo-not-hd' ? err.message : 'Impossible de mettre à jour votre profil'
+      const message = err?.code?.startsWith('photo-') ? err.message : 'Impossible de mettre à jour votre profil'
       setError(message)
       showToast(message, 'error')
     } finally {

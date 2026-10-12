@@ -3,6 +3,7 @@ const path = require("path");
 const sharp = require("sharp");
 const admin = require("../config/firebaseAdmin");
 const { MIN_PHOTO_SIDE, isHdOriginal, isHdStored } = require("../config/photoQuality");
+const { analyzeProfilePhoto, REJECTION_MESSAGES } = require("../services/photoAnalysis");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "profile-photos");
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://bomavibes.tech";
@@ -41,12 +42,27 @@ async function uploadPhoto(req, res) {
       });
     }
 
+    // Normalize orientation once (EXIF-aware), reuse the decoded buffer for
+    // the analysis and every variant instead of re-reading the source.
+    const normalized = await sharp(req.file.path).rotate().toBuffer();
+
+    // A real photo of a person (see services/photoAnalysis.js). If the
+    // analysis itself breaks, the photo goes through: a bug must never
+    // block signups — it's logged instead.
+    let analysis = null;
+    try {
+      analysis = await analyzeProfilePhoto(normalized);
+    } catch (err) {
+      console.error("Analyse photo indisponible :", err);
+    }
+    if (analysis && !analysis.ok) {
+      fs.unlink(req.file.path, () => {});
+      console.log(`Photo refusée (${uid}, ${analysis.code}) ${JSON.stringify(analysis.details)}`);
+      return res.status(422).json({ code: analysis.code, message: REJECTION_MESSAGES[analysis.code] });
+    }
+
     const dir = path.join(UPLOAD_ROOT, uid);
     fs.mkdirSync(dir, { recursive: true });
-
-    // Normalize orientation once (EXIF-aware), reuse the decoded buffer for
-    // every variant instead of re-reading/re-rotating the source each time.
-    const normalized = await sharp(req.file.path).rotate().toBuffer();
     const cacheBust = Date.now();
     const urls = {};
 

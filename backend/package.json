@@ -11,7 +11,8 @@
     "announce": "node scripts/announceFeature.js",
     "grant-admin": "node scripts/setAdmin.js",
     "notify-user": "node scripts/notifyUser.js",
-    "deploy-rules": "node scripts/deployFirestoreRules.js"
+    "deploy-rules": "node scripts/deployFirestoreRules.js",
+    "postinstall": "node scripts/fetchModels.js"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "express-rate-limit": "^8.7.0",
     "firebase-admin": "^13.10.0",
     "multer": "^2.2.0",
+    "onnxruntime-node": "^1.20.1",
     "resend": "^6.18.1",
     "sharp": "^0.35.3"
   },

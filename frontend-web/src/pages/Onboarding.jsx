@@ -1,14 +1,14 @@
 import { useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Mars, Minus, NonBinary, Plus, Venus, X } from 'lucide-react'
+import { Check, Loader2, Mars, Minus, NonBinary, Plus, RotateCw, Venus, X } from 'lucide-react'
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { findCountry, findRegion } from '../lib/geography.js'
-import { MIN_PHOTO_SIDE, PHOTO_NOT_HD_MESSAGE, isHdPhoto } from '../lib/photoQuality.js'
+import { MIN_PHOTO_SIDE, MIN_PROFILE_PHOTOS, PHOTO_NOT_HD_MESSAGE, isHdPhoto } from '../lib/photoQuality.js'
 import CountryPicker from '../components/CountryPicker.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 import ProfileLaunchOverlay from '../components/ProfileLaunchOverlay.jsx'
@@ -85,15 +85,30 @@ function Onboarding() {
     prefMaxDistance: 25,
   })
 
-  // Photos start uploading as soon as they're picked, so by the time the
-  // user reaches "Terminer" they're usually already on the server.
+  // Photos start uploading as soon as they're picked: the server checks each
+  // one (HD, a real photo of a person with the face visible) and the tile
+  // shows the verdict. status: checking → ok | refused | failed (network).
   function startUpload(slot, file) {
     const previous = slotUploadsRef.current[slot] || Promise.resolve()
-    const upload = previous
-      .then(() => uploadProfilePhoto(user.id, slot, file))
-      .catch(() => null)
-    slotUploadsRef.current[slot] = upload
+    const upload = previous.then(() => uploadProfilePhoto(user.id, slot, file))
+    slotUploadsRef.current[slot] = upload.catch(() => null)
     return upload
+  }
+
+  function updatePhoto(id, patch) {
+    setForm((f) => ({ ...f, photos: f.photos.map((p) => (p.id === id ? { ...p, ...patch } : p)) }))
+  }
+
+  function checkPhoto({ id, slot, file }) {
+    updatePhoto(id, { status: 'checking', message: null })
+    startUpload(slot, file).then(
+      (url) => updatePhoto(id, { status: 'ok', url }),
+      (err) => {
+        const refused = Boolean(err?.code?.startsWith('photo-'))
+        if (refused) showToast(err.message, 'error')
+        updatePhoto(id, refused ? { status: 'refused', message: err.message } : { status: 'failed' })
+      },
+    )
   }
 
   async function handleAddPhotos(e) {
@@ -105,12 +120,14 @@ function Onboarding() {
     if (!files.length) return
     const freeSlots = [0, 1, 2].filter((slot) => !form.photos.some((p) => p.slot === slot))
     const entries = files.map((file, i) => ({
+      id: `${Date.now()}-${i}`,
       file,
       slot: freeSlots[i],
       previewUrl: URL.createObjectURL(file),
-      upload: startUpload(freeSlots[i], file),
+      status: 'checking',
     }))
     setForm((f) => ({ ...f, photos: [...f.photos, ...entries].slice(0, 3) }))
+    entries.forEach(checkPhoto)
   }
 
   function removePhoto(index) {
@@ -178,14 +195,16 @@ function Onboarding() {
   }
 
   async function finish() {
+    // Only photos the server accepted; the photo step can't be left without
+    // enough of them, so this is a last guard.
+    const photoUrls = form.photos.filter((p) => p.status === 'ok').map((p) => p.url)
+    if (photoUrls.length < MIN_PROFILE_PHOTOS) {
+      showToast(`Ajoutez au moins ${MIN_PROFILE_PHOTOS} photos de vous.`, 'error')
+      setStep(0)
+      return
+    }
     setIsSaving(true)
-    let photoUrls
     try {
-      // Background uploads that failed get one more try here.
-      photoUrls = (
-        await Promise.all(form.photos.map(async (p) => (await p.upload) || startUpload(p.slot, p.file)))
-      ).filter(Boolean)
-
       // Both docs in one round trip instead of two sequential writes.
       const batch = writeBatch(db)
       batch.set(
@@ -233,10 +252,6 @@ function Onboarding() {
       showToast("Impossible d'enregistrer votre profil, réessayez.", 'error')
       return
     }
-    // A failed photo no longer blocks the whole signup: it's skipped instead.
-    if (photoUrls.length < form.photos.length) {
-      showToast("Une photo n'a pas pu être envoyée, ajoutez-la depuis votre profil.", 'error')
-    }
     // Short celebration on the overlay before landing on Discover.
     setIsDone(true)
     setTimeout(() => navigate('/discover', { replace: true }), 1100)
@@ -247,8 +262,14 @@ function Onboarding() {
   if (isProfileLoading) return <FullPageSpinner />
   if (profile?.onboarded && !isSaving) return <Navigate to="/discover" replace />
 
+  const acceptedPhotos = form.photos.filter((p) => p.status === 'ok').length
+  const checkingPhotos = form.photos.some((p) => p.status === 'checking')
+  const refusedPhotos = form.photos.filter((p) => p.status === 'refused')
+
   const canContinue =
-    step === 1
+    step === 0
+      ? acceptedPhotos >= MIN_PROFILE_PHOTOS && !checkingPhotos
+      : step === 1
       ? form.age && form.gender
       : step === 2
         ? !!form.country
@@ -312,26 +333,61 @@ function Onboarding() {
             >
               {step === 0 && (
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-ink">Ajoutez vos photos</h2>
+                  <h2 className="font-display text-xl font-semibold text-ink">
+                    Ajoutez {MIN_PROFILE_PHOTOS} ou 3 photos de vous
+                  </h2>
                   <p className="mt-1 text-sm text-ink-soft/60">
-                    Un profil avec au moins une photo reçoit bien plus de matchs.
+                    De vraies photos de vous, le visage bien visible : chaque photo est vérifiée automatiquement.
                   </p>
                   <p className="mt-1 text-xs text-ink-soft/50">
-                    Photos HD uniquement (au moins {MIN_PHOTO_SIDE} pixels de côté) : pas de capture d’écran ni d’image
-                    compressée.
+                    Photos HD uniquement (au moins {MIN_PHOTO_SIDE} pixels de côté). Pas d’animal, de dessin, de paysage,
+                    de capture d’écran ni de photo où l’on ne voit pas votre visage.
                   </p>
 
                   <div className="mt-5 grid grid-cols-3 gap-3">
                     {[0, 1, 2].map((i) => {
-                      const src = form.photos[i]?.previewUrl
+                      const photo = form.photos[i]
+                      const src = photo?.previewUrl
                       return (
                         <div
                           key={i}
-                          className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-dashed border-ink/15 bg-ink/[0.03]"
+                          className={`relative aspect-[3/4] overflow-hidden rounded-2xl border bg-ink/[0.03] ${
+                            photo?.status === 'refused' ? 'border-2 border-red-500' : 'border-dashed border-ink/15'
+                          }`}
                         >
                           {src ? (
                             <>
-                              <img src={src} alt="" className="h-full w-full object-cover" />
+                              <img
+                                src={src}
+                                alt=""
+                                className={`h-full w-full object-cover ${photo.status === 'ok' ? '' : 'opacity-60'}`}
+                              />
+                              {photo.status === 'checking' && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/40 text-[11px] font-medium text-white">
+                                  <Loader2 size={20} className="animate-spin" />
+                                  Vérification…
+                                </div>
+                              )}
+                              {photo.status === 'refused' && (
+                                <div className="absolute inset-x-0 bottom-0 bg-red-600 py-1 text-center text-[11px] font-semibold text-white">
+                                  Refusée
+                                </div>
+                              )}
+                              {photo.status === 'failed' && (
+                                <button
+                                  type="button"
+                                  onClick={() => checkPhoto(photo)}
+                                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 text-[11px] font-medium text-white"
+                                >
+                                  <RotateCw size={18} />
+                                  Échec de l’envoi, réessayer
+                                </button>
+                              )}
+                              {photo.status === 'ok' && (
+                                <span className="absolute bottom-1.5 left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-mint-500 text-white">
+                                  <Check size={12} strokeWidth={3} />
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={() => removePhoto(i)}
@@ -355,6 +411,23 @@ function Onboarding() {
                       )
                     })}
                   </div>
+                  {refusedPhotos.length > 0 && (
+                    <ul className="mt-3 space-y-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs text-red-700 dark:text-red-300">
+                      {refusedPhotos.map((p) => (
+                        <li key={p.id}>
+                          <span className="font-semibold">Photo {form.photos.indexOf(p) + 1} :</span> {p.message}
+                        </li>
+                      ))}
+                      <li className="text-red-700/80 dark:text-red-300/80">Retirez-la avec la croix et ajoutez-en une autre.</li>
+                    </ul>
+                  )}
+                  {!checkingPhotos && acceptedPhotos < MIN_PROFILE_PHOTOS && (
+                    <p className="mt-3 text-xs text-ink-soft/60">
+                      {acceptedPhotos === 0
+                        ? `Il faut au moins ${MIN_PROFILE_PHOTOS} photos de vous pour continuer.`
+                        : `Encore ${MIN_PROFILE_PHOTOS - acceptedPhotos} photo pour continuer.`}
+                    </p>
+                  )}
                   <input
                     ref={fileInputRef}
                     type="file"

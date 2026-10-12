@@ -4,6 +4,11 @@
 // (backend/src/config/photoQuality.js — keep both in sync).
 export const MIN_PHOTO_SIDE = 720
 
+// Every profile has at least this many photos (3 at most), and each one is
+// checked by the server on upload: a real photo of a person, face visible
+// (backend/src/services/photoAnalysis.js).
+export const MIN_PROFILE_PHOTOS = 2
+
 // Members whose photos predate the rule have until then to replace them;
 // after that the app only opens their profile page until it's done.
 export const HD_PHOTO_DEADLINE = new Date('2026-10-17T23:59:59+01:00')
