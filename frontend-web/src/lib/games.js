@@ -2,8 +2,6 @@ import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
 import motoKevin from '../assets/game/moto-kevin.webp'
 import motoAicha from '../assets/game/moto-aicha.webp'
-import fightNzame from '../assets/game/fight/nzame.webp'
-import fightSally from '../assets/game/fight/sally.webp'
 
 // Every game of the "Jeux" module (pages/Games.jsx), in display order. A new
 // game only needs its entry here (and its route in App.jsx) to show up.
@@ -11,18 +9,6 @@ import fightSally from '../assets/game/fight/sally.webp'
 //   dailyCap: Ngori it can earn per day (each game has its own cap)
 //   isNew: shows a "Nouveau" badge
 export const GAMES = [
-  {
-    id: 'boma-fight',
-    name: 'Boma Fight',
-    tagline: 'Combat entre 12 guerriers du Gabon',
-    description: 'Choisis ton combattant parmi 12 légendes, frappe, pare, déclenche ton spécial et deviens le champion de la semaine.',
-    path: '/boma-fight',
-    pictures: [fightNzame, fightSally],
-    gradient: 'from-[#1a0b07] via-[#5a1d12] to-[#e2733a]',
-    accent: 'text-amber-300',
-    dailyCap: 5,
-    isNew: true,
-  },
   {
     id: 'moto-boma',
     name: 'Moto Boma',

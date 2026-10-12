@@ -55,16 +55,6 @@ const MOTO_BOMA = {
     challengeTtlMs: 7 * 24 * 60 * 60 * 1000,
 };
 
-// BOMA FIGHT, the fighting game: a win pays its level's reward (+1 for a
-// perfect round, see shared/boma-fight/engine.mjs), within its own daily cap.
-const BOMA_FIGHT = {
-    dailyCap: 5,
-    maxStartsPerDay: 60,
-    minStartIntervalMs: 3000,
-    maxRunMs: 20 * 60 * 1000,
-    minTimeRatio: 0.9,
-};
-
 // 🔥 badge shown on the profile for a login streak of at least N days.
 const STREAK_BADGES = [30, 14, 7, 3];
 
@@ -109,4 +99,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, BOMA_FIGHT, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
