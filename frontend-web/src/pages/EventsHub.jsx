@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, Globe, Heart, MapPin, Search, Ticket } from 'lucide-react'
+import { Briefcase, ChevronRight, Clapperboard, Gamepad2, Globe, Heart, MapPin, Search, Sparkles, Ticket } from 'lucide-react'
+import { GAMES } from '../lib/games.js'
 import { cancelEventTicket, fetchMyTickets, fetchPublishedEvents, reserveEventTicket } from '../firebase/events.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -12,14 +13,52 @@ const CATEGORY_CARDS = [
   {
     icon: Heart,
     title: 'Salon des amoureux',
-    subtitle: 'Dating & relations sérieuses ou éphémères',
+    subtitle: 'Coins Chics & Ciné pour vos rendez-vous',
     tint: 'bg-pink-500/15 text-pink-600',
+    modules: [
+      {
+        to: '/coins-chics',
+        label: 'Coins Chics',
+        description: 'Restos, bars & lounges pour un rendez-vous',
+        icon: MapPin,
+        tint: 'bg-pink-500/15 text-pink-500',
+      },
+      {
+        to: '/cine',
+        label: 'Ciné & Séries',
+        description: 'Films et séries à regarder à deux',
+        icon: Clapperboard,
+        tint: 'bg-rose-500/15 text-rose-500',
+      },
+    ],
   },
   {
     icon: Briefcase,
     title: 'Salon de métier',
-    subtitle: 'Networking, partenaires & mentors',
+    subtitle: 'Networking, mentors & Studio IA',
     tint: 'bg-gold/15 text-gold',
+    modules: [
+      {
+        to: '/studio-ia',
+        label: 'Studio IA',
+        description: 'Outils vidéo IA pour créer',
+        icon: Sparkles,
+        tint: 'bg-sky-500/15 text-sky-500',
+      },
+    ],
+  },
+  {
+    icon: Gamepad2,
+    title: 'Salon de jeu',
+    subtitle: 'Tous les jeux pour gagner des Ngori',
+    tint: 'bg-violet-500/15 text-violet-600',
+    modules: GAMES.map((game) => ({
+      to: game.path,
+      label: game.name,
+      description: game.tagline,
+      icon: Gamepad2,
+      tint: `bg-gradient-to-br ${game.gradient} text-white`,
+    })),
   },
   {
     icon: Globe,
@@ -62,6 +101,8 @@ function EventsHub() {
   const [reservingEvent, setReservingEvent] = useState(null)
   const [form, setForm] = useState({ name: '', email: '', phone: '' })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [openSalon, setOpenSalon] = useState(null)
+  const activeSalon = CATEGORY_CARDS.find((c) => c.title === openSalon)
 
   const load = useCallback(() => {
     setIsLoading(true)
@@ -148,16 +189,60 @@ function EventsHub() {
 
       <h2 className="mt-6 text-sm font-semibold text-ink">Salons &amp; Communauté</h2>
       <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
-        {CATEGORY_CARDS.map((c) => (
-          <div key={c.title} className={`w-36 shrink-0 rounded-2xl p-4 ${c.tint}`}>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/60">
-              <c.icon size={17} strokeWidth={2.25} />
-            </span>
-            <p className="mt-3 text-sm font-semibold leading-tight">{c.title}</p>
-            <p className="mt-0.5 text-xs opacity-80">{c.subtitle}</p>
-          </div>
-        ))}
+        {CATEGORY_CARDS.map((c) => {
+          const content = (
+            <>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/60">
+                <c.icon size={17} strokeWidth={2.25} />
+              </span>
+              <p className="mt-3 text-sm font-semibold leading-tight">{c.title}</p>
+              <p className="mt-0.5 text-xs opacity-80">{c.subtitle}</p>
+            </>
+          )
+          return c.modules ? (
+            <button
+              key={c.title}
+              type="button"
+              onClick={() => setOpenSalon((prev) => (prev === c.title ? null : c.title))}
+              aria-expanded={openSalon === c.title}
+              className={`w-36 shrink-0 rounded-2xl p-4 text-left transition hover:brightness-95 ${c.tint} ${
+                openSalon === c.title ? 'ring-2 ring-current' : ''
+              }`}
+            >
+              {content}
+            </button>
+          ) : (
+            <div key={c.title} className={`w-36 shrink-0 rounded-2xl p-4 ${c.tint}`}>
+              {content}
+            </div>
+          )
+        })}
       </div>
+
+      {activeSalon && (
+        <div className="mt-3 rounded-2xl border border-ink/8 bg-white p-3 shadow-sm dark:bg-surface-tint">
+          <p className="px-1 text-xs font-semibold text-ink-soft/70">{activeSalon.title}</p>
+          <div className="mt-2 space-y-2">
+            {activeSalon.modules.map((m) => (
+              <button
+                key={m.to}
+                type="button"
+                onClick={() => navigate(m.to)}
+                className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-ink/5"
+              >
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${m.tint}`}>
+                  <m.icon size={18} strokeWidth={2.25} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-ink">{m.label}</span>
+                  <span className="block truncate text-xs text-ink-soft/60">{m.description}</span>
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-ink-soft/40" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="relative mt-5">
         <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
