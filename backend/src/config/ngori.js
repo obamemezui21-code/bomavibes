@@ -65,6 +65,13 @@ const MOT_DU_JOUR = {
     streakBonus: 3,
 };
 
+// VIBE CHECK, the blind-matching game: Ngori for answering the day's
+// questions, and for a match born in the game (each side, once a day).
+const VIBE_CHECK = {
+    playReward: 1,
+    matchReward: 2,
+};
+
 // 🔥 badge shown on the profile for a login streak of at least N days.
 const STREAK_BADGES = [30, 14, 7, 3];
 
@@ -109,4 +116,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, MOT_DU_JOUR, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };

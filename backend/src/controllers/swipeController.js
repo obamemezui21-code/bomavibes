@@ -17,6 +17,15 @@ class QuotaError extends Error {
     }
 }
 
+// A swipe refused before any quota is counted (status + code for the response).
+class SwipeError extends Error {
+    constructor(status, message, code = null) {
+        super(message);
+        this.status = status;
+        this.code = code;
+    }
+}
+
 // Counts already used in the current window (0 when the stored window is old).
 function used(usage, keyField, countField, key) {
     return usage?.[keyField] === key ? usage[countField] || 0 : 0;
@@ -30,6 +39,110 @@ function remainingFor(plan, usage, now) {
     return { likes: likesLeft, superlikes: superLeft };
 }
 
+// Records uid's swipe on targetId and creates the match when the like is
+// mutual. Discover (recordSwipe below) and VIBE CHECK both go through here,
+// so quotas apply the same way. → { matchId, matchCreated, remaining }
+// Throws QuotaError (likes used up) or SwipeError.
+async function applySwipe(uid, targetId, direction) {
+    const now = Date.now();
+    const userRef = db.collection("users").doc(uid);
+    const usageRef = db.collection("usage").doc(uid);
+    const swipeRef = db.collection("swipes").doc(`${uid}_${targetId}`);
+
+    // Likes need a verified identity (passing a profile doesn't).
+    if (LIKE_DIRECTIONS.includes(direction) && !(await canInteract(uid))) {
+        throw new SwipeError(403, IDENTITY_REQUIRED_MESSAGE, "identity_required");
+    }
+    if (direction === "superlike" && !(await isVerified(uid))) {
+        throw new SwipeError(403, VERIFIED_ONLY_MESSAGE, "verified_only");
+    }
+    const targetProfile = await db.collection("profiles").doc(targetId).get();
+    if (!targetProfile.exists) throw new SwipeError(404, "Profil introuvable");
+
+    let plan = PLANS.free;
+    let usageAfter = null;
+    await db.runTransaction(async (tx) => {
+        const [userSnap, usageSnap, prevSwipe, mySnap] = await Promise.all([
+            tx.get(userRef),
+            tx.get(usageRef),
+            tx.get(swipeRef),
+            tx.get(db.collection("profiles").doc(uid)),
+        ]);
+        plan = effectivePlanFor(userSnap.data(), now, mySnap.data());
+        const usage = usageSnap.data() || {};
+        const wasLiked = LIKE_DIRECTIONS.includes(prevSwipe.data()?.direction);
+        const update = {};
+
+        if (direction === "like" && !wasLiked && plan.likesPerDay !== UNLIMITED) {
+            const day = periodKey("day", now);
+            const count = used(usage, "likesDay", "likes", day);
+            if (count >= plan.likesPerDay) {
+                throw new QuotaError("LIKE_LIMIT", `Vous avez utilisé vos ${plan.likesPerDay} likes du jour.`);
+            }
+            Object.assign(update, { likesDay: day, likes: count + 1 });
+        }
+
+        if (direction === "superlike" && prevSwipe.data()?.direction !== "superlike") {
+            const key = periodKey(plan.superlikes.period, now);
+            const count = used(usage, "superPeriod", "superlikes", key);
+            if (count >= plan.superlikes.count) {
+                const when = plan.superlikes.period === "day" ? "aujourd'hui" : "cette semaine";
+                throw new QuotaError("SUPERLIKE_LIMIT", `Vous avez utilisé tous vos Super Likes ${when}.`);
+            }
+            Object.assign(update, { superPeriod: key, superlikes: count + 1 });
+        }
+
+        tx.set(swipeRef, { swiperId: uid, targetId, direction, createdAt: FieldValue.serverTimestamp() });
+        if (Object.keys(update).length) tx.set(usageRef, update, { merge: true });
+        usageAfter = { ...usage, ...update };
+    });
+
+    let matchId = null;
+    let matchCreated = false;
+    if (LIKE_DIRECTIONS.includes(direction)) {
+        const [reciprocal, blockA, blockB] = await Promise.all([
+            db.collection("swipes").doc(`${targetId}_${uid}`).get(),
+            db.collection("blocks").doc(`${uid}_${targetId}`).get(),
+            db.collection("blocks").doc(`${targetId}_${uid}`).get(),
+        ]);
+        const mutual = LIKE_DIRECTIONS.includes(reciprocal.data()?.direction);
+        if (mutual && !blockA.exists && !blockB.exists) {
+            matchId = [uid, targetId].sort().join("_");
+            const matchRef = db.collection("matches").doc(matchId);
+            const created = await db.runTransaction(async (tx) => {
+                if ((await tx.get(matchRef)).exists) return false;
+                tx.set(matchRef, {
+                    users: [uid, targetId].sort(),
+                    createdAt: FieldValue.serverTimestamp(),
+                    lastMessage: null,
+                    lastMessageAt: FieldValue.serverTimestamp(),
+                    seen: { [uid]: true, [targetId]: false },
+                });
+                return true;
+            });
+            matchCreated = created;
+            if (created) {
+                const me = (await db.collection("profiles").doc(uid).get()).data();
+                sendPushToUser(targetId, {
+                    title: "Nouveau match !",
+                    body: me?.firstName ? `Vous et ${me.firstName} vous êtes plu mutuellement.` : "Vous avez un nouveau match.",
+                    path: "/matches",
+                    prefField: "notifyMatches",
+                });
+            }
+        }
+    }
+
+    return { matchId, matchCreated, remaining: remainingFor(plan, usageAfter, now) };
+}
+
+function sendSwipeError(res, err) {
+    if (err instanceof QuotaError) return res.status(429).json({ code: err.code, message: err.message });
+    if (err instanceof SwipeError) return res.status(err.status).json({ message: err.message, ...(err.code ? { code: err.code } : {}) });
+    console.error(err);
+    res.status(500).json({ message: "Impossible d'enregistrer votre choix" });
+}
+
 // POST /api/swipes { targetId, direction }
 // Swipes and matches are written here (not by the app) so quotas can't be
 // bypassed: free accounts get PLANS.free limits, subscribers their tier's.
@@ -39,102 +152,11 @@ async function recordSwipe(req, res) {
     if (typeof targetId !== "string" || !targetId || targetId === uid || !DIRECTIONS.includes(direction)) {
         return res.status(400).json({ message: "Requête invalide" });
     }
-
-    const now = Date.now();
-    const userRef = db.collection("users").doc(uid);
-    const usageRef = db.collection("usage").doc(uid);
-    const swipeRef = db.collection("swipes").doc(`${uid}_${targetId}`);
-
     try {
-        // Likes need a verified identity (passing a profile doesn't).
-        if (LIKE_DIRECTIONS.includes(direction) && !(await canInteract(uid))) {
-            return res.status(403).json({ message: IDENTITY_REQUIRED_MESSAGE, code: "identity_required" });
-        }
-        if (direction === "superlike" && !(await isVerified(uid))) {
-            return res.status(403).json({ message: VERIFIED_ONLY_MESSAGE, code: "verified_only" });
-        }
-        const targetProfile = await db.collection("profiles").doc(targetId).get();
-        if (!targetProfile.exists) return res.status(404).json({ message: "Profil introuvable" });
-
-        let plan = PLANS.free;
-        let usageAfter = null;
-        await db.runTransaction(async (tx) => {
-            const [userSnap, usageSnap, prevSwipe, mySnap] = await Promise.all([
-                tx.get(userRef),
-                tx.get(usageRef),
-                tx.get(swipeRef),
-                tx.get(db.collection("profiles").doc(uid)),
-            ]);
-            plan = effectivePlanFor(userSnap.data(), now, mySnap.data());
-            const usage = usageSnap.data() || {};
-            const wasLiked = LIKE_DIRECTIONS.includes(prevSwipe.data()?.direction);
-            const update = {};
-
-            if (direction === "like" && !wasLiked && plan.likesPerDay !== UNLIMITED) {
-                const day = periodKey("day", now);
-                const count = used(usage, "likesDay", "likes", day);
-                if (count >= plan.likesPerDay) {
-                    throw new QuotaError("LIKE_LIMIT", `Vous avez utilisé vos ${plan.likesPerDay} likes du jour.`);
-                }
-                Object.assign(update, { likesDay: day, likes: count + 1 });
-            }
-
-            if (direction === "superlike" && prevSwipe.data()?.direction !== "superlike") {
-                const key = periodKey(plan.superlikes.period, now);
-                const count = used(usage, "superPeriod", "superlikes", key);
-                if (count >= plan.superlikes.count) {
-                    const when = plan.superlikes.period === "day" ? "aujourd'hui" : "cette semaine";
-                    throw new QuotaError("SUPERLIKE_LIMIT", `Vous avez utilisé tous vos Super Likes ${when}.`);
-                }
-                Object.assign(update, { superPeriod: key, superlikes: count + 1 });
-            }
-
-            tx.set(swipeRef, { swiperId: uid, targetId, direction, createdAt: FieldValue.serverTimestamp() });
-            if (Object.keys(update).length) tx.set(usageRef, update, { merge: true });
-            usageAfter = { ...usage, ...update };
-        });
-
-        let matchId = null;
-        if (LIKE_DIRECTIONS.includes(direction)) {
-            const [reciprocal, blockA, blockB] = await Promise.all([
-                db.collection("swipes").doc(`${targetId}_${uid}`).get(),
-                db.collection("blocks").doc(`${uid}_${targetId}`).get(),
-                db.collection("blocks").doc(`${targetId}_${uid}`).get(),
-            ]);
-            const mutual = LIKE_DIRECTIONS.includes(reciprocal.data()?.direction);
-            if (mutual && !blockA.exists && !blockB.exists) {
-                matchId = [uid, targetId].sort().join("_");
-                const matchRef = db.collection("matches").doc(matchId);
-                const created = await db.runTransaction(async (tx) => {
-                    if ((await tx.get(matchRef)).exists) return false;
-                    tx.set(matchRef, {
-                        users: [uid, targetId].sort(),
-                        createdAt: FieldValue.serverTimestamp(),
-                        lastMessage: null,
-                        lastMessageAt: FieldValue.serverTimestamp(),
-                        seen: { [uid]: true, [targetId]: false },
-                    });
-                    return true;
-                });
-                if (created) {
-                    const me = (await db.collection("profiles").doc(uid).get()).data();
-                    sendPushToUser(targetId, {
-                        title: "Nouveau match !",
-                        body: me?.firstName ? `Vous et ${me.firstName} vous êtes plu mutuellement.` : "Vous avez un nouveau match.",
-                        path: "/matches",
-                        prefField: "notifyMatches",
-                    });
-                }
-            }
-        }
-
-        res.json({ matchId, remaining: remainingFor(plan, usageAfter, now) });
+        const { matchId, remaining } = await applySwipe(uid, targetId, direction);
+        res.json({ matchId, remaining });
     } catch (err) {
-        if (err instanceof QuotaError) {
-            return res.status(429).json({ code: err.code, message: err.message });
-        }
-        console.error(err);
-        res.status(500).json({ message: "Impossible d'enregistrer votre choix" });
+        sendSwipeError(res, err);
     }
 }
 
@@ -223,4 +245,4 @@ async function getIncomingLikers(req, res) {
     }
 }
 
-module.exports = { recordSwipe, getQuota, getIncomingLikesCount, getIncomingLikers };
+module.exports = { applySwipe, sendSwipeError, recordSwipe, getQuota, getIncomingLikesCount, getIncomingLikers };

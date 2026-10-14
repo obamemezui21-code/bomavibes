@@ -10,6 +10,19 @@ import motoAicha from '../assets/game/moto-aicha.webp'
 //   isNew: shows a "Nouveau" badge
 export const GAMES = [
   {
+    id: 'vibe-check',
+    name: 'Vibe Check',
+    tagline: 'Le match à l’aveugle',
+    description: '8 questions « ceci ou cela » par jour. Découvre avec qui tu as le plus de vibe, photo cachée, et matche sur la personnalité !',
+    path: '/vibe-check',
+    pictures: [kevinPortrait, aichaPortrait],
+    round: true,
+    gradient: 'from-[#3b0f5c] via-[#7e3a7f] to-[#dd88cf]',
+    accent: 'text-heart-300',
+    dailyCap: 3,
+    isNew: true,
+  },
+  {
     id: 'mot-du-jour',
     name: 'Le Mot du Jour',
     tagline: 'Un mot à trouver chaque jour',
