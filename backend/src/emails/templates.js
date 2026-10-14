@@ -1,5 +1,9 @@
 const LOGO_URL = "https://bomavibes.tech/bomavibes-logo.jpeg";
 
+function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function wrapper(title, bodyHtml) {
     return `
     <div style="background:#FAF6EF;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
@@ -71,9 +75,8 @@ function featureAnnouncementEmail({ title, description, ctaLabel, ctaLink }) {
         subject: `Nouveau sur BomaVibes : ${title}`,
         html: wrapper(
             title,
-            `<p style="color:#6b5d4f;font-size:14px;line-height:1.6;">
-              ${description}
-            </p>
+            // <br>s keep the description's line breaks (sections, bullet lists) in every mail client.
+            `<p style="color:#6b5d4f;font-size:14px;line-height:1.6;">${escapeHtml(description).replace(/\r?\n/g, "<br>")}</p>
             ${ctaLink ? button(ctaLink, ctaLabel || 'Découvrir') : ''}`,
         ),
     };
