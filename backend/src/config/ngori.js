@@ -55,6 +55,16 @@ const MOTO_BOMA = {
     challengeTtlMs: 7 * 24 * 60 * 60 * 1000,
 };
 
+// LE MOT DU JOUR, the daily word game: one game per day, paid once won.
+const MOT_DU_JOUR = {
+    winReward: 2,
+    quickWinReward: 3, // found in quickWinTries tries or fewer
+    quickWinTries: 3,
+    // Bonus every streakLength days won in a row (a lost or skipped day resets it).
+    streakLength: 7,
+    streakBonus: 3,
+};
+
 // 🔥 badge shown on the profile for a login streak of at least N days.
 const STREAK_BADGES = [30, 14, 7, 3];
 
@@ -99,4 +109,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, MOT_DU_JOUR, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };

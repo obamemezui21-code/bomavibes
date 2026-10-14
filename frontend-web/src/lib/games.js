@@ -10,6 +10,19 @@ import motoAicha from '../assets/game/moto-aicha.webp'
 //   isNew: shows a "Nouveau" badge
 export const GAMES = [
   {
+    id: 'mot-du-jour',
+    name: 'Le Mot du Jour',
+    tagline: 'Un mot à trouver chaque jour',
+    description: 'Devine le mot du jour en 6 essais : nature, villes, cuisine et expressions du Gabon. Le même pour tout le monde !',
+    path: '/mot-du-jour',
+    pictures: [kevinPortrait, aichaPortrait],
+    round: true,
+    gradient: 'from-[#0b4d33] via-[#13784a] to-[#1d5fa8]',
+    accent: 'text-[#fcd116]',
+    dailyCap: 3,
+    isNew: true,
+  },
+  {
     id: 'moto-boma',
     name: 'Moto Boma',
     tagline: 'Course de moto dans Libreville',

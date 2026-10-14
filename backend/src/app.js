@@ -26,6 +26,7 @@ const subscriptionRoutes = require("./routes/subscriptionRoutes");
 const ngoriRoutes = require("./routes/ngoriRoutes");
 const ngoriRunRoutes = require("./routes/ngoriRunRoutes");
 const motoBomaRoutes = require("./routes/motoBomaRoutes");
+const motDuJourRoutes = require("./routes/motDuJourRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
@@ -80,6 +81,7 @@ app.use("/api/admin/subscriptions", subscriptionRoutes.adminRouter);
 app.use("/api/ngori", ngoriRoutes);
 app.use("/api/ngori-run", ngoriRunRoutes);
 app.use("/api/moto-boma", motoBomaRoutes);
+app.use("/api/mot-du-jour", motDuJourRoutes);
 app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
 
