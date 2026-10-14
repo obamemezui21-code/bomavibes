@@ -4,9 +4,10 @@ import badgeVip from '../assets/hbdo.webp'
 import badgeDiamant from '../assets/mensuel.webp'
 import badgeJade from '../assets/annuel.webp'
 
-// Perks marked "(bientôt)" are announced but not built yet — drop the mark
-// when the feature ships. What each plan really unlocks is enforced by the
-// backend (backend/src/config/plans.js); keep this copy consistent with it.
+// Only perks that exist: a plan never advertises a feature not built yet,
+// nor one every member already has for free (messages, for instance). What
+// each plan really unlocks is enforced by the backend
+// (backend/src/config/plans.js); keep this copy consistent with it.
 export const TIERS = [
   {
     badge: badgeVip,
@@ -22,7 +23,6 @@ export const TIERS = [
     features: [
       'Likes illimités',
       'Voir qui vous aime',
-      'Messages illimités',
       'Appels audio & vidéo',
       'Boost 1×/semaine',
       '5 Super Likes/semaine',
@@ -43,7 +43,6 @@ export const TIERS = [
     features: [
       'Boost 3×/semaine',
       '3 Super Likes/jour',
-      'Support prioritaire (bientôt)',
       'Priorité de visibilité très élevée',
     ],
   },
@@ -62,11 +61,6 @@ export const TIERS = [
       'Boost 1×/jour',
       '10 Super Likes/jour',
       'Mode invisible',
-      'Traduction automatique (bientôt)',
-      'Concierge IA personnel (bientôt)',
-      'Rooms exclusives (bientôt)',
-      'Événements exclusifs (bientôt)',
-      'Support Premium 24/7 (bientôt)',
       'Priorité de visibilité maximale',
     ],
   },
