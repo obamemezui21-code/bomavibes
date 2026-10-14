@@ -174,8 +174,8 @@ function EventsHub() {
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="font-display text-2xl font-semibold text-ink">Événements</h1>
-          <p className="mt-0.5 text-sm text-ink-soft/70">Soirées, concerts &amp; événements du Gabon 🇬🇦</p>
+          <h1 className="font-display text-2xl font-semibold text-ink">Salons</h1>
+          <p className="mt-0.5 text-sm text-ink-soft/70">Rencontres, jeux, lieux &amp; événements du Gabon 🇬🇦</p>
         </div>
         <button
           type="button"
@@ -244,7 +244,8 @@ function EventsHub() {
         </div>
       )}
 
-      <div className="relative mt-5">
+      <h2 className="mt-6 text-sm font-semibold text-ink">Événements</h2>
+      <div className="relative mt-3">
         <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
         <input
           type="text"

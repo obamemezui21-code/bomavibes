@@ -54,8 +54,8 @@ function AppTopBar() {
       ? [{ to: '/admin', label: 'Administration', icon: ShieldCheck, tint: 'bg-violet-500/15 text-violet-500 hover:bg-violet-500/25' }]
       : []),
     // Coins Chics, Ciné & Séries, Studio IA and the games are reached from
-    // the salons of the Événements page.
-    { to: '/events', label: 'Événements', icon: LayoutGrid, tint: 'bg-mint-500/15 text-mint-500 hover:bg-mint-500/25' },
+    // the salons of the Salons page.
+    { to: '/events', label: 'Salons', icon: LayoutGrid, tint: 'bg-mint-500/15 text-mint-500 hover:bg-mint-500/25' },
   ]
 
   return (
