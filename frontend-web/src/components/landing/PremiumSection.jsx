@@ -92,7 +92,7 @@ function PremiumSection() {
                       {tier.emoji} {tier.name}
                     </p>
                     <p className="text-sm text-white/70">
-                      <span className="font-semibold text-white">{tier.prices[0].amount}</span> / mois
+                      <span className="font-semibold text-white">{tier.prices[1].amount}</span> / mois
                     </p>
                   </div>
                 </Link>

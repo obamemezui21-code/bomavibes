@@ -69,7 +69,7 @@ function PaywallModal({ reason = 'likes', message, onClose }) {
         <h2 id="paywall-title" className="mt-4 font-display text-xl font-bold">
           {message || copy.title}
         </h2>
-        <p className="mt-1 text-sm text-white/70">Avec un forfait BomaVibes, dès 2 000 FCFA par mois :</p>
+        <p className="mt-1 text-sm text-white/70">Avec un forfait BomaVibes, dès 990 FCFA par semaine :</p>
         <ul className="mt-4 space-y-2">
           {copy.perks.map((p) => (
             <li key={p} className="flex items-center gap-2 text-sm">

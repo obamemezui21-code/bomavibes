@@ -14,8 +14,7 @@ const POLL_INTERVAL_MS = 4000
 // and the user still gets a push notification once the plan is active.
 const POLL_TIMEOUT_MS = 3 * 60 * 1000
 
-function WhatsAppLink({ tier, email, className, children }) {
-  const price = tier.prices[0]
+function WhatsAppLink({ tier, price, email, className, children }) {
   const text = `Bonjour BomaVibes, je souhaite activer le forfait ${tier.name} (${price.amount} / ${price.period.toLowerCase()}). Mon e-mail de compte : ${email || '—'}`
   return (
     <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer" className={className}>
@@ -30,7 +29,8 @@ function WhatsAppLink({ tier, email, className, children }) {
 // Gabon, or while SingPay isn't configured, the WhatsApp flow remains: the
 // team takes the payment and an admin activates the plan.
 function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
-  const price = tier.prices[0]
+  const [durationId, setDurationId] = useState('month')
+  const price = tier.prices.find((p) => p.id === durationId)
   const [phone, setPhone] = useState('')
   // 'form' | 'sending' | 'waiting' | 'paid' | 'failed' | 'slow'
   const [step, setStep] = useState('form')
@@ -67,7 +67,7 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
     setError('')
     setStep('sending')
     try {
-      const p = await startMobileMoneyPayment(tier.id, phone)
+      const p = await startMobileMoneyPayment(tier.id, durationId, phone)
       setStep('waiting')
       poll(p.reference, Date.now())
     } catch (err) {
@@ -107,6 +107,27 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
           {price.amount} / {price.period.toLowerCase()}
         </p>
 
+        {step === 'form' && (
+          <div className="mt-4 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Durée">
+            {tier.prices.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                role="radio"
+                aria-checked={p.id === durationId}
+                onClick={() => setDurationId(p.id)}
+                className={`rounded-xl border px-3 py-2 text-left transition ${
+                  p.id === durationId ? 'border-pink-500 bg-pink-500/5' : 'border-violet-600/15 hover:border-violet-600/40'
+                }`}
+              >
+                <span className="block text-xs text-[#635a65]">{p.period}</span>
+                <span className="block text-sm font-bold text-[#261b28]">{p.amount}</span>
+                {p.note && <span className="block text-[10px] font-semibold text-pink-600">{p.note}</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
         {!mobileMoney && (
           <>
             <ol className="mt-4 space-y-2 text-sm text-[#261b28]">
@@ -114,7 +135,7 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
               <li>2. Nous vous indiquons comment payer par Mobile Money.</li>
               <li>3. Votre forfait est activé sur votre compte : vous recevez une notification.</li>
             </ol>
-            <WhatsAppLink tier={tier} email={email} className={whatsappClass}>
+            <WhatsAppLink tier={tier} price={price} email={email} className={whatsappClass}>
               <MessageCircle size={17} strokeWidth={2.25} />
               Continuer sur WhatsApp
             </WhatsAppLink>
@@ -151,7 +172,7 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
               {step === 'sending' ? <Loader2 size={17} className="animate-spin" /> : <Smartphone size={17} strokeWidth={2.25} />}
               Payer {price.amount}
             </button>
-            <WhatsAppLink tier={tier} email={email} className="mt-4 block text-center text-xs font-semibold text-violet-600 underline">
+            <WhatsAppLink tier={tier} price={price} email={email} className="mt-4 block text-center text-xs font-semibold text-violet-600 underline">
               Hors du Gabon ? Payer via WhatsApp
             </WhatsAppLink>
           </form>

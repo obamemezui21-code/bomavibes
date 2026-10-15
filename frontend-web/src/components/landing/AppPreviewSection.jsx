@@ -198,7 +198,7 @@ function MobileMoneyMock() {
       <p className="mb-3 text-center text-[11px] font-bold text-[#261b28]">Activer Diamant Rouge</p>
       <div className="rounded-2xl bg-white p-3 text-center shadow-sm">
         <p className="text-[10px] text-[#635a65]">Forfait mensuel</p>
-        <p className="whitespace-nowrap font-display text-lg font-extrabold text-[#261b28]">3 500 FCFA</p>
+        <p className="whitespace-nowrap font-display text-lg font-extrabold text-[#261b28]">5 990 FCFA</p>
         <div className="mt-2 flex flex-wrap justify-center gap-1">
           {['Likes illimités', 'Boost 3×/sem.', 'Appels'].map((perk) => (
             <span key={perk} className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[9px] font-medium text-violet-600">

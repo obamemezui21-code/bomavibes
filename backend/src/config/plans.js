@@ -33,7 +33,8 @@ const PLANS = {
     },
     vip: {
         label: "VIP",
-        price: 2000,
+        price: 2990,
+        prices: { week: 990, month: 2990, semester: 14990, year: 27990 },
         likesPerDay: UNLIMITED,
         superlikes: { count: 5, period: "week" },
         boosts: { count: 1, period: "week" },
@@ -44,7 +45,8 @@ const PLANS = {
     },
     diamant: {
         label: "Diamant Rouge",
-        price: 3500,
+        price: 5990,
+        prices: { week: 1990, month: 5990, semester: 29990, year: 55990 },
         likesPerDay: UNLIMITED,
         superlikes: { count: 3, period: "day" },
         boosts: { count: 3, period: "week" },
@@ -55,7 +57,8 @@ const PLANS = {
     },
     jade: {
         label: "Jadéite Impériale",
-        price: 5500,
+        price: 9990,
+        prices: { week: 3490, month: 9990, semester: 49990, year: 94990 },
         likesPerDay: UNLIMITED,
         superlikes: { count: 10, period: "day" },
         boosts: { count: 1, period: "day" },
@@ -68,8 +71,14 @@ const PLANS = {
 
 const PAID_PLANS = ["vip", "diamant", "jade"];
 const BOOST_DURATION_MS = 30 * 60 * 1000;
-// A paid plan's price (FCFA) buys this many days.
-const PLAN_PERIOD_DAYS = 30;
+// What each price in PLANS[id].prices (FCFA) buys; `price` stays the
+// monthly one (admin stats). Mirrored in frontend-web/src/lib/pricingTiers.js.
+const PLAN_DURATIONS = {
+    week: { days: 7 },
+    month: { days: 30 },
+    semester: { days: 182 },
+    year: { days: 365 },
+};
 
 function toMillis(value) {
     if (!value) return 0;
@@ -101,4 +110,4 @@ function periodKey(period, now = Date.now()) {
     return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
-module.exports = { FREE_LIKES_PER_DAY, VERIFIED_LIKES_PER_DAY, PLANS, PAID_PLANS, UNLIMITED, BOOST_DURATION_MS, PLAN_PERIOD_DAYS, activePlanId, planFor, periodKey, toMillis };
+module.exports = { FREE_LIKES_PER_DAY, VERIFIED_LIKES_PER_DAY, PLANS, PAID_PLANS, UNLIMITED, BOOST_DURATION_MS, PLAN_DURATIONS, activePlanId, planFor, periodKey, toMillis };

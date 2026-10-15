@@ -98,7 +98,7 @@ function LikesYou() {
             </div>
             <div className="mt-8 flex flex-col items-center gap-3 rounded-2xl bg-violet-950 p-6 text-center text-white">
               <p className="text-sm text-white/80">
-                Découvre qui t'a aimé·e et matche en un geste, avec un forfait dès 2 000 FCFA par mois.
+                Découvre qui t'a aimé·e et matche en un geste, avec un forfait dès 990 FCFA par semaine.
               </p>
               <button
                 type="button"

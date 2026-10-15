@@ -39,8 +39,9 @@ export async function getPaymentConfig() {
 }
 
 // → { reference, status: 'pending', ... } once the USSD Push is sent.
-export function startMobileMoneyPayment(plan, phone) {
-  return api('/api/payments/singpay', { method: 'POST', body: JSON.stringify({ plan, phone }) })
+// duration = 'week' | 'month' | 'semester' | 'year'
+export function startMobileMoneyPayment(plan, duration, phone) {
+  return api('/api/payments/singpay', { method: 'POST', body: JSON.stringify({ plan, duration, phone }) })
 }
 
 // → { status: 'pending' | 'paid' | 'failed' | 'expired', message, planExpiresAt }

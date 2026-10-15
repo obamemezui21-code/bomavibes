@@ -1,6 +1,6 @@
 const crypto = require("crypto");
 const admin = require("../config/firebaseAdmin");
-const { PLANS, PAID_PLANS, PLAN_PERIOD_DAYS, toMillis } = require("../config/plans");
+const { PLANS, PAID_PLANS, PLAN_DURATIONS, toMillis } = require("../config/plans");
 const singpay = require("../services/singpayService");
 const { grantPlan } = require("../services/subscriptionService");
 
@@ -34,6 +34,7 @@ function publicView(p) {
     return {
         reference: p.reference,
         plan: p.plan,
+        duration: p.duration || "month",
         amount: p.amount,
         operator: p.operator,
         status: p.status === "confirming" ? "pending" : p.status,
@@ -121,14 +122,15 @@ function getPaymentConfig(req, res) {
     res.json({ singpay: singpay.isConfigured() });
 }
 
-// POST /api/payments/singpay { plan, phone }
+// POST /api/payments/singpay { plan, duration, phone } — duration: week | month | semester | year
 async function startSingPayPayment(req, res) {
     if (!singpay.isConfigured()) {
         return res.status(503).json({ message: "Le paiement Mobile Money n'est pas encore disponible." });
     }
     const uid = req.firebaseUser.uid;
-    const { plan, phone } = req.body || {};
+    const { plan, phone, duration = "month" } = req.body || {};
     if (!PAID_PLANS.includes(plan)) return res.status(400).json({ message: "Forfait invalide" });
+    if (!Object.hasOwn(PLAN_DURATIONS, duration)) return res.status(400).json({ message: "Durée invalide" });
     const msisdn = singpay.normalizeMsisdn(phone);
     const operator = msisdn && singpay.operatorFor(msisdn);
     if (!operator) {
@@ -154,8 +156,9 @@ async function startSingPayPayment(req, res) {
             reference,
             uid,
             plan,
-            days: PLAN_PERIOD_DAYS,
-            amount: PLANS[plan].price,
+            duration,
+            days: PLAN_DURATIONS[duration].days,
+            amount: PLANS[plan].prices[duration],
             currency: "XAF",
             provider: "singpay",
             operator,
