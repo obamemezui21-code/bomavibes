@@ -47,18 +47,9 @@ const VIEW_MODES = [
   { id: 'cards', label: 'Cartes', icon: LayoutGrid },
   { id: 'swipe', label: 'Swipe', icon: Layers },
 ]
-const VIEW_MODE_KEY = 'bv:discoverViewMode'
 const INTERESTS_HIDDEN_KEY = 'bv:discoverInterestsHidden'
 const HEADER_ICON_BUTTON =
   'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ink/12 bg-ink/[0.03] text-ink/80 transition hover:border-violet-400/60 hover:text-violet-600'
-
-function readViewMode() {
-  try {
-    return localStorage.getItem(VIEW_MODE_KEY) === 'swipe' ? 'swipe' : 'cards'
-  } catch {
-    return 'cards'
-  }
-}
 
 function readInterestsHidden() {
   try {
@@ -106,7 +97,7 @@ function Discover() {
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [paywall, setPaywall] = useState(null)
   const [interestFilter, setInterestFilter] = useState('')
-  const [viewMode, setViewMode] = useState(readViewMode)
+  const [viewMode, setViewMode] = useState('cards') // always opens on Cartes; Swipe is chosen per visit
   const [showSearch, setShowSearch] = useState(false)
   const [showMoreFilters, setShowMoreFilters] = useState(false)
   const [showAllInterests, setShowAllInterests] = useState(false)
@@ -197,14 +188,6 @@ function Discover() {
 
   const extraFiltersCount = [countryFilter, religionFilter, travelingOnly, verifiedOnly].filter(Boolean).length
 
-  function changeViewMode(mode) {
-    setViewMode(mode)
-    try {
-      localStorage.setItem(VIEW_MODE_KEY, mode)
-    } catch {
-      // storage unavailable (private mode etc.) — the choice just won't persist
-    }
-  }
 
   function openProfile(profile) {
     seenIdsRef.current.add(profile.id)
@@ -449,7 +432,7 @@ function Discover() {
                 <button
                   key={mode.id}
                   type="button"
-                  onClick={() => changeViewMode(mode.id)}
+                  onClick={() => setViewMode(mode.id)}
                   className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-full py-1.5 text-sm font-medium transition-colors ${
                     isActive ? 'text-ink' : 'text-ink-soft/60 hover:text-ink'
                   }`}
