@@ -6,24 +6,29 @@ import {
   Baby,
   Briefcase,
   Check,
+  Cigarette,
+  CigaretteOff,
+  Dumbbell,
   Flag,
+  Flame,
+  HandHeart,
   Heart,
   House,
   Languages,
-  Leaf,
   MapPin,
   MessageCircle,
   MoreVertical,
   Navigation,
+  Plane,
+  Rocket,
   Ruler,
   ShieldOff,
   Sparkles,
   Star,
-  Target,
+  Wine,
   X,
 } from 'lucide-react'
 import InterestCard from './InterestCard.jsx'
-import { LIFESTYLE_GROUPS } from '../lib/onboardingOptions.js'
 import { distanceKmBetween } from '../lib/nearby.js'
 import { activeStreakBadge } from '../lib/ngori.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
@@ -34,28 +39,27 @@ import ReportModal from './ReportModal.jsx'
 import BlockConfirmModal from './BlockConfirmModal.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
-function Chip({ Icon, label }) {
+// Soft grey pill with a line icon — every profile fact uses this one look.
+function InfoChip({ Icon, label, title }) {
   return (
-    <span className="flex items-center gap-1.5 rounded-full border border-ink/12 bg-white px-3 py-1.5 text-xs font-medium text-ink dark:bg-surface-tint">
-      {Icon && <Icon size={13} strokeWidth={2.25} className="text-violet-500" />}
+    <span
+      title={title}
+      className="inline-flex items-center gap-2 rounded-full bg-ink/[0.06] px-3.5 py-2 text-sm font-semibold text-ink"
+    >
+      {Icon && <Icon size={16} strokeWidth={2.25} className="shrink-0" />}
       {label}
     </span>
   )
 }
 
-// Generic, reusable chip-list block — add a new profile attribute later by
-// adding one more <InfoSection> call, no structural changes needed.
-function InfoSection({ icon: Icon, title, items, iconFor }) {
-  if (!items?.length) return null
+function InfoBlock({ title, chips }) {
+  if (!chips.length) return null
   return (
     <div className="mt-6">
-      <p className="flex items-center gap-1.5 font-display text-sm font-semibold text-ink">
-        <Icon size={14} strokeWidth={2.25} className="text-pink-500" />
-        {title}
-      </p>
-      <div className="mt-2.5 flex flex-wrap gap-2">
-        {items.map((item) => (
-          <Chip key={item} Icon={iconFor?.(item)} label={item} />
+      <p className="text-sm font-semibold text-ink-soft">{title}</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {chips.map((chip) => (
+          <InfoChip key={`${chip.title}-${chip.label}`} {...chip} />
         ))}
       </div>
     </div>
@@ -65,32 +69,7 @@ function InfoSection({ icon: Icon, title, items, iconFor }) {
 function formatDistance(km) {
   if (km == null) return null
   if (km < 5) return 'Dans votre ville'
-  return `À ${km < 100 ? Math.round(km) : Math.round(km / 10) * 10} km de vous`
-}
-
-function formatHeight(cm) {
-  return `${(cm / 100).toFixed(2).replace('.', ',')} m`
-}
-
-// The facts people look for first — distance, height, where they live and
-// work, languages, children — as one compact list at the top of the sheet.
-function KeyFacts({ facts }) {
-  if (!facts.length) return null
-  return (
-    <ul className="mt-5 divide-y divide-ink/6 rounded-2xl bg-surface-soft px-4">
-      {facts.map(({ Icon, label, value }) => (
-        <li key={label} className="flex items-center gap-3 py-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-600">
-            <Icon size={15} strokeWidth={2.25} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[11px] font-medium uppercase tracking-wide text-ink-soft/60">{label}</span>
-            <span className="block text-sm font-medium text-ink">{value}</span>
-          </span>
-        </li>
-      ))}
-    </ul>
-  )
+  return `À ${km < 100 ? Math.round(km) : Math.round(km / 10) * 10} km`
 }
 
 const RING_RADIUS = 17
@@ -186,14 +165,28 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
 
   const work = [profile.jobTitle, profile.workplace].filter(Boolean).join(' chez ')
   const home = [profile.neighborhood, profile.city].filter(Boolean).join(', ')
-  const facts = [
-    !isSelf && { Icon: Navigation, label: 'Distance', value: formatDistance(distanceKmBetween(publicProfile, profile)) },
-    { Icon: Ruler, label: 'Taille', value: profile.height ? formatHeight(profile.height) : null },
-    { Icon: House, label: 'Habite à', value: home },
-    { Icon: Briefcase, label: 'Travail', value: work },
-    { Icon: Languages, label: 'Langues', value: profile.languages?.join(', ') },
-    { Icon: Baby, label: 'Enfants', value: profile.children },
-  ].filter((f) => f && f.value)
+  const lifestyle = profile.lifestyle || {}
+  const infoChips = [
+    { Icon: Heart, title: 'Recherche', label: profile.datingGoal },
+    !isSelf && { Icon: Navigation, title: 'Distance', label: formatDistance(distanceKmBetween(publicProfile, profile)) },
+    { Icon: Baby, title: 'Enfants', label: profile.children },
+    { Icon: lifestyle.smoking === 'Non-fumeur' ? CigaretteOff : Cigarette, title: 'Tabac', label: lifestyle.smoking },
+    { Icon: Wine, title: 'Alcool', label: lifestyle.alcohol },
+    { Icon: Dumbbell, title: 'Sport', label: lifestyle.sport },
+    { Icon: Plane, title: 'Voyage', label: lifestyle.travel },
+    ...(profile.languages || []).map((language) => ({ Icon: Languages, title: 'Langue', label: language })),
+    { Icon: Ruler, title: 'Taille', label: profile.height ? `${profile.height} cm` : null },
+    { Icon: HandHeart, title: 'Religion', label: profile.religion },
+    { Icon: Briefcase, title: 'Travail', label: work },
+    { Icon: House, title: 'Habite à', label: home },
+    profile.isEntrepreneur && { Icon: Rocket, title: 'Entrepreneuriat', label: 'Entrepreneur·e' },
+    profile.isTraveling && { Icon: Plane, title: 'En voyage', label: 'Actuellement en voyage' },
+  ].filter((chip) => chip && chip.label)
+  const personalityChips = (profile.personalityTraits || []).map((trait) => ({
+    Icon: Sparkles,
+    title: 'Personnalité',
+    label: trait,
+  }))
 
   return (
     <motion.div
@@ -336,7 +329,8 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                       className="inline-flex items-center gap-1 rounded-full bg-orange-500/90 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-md"
                       title="Connecté·e à BomaVibes plusieurs jours d'affilée"
                     >
-                      🔥 {streakBadge} jours d'affilée
+                      <Flame size={11} strokeWidth={2.5} />
+                      {streakBadge} jours d'affilée
                     </span>
                   )}
                 </div>
@@ -353,30 +347,15 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           <div className={`relative -mt-8 min-h-[45%] rounded-t-[32px] bg-surface px-5 pt-3 ${showActions ? 'pb-32' : 'pb-8'}`}>
             <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12" />
 
-            {(profile.datingGoal || profile.isEntrepreneur) && (
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                {profile.datingGoal && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-1.5 text-xs font-semibold text-ink-on-brand">
-                    <Target size={12} strokeWidth={2.5} />
-                    {profile.datingGoal}
-                  </span>
-                )}
-                {profile.isEntrepreneur && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-3 py-1.5 text-xs font-semibold text-violet-600">
-                    🚀 Entrepreneur·e
-                  </span>
-                )}
-              </div>
-            )}
-
-            <KeyFacts facts={facts} />
-
             {profile.bio && (
               <div className="mt-5">
-                <p className="font-display text-sm font-semibold text-ink">À propos</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{profile.bio}</p>
+                <p className="text-sm font-semibold text-ink-soft">À propos de moi</p>
+                <p className="mt-2 whitespace-pre-line text-lg font-semibold leading-snug text-ink">{profile.bio}</p>
               </div>
             )}
+
+            <InfoBlock title={isSelf ? 'Mes infos' : 'Ses infos'} chips={infoChips} />
+            <InfoBlock title="Personnalité" chips={personalityChips} />
 
             {profile.interests?.length > 0 && (
               <div className="mt-6">
@@ -397,14 +376,6 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                 </div>
               </div>
             )}
-            <InfoSection icon={Sparkles} title="Personnalité" items={profile.personalityTraits} />
-            <InfoSection
-              icon={Leaf}
-              title="Style de vie"
-              items={LIFESTYLE_GROUPS.filter((g) => profile.lifestyle?.[g.key]).map(
-                (g) => `${g.label} : ${profile.lifestyle[g.key]}`,
-              )}
-            />
 
             {profile.prompts?.length > 0 && (
               <div className="mt-6 space-y-3">

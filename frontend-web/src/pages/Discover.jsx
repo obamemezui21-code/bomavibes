@@ -259,8 +259,8 @@ function Discover() {
         <div
           className={
             showAllInterests
-              ? 'mt-3 grid grid-cols-3 gap-3 px-1 pb-1 sm:grid-cols-4'
-              : '-mx-1 mt-3 flex snap-x gap-3 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]'
+              ? 'mt-3 grid grid-cols-4 gap-2 px-1 pb-1 sm:grid-cols-6'
+              : '-mx-1 mt-3 flex snap-x gap-2 overflow-x-auto px-2 pb-2 pt-1 [scrollbar-width:none]'
           }
         >
           {visibleInterests.map((interest) => (
@@ -270,7 +270,8 @@ function Discover() {
               subtitle={profilesLabel(interestCounts[interest] || 0)}
               active={interestFilter === interest}
               onClick={() => setInterestFilter((prev) => (prev === interest ? '' : interest))}
-              className={showAllInterests ? '' : 'w-[8.5rem] shrink-0 snap-start'}
+              compact
+              className={showAllInterests ? '' : 'w-24 shrink-0 snap-start'}
             />
           ))}
         </div>
