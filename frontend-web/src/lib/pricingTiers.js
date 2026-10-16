@@ -7,20 +7,33 @@ import badgeJade from '../assets/annuel.webp'
 // Durations on sale, mirrored from PLAN_DURATIONS in
 // backend/src/config/plans.js (which also holds the prices actually charged).
 const DURATIONS = [
-  { id: 'week', period: 'Hebdomadaire', months: 0 },
-  { id: 'month', period: 'Mensuel', months: 1 },
-  { id: 'semester', period: 'Semestriel', months: 6 },
-  { id: 'year', period: 'Annuel', months: 12 },
+  { id: 'week', period: 'Hebdomadaire', unit: 'semaine', days: 7, months: 0 },
+  { id: 'month', period: 'Mensuel', unit: 'mois', days: 30, months: 1 },
+  { id: 'semester', period: 'Semestriel', unit: '6 mois', days: 182, months: 6 },
+  { id: 'year', period: 'Annuel', unit: 'an', days: 365, months: 12 },
 ]
 
-const fcfa = (n) => `${n.toLocaleString('fr-FR').replace(/s/g, ' ')} FCFA`
+// Non-breaking spaces so "27 990 FCFA" never wraps mid-amount.
+const NBSP = String.fromCharCode(0xa0)
+const fcfa = (n) => `${Math.round(n).toLocaleString('fr-FR').replace(/\s/g, NBSP)}${NBSP}FCFA`
 
-// { week, month, semester, year } in FCFA → the price rows, long durations
-// showing their saving against paying monthly.
+// { week, month, semester, year } in FCFA → the price rows: the amount, what
+// it comes to per day (per month for long durations) and, for 6 months and
+// a year, the saving against paying month by month.
 function pricesOf(amounts) {
-  return DURATIONS.map(({ id, period, months }) => {
-    const saving = months > 1 ? Math.round((1 - amounts[id] / (amounts.month * months)) * 100) : 0
-    return { id, period, amount: fcfa(amounts[id]), note: saving > 0 ? `Économisez ${saving} %` : null }
+  return DURATIONS.map(({ id, period, unit, days, months }) => {
+    const amount = amounts[id]
+    const perUnit = months > 1 ? `soit ${fcfa(amount / months)} / mois` : `soit ${fcfa(amount / days)} / jour`
+    const savedFcfa = months > 1 ? amounts.month * months - amount : 0
+    const savedPercent = savedFcfa > 0 ? Math.round((savedFcfa / (amounts.month * months)) * 100) : 0
+    return {
+      id,
+      period,
+      unit,
+      amount: fcfa(amount),
+      detail: perUnit,
+      note: savedFcfa > 0 ? `Économisez ${fcfa(savedFcfa)} (−${savedPercent} %)` : null,
+    }
   })
 }
 

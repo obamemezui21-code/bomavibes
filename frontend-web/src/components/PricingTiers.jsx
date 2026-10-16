@@ -104,7 +104,7 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
           {tier.emoji} Activer {tier.name}
         </h3>
         <p className="mt-1 text-sm text-[#635a65]">
-          {price.amount} / {price.period.toLowerCase()}
+          {price.amount} / {price.unit} · {price.detail}
         </p>
 
         {step === 'form' && (
@@ -122,6 +122,7 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
               >
                 <span className="block text-xs text-[#635a65]">{p.period}</span>
                 <span className="block text-sm font-bold text-[#261b28]">{p.amount}</span>
+                <span className="block text-[10px] text-[#635a65]">{p.detail}</span>
                 {p.note && <span className="block text-[10px] font-semibold text-pink-600">{p.note}</span>}
               </button>
             ))}
@@ -269,7 +270,9 @@ function PricingTiers() {
                 <span className="text-sm font-medium text-[#635a65]">{p.period}</span>
                 <div className="text-right">
                   <span className="font-display text-base font-bold text-[#261b28]">{p.amount}</span>
-                  {p.note && <p className="text-[11px] text-pink-600">{p.note}</p>}
+                  <span className="text-xs font-medium text-[#635a65]"> / {p.unit}</span>
+                  <p className="text-[11px] text-[#635a65]">{p.detail}</p>
+                  {p.note && <p className="text-[11px] font-semibold text-pink-600">{p.note}</p>}
                 </div>
               </div>
             ))}

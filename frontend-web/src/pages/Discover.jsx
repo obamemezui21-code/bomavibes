@@ -773,7 +773,7 @@ function Discover() {
                     </p>
                     <p className="mt-1 text-base font-bold text-ink">
                       {tier.prices[1]?.amount || tier.prices[0].amount}
-                      <span className="text-xs font-medium text-ink-soft/60"> /{(tier.prices[1]?.period || tier.prices[0].period).toLowerCase()}</span>
+                      <span className="text-xs font-medium text-ink-soft/60"> / {tier.prices[1]?.unit || tier.prices[0].unit}</span>
                     </p>
                     <ul className="mt-2 space-y-1">
                       {tier.features.slice(0, 3).map((f) => (
