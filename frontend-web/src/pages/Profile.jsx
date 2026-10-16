@@ -15,6 +15,7 @@ import SearchSelect from '../components/SearchSelect.jsx'
 import SupportModal from '../components/SupportModal.jsx'
 import VerificationCard from '../components/VerificationCard.jsx'
 import SubscriptionCard from '../components/SubscriptionCard.jsx'
+import ProfilePromptsEditor from '../components/ProfilePromptsEditor.jsx'
 import {
   CHILDREN_OPTIONS,
   DATING_GOALS,
@@ -48,6 +49,7 @@ const emptyForm = {
   religion: '',
   isTraveling: false,
   lifestyle: { sport: '', travel: '', smoking: '', alcohol: '' },
+  prompts: [],
 }
 
 function Profile() {
@@ -87,6 +89,7 @@ function Profile() {
       religion: publicProfile?.religion || '',
       isTraveling: publicProfile?.isTraveling || false,
       lifestyle: publicProfile?.lifestyle || { sport: '', travel: '', smoking: '', alcohol: '' },
+      prompts: publicProfile?.prompts || [],
     })
     setCountryCode(
       publicProfile?.countryCode ||
@@ -229,6 +232,9 @@ function Profile() {
           religion: form.religion || null,
           isTraveling: form.isTraveling,
           lifestyle: form.lifestyle,
+          prompts: form.prompts
+            .map((p) => ({ question: p.question, answer: p.answer.trim() }))
+            .filter((p) => p.answer),
           photos: photoUrls,
           updatedAt: serverTimestamp(),
         },
@@ -599,6 +605,8 @@ function Profile() {
               className={`${inputClass} resize-none`}
             />
           </div>
+
+          <ProfilePromptsEditor prompts={form.prompts} onChange={(prompts) => setForm((f) => ({ ...f, prompts }))} />
 
           <div>
             <label className={labelClass}>Langues</label>

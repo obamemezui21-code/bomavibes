@@ -137,7 +137,10 @@ service cloud.firestore {
           && (!('height' in data) || data.height == null || (data.height is number && data.height >= 120 && data.height <= 230))
           && (!('age' in data) || data.age == null || (data.age is number && data.age >= 18 && data.age <= 120))
           && (!('interests' in data) || (data.interests is list && data.interests.size() <= 20))
-          && (!('photos' in data) || (data.photos is list && data.photos.size() <= 3));
+          && (!('photos' in data) || (data.photos is list && data.photos.size() <= 3))
+          && (!('prompts' in data) || (data.prompts is list && data.prompts.size() <= 3))
+          && (!('hideAge' in data) || data.hideAge is bool)
+          && (!('hideDistance' in data) || data.hideDistance is bool);
       }
 
       function verifiedUnchanged() {

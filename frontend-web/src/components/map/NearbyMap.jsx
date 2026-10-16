@@ -4,6 +4,7 @@ import LeafletMap from './LeafletMap.jsx'
 import { groupProfilesByCity } from '../../lib/nearby.js'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { fallbackAvatar } from '../../lib/fallbackAvatar.js'
+import { ageSuffix } from '../../lib/profileDisplay.js'
 
 const PIN_SIZE = 44
 
@@ -84,7 +85,7 @@ function NearbyMap({ profiles, onOpenProfile }) {
             />
             <span className="max-w-[4rem] truncate text-xs font-medium text-ink">
               {p.firstName}
-              {p.age ? `, ${p.age}` : ''}
+              {ageSuffix(p)}
             </span>
           </button>
         ))}

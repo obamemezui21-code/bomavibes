@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { countIncomingLikes } from '../firebase/swipes.js'
 import { matchPercent } from '../lib/interests.js'
 import { fallbackToFullPhoto } from '../lib/photoVariants.js'
+import { ageSuffix } from '../lib/profileDisplay.js'
 
 function Matches() {
   const navigate = useNavigate()
@@ -166,7 +167,7 @@ function Matches() {
                     <div className="absolute inset-x-0 bottom-0 p-3 text-center">
                       <p className="truncate font-display text-base font-semibold text-white">
                         {conversation.profile.firstName}
-                        {conversation.profile.age ? `, ${conversation.profile.age}` : ''}
+                        {ageSuffix(conversation.profile)}
                       </p>
                       {conversation.profile.city && (
                         <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-wider text-white/70">

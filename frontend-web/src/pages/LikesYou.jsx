@@ -10,6 +10,7 @@ import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import PaywallModal from '../components/PaywallModal.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import { ageSuffix } from '../lib/profileDisplay.js'
 
 // "Qui t'a aimé·e": people who liked this user and are still waiting for an
 // answer. Subscribers see them (served by the backend only to them); free
@@ -145,7 +146,7 @@ function LikesYou() {
                   <div className="absolute inset-x-0 bottom-0 p-3">
                     <p className="flex items-center gap-1 truncate font-display text-sm font-semibold text-white">
                       {p.firstName}
-                      {p.age ? `, ${p.age}` : ''}
+                      {ageSuffix(p)}
                       {p.verified && (
                         <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-sky-500">
                           <Check size={8} strokeWidth={3.5} />

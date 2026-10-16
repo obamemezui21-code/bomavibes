@@ -16,6 +16,13 @@ const MODELS = [
     url: "https://huggingface.co/Xenova/clip-vit-base-patch32/resolve/d15189d7028b43f1d3e65039190477f6af591c2a/onnx/vision_model_quantized.onnx",
     sha256: "583fd1110a514667812fee7d684952aaf82a99b959760c8d7dca7e0ab9839299",
   },
+  {
+    // NSFW detector (ViT, Apache-2.0, AdamCodd on Hugging Face), int8 — blurs
+    // sensitive chat photos (src/services/chatPhotoSafety.js).
+    file: "nsfw-vit-q8.onnx",
+    url: "https://huggingface.co/AdamCodd/vit-base-nsfw-detector/resolve/8587de998f441aac03fdd57a85d2e4cb808c7d64/onnx/model_quantized.onnx",
+    sha256: "432763a6899ebc418c55f784b98f90565e5fc694c778d2ffcb0294b12f6a7404",
+  },
 ];
 
 function sha256(file) {

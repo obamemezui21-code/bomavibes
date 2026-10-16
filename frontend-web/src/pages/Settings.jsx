@@ -9,6 +9,8 @@ import { useTheme } from '../context/ThemeContext.jsx'
 import { db } from '../firebase/config.js'
 import { enablePushForUser } from '../firebase/push.js'
 import { fetchMyBlockedIds, unblockUser } from '../firebase/safety.js'
+import { setInvisibleMode } from '../firebase/subscriptions.js'
+import { activePlan } from '../lib/plans.js'
 import { hasAdminAccess } from '../lib/roles.js'
 import PasswordInput from '../components/PasswordInput.jsx'
 import LanguageSwitcher from '../components/LanguageSwitcher.jsx'
@@ -278,7 +280,7 @@ function ChangePasswordModal({ onClose }) {
 
 function Settings() {
   const navigate = useNavigate()
-  const { user, profile, logout, deleteAccount } = useAuth()
+  const { user, profile, publicProfile, logout, deleteAccount } = useAuth()
   const { showToast } = useToast()
   const { theme, toggleTheme } = useTheme()
 
@@ -286,10 +288,13 @@ function Settings() {
   const newMatches = profile?.notifyMatches ?? true
   const newMessages = profile?.notifyMessages ?? true
   const newFeed = profile?.notifyFeed ?? true
-  const [emailUpdates, setEmailUpdates] = useState(false)
-  const [showDistance, setShowDistance] = useState(true)
-  const [showAge, setShowAge] = useState(true)
-  const [incognito, setIncognito] = useState(false)
+  const emailAnnouncements = profile?.emailAnnouncements ?? true
+  const showDistance = !publicProfile?.hideDistance
+  const showAge = !publicProfile?.hideAge
+  // Incognito is the Jadéite Impériale invisible mode, enforced server side.
+  const canGoInvisible = activePlan(profile).invisible
+  const incognito = canGoInvisible && !!publicProfile?.invisible
+  const [savingPrivacy, setSavingPrivacy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
@@ -308,6 +313,35 @@ function Settings() {
       showToast(err.message, 'error')
     } finally {
       setIsTogglingPush(false)
+    }
+  }
+
+  // Privacy choices live where they apply: hideAge / hideDistance on the
+  // public profile others read, emailAnnouncements on the private account.
+  async function savePrivacy(collection, field, value) {
+    setSavingPrivacy(true)
+    try {
+      await updateDoc(doc(db, collection, user.id), { [field]: value })
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setSavingPrivacy(false)
+    }
+  }
+
+  async function handleIncognito(enabled) {
+    if (!canGoInvisible) {
+      navigate('/tarifs')
+      return
+    }
+    setSavingPrivacy(true)
+    try {
+      await setInvisibleMode(enabled)
+      showToast(enabled ? 'Mode incognito activé.' : 'Vous êtes de nouveau visible.', 'success')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setSavingPrivacy(false)
     }
   }
 
@@ -382,20 +416,39 @@ function Settings() {
                 disabled={isTogglingPush}
               />
             </Row>
-            <Row title="Résumé par email" subtitle="Un récapitulatif hebdomadaire">
-              <Toggle checked={emailUpdates} onChange={setEmailUpdates} />
+            <Row title="Annonces par e-mail" subtitle="Nouveautés et annonces de BomaVibes">
+              <Toggle
+                checked={emailAnnouncements}
+                onChange={(v) => savePrivacy('users', 'emailAnnouncements', v)}
+                disabled={savingPrivacy}
+              />
             </Row>
           </Section>
 
           <Section title="Confidentialité">
-            <Row title="Afficher ma distance" subtitle="Visible sur votre profil public">
-              <Toggle checked={showDistance} onChange={setShowDistance} />
+            <Row title="Afficher ma distance" subtitle="Les autres voient à combien de km vous êtes">
+              <Toggle
+                checked={showDistance}
+                onChange={(v) => savePrivacy('profiles', 'hideDistance', !v)}
+                disabled={savingPrivacy}
+              />
             </Row>
-            <Row title="Afficher mon âge" subtitle="Visible sur votre profil public">
-              <Toggle checked={showAge} onChange={setShowAge} />
+            <Row title="Afficher mon âge" subtitle="Votre âge à côté de votre prénom">
+              <Toggle
+                checked={showAge}
+                onChange={(v) => savePrivacy('profiles', 'hideAge', !v)}
+                disabled={savingPrivacy}
+              />
             </Row>
-            <Row title="Mode incognito" subtitle="Découvre sans apparaître dans les decks des autres">
-              <Toggle checked={incognito} onChange={setIncognito} />
+            <Row
+              title="Mode incognito"
+              subtitle={
+                canGoInvisible
+                  ? 'Vous disparaissez de Découvrir et votre statut « en ligne » est masqué'
+                  : 'Réservé à Jadéite Impériale — voir les forfaits'
+              }
+            >
+              <Toggle checked={incognito} onChange={handleIncognito} disabled={savingPrivacy} />
             </Row>
             <Row title="Utilisateurs bloqués" subtitle="Gérer les profils que vous avez bloqués">
               <button

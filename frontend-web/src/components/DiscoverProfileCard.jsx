@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Check, Heart } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
+import { ageSuffix } from '../lib/profileDisplay.js'
 
 const NEW_PROFILE_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -61,7 +62,7 @@ function DiscoverProfileCard({ profile, matchPercent, index = 0, onOpen }) {
         <p className="flex items-center gap-1 truncate font-display text-sm font-semibold text-white">
           <span className="truncate">
             {profile.firstName}
-            {profile.age ? `, ${profile.age}` : ''}
+            {ageSuffix(profile)}
           </span>
           {profile.verified && (
             <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-sky-500">

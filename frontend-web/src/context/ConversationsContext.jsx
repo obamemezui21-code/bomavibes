@@ -284,9 +284,12 @@ export function ConversationsProvider({ children }) {
           profile: {
             firstName: profile.firstName,
             age: profile.age,
+            hideAge: !!profile.hideAge,
+            hideDistance: !!profile.hideDistance,
             city: profile.city,
             verified: !!profile.verified,
             interests: profile.interests || [],
+            prompts: profile.prompts || [],
             photo:
               photoVariant(profile.photos?.[0], 'thumb') ||
               fallbackAvatar(profile.firstName || 'Bomavibes', 'e8c468'),

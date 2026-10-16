@@ -3,6 +3,7 @@ import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Check, Heart, Info, MapPin, Target } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
+import { ageSuffix } from '../lib/profileDisplay.js'
 
 const SWIPE_THRESHOLD = 100
 const EXIT_X = 600
@@ -198,7 +199,7 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
             )}
             <div className="flex items-center gap-1.5">
               <h2 className="font-display text-2xl font-bold text-white">
-                {profile.firstName}, {profile.age}
+                {profile.firstName}{ageSuffix(profile)}
               </h2>
               {profile.verified && (
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-white">

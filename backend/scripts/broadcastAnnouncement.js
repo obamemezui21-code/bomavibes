@@ -18,16 +18,22 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Every active account's email, minus those who turned off "Annonces par
+// e-mail" in Paramètres (users/{uid}.emailAnnouncements === false).
 async function getAllUserEmails() {
+    const optedOut = new Set(
+        (await admin.firestore().collection("users").where("emailAnnouncements", "==", false).select().get()).docs.map((d) => d.id),
+    );
     const emails = [];
     let pageToken;
     do {
         const result = await admin.auth().listUsers(1000, pageToken);
         for (const user of result.users) {
-            if (user.email && !user.disabled) emails.push(user.email);
+            if (user.email && !user.disabled && !optedOut.has(user.uid)) emails.push(user.email);
         }
         pageToken = result.pageToken;
     } while (pageToken);
+    if (optedOut.size) console.log(`${optedOut.size} membre(s) ont désactivé les annonces par e-mail.`);
     return emails;
 }
 

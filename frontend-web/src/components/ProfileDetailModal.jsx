@@ -38,6 +38,7 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import ReportModal from './ReportModal.jsx'
 import BlockConfirmModal from './BlockConfirmModal.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
+import { ageSuffix } from '../lib/profileDisplay.js'
 
 // Soft grey pill with a line icon — every profile fact uses this one look.
 function InfoChip({ Icon, label, title }) {
@@ -168,7 +169,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
   const lifestyle = profile.lifestyle || {}
   const infoChips = [
     { Icon: Heart, title: 'Recherche', label: profile.datingGoal },
-    !isSelf && { Icon: Navigation, title: 'Distance', label: formatDistance(distanceKmBetween(publicProfile, profile)) },
+    !isSelf && !profile.hideDistance && { Icon: Navigation, title: 'Distance', label: formatDistance(distanceKmBetween(publicProfile, profile)) },
     { Icon: Baby, title: 'Enfants', label: profile.children },
     { Icon: lifestyle.smoking === 'Non-fumeur' ? CigaretteOff : Cigarette, title: 'Tabac', label: lifestyle.smoking },
     { Icon: Wine, title: 'Alcool', label: lifestyle.alcohol },
@@ -304,7 +305,7 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               <div className="mt-2 flex items-center gap-2">
                 <h2 className="font-display text-3xl font-bold text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.4)]">
                   {profile.firstName}
-                  {profile.age ? `, ${profile.age}` : ''}
+                  {ageSuffix(profile)}
                 </h2>
                 {profile.verified && (
                   <span
@@ -354,6 +355,17 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
               </div>
             )}
 
+            {profile.prompts?.length > 0 && (
+              <div className="mt-5 space-y-3">
+                {profile.prompts.map((p) => (
+                  <div key={p.question} className="rounded-2xl bg-ink/[0.04] p-4">
+                    <p className="text-sm font-semibold text-ink-soft">{p.question}</p>
+                    <p className="mt-1.5 whitespace-pre-line text-lg font-semibold leading-snug text-ink">{p.answer}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <InfoBlock title={isSelf ? 'Mes infos' : 'Ses infos'} chips={infoChips} />
             <InfoBlock title="Personnalité" chips={personalityChips} />
 
@@ -374,17 +386,6 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                     />
                   ))}
                 </div>
-              </div>
-            )}
-
-            {profile.prompts?.length > 0 && (
-              <div className="mt-6 space-y-3">
-                {profile.prompts.map((p) => (
-                  <div key={p.question} className="rounded-2xl bg-surface-soft p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">{p.question}</p>
-                    <p className="mt-1.5 text-sm text-ink">{p.answer}</p>
-                  </div>
-                ))}
               </div>
             )}
           </div>

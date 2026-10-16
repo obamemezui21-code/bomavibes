@@ -34,3 +34,23 @@ export const LIFESTYLE_GROUPS = [
 ]
 
 export const CHILDREN_OPTIONS = ["Pas d'enfant", "A des enfants", "Pas d'enfant, en veut", "A des enfants, en veut d'autres"]
+
+// Profile prompts (question + short answer) shown on the profile sheet.
+export const PROFILE_PROMPTS = [
+  'Mon dimanche idéal à Libreville…',
+  'Le plat qui me fait craquer…',
+  'On va bien s\'entendre si…',
+  'Ma plus grande fierté…',
+  'Le son que je mets en boucle…',
+  'Mon premier rendez-vous idéal…',
+  'Je ne peux pas vivre sans…',
+  'Ce qui me fait rire à coup sûr…',
+  'Mon coin préféré au Gabon…',
+  'Un truc que peu de gens savent sur moi…',
+  'Dans 5 ans, je me vois…',
+  'Mon red flag à moi…',
+  'Le meilleur conseil qu\'on m\'ait donné…',
+  'Je cherche quelqu\'un qui…',
+]
+export const MAX_PROFILE_PROMPTS = 3
+export const PROMPT_ANSWER_MAX = 200

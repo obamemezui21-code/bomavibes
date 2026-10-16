@@ -12,7 +12,9 @@ import {
   Download,
   FileText,
   Flag,
+  EyeOff,
   Hand,
+  Shuffle,
   Heart,
   Info,
   MapPin,
@@ -38,6 +40,7 @@ import {
   Video,
   X,
 } from 'lucide-react'
+import { ageSuffix, isSensitivePhoto } from '../lib/profileDisplay.js'
 // Loaded on demand (see EmojiPicker usage below) — emoji-picker-react ships
 // its entire emoji dataset in the module itself, so importing it eagerly
 // here would add that weight to every visit to the chat page even for
@@ -60,6 +63,7 @@ import { effectivePlan } from '../lib/ngori.js'
 import PaywallModal from '../components/PaywallModal.jsx'
 import { formatDuration } from '../lib/formatDuration.js'
 import { matchPercent } from '../lib/interests.js'
+import { icebreakersFor } from '../lib/icebreakers.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
@@ -244,6 +248,8 @@ function buildChatProfile(c) {
     id: c.otherUid,
     firstName: c.profile.firstName,
     age: c.profile.age,
+    hideAge: c.profile.hideAge,
+    hideDistance: c.profile.hideDistance,
     city: c.profile.city,
     verified: c.profile.verified,
     interests: c.profile.interests,
@@ -384,6 +390,7 @@ function Chat() {
   const { startCall } = useCall()
   const { requireVerified } = useIdentity()
   const [draft, setDraft] = useState('')
+  const [icebreakerSeed, setIcebreakerSeed] = useState(1)
   const [listSearch, setListSearch] = useState('')
   const [likesCount, setLikesCount] = useState(null)
   const [paywall, setPaywall] = useState(null)
@@ -410,6 +417,7 @@ function Chat() {
   const [isSendingVoice, setIsSendingVoice] = useState(false)
   const [isSendingAttachment, setIsSendingAttachment] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState(null)
+  const [revealedPhotoIds, setRevealedPhotoIds] = useState(() => new Set())
   const fileInputRef = useRef(null)
   const scrollRef = useRef(null)
   const bottomRef = useRef(null)
@@ -1077,7 +1085,7 @@ function Chat() {
                     <p className="flex items-center gap-1 truncate text-sm font-semibold text-ink">
                       <span className="truncate">
                         {c.profile.firstName}
-                        {c.profile.age ? `, ${c.profile.age}` : ''}
+                        {ageSuffix(c.profile)}
                       </span>
                       {c.profile.verified && (
                         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white">
@@ -1324,6 +1332,33 @@ function Chat() {
                   <p className="text-sm text-ink-soft/60">
                     🎉 C'est un match avec {active.profile.firstName} ! Envoyez le premier message.
                   </p>
+                  {/* Icebreakers: a tap fills the input, the member can still edit before sending */}
+                  <div className="mt-3 w-full max-w-sm space-y-2">
+                    <div className="flex items-center justify-between px-1">
+                      <p className="text-xs font-semibold text-ink-soft">Besoin d'inspiration ?</p>
+                      <button
+                        type="button"
+                        onClick={() => setIcebreakerSeed((s) => s + 1)}
+                        className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
+                      >
+                        <Shuffle size={13} strokeWidth={2.5} />
+                        Autres idées
+                      </button>
+                    </div>
+                    {icebreakersFor(active.profile, publicProfile?.interests || [], icebreakerSeed).map((idea) => (
+                      <button
+                        key={idea}
+                        type="button"
+                        onClick={() => {
+                          handleDraftChange(idea)
+                          textareaRef.current?.focus()
+                        }}
+                        className="block w-full rounded-2xl bg-white px-4 py-3 text-left text-sm text-ink shadow-sm ring-1 ring-ink/8 transition hover:ring-violet-400 dark:bg-surface-tint"
+                      >
+                        {idea}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -1400,6 +1435,25 @@ function Chat() {
                           )}
                           {m.type === 'voice' ? (
                             <VoiceMessage url={m.audioUrl} duration={m.duration} fromMe={m.fromMe} />
+                          ) : m.type === 'image' && !m.fromMe && isSensitivePhoto(m.fileUrl) && !revealedPhotoIds.has(m.id) ? (
+                            // Flagged by the server as possibly explicit: blurred until the receiver chooses to see it.
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setRevealedPhotoIds((ids) => new Set(ids).add(m.id))
+                              }}
+                              className="relative block overflow-hidden rounded-lg"
+                            >
+                              <img src={m.fileUrl} alt="" className="max-h-64 max-w-full scale-110 object-cover blur-2xl" />
+                              <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/40 px-4 text-center text-white">
+                                <EyeOff size={22} strokeWidth={2} />
+                                <span className="text-xs font-semibold">Photo potentiellement sensible</span>
+                                <span className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold backdrop-blur">
+                                  Appuyer pour voir
+                                </span>
+                              </span>
+                            </button>
                           ) : m.type === 'image' ? (
                             <button
                               type="button"
@@ -1414,6 +1468,11 @@ function Chat() {
                                 alt=""
                                 className="max-h-64 max-w-full rounded-lg object-cover"
                               />
+                              {m.fromMe && isSensitivePhoto(m.fileUrl) && (
+                                <span className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
+                                  <EyeOff size={11} /> Floutée pour {active.profile.firstName}
+                                </span>
+                              )}
                             </button>
                           ) : m.type === 'file' ? (
                             <FileMessage url={m.fileUrl} fileName={m.fileName} fileSize={m.fileSize} fromMe={m.fromMe} />

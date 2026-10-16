@@ -33,4 +33,5 @@ frontend-web/src/assets/faces/pexels-*
 
 # Models downloaded by backend/scripts/fetchModels.js (too big for git)
 backend/models/clip-vision-q8.onnx
+backend/models/nsfw-vit-q8.onnx
 backend/models/*.download

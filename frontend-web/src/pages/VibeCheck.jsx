@@ -8,6 +8,7 @@ import { getVibeCheck, getVibeResults, sendVibe, submitVibeAnswers } from '../fi
 import { isQuotaError } from '../firebase/swipes.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
+import { ageSuffix } from '../lib/profileDisplay.js'
 
 const PREF_OPTIONS = [
   { value: 'FEMME', label: 'Des femmes', emoji: '👩🏾' },
@@ -130,7 +131,7 @@ function VibeCard({ card, onVibe, busy }) {
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 truncate font-display text-lg font-bold text-ink">
             {card.firstName}
-            {card.age ? `, ${card.age}` : ''}
+            {ageSuffix(card)}
             {card.verified && <BadgeCheck size={16} className="shrink-0 text-violet-500" />}
           </p>
           {card.city && <p className="truncate text-xs text-ink-soft">{card.city}</p>}

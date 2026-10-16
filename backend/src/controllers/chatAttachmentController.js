@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
+const { analyzeChatPhoto } = require("../services/chatPhotoSafety");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "chat-attachments");
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://bomavibes.tech";
@@ -24,23 +25,33 @@ async function uploadChatAttachment(req, res) {
         const timestamp = Date.now();
 
         if (isImage) {
-            const filename = `image-${timestamp}.jpg`;
-            const destPath = path.join(dir, filename);
             // Normalize EXIF rotation and cap the width, same approach as
             // profile photos — chat images shouldn't ship full camera
             // resolution either.
-            await sharp(req.file.path)
+            const image = await sharp(req.file.path)
                 .rotate()
                 .resize({ width: MAX_IMAGE_WIDTH, withoutEnlargement: true })
                 .jpeg({ quality: 82, mozjpeg: true })
-                .toFile(destPath);
+                .toBuffer();
             fs.unlink(req.file.path, () => {});
+
+            // A failed analysis never blocks the photo: it goes through unflagged.
+            const { sensitive } = await analyzeChatPhoto(image).catch((err) => {
+                console.error("Chat photo analysis failed:", err.message);
+                return { sensitive: false };
+            });
+            // The flag is in the file name, so the receiver's app blurs it
+            // even if the sender's client leaves the message field out.
+            const filename = `image-${timestamp}${sensitive ? "-sensitive" : ""}.jpg`;
+            const destPath = path.join(dir, filename);
+            fs.writeFileSync(destPath, image);
 
             return res.json({
                 type: "image",
                 url: `${FRONTEND_URL}/uploads/chat-attachments/${uid}/${filename}`,
                 fileName: sanitizeFileName(req.file.originalname || "photo.jpg"),
-                fileSize: fs.statSync(destPath).size,
+                fileSize: image.length,
+                sensitive,
             });
         }
 

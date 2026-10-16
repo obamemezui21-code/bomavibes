@@ -215,7 +215,7 @@ async function getResults(req, res) {
             cards.push({
                 id: entry.id,
                 firstName: p.firstName || "Mystère",
-                age: p.age || null,
+                age: p.hideAge ? null : p.age || null,
                 city: p.city || null,
                 verified: !!p.verified,
                 percent: entry.score?.percent ?? receivedFrom.get(entry.id) ?? null,
