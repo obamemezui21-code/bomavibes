@@ -72,6 +72,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import LocationMessage from '../components/chat/LocationMessage.jsx'
 import StickerMaker from '../components/chat/StickerMaker.jsx'
 import MotoChallengeCard from '../components/chat/MotoChallengeCard.jsx'
+import WeMetPrompt from '../components/chat/WeMetPrompt.jsx'
 import { deleteSticker, listMyStickers } from '../firebase/stickers.js'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
@@ -1306,6 +1307,7 @@ function Chat() {
             )}
 
             <div className="relative min-w-0 flex-1 overflow-hidden">
+            <WeMetPrompt key={active.id} matchId={active.id} firstName={active.profile.firstName} />
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <img
                 src={active.profile.photoFull || active.profile.photo}

@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Globe2,
   Heart,
+  CalendarHeart,
   Layers,
   LayoutGrid,
   MapPin,
@@ -41,6 +42,8 @@ import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { useIdentity } from '../context/IdentityContext.jsx'
 import MostCompatibleCard from '../components/MostCompatibleCard.jsx'
 import { dailyMostCompatible } from '../lib/mostCompatible.js'
+import { dailySelection } from '../lib/dailySelection.js'
+import DailySelection from '../components/DailySelection.jsx'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
@@ -48,6 +51,7 @@ const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
 const VIEW_MODES = [
   { id: 'cards', label: 'Cartes', icon: LayoutGrid },
   { id: 'swipe', label: 'Swipe', icon: Layers },
+  { id: 'selection', label: 'Sélection', icon: CalendarHeart },
 ]
 const INTERESTS_HIDDEN_KEY = 'bv:discoverInterestsHidden'
 const HEADER_ICON_BUTTON =
@@ -187,6 +191,13 @@ function Discover() {
   const mostCompatible = useMemo(
     () => (isLoading || !uid || !publicProfile ? null : dailyMostCompatible(publicProfile, uid, profiles)),
     [isLoading, uid, publicProfile, profiles],
+  )
+  const selection = useMemo(
+    () =>
+      isLoading || !uid || !publicProfile || viewMode !== 'selection'
+        ? null
+        : dailySelection(publicProfile, uid, profiles),
+    [isLoading, uid, publicProfile, profiles, viewMode],
   )
 
   const deck = searched.slice(0, DECK_SIZE)
@@ -626,6 +637,12 @@ function Discover() {
           <div className="flex h-64 items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
           </div>
+        ) : viewMode === 'selection' && selection ? (
+          <DailySelection
+            selection={selection}
+            matchPercentFor={(p) => matchPercent(publicProfile?.interests, p.interests)}
+            onOpen={openProfile}
+          />
         ) : searched.length === 0 ? (
           <div className="glass-panel flex flex-col items-center gap-2 rounded-[28px] p-10 text-center">
             <Sparkles size={40} strokeWidth={1.5} className="text-violet-500" />

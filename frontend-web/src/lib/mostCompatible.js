@@ -80,7 +80,7 @@ const STORAGE_KEY = 'bv:mostCompatible'
 
 export function dailyMostCompatible(me, uid, candidates, now = new Date()) {
   const today = dayKey(now)
-  let stored = null
+  let stored
   try {
     stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
   } catch {
