@@ -2,15 +2,19 @@
 //  1. the scenery: a painted backdrop per mission (public/commando/bg-<theme>.webp,
 //     drawn at full screen resolution with parallax, mirrored to loop) — or,
 //     until those images exist, scenery drawn in code;
-//  2. the action, on a 640×360 buffer (twice the 320×180 world) so sprites,
-//     ground and effects get half-pixel detail and thin outlines, scaled up
-//     with no smoothing.
+//  2. the action, on a buffer as large as the screen (the 320×180 world
+//     times RES, 2 to 6) so the commandos' 3D-rendered sprites
+//     (public/commando/sprites-<name>.webp, built by
+//     backend/scripts/buildCommandoSprites.js) stay sharp, and the pixel-art
+//     parts get half-pixel detail and thin outlines.
 // Purely visual — the game itself lives in shared/commando-okoume/engine.mjs.
 import { FP, GROUND_Y, MISSIONS, SCREEN_H, SCREEN_W, WEAPONS } from '../../../../shared/commando-okoume/engine.mjs'
 import { LOOKS, drawFigure, drawLying, drawPuff } from './sprites.js'
 import { drawBoss as paintBoss } from './bosses.js'
 
-const RES = 2 // buffer pixels per world pixel
+// Height (world px) of a commando drawn from its sprite sheet: a little
+// taller than the 24 px hitbox, the beret / hat stands above it.
+const SPRITE_HEIGHT = 34
 const PARALLAX = 0.3 // how fast the painted backdrop scrolls
 
 const THEMES = {
@@ -72,7 +76,43 @@ function backdrop(theme) {
   return backdrops[theme]
 }
 
+// Character sprite sheets (image + JSON manifest); null = not (yet) available.
+const sheets = {}
+const sheetLoads = {}
+
+export function preloadSprites(name) {
+  sheetLoads[name] ||= fetch(`/commando/sprites-${name}.json`)
+    .then((res) => (res.ok ? res.json() : Promise.reject(new Error('missing'))))
+    .then(
+      (manifest) =>
+        new Promise((resolve) => {
+          const img = new Image()
+          img.onload = () => {
+            sheets[name] = { img, manifest }
+            resolve(true)
+          }
+          img.onerror = () => resolve(false)
+          img.src = `/commando/sprites-${name}.webp`
+        }),
+    )
+    .catch(() => false)
+  return sheetLoads[name]
+}
+
+function spriteSheet(name) {
+  preloadSprites(name)
+  return sheets[name] || null
+}
+
+// The closest pose a sheet has, when the wanted one wasn't drawn yet.
+const POSE_FALLBACK = { stand: ['stand', 'run'], run: ['run', 'stand'], jump: ['jump', 'run'], up: ['up', 'stand', 'run'], throw: ['throw', 'stand', 'run'], hurt: ['hurt', 'stand', 'run'] }
+function framesFor(manifest, pose) {
+  for (const p of POSE_FALLBACK[pose] || [pose]) if (manifest.frames[p]?.length) return { pose: p, list: manifest.frames[p] }
+  return null
+}
+
 export function createCommandoRenderer(canvas) {
+  let RES = 2 // buffer pixels per world pixel, set from the screen size
   const buf = document.createElement('canvas')
   buf.width = SCREEN_W * RES
   buf.height = SCREEN_H * RES
@@ -83,6 +123,7 @@ export function createCommandoRenderer(canvas) {
   let shake = 0
   let wasOnGround = true
   const bossLayer = { canvas: document.createElement('canvas'), res: RES }
+  let muzzleAt = null // where the image sprite's rifle tip is this frame (world px)
   let view = { x: 0, y: 0, w: SCREEN_W, h: SCREEN_H }
 
   const q = (v) => Math.round(v * RES) / RES
@@ -464,6 +505,20 @@ export function createCommandoRenderer(canvas) {
       g.ellipse(x, y, 7, 1.5, 0, 0, Math.PI * 2)
       g.fill()
     }
+    const rollSheet = rolling && spriteSheet(state.character)
+    if (rollSheet) {
+      const { img, manifest } = rollSheet
+      const found = framesFor(manifest, 'jump')
+      const frame = found.list[0]
+      const scale = (SPRITE_HEIGHT * 0.8) / manifest.figureHeight
+      g.save()
+      g.translate(x, y - (frame.h * scale) / 2)
+      g.rotate(p.facing * p.special * 0.35)
+      g.imageSmoothingEnabled = true
+      g.drawImage(img, frame.x, frame.y, frame.w, frame.h, (-frame.w * scale) / 2, (-frame.h * scale) / 2, frame.w * scale, frame.h * scale)
+      g.restore()
+      return
+    }
     if (rolling) {
       g.fillStyle = '#15140f'
       g.beginPath()
@@ -479,6 +534,11 @@ export function createCommandoRenderer(canvas) {
     const rate = WEAPONS[p.weapon].rate
     const throwing = p.weapon === 'grenade' && p.fireCooldown > rate - 8
     const firing = p.weapon !== 'grenade' && p.fireCooldown >= rate - 2
+    const sheet = spriteSheet(state.character)
+    if (sheet) {
+      drawPlayerSprite(sheet, state, x, y, { hurt, throwing, firing })
+      return
+    }
     const kind = hurt
       ? 'hurt'
       : !p.onGround
@@ -509,6 +569,56 @@ export function createCommandoRenderer(canvas) {
       g.strokeStyle = '#7df9ff'
       g.lineWidth = 0.5
       g.strokeRect(q(x - 10), q(y - 30), 20, 30)
+    }
+  }
+
+  // A commando from its 3D-rendered sprite sheet.
+  function drawPlayerSprite(sheet, state, x, y, { hurt, throwing, firing }) {
+    const p = state.player
+    const { img, manifest } = sheet
+    const wanted = hurt
+      ? 'hurt'
+      : !p.onGround
+        ? state.input.up ? 'up' : 'jump'
+        : throwing
+          ? 'throw'
+          : state.input.up
+            ? 'up'
+            : state.input.move !== 0
+              ? 'run'
+              : 'stand'
+    const found = framesFor(manifest, wanted)
+    if (!found) return
+    const frame = found.pose === 'run' ? found.list[Math.floor(p.walkTick / 6) % found.list.length] : found.list[0]
+    const scale = SPRITE_HEIGHT / manifest.figureHeight
+    const w = frame.w * scale
+    const h = frame.h * scale
+    // A running frame used for standing still bobs a little less obviously when not moving.
+    const left = -frame.anchorX * scale
+    g.save()
+    g.translate(x, y)
+    if (p.facing === -1) g.scale(-1, 1)
+    g.imageSmoothingEnabled = true
+    g.imageSmoothingQuality = 'high'
+    g.drawImage(img, frame.x, frame.y, frame.w, frame.h, left, -h, w, h)
+    g.restore()
+    // Rifle tip, for the muzzle flash and its light.
+    const tip = found.pose === 'up' ? frame.muzzleUp : frame.muzzle
+    muzzleAt = { x: x + p.facing * (left + tip[0] * scale), y: y - h + tip[1] * scale }
+    if (firing && (found.pose === 'stand' || found.pose === 'run' || found.pose === 'up' || found.pose === 'jump')) {
+      const mx = muzzleAt.x
+      const my = muzzleAt.y
+      const glowGrad = g.createRadialGradient(mx, my, 0, mx, my, 14)
+      glowGrad.addColorStop(0, 'rgba(255,240,180,0.95)')
+      glowGrad.addColorStop(0.25, 'rgba(255,190,70,0.8)')
+      glowGrad.addColorStop(1, 'rgba(255,150,40,0)')
+      g.fillStyle = glowGrad
+      g.fillRect(mx - 14, my - 14, 28, 28)
+    }
+    if (state.character === 'moussavou' && p.special > 0) {
+      g.strokeStyle = '#7df9ff'
+      g.lineWidth = 0.5
+      g.strokeRect(q(x - w / 2 - 2), q(y - h - 2), w + 4, h + 4)
     }
   }
 
@@ -644,6 +754,12 @@ export function createCommandoRenderer(canvas) {
       const w = SCREEN_W * scale
       const h = SCREEN_H * scale
       view = { x: (canvas.width - w) / 2, y: (canvas.height - h) / 2, w, h }
+      // As many buffer pixels as screen pixels (2× at least for the pixel art,
+      // 6× at most to stay quick).
+      RES = Math.max(2, Math.min(6, Math.round(scale)))
+      buf.width = SCREEN_W * RES
+      buf.height = SCREEN_H * RES
+      bossLayer.res = RES
     },
     // World events → particles and screen shake.
     handleEvents(state) {
@@ -663,8 +779,8 @@ export function createCommandoRenderer(canvas) {
         } else if (e.type === 'shot' && e.weapon !== 'grenade') {
           // A spent casing jumps out of the rifle and bounces on the ground.
           particles.push({
-            x: p.x / FP + p.facing * 3,
-            y: p.y / FP - 15,
+            x: muzzleAt ? muzzleAt.x + state.camX / FP - p.facing * 10 : p.x / FP + p.facing * 3,
+            y: muzzleAt ? muzzleAt.y + 2 : p.y / FP - 15,
             vx: -p.facing * (25 + Math.random() * 25),
             vy: -45 - Math.random() * 20,
             gravity: 260,
@@ -737,7 +853,8 @@ export function createCommandoRenderer(canvas) {
         out.fillStyle = 'rgba(0,0,0,0.18)'
         out.fillRect(view.x, view.y, view.w, view.h)
       }
-      out.imageSmoothingEnabled = false
+      // The buffer is about the screen size now: smoothing only evens out the last fraction.
+      out.imageSmoothingEnabled = true
       out.drawImage(buf, view.x, view.y, view.w, view.h)
 
       // Cinematic vignette.
