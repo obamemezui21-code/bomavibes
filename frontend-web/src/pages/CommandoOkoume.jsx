@@ -6,6 +6,7 @@ import { CHARACTERS, MISSIONS, MISSION_IDS } from '../../../shared/commando-okou
 import { finishCommandoMission, getCommando, startCommandoMission } from '../firebase/commando.js'
 import { createCommandoAudio, loadMuted, saveMuted } from '../game/commando/audio.js'
 import CommandoScreen from '../game/commando/CommandoScreen.jsx'
+import ControlsHelp from '../game/commando/ControlsHelp.jsx'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import mboumbaPortrait from '../assets/game/commando-mboumba.svg'
@@ -148,6 +149,9 @@ function CommandoOkoume() {
           <p className="mt-1 text-sm text-white/80">
             Le réseau du Serpent Noir pille le pays : braconnage, orpaillage illégal, trafic d’ivoire. Ton unité doit le démanteler.
           </p>
+          <a href="#comment-jouer" className="mt-2 inline-block text-xs font-semibold text-amber-300 underline underline-offset-2">
+            ❓ Comment jouer
+          </a>
           {!data ? (
             <div className="mt-4 h-10 animate-pulse rounded-xl bg-white/10" />
           ) : data.failed ? (
@@ -263,6 +267,12 @@ function CommandoOkoume() {
           <Crosshair size={18} />
           {phase === 'starting' ? 'PRÉPARATION…' : `LANCER LA MISSION ${mission}`}
         </motion.button>
+
+        {/* How to play */}
+        <section id="comment-jouer" className="rounded-2xl bg-[#14200c] p-4 text-white">
+          <h2 className="mb-3 font-display text-base font-semibold">🎮 Comment jouer</h2>
+          <ControlsHelp variant="full" character={chosen} />
+        </section>
 
         {/* Leaderboard */}
         {data?.leaderboard?.length > 0 && (

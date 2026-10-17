@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, ChevronUp, Heart, Pause, Play, Volume2, VolumeX, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronUp, CircleHelp, Heart, Pause, Play, Volume2, VolumeX, X } from 'lucide-react'
 import {
   CHARACTERS,
   MISSIONS,
@@ -10,8 +10,12 @@ import {
   step,
 } from '../../../../shared/commando-okoume/engine.mjs'
 import { createCommandoRenderer, preloadBackdrop } from './renderer.js'
+import ControlsHelp from './ControlsHelp.jsx'
 
 const SIM_MS = 1000 / TICK_RATE
+// With a keyboard, the intro stays longer: it shows the keys.
+const HAS_MOUSE = typeof window !== 'undefined' && window.matchMedia?.('(pointer: fine)').matches
+const INTRO_MS = HAS_MOUSE ? 4500 : 2600
 const LEFT_KEYS = new Set(['ArrowLeft', 'q', 'a', 'Q', 'A'])
 const RIGHT_KEYS = new Set(['ArrowRight', 'd', 'D'])
 const UP_KEYS = new Set(['ArrowUp', 'z', 'w', 'Z', 'W'])
@@ -58,6 +62,7 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
   const pausedRef = useRef(false)
   const onEndRef = useRef(onEnd)
   const quitRef = useRef(null)
+  const pauseRef = useRef(null)
   const [hud, setHud] = useState(null)
   const [paused, setPaused] = useState(false)
   const [toast, setToast] = useState(null)
@@ -78,7 +83,7 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
     const inputs = []
     let acc = 0
     let last = performance.now()
-    const startAt = last + 2600
+    const startAt = last + INTRO_MS
     let pausedFor = 0
     let raf = 0
     let lastHud = 0
@@ -182,7 +187,7 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
     }
     raf = requestAnimationFrame(frame)
     audio.startMusic()
-    const introTimer = setTimeout(() => setIntro(false), 2600)
+    const introTimer = setTimeout(() => setIntro(false), INTRO_MS)
 
     return () => {
       cancelAnimationFrame(raf)
@@ -210,6 +215,7 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
       else if (FIRE_KEYS.has(e.key)) push('F')
       else if (JUMP_KEYS.has(e.key)) push('J')
       else if (SPECIAL_KEYS.has(e.key)) push('P')
+      else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') pauseRef.current?.()
       else return
       e.preventDefault()
       audio.unlock()
@@ -239,6 +245,21 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
     else audio.startMusic()
   }
 
+  // The keyboard handler (Échap / P) reaches the latest pause toggle through this ref.
+  useEffect(() => {
+    pauseRef.current = togglePause
+  })
+
+  // Mouse: hold the left button anywhere on the game to fire.
+  function handleMouseDown(e) {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || paused) return
+    audio.unlock()
+    pendingRef.current.push('F')
+  }
+  function handleMouseUp(e) {
+    if (e.pointerType === 'mouse' && e.button === 0) pendingRef.current.push('f')
+  }
+
   function press(action) {
     audio.unlock()
     pendingRef.current.push(action)
@@ -246,7 +267,7 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
 
   return (
     <div className="fixed inset-0 z-[95] select-none bg-black" style={{ touchAction: 'none' }}>
-      <div ref={wrapRef} className="absolute inset-0">
+      <div ref={wrapRef} className="absolute inset-0" onPointerDown={handleMouseDown} onPointerUp={handleMouseUp} onContextMenu={(e) => e.preventDefault()}>
         <canvas ref={canvasRef} className="h-full w-full" style={{ imageRendering: 'pixelated' }} />
       </div>
 
@@ -270,6 +291,14 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
           <div className="pointer-events-auto flex gap-1.5">
             <button type="button" onClick={onToggleMute} className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40" aria-label={muted ? 'Activer le son' : 'Couper le son'}>
               {muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => !paused && togglePause()}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40"
+              aria-label="Comment jouer"
+            >
+              <CircleHelp size={15} />
             </button>
             <button type="button" onClick={togglePause} className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40" aria-label={paused ? 'Reprendre' : 'Pause'}>
               {paused ? <Play size={15} /> : <Pause size={15} />}
@@ -299,6 +328,11 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
             <p className="mt-2 font-display text-3xl font-bold">{info.name}</p>
             <p className="mt-1 text-sm text-white/80">{info.goal}</p>
             <p className="mt-4 text-xs text-white/60">{character.name} · {character.corps}</p>
+            {HAS_MOUSE && (
+              <div className="mt-5 w-[min(92%,26rem)] rounded-2xl bg-black/50 p-4 text-left">
+                <ControlsHelp variant="keyboard" character={options.character} />
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -334,9 +368,15 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
           <button type="button" onClick={() => quitRef.current?.()} className="flex items-center gap-1.5 rounded-full border border-white/40 px-5 py-2 text-sm">
             <X size={14} /> Abandonner la mission
           </button>
-          <p className="mt-2 max-w-xs text-center text-[11px] text-white/60">
-            Clavier : ← → bouger · ↑ viser en haut · Espace sauter · J tirer · L {character.special.toLowerCase()}
-          </p>
+          <div className="mt-3 max-h-[50svh] w-[min(92%,26rem)] overflow-y-auto rounded-2xl bg-black/40 p-4 text-left">
+            {HAS_MOUSE ? (
+              <ControlsHelp variant="keyboard" character={options.character} />
+            ) : (
+              <p className="text-xs text-white/80">
+                Croix à gauche pour bouger et viser en haut, <b>TIR</b> (garder appuyé), <b>SAUT</b> et <b>SPÉ</b> pour le pouvoir spécial.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
