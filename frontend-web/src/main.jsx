@@ -15,6 +15,7 @@ import { ThemeProvider } from './context/ThemeContext.jsx'
 import { CallProvider } from './context/CallContext.jsx'
 import { IdentityProvider } from './context/IdentityContext.jsx'
 import { PhotoQualityProvider } from './context/PhotoQualityContext.jsx'
+import { GroupCallProvider } from './context/GroupCallContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -26,7 +27,9 @@ createRoot(document.getElementById('root')).render(
               <PhotoQualityProvider>
                 <ConversationsProvider>
                   <CallProvider>
-                    <App />
+                    <GroupCallProvider>
+                      <App />
+                    </GroupCallProvider>
                   </CallProvider>
                 </ConversationsProvider>
               </PhotoQualityProvider>

@@ -39,6 +39,7 @@ import {
   Sticker,
   Trash2,
   TriangleAlert,
+  Users,
   Video,
   X,
 } from 'lucide-react'
@@ -54,6 +55,8 @@ import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useCall } from '../context/CallContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import { useGroupCall } from '../context/GroupCallContext.jsx'
+import GroupCallPicker from '../components/GroupCallPicker.jsx'
 import { uploadVoiceNote } from '../firebase/voiceNotes.js'
 import { uploadChatAttachment, formatFileSize } from '../firebase/chatAttachments.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
@@ -395,6 +398,7 @@ function Chat() {
   const { theme } = useTheme()
   const { startCall } = useCall()
   const { requireVerified } = useIdentity()
+  const { available: groupCallsAvailable, startGroupCall } = useGroupCall()
   const [draft, setDraft] = useState('')
   const [icebreakerSeed, setIcebreakerSeed] = useState(1)
   const [listSearch, setListSearch] = useState('')
@@ -420,6 +424,7 @@ function Chat() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [showGroupPicker, setShowGroupPicker] = useState(false)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
@@ -946,6 +951,17 @@ function Chat() {
     })
   }
 
+  // Group call: pick more matches to call together with this one.
+  function handleStartGroupCall() {
+    if (!active?.otherUid) return
+    if (!requireVerified('calls')) return
+    if (!effectivePlan(account).calls) {
+      setPaywall('calls')
+      return
+    }
+    setShowGroupPicker(true)
+  }
+
   async function handleReportUser(reason, description, alsoBlock) {
     if (!active) return
     setIsSubmittingSafety(true)
@@ -1317,6 +1333,16 @@ function Chat() {
                   >
                     <Video size={16} strokeWidth={2} />
                   </button>
+                  {groupCallsAvailable && (
+                    <button
+                      type="button"
+                      onClick={handleStartGroupCall}
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
+                      aria-label="Appel de groupe"
+                    >
+                      <Users size={16} strokeWidth={2} />
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -2107,6 +2133,19 @@ function Chat() {
       <AnimatePresence>
         {paywall && <PaywallModal reason={paywall} onClose={() => setPaywall(null)} />}
       </AnimatePresence>
+
+      {showGroupPicker && active && (
+        <GroupCallPicker
+          title="Appel de groupe"
+          initialIds={[active.otherUid]}
+          chooseType
+          onClose={() => setShowGroupPicker(false)}
+          onConfirm={(ids, type) => {
+            setShowGroupPicker(false)
+            startGroupCall(type, ids)
+          }}
+        />
+      )}
 
       {showReport && active && (
         <ReportModal
