@@ -9,6 +9,21 @@ const { FieldValue } = admin.firestore;
 
 const DIRECTIONS = ["like", "pass", "superlike"];
 const LIKE_DIRECTIONS = ["like", "superlike"];
+const COMPLIMENT_MAX = 200;
+const COMPLIMENT_ABOUT_MAX = 300;
+
+// A compliment is a short note sent with a like (Hinge comments / Bumble
+// compliments): { text, about } where about quotes what it answers (the
+// bio or a profile prompt), or null. → the cleaned compliment, null when
+// absent, undefined when invalid.
+function parseCompliment(raw) {
+    if (raw == null) return null;
+    if (typeof raw !== "object") return undefined;
+    const text = typeof raw.text === "string" ? raw.text.trim() : "";
+    if (!text || text.length > COMPLIMENT_MAX) return undefined;
+    const about = typeof raw.about === "string" ? raw.about.trim().slice(0, COMPLIMENT_ABOUT_MAX) : "";
+    return { text, about: about || null };
+}
 
 class QuotaError extends Error {
     constructor(code, message) {
@@ -43,7 +58,7 @@ function remainingFor(plan, usage, now) {
 // mutual. Discover (recordSwipe below) and VIBE CHECK both go through here,
 // so quotas apply the same way. → { matchId, matchCreated, remaining }
 // Throws QuotaError (likes used up) or SwipeError.
-async function applySwipe(uid, targetId, direction) {
+async function applySwipe(uid, targetId, direction, compliment = null) {
     const now = Date.now();
     const userRef = db.collection("users").doc(uid);
     const usageRef = db.collection("usage").doc(uid);
@@ -92,7 +107,13 @@ async function applySwipe(uid, targetId, direction) {
             Object.assign(update, { superPeriod: key, superlikes: count + 1 });
         }
 
-        tx.set(swipeRef, { swiperId: uid, targetId, direction, createdAt: FieldValue.serverTimestamp() });
+        tx.set(swipeRef, {
+            swiperId: uid,
+            targetId,
+            direction,
+            createdAt: FieldValue.serverTimestamp(),
+            ...(compliment && LIKE_DIRECTIONS.includes(direction) ? { compliment } : {}),
+        });
         if (Object.keys(update).length) tx.set(usageRef, update, { merge: true });
         usageAfter = { ...usage, ...update };
     });
@@ -122,6 +143,11 @@ async function applySwipe(uid, targetId, direction) {
             });
             matchCreated = created;
             if (created) {
+                // Compliments sent with either like open the conversation,
+                // the older one first.
+                await postCompliments(matchId, [reciprocal.data(), { swiperId: uid, compliment }]).catch((err) =>
+                    console.error("Posting compliments failed:", err.message),
+                );
                 const me = (await db.collection("profiles").doc(uid).get()).data();
                 sendPushToUser(targetId, {
                     title: "Nouveau match !",
@@ -133,7 +159,34 @@ async function applySwipe(uid, targetId, direction) {
         }
     }
 
+    if (compliment && !matchId && LIKE_DIRECTIONS.includes(direction)) {
+        sendPushToUser(targetId, {
+            title: "Nouveau compliment 💬",
+            body: "Quelqu'un vous a envoyé un compliment avec son like.",
+            path: "/likes",
+            prefField: "notifyMatches",
+        }).catch(() => {});
+    }
+
     return { matchId, matchCreated, remaining: remainingFor(plan, usageAfter, now) };
+}
+
+// swipes: [{ swiperId, compliment }] in the order they were made.
+async function postCompliments(matchId, swipes) {
+    const matchRef = db.collection("matches").doc(matchId);
+    let last = null;
+    for (const { swiperId, compliment } of swipes) {
+        if (!compliment?.text) continue;
+        await matchRef.collection("messages").add({
+            senderId: swiperId,
+            text: compliment.text,
+            type: "compliment",
+            about: compliment.about || null,
+            createdAt: FieldValue.serverTimestamp(),
+        });
+        last = compliment.text;
+    }
+    if (last) await matchRef.update({ lastMessage: last.slice(0, 500), lastMessageAt: FieldValue.serverTimestamp() });
 }
 
 function sendSwipeError(res, err) {
@@ -149,11 +202,12 @@ function sendSwipeError(res, err) {
 async function recordSwipe(req, res) {
     const uid = req.firebaseUser.uid;
     const { targetId, direction } = req.body || {};
-    if (typeof targetId !== "string" || !targetId || targetId === uid || !DIRECTIONS.includes(direction)) {
+    const compliment = parseCompliment(req.body?.compliment);
+    if (typeof targetId !== "string" || !targetId || targetId === uid || !DIRECTIONS.includes(direction) || compliment === undefined) {
         return res.status(400).json({ message: "Requête invalide" });
     }
     try {
-        const { matchId, remaining } = await applySwipe(uid, targetId, direction);
+        const { matchId, remaining } = await applySwipe(uid, targetId, direction, compliment);
         res.json({ matchId, remaining });
     } catch (err) {
         sendSwipeError(res, err);
@@ -213,19 +267,22 @@ async function getIncomingLikers(req, res) {
         const likerIds = likesSnap.docs
             .map((d) => d.data())
             .filter((s) => !answered.has(s.swiperId) && !blocked.has(s.swiperId))
-            .map((s) => ({ id: s.swiperId, superlike: s.direction === "superlike" }));
+            .map((s) => ({ id: s.swiperId, superlike: s.direction === "superlike", compliment: s.compliment || null }));
 
         if (!effectivePlanFor(userSnap.data()).seeLikes) {
-            return res.json({ locked: true, count: likerIds.length, likers: [] });
+            // Free accounts read the compliments, just not who sent them.
+            const compliments = likerIds.filter((l) => l.compliment).map((l) => l.compliment);
+            return res.json({ locked: true, count: likerIds.length, likers: [], compliments });
         }
 
         const profiles = await Promise.all(
-            likerIds.map(async ({ id, superlike }) => {
+            likerIds.map(async ({ id, superlike, compliment }) => {
                 const p = (await db.collection("profiles").doc(id).get()).data();
                 if (!p) return null;
                 return {
                     id,
                     superlike,
+                    compliment,
                     firstName: p.firstName || "",
                     age: p.age || null,
                     city: p.city || null,
@@ -235,6 +292,8 @@ async function getIncomingLikers(req, res) {
                     interests: p.interests || [],
                     verified: !!p.verified,
                     datingGoal: p.datingGoal || null,
+                    prompts: p.prompts || [],
+                    hideAge: !!p.hideAge,
                 };
             }),
         );
@@ -245,4 +304,4 @@ async function getIncomingLikers(req, res) {
     }
 }
 
-module.exports = { applySwipe, sendSwipeError, recordSwipe, getQuota, getIncomingLikesCount, getIncomingLikers };
+module.exports = { parseCompliment, applySwipe, sendSwipeError, recordSwipe, getQuota, getIncomingLikesCount, getIncomingLikers };

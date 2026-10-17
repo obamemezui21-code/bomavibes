@@ -43,9 +43,13 @@ export function getSwipeQuota() {
 // Returns the match id when this like completes a match, else null.
 // Throws an error with `code` LIKE_LIMIT / SUPERLIKE_LIMIT when the plan's
 // quota is used up (nothing is recorded then).
+// compliment: optional { text, about } sent with a like.
 // eslint-disable-next-line no-unused-vars
-export async function recordSwipeAndMatch(uid, targetId, direction, _firstName) {
-  const { matchId } = await api('/api/swipes', { method: 'POST', body: JSON.stringify({ targetId, direction }) })
+export async function recordSwipeAndMatch(uid, targetId, direction, _firstName, compliment = null) {
+  const { matchId } = await api('/api/swipes', {
+    method: 'POST',
+    body: JSON.stringify({ targetId, direction, ...(compliment ? { compliment } : {}) }),
+  })
   rememberSwipe(uid, targetId, direction)
   return matchId || null
 }

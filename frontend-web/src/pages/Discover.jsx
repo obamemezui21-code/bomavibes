@@ -39,6 +39,8 @@ import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
 import { RELIGIONS } from '../lib/onboardingOptions.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import MostCompatibleCard from '../components/MostCompatibleCard.jsx'
+import { dailyMostCompatible } from '../lib/mostCompatible.js'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
@@ -179,6 +181,14 @@ function Discover() {
     return [...mine, ...Object.keys(INTEREST_ICONS).filter((i) => !mine.includes(i))]
   }, [publicProfile])
 
+  // Picked from the whole list, not the chip / search filters, so it stays
+  // the same pick all day.
+  const uid = user?.id
+  const mostCompatible = useMemo(
+    () => (isLoading || !uid || !publicProfile ? null : dailyMostCompatible(publicProfile, uid, profiles)),
+    [isLoading, uid, publicProfile, profiles],
+  )
+
   const deck = searched.slice(0, DECK_SIZE)
   const topProfile = deck[0] || null
 
@@ -302,17 +312,22 @@ function Discover() {
     }
   }
 
-  async function handleSwipe(profile, direction) {
+  async function handleSwipe(profile, direction, compliment = null) {
     // Liking needs a verified identity; passing doesn't.
     if (direction !== 'pass' && !requireIdentity()) return
     setProfiles((prev) => prev.filter((p) => p.id !== profile.id))
     try {
-      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName)
+      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName, compliment)
       if (matchId) {
         setMatchConversationId(matchId)
         setMatchedProfile(profile)
       } else if (direction !== 'pass') {
-        showToast(`Vous avez aimé le profil de ${profile.firstName}.`, 'success')
+        showToast(
+          compliment
+            ? `Compliment envoyé à ${profile.firstName} avec votre like 💬`
+            : `Vous avez aimé le profil de ${profile.firstName}.`,
+          'success',
+        )
       }
     } catch (err) {
       // Nothing was recorded: put the profile back where it was.
@@ -355,6 +370,12 @@ function Discover() {
 
   function handlePass(profile) {
     return triggerSwipe(profile, 'pass')
+  }
+
+  // Sent from the profile sheet, so no deck exit animation to wait for.
+  function handleCompliment(profile, compliment) {
+    if (exitingId === profile.id) return
+    handleSwipe(profile, 'like', compliment)
   }
 
   function handleBlocked(profile) {
@@ -597,6 +618,10 @@ function Discover() {
           {!(hasUnseenAnnouncement && latestAnnouncement) && <SupportPromptCard />}
         </div>
 
+        {!isLoading && mostCompatible && (
+          <MostCompatibleCard pick={mostCompatible} onOpen={() => setExpandedProfile(mostCompatible.profile)} />
+        )}
+
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
@@ -800,6 +825,7 @@ function Discover() {
             onLike={() => handleLike(expandedProfile)}
             onSuperlike={() => handleSuperlike(expandedProfile)}
             onPass={() => handlePass(expandedProfile)}
+            onCompliment={(compliment) => handleCompliment(expandedProfile, compliment)}
             onBlocked={handleBlocked}
           />
         )}

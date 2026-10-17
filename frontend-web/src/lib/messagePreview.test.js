@@ -42,4 +42,8 @@ describe('messagePreviewText', () => {
   it('describes a shared post message', () => {
     expect(messagePreviewText({ type: 'post' })).toBe('📌 Publication partagée')
   })
+
+  it('shows a compliment with its text', () => {
+    expect(messagePreviewText({ type: 'compliment', text: 'Joli sourire' })).toBe('💬 Joli sourire')
+  })
 })

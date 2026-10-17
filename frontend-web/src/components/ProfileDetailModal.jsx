@@ -17,6 +17,7 @@ import {
   Languages,
   MapPin,
   MessageCircle,
+  MessageCircleHeart,
   MoreVertical,
   Navigation,
   Plane,
@@ -35,10 +36,28 @@ import { blockUser, reportUser } from '../firebase/safety.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
+import { useIdentity } from '../context/IdentityContext.jsx'
 import ReportModal from './ReportModal.jsx'
 import BlockConfirmModal from './BlockConfirmModal.jsx'
+import ComplimentModal from './ComplimentModal.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
+import { complimentAbout } from '../lib/compliments.js'
+
+// Small round button on a bio / prompt card: compliment that answer.
+function ComplimentButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-pink-500 shadow-md ring-1 ring-ink/8 transition hover:scale-105 dark:bg-surface-tint"
+      aria-label="Envoyer un compliment sur cette réponse"
+      title="Envoyer un compliment"
+    >
+      <MessageCircleHeart size={17} strokeWidth={2.25} />
+    </button>
+  )
+}
 
 // Soft grey pill with a line icon — every profile fact uses this one look.
 function InfoChip({ Icon, label, title }) {
@@ -110,9 +129,21 @@ function MatchRing({ percent }) {
   )
 }
 
-function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlike, onPass, onBlocked, matchId, isSelf }) {
+function ProfileDetailModal({
+  profile,
+  matchPercent,
+  onClose,
+  onLike,
+  onSuperlike,
+  onPass,
+  onCompliment,
+  onBlocked,
+  matchId,
+  isSelf,
+}) {
   const { user, publicProfile } = useAuth()
   const { refreshBlockedIds } = useConversations()
+  const { requireIdentity } = useIdentity()
   const { showToast } = useToast()
   const navigate = useNavigate()
   const photos = profile.photos?.length
@@ -123,6 +154,8 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
   const [showReport, setShowReport] = useState(false)
   const [showBlock, setShowBlock] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // undefined = closed, null = general compliment, string = the quoted answer
+  const [complimenting, setComplimenting] = useState(undefined)
 
   async function handleReport(reason, description, alsoBlock) {
     setIsSubmitting(true)
@@ -162,6 +195,11 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
   }
 
   const showActions = !isSelf
+  const canCompliment = showActions && !matchId && !!onCompliment
+  // Liking needs a verified identity: ask before the member writes anything.
+  function startCompliment(about) {
+    if (requireIdentity()) setComplimenting(about)
+  }
   const [streakBadge] = useState(() => activeStreakBadge(profile))
 
   const work = [profile.jobTitle, profile.workplace].filter(Boolean).join(' chez ')
@@ -349,18 +387,24 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
             <div className="mx-auto h-1.5 w-12 rounded-full bg-ink/12" />
 
             {profile.bio && (
-              <div className="mt-5">
+              <div className={`relative mt-5 ${canCompliment ? 'pb-10' : ''}`}>
                 <p className="text-sm font-semibold text-ink-soft">À propos de moi</p>
                 <p className="mt-2 whitespace-pre-line text-lg font-semibold leading-snug text-ink">{profile.bio}</p>
+                {canCompliment && (
+                  <ComplimentButton onClick={() => startCompliment(complimentAbout(null, profile.bio))} />
+                )}
               </div>
             )}
 
             {profile.prompts?.length > 0 && (
               <div className="mt-5 space-y-3">
                 {profile.prompts.map((p) => (
-                  <div key={p.question} className="rounded-2xl bg-ink/[0.04] p-4">
+                  <div key={p.question} className={`relative rounded-2xl bg-ink/[0.04] p-4 ${canCompliment ? 'pb-12' : ''}`}>
                     <p className="text-sm font-semibold text-ink-soft">{p.question}</p>
                     <p className="mt-1.5 whitespace-pre-line text-lg font-semibold leading-snug text-ink">{p.answer}</p>
+                    {canCompliment && (
+                      <ComplimentButton onClick={() => startCompliment(complimentAbout(p.question, p.answer))} />
+                    )}
                   </div>
                 ))}
               </div>
@@ -434,6 +478,17 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
                     <Star size={26} strokeWidth={2.25} fill="currentColor" />
                   </motion.button>
                 )}
+                {canCompliment && (
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                    onClick={() => startCompliment(null)}
+                    className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-pink-500 shadow-lg shadow-black/15 ring-1 ring-ink/8 dark:bg-surface-tint"
+                    aria-label="Envoyer un compliment"
+                  >
+                    <MessageCircleHeart size={24} strokeWidth={2.25} />
+                  </motion.button>
+                )}
                 <motion.button
                   whileTap={{ scale: 0.85 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
@@ -460,6 +515,23 @@ function ProfileDetailModal({ profile, matchPercent, onClose, onLike, onSuperlik
           isSubmitting={isSubmitting}
         />
       )}
+      {/* Clicks inside the compliment modal must not close the profile behind it. */}
+      <AnimatePresence>
+        {complimenting !== undefined && (
+          <div onClick={(e) => e.stopPropagation()}>
+          <ComplimentModal
+            firstName={profile.firstName}
+            about={complimenting}
+            onCancel={() => setComplimenting(undefined)}
+            onSend={(compliment) => {
+              setComplimenting(undefined)
+              onCompliment(compliment)
+              onClose()
+            }}
+          />
+          </div>
+        )}
+      </AnimatePresence>
       {showBlock && (
         <BlockConfirmModal
           firstName={profile.firstName}

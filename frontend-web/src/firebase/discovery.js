@@ -157,6 +157,7 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
         lastActiveAt: toMillis(data.lastActive),
         updatedAtMs: toMillis(data.updatedAt),
         createdAtMs: toMillis(data.createdAt),
+        alreadySwiped: !!mySwipe, // liked before (resurfacing) or passed
       }
 
       if (isRefused) {

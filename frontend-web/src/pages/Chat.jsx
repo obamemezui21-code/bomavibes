@@ -20,6 +20,7 @@ import {
   MapPin,
   Mic,
   MessageCircle,
+  MessageCircleHeart,
   Paperclip,
   Pause,
   Pencil,
@@ -1575,6 +1576,24 @@ function Chat() {
                               challenge={m.challenge}
                               onOpen={() => navigate(`/moto-boma?defi=${encodeURIComponent(m.challenge.id)}`)}
                             />
+                          ) : m.type === 'compliment' ? (
+                            // Sent with the like, posted by the server when the match happened.
+                            <div className="min-w-0">
+                              <p className={`flex items-center gap-1 text-[11px] font-semibold ${m.fromMe ? 'text-white/85' : 'text-pink-500'}`}>
+                                <MessageCircleHeart size={12} strokeWidth={2.5} />
+                                {m.fromMe ? 'Votre compliment' : 'Compliment'}
+                              </p>
+                              {m.about && (
+                                <p
+                                  className={`mt-1 line-clamp-3 border-l-2 pl-2 text-xs ${
+                                    m.fromMe ? 'border-white/60 text-white/75' : 'border-violet-400 text-ink-soft/70'
+                                  }`}
+                                >
+                                  {m.about}
+                                </p>
+                              )}
+                              <p className="mt-1 whitespace-pre-wrap [overflow-wrap:anywhere]">{m.text}</p>
+                            </div>
                           ) : (
                             <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{m.text}</p>
                           )}

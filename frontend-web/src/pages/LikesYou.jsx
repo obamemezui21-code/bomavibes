@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Check, Heart, Lock, Sparkles, Star } from 'lucide-react'
+import { ArrowLeft, Check, Heart, Lock, MessageCircleHeart, Sparkles, Star } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { getIncomingLikers, isQuotaError, recordSwipeAndMatch } from '../firebase/swipes.js'
@@ -11,6 +11,23 @@ import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import PaywallModal from '../components/PaywallModal.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
 import { ageSuffix } from '../lib/profileDisplay.js'
+
+// A compliment received with a like, with what it answers on my profile.
+function ComplimentQuote({ compliment }) {
+  return (
+    <div className="flex gap-3 rounded-2xl bg-white p-3.5 shadow-sm dark:bg-surface-tint">
+      <MessageCircleHeart size={20} strokeWidth={2} className="mt-0.5 shrink-0 text-pink-500" />
+      <div className="min-w-0">
+        {compliment.about && (
+          <p className="line-clamp-2 border-l-2 border-violet-400 pl-2 text-xs text-ink-soft/70">{compliment.about}</p>
+        )}
+        <p className={`text-sm font-medium text-ink [overflow-wrap:anywhere] ${compliment.about ? 'mt-1.5' : ''}`}>
+          {compliment.text}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 // "Qui t'a aimé·e": people who liked this user and are still waiting for an
 // answer. Subscribers see them (served by the backend only to them); free
@@ -31,12 +48,12 @@ function LikesYou() {
       .catch(() => setData({ locked: true, count: 0, likers: [] }))
   }, [user?.id])
 
-  async function answer(profile, direction) {
+  async function answer(profile, direction, compliment = null) {
     if (direction !== 'pass' && !requireIdentity()) return
     if (direction === 'superlike' && !requireVerified('superlike')) return
     setData((prev) => ({ ...prev, count: prev.count - 1, likers: prev.likers.filter((p) => p.id !== profile.id) }))
     try {
-      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName)
+      const matchId = await recordSwipeAndMatch(user.id, profile.id, direction, user.firstName, compliment)
       if (matchId) {
         showToast(`C'est un match avec ${profile.firstName} !`, 'success')
         navigate(`/chat/${matchId}`)
@@ -83,6 +100,16 @@ function LikesYou() {
               <span className="font-semibold text-ink">{count}</span> personne{count > 1 ? 's' : ''}{' '}
               {count > 1 ? "t'ont" : "t'a"} déjà aimé·e.
             </p>
+            {data.compliments?.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft/60">
+                  {data.compliments.length > 1 ? 'Les compliments reçus' : 'Le compliment reçu'}
+                </p>
+                {data.compliments.map((c, i) => (
+                  <ComplimentQuote key={i} compliment={c} />
+                ))}
+              </div>
+            )}
             <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
               {Array.from({ length: Math.min(count, 9) }).map((_, i) => (
                 <div
@@ -154,6 +181,11 @@ function LikesYou() {
                       )}
                     </p>
                     {p.city && <p className="truncate text-[10px] uppercase tracking-wider text-white/70">{p.city}</p>}
+                    {p.compliment && (
+                      <p className="mt-1.5 line-clamp-3 rounded-xl bg-white/95 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-ink">
+                        💬 {p.compliment.text}
+                      </p>
+                    )}
                   </div>
                 </motion.button>
               ))}
@@ -171,6 +203,7 @@ function LikesYou() {
             onLike={() => answer(openProfile, 'like')}
             onSuperlike={() => answer(openProfile, 'superlike')}
             onPass={() => answer(openProfile, 'pass')}
+            onCompliment={(compliment) => answer(openProfile, 'like', compliment)}
           />
         )}
       </AnimatePresence>
