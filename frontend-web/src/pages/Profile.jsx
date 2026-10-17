@@ -56,7 +56,7 @@ const emptyForm = {
 function Profile() {
   const { user, publicProfile, isPublicProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
-  const { lowRes, blocked: photosBlocked } = usePhotoQuality()
+  const { lowRes, rejected, missing: photosMissing, blocked: photosBlocked } = usePhotoQuality()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
   const [countryCode, setCountryCode] = useState('')
@@ -154,9 +154,13 @@ function Profile() {
     setPhotoSlots((slots) => slots.map((s, i) => (i === index ? { file, previewUrl: URL.createObjectURL(file) } : s)))
   }
 
-  // A photo already on the profile that isn't HD (see PhotoQualityContext).
+  // A photo already on the profile that must be replaced (see PhotoQualityContext):
+  // not HD, or not a real photo of the member (with the reason).
   const isLowRes = (slot) => Boolean(slot?.url && !slot.file && lowRes.includes(slot.url))
-  const lowResCount = photoSlots.filter(isLowRes).length
+  const rejectionOf = (slot) => (slot?.url && !slot.file ? rejected.find((r) => r.url === slot.url) : null)
+  const isBadPhoto = (slot) => isLowRes(slot) || Boolean(rejectionOf(slot))
+  const lowResCount = photoSlots.filter(isBadPhoto).length
+  const rejectedReasons = [...new Set(photoSlots.map(rejectionOf).filter(Boolean).map((r) => r.message))]
 
   function removePhotoSlot(index) {
     setPhotoSlots((slots) => slots.map((s, i) => (i === index ? null : s)))
@@ -182,7 +186,7 @@ function Profile() {
       return
     }
     if (lowResCount) {
-      setError('Remplace ou retire les photos marquées « Pas en HD » avant d’enregistrer.')
+      setError('Remplace ou retire les photos marquées en rouge ou en orange avant d’enregistrer.')
       return
     }
     if (photoSlots.filter(Boolean).length < MIN_PROFILE_PHOTOS) {
@@ -340,37 +344,57 @@ function Profile() {
 
           <div>
             <label className={labelClass}>Photos</label>
-            {lowResCount > 0 && (
-              <div className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+            {(lowResCount > 0 || photosMissing > 0) && (
+              <div
+                className={`mb-3 rounded-xl border px-3 py-2.5 text-sm ${
+                  photosBlocked
+                    ? 'border-coral-500/40 bg-coral-500/10 text-coral-600 dark:text-coral-400'
+                    : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                }`}
+              >
                 <p className="font-semibold">
                   {photosBlocked
-                    ? 'Remplace tes photos pour continuer à utiliser BomaVibes'
-                    : `Les photos HD deviennent obligatoires le ${formatDeadline()}`}
+                    ? 'Ton compte est suspendu : mets de vraies photos de toi pour le réactiver'
+                    : `Vraies photos obligatoires avant le ${formatDeadline()}, sinon ton compte sera suspendu`}
                 </p>
-                <p className="mt-1 text-xs">
-                  {lowResCount > 1 ? `${lowResCount} de tes photos sont trop petites` : 'Une de tes photos est trop petite'}{' '}
-                  (moins de {MIN_PHOTO_SIDE} pixels de côté). Retire-{lowResCount > 1 ? 'les' : 'la'} avec la croix et
-                  ajoute une photo HD prise avec ton téléphone, puis enregistre.
-                </p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
+                  <li>Au moins {MIN_PROFILE_PHOTOS} photos de toi, le visage bien visible, prises avec ton téléphone (HD, au moins {MIN_PHOTO_SIDE} pixels de côté).</li>
+                  {photosMissing > 0 && <li>Il te manque {photosMissing > 1 ? `${photosMissing} photos` : '1 photo'}.</li>}
+                  {lowResCount > 0 && (
+                    <li>
+                      {lowResCount > 1 ? `${lowResCount} photos marquées sont à remplacer` : '1 photo marquée est à remplacer'} : retire-
+                      {lowResCount > 1 ? 'les' : 'la'} avec la croix, ajoute une nouvelle photo, puis enregistre.
+                    </li>
+                  )}
+                  {rejectedReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
               </div>
             )}
             <div className="grid grid-cols-3 gap-3">
               {[0, 1, 2].map((i) => {
                 const src = photoSlots[i]?.previewUrl || photoSlots[i]?.url
-                const lowResSlot = isLowRes(photoSlots[i])
+                const rejection = rejectionOf(photoSlots[i])
+                const lowResSlot = isBadPhoto(photoSlots[i])
                 return (
                   <div
                     key={i}
                     className={`relative aspect-[3/4] overflow-hidden rounded-2xl border bg-ink/[0.03] ${
-                      lowResSlot ? 'border-2 border-amber-500' : 'border-dashed border-ink/15'
+                      rejection ? 'border-2 border-coral-500' : lowResSlot ? 'border-2 border-amber-500' : 'border-dashed border-ink/15'
                     }`}
                   >
                     {src ? (
                       <>
                         <img src={src} alt="" className="h-full w-full object-cover" />
                         {lowResSlot && (
-                          <span className="absolute inset-x-0 bottom-0 bg-amber-500 py-1 text-center text-[11px] font-bold text-white">
-                            Pas en HD
+                          <span
+                            className={`absolute inset-x-0 bottom-0 py-1 text-center text-[11px] font-bold text-white ${
+                              rejection ? 'bg-coral-500' : 'bg-amber-500'
+                            }`}
+                            title={rejection?.message}
+                          >
+                            {rejection ? 'Photo refusée' : 'Pas en HD'}
                           </span>
                         )}
                         <button

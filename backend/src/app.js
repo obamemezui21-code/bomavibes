@@ -24,6 +24,7 @@ const callRoutes = require("./routes/callRoutes");
 const groupCallRoutes = require("./routes/groupCallRoutes");
 const liveRoutes = require("./routes/liveRoutes");
 const { startLiveSweep } = require("./controllers/liveController");
+const { startPhotoAuditScheduler } = require("./services/profilePhotoAudit");
 const { startGroupCallSweep } = require("./controllers/groupCallController");
 const verificationRoutes = require("./routes/verificationRoutes");
 const subscriptionRoutes = require("./routes/subscriptionRoutes");
@@ -105,6 +106,7 @@ startStoryCleanupScheduler();
 markLegacyMembers();
 startGroupCallSweep();
 startLiveSweep();
+startPhotoAuditScheduler();
 startPaymentSweepScheduler();
 startNewsScheduler();
 

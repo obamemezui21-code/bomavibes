@@ -26,7 +26,8 @@ export async function uploadProfilePhotos(uid, files) {
   return Promise.all(files.map((file, i) => (file ? uploadProfilePhoto(uid, i, file) : null)))
 }
 
-// → { minSide, lowRes: [urls of my profile photos that aren't HD] }
+// → { minSide, minPhotos, deadline, lowRes: [urls not HD],
+//     rejected: [{ url, code, message }] (not a real photo of me), missing: photos to add }
 export async function getPhotoQuality() {
   const idToken = await auth.currentUser?.getIdToken()
   const res = await fetch('/api/photos/quality', { headers: { Authorization: `Bearer ${idToken}` } })

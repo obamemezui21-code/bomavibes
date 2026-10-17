@@ -8,7 +8,7 @@ import { FullPageSpinner } from './ui/Spinner.jsx'
 // requireIdentity: new members must have sent their ID document + selfie
 // (see IdentityContext) — while it's being reviewed they get in, with
 // limited access.
-// requireHdPhotos: past HD_PHOTO_DEADLINE, members whose photos aren't HD
+// requireHdPhotos: past PHOTO_DEADLINE, members whose photos must be fixed
 // (see PhotoQualityContext) only get to their profile page — to replace
 // them — and the settings.
 const PHOTO_FIX_PATHS = ['/profile', '/settings']

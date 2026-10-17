@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const admin = require("../config/firebaseAdmin");
-const { MIN_PHOTO_SIDE, isHdOriginal, isHdStored } = require("../config/photoQuality");
+const { MIN_PHOTO_SIDE, MIN_PROFILE_PHOTOS, PHOTO_DEADLINE_MS, isHdOriginal } = require("../config/photoQuality");
+const { auditProfile } = require("../services/profilePhotoAudit");
 const { analyzeProfilePhoto, REJECTION_MESSAGES } = require("../services/photoAnalysis");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "profile-photos");
@@ -88,29 +89,22 @@ async function uploadPhoto(req, res) {
   }
 }
 
-// Which of the member's current profile photos are not HD — those uploaded
-// before HD became mandatory. Measured on the stored files: a photo that
-// isn't one of ours, or whose file is gone, has to be replaced as well.
-const STORED_PHOTO = /\/uploads\/profile-photos\/([^/]+)\/(photo-\d+\.jpg)(?:\?|$)/;
-
-async function storedPhotoIsHd(uid, url) {
-  const match = typeof url === "string" && url.match(STORED_PHOTO);
-  if (!match || match[1] !== uid) return false;
-  try {
-    const { width, height } = await sharp(path.join(UPLOAD_ROOT, uid, match[2])).metadata();
-    return Boolean(width && height && isHdStored(width, height));
-  } catch {
-    return false;
-  }
-}
-
+// GET /api/photos/quality — what's wrong with the member's current profile
+// photos (services/profilePhotoAudit.js): not HD, not a real photo of them,
+// or too few; with the deadline after which the account is suspended.
 async function photoQuality(req, res) {
   const uid = req.firebaseUser.uid;
   try {
     const snap = await admin.firestore().collection("profiles").doc(uid).get();
-    const photos = (snap.exists && snap.data().photos) || [];
-    const hd = await Promise.all(photos.map((url) => storedPhotoIsHd(uid, url)));
-    res.json({ minSide: MIN_PHOTO_SIDE, lowRes: photos.filter((_, i) => !hd[i]) });
+    const audit = await auditProfile(uid, snap.exists ? snap.data() : {});
+    res.json({
+      minSide: MIN_PHOTO_SIDE,
+      minPhotos: MIN_PROFILE_PHOTOS,
+      deadline: PHOTO_DEADLINE_MS,
+      lowRes: audit.lowRes,
+      rejected: audit.rejected,
+      missing: audit.missing,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Impossible de vérifier les photos" });

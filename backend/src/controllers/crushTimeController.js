@@ -2,6 +2,7 @@ const admin = require("../config/firebaseAdmin");
 const { periodKey } = require("../config/plans");
 const { profileCanInteract } = require("../services/identityAccess");
 const { applySwipe, sendSwipeError } = require("./swipeController");
+const { photosSuspended } = require("../services/profilePhotoAudit");
 
 const db = admin.firestore();
 const { FieldValue } = admin.firestore;
@@ -83,6 +84,7 @@ async function newRound(uid, ctx, playedLikers) {
                     !ctx.blocked.has(d.id) &&
                     p.photos?.length &&
                     !p.invisible &&
+                    !photosSuspended(p) &&
                     profileCanInteract(p)
                 );
             }),

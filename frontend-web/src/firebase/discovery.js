@@ -3,6 +3,7 @@ import { db } from './config.js'
 import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
 import { fetchBlockedIds } from './safety.js'
 import { matchPercent } from '../lib/interests.js'
+import { PHOTO_DEADLINE } from '../lib/photoQuality.js'
 
 const BATCH_SIZE = 30
 const MAX_PAGES = 3
@@ -142,6 +143,8 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
       // New members only show up once their identity is verified (older
       // members, legacyMember, never had to).
       if (IDENTITY_REQUIRED && !data.verified && !data.legacyMember) continue
+      // Suspended for its photos (past PHOTO_DEADLINE without real photos): hidden.
+      if (data.photoStatus?.ok === false && now > PHOTO_DEADLINE.getTime()) continue
       // Invisible mode (Jadéite Impériale): hidden from Discover while the plan runs.
       if (data.invisible && toMillis(data.visibilityUntil) > now) continue
       if (filters.minAge != null && data.age != null && data.age < filters.minAge) continue

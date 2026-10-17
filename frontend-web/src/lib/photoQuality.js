@@ -9,9 +9,11 @@ export const MIN_PHOTO_SIDE = 720
 // (backend/src/services/photoAnalysis.js).
 export const MIN_PROFILE_PHOTOS = 2
 
-// Members whose photos predate the rule have until then to replace them;
-// after that the app only opens their profile page until it's done.
-export const HD_PHOTO_DEADLINE = new Date('2026-10-17T23:59:59+01:00')
+// Members whose photos break the rules (not HD, not a real photo of them,
+// fewer than MIN_PROFILE_PHOTOS) have until then to fix them; after that their
+// account is suspended until they do: the app only opens their profile page,
+// they're hidden from Discover and can't like (backend PHOTO_DEADLINE_MS).
+export const PHOTO_DEADLINE = new Date('2026-10-21T23:59:59+01:00')
 
 export const PHOTO_NOT_HD_MESSAGE = `Photo trop petite : il faut une photo HD d'au moins ${MIN_PHOTO_SIDE} pixels de côté. Prends-en une nouvelle avec ton téléphone plutôt qu'une capture d'écran ou une image reçue sur WhatsApp.`
 
@@ -34,6 +36,6 @@ export async function isHdPhoto(file) {
   }
 }
 
-export function formatDeadline(date = HD_PHOTO_DEADLINE) {
+export function formatDeadline(date = PHOTO_DEADLINE) {
   return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
 }

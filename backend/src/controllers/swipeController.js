@@ -3,6 +3,7 @@ const { canInteract, IDENTITY_REQUIRED_MESSAGE, isVerified, VERIFIED_ONLY_MESSAG
 const { PLANS, UNLIMITED, periodKey } = require("../config/plans");
 const { effectivePlanFor } = require("../config/ngori");
 const { sendPushToUser } = require("../services/pushService");
+const { photosSuspended } = require("../services/profilePhotoAudit");
 
 const db = admin.firestore();
 const { FieldValue } = admin.firestore;
@@ -73,6 +74,10 @@ async function applySwipe(uid, targetId, direction, compliment = null) {
     }
     const targetProfile = await db.collection("profiles").doc(targetId).get();
     if (!targetProfile.exists) throw new SwipeError(404, "Profil introuvable");
+    // An account suspended for its photos can't like until they're fixed.
+    if (LIKE_DIRECTIONS.includes(direction) && photosSuspended((await db.collection("profiles").doc(uid).get()).data())) {
+        throw new SwipeError(403, "Ton compte est suspendu : ajoute de vraies photos de toi pour le réactiver.", "photos_required");
+    }
 
     let plan = PLANS.free;
     let usageAfter = null;
@@ -278,7 +283,7 @@ async function getIncomingLikers(req, res) {
         const profiles = await Promise.all(
             likerIds.map(async ({ id, superlike, compliment }) => {
                 const p = (await db.collection("profiles").doc(id).get()).data();
-                if (!p) return null;
+                if (!p || photosSuspended(p)) return null;
                 return {
                     id,
                     superlike,

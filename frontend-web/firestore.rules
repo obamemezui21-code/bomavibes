@@ -153,7 +153,8 @@ service cloud.firestore {
       // are written by the backend only.
       function perksUnchanged() {
         // voicePrompt: set by the backend only, so its url is always one of our uploads (voiceController.js).
-        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible', 'streakBadge', 'streakDay', 'legacyMember', 'voicePrompt']);
+        // photoStatus: the photo audit's verdict (profilePhotoAudit.js) — a member can't lift their own suspension.
+        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible', 'streakBadge', 'streakDay', 'legacyMember', 'voicePrompt', 'photoStatus']);
       }
 
       allow create: if isOwner(userId) && validPublicProfile() && perksUnchanged()

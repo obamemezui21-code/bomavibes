@@ -54,8 +54,7 @@ function AppLayout() {
   const navigate = useNavigate()
   const navItems = useNavItems()
   const { status: identity } = useIdentity()
-  const { status: photoQuality, lowRes } = usePhotoQuality()
-  const lowResCount = lowRes.length
+  const { status: photoQuality, toFix: photosToFix } = usePhotoQuality()
   const { t } = useTranslation()
 
   function handleLogout() {
@@ -140,7 +139,7 @@ function AppLayout() {
               Vérification d’identité en cours : vous pourrez liker, écrire et publier dès qu’elle sera validée.
             </div>
           )}
-          {/* Photos that aren't HD: to replace before the deadline (see PhotoQualityContext). */}
+          {/* Photos to fix before the deadline, or the account is suspended (see PhotoQualityContext). */}
           {photoQuality === 'todo' && location.pathname !== '/profile' && (
             <NavLink
               to="/profile"
@@ -148,9 +147,9 @@ function AppLayout() {
             >
               <ImageUp size={14} className="shrink-0" />
               <span className="flex-1">
-                Les photos HD deviennent obligatoires : remplace{' '}
-                {lowResCount > 1 ? `tes ${lowResCount} photos trop petites` : 'ta photo trop petite'} avant le{' '}
-                {formatDeadline()}.
+                Il faut au moins 2 vraies photos de toi, visage visible et en HD.{' '}
+                {photosToFix > 1 ? `${photosToFix} photos à corriger` : '1 photo à corriger'} avant le {formatDeadline()}, sinon
+                ton compte sera suspendu.
               </span>
               <span className="shrink-0 font-semibold underline">Mettre à jour</span>
             </NavLink>
