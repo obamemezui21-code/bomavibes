@@ -105,7 +105,17 @@ function spriteSheet(name) {
 }
 
 // The closest pose a sheet has, when the wanted one wasn't drawn yet.
-const POSE_FALLBACK = { stand: ['stand', 'run'], run: ['run', 'stand'], jump: ['jump', 'run'], up: ['up', 'stand', 'run'], throw: ['throw', 'stand', 'run'], hurt: ['hurt', 'stand', 'run'] }
+const POSE_FALLBACK = {
+  stand: ['stand', 'run'],
+  run: ['run', 'stand'],
+  jump: ['jump', 'run'],
+  up: ['up', 'stand', 'run'],
+  throw: ['throw', 'stand', 'run'],
+  hurt: ['hurt', 'stand', 'run'],
+  kneel: ['kneel', 'stand', 'run'],
+}
+// The poachers' sheet (one sheet for every kind of poacher).
+export const ENEMY_SHEET = 'braconniers'
 function framesFor(manifest, pose) {
   for (const p of POSE_FALLBACK[pose] || [pose]) if (manifest.frames[p]?.length) return { pose: p, list: manifest.frames[p] }
   return null
@@ -378,6 +388,12 @@ export function createCommandoRenderer(canvas) {
       r(x - 0.5, y + 3.5, 1, 1, Math.floor(time * 4) % 2 ? '#ff3b30' : '#7a1c17')
       return
     }
+    const sheet = spriteSheet(ENEMY_SHEET)
+    if (sheet) {
+      const pose = flash ? 'hurt' : e.type === 'sniper' ? 'kneel' : e.type === 'runner' ? 'run' : 'stand'
+      drawSheetFrame(sheet, pose, x, y, e.facing, Math.floor(time * 10))
+      return
+    }
     drawFigure(g, x, y, e.facing, LOOKS[e.type], {
       kind: e.type === 'sniper' ? 'kneel' : e.type === 'runner' ? 'run' : 'stand',
       frame: Math.floor(time * 10),
@@ -572,6 +588,23 @@ export function createCommandoRenderer(canvas) {
     }
   }
 
+  // One frame of a sprite sheet, feet at (x, y), mirrored when facing left.
+  function drawSheetFrame(sheet, pose, x, y, facing, tick, alpha = 1, tilt = 0) {
+    const found = framesFor(sheet.manifest, pose)
+    if (!found) return
+    const frame = found.list[tick % found.list.length]
+    const scale = SPRITE_HEIGHT / sheet.manifest.figureHeight
+    g.save()
+    g.globalAlpha = alpha
+    g.translate(x, y)
+    if (facing === -1) g.scale(-1, 1)
+    if (tilt) g.rotate(tilt)
+    g.imageSmoothingEnabled = true
+    g.imageSmoothingQuality = 'high'
+    g.drawImage(sheet.img, frame.x, frame.y, frame.w, frame.h, -frame.anchorX * scale, -frame.h * scale, frame.w * scale, frame.h * scale)
+    g.restore()
+  }
+
   // A commando from its 3D-rendered sprite sheet.
   function drawPlayerSprite(sheet, state, x, y, { hurt, throwing, firing }) {
     const p = state.player
@@ -624,10 +657,16 @@ export function createCommandoRenderer(canvas) {
 
   function drawCorpses(cam, dt) {
     corpses = corpses.filter((c) => (c.t += dt) < 0.95)
+    const sheet = spriteSheet(ENEMY_SHEET)
     for (const c of corpses) {
       const x = c.x - cam
-      if (c.t < 0.45) drawLying(g, x, c.y, c.look)
-      else drawPuff(g, x, c.y, (c.t - 0.45) / 0.5)
+      if (c.t < 0.45) {
+        // Knocked out on the ground (with its stars), or, without that
+        // frame, toppling over and fading.
+        if (sheet?.manifest.frames.lying) drawSheetFrame(sheet, 'lying', x, c.y, c.facing, 0)
+        else if (sheet) drawSheetFrame(sheet, 'hurt', x, c.y, c.facing, 0, 1 - c.t * 1.2, -(c.t / 0.45) * 1.2)
+        else drawLying(g, x, c.y, c.look)
+      } else drawPuff(g, x, c.y, (c.t - 0.45) / 0.5)
     }
   }
 
@@ -766,7 +805,7 @@ export function createCommandoRenderer(canvas) {
       const p = state.player
       for (const e of state.events) {
         if (e.type === 'kill') {
-          if (LOOKS[e.enemy]) corpses.push({ look: LOOKS[e.enemy], x: e.x / FP, y: e.y / FP, t: 0 })
+          if (LOOKS[e.enemy]) corpses.push({ look: LOOKS[e.enemy], x: e.x / FP, y: e.y / FP, facing: p.x < e.x ? -1 : 1, t: 0 })
           else {
             burst(e.x / FP, e.y / FP - 10, '#f39c12', 14, 90)
             smoke(e.x / FP, e.y / FP - 10, 6)

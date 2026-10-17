@@ -9,7 +9,7 @@ import {
   createGame,
   step,
 } from '../../../../shared/commando-okoume/engine.mjs'
-import { createCommandoRenderer, preloadBackdrop, preloadSprites } from './renderer.js'
+import { ENEMY_SHEET, createCommandoRenderer, preloadBackdrop, preloadSprites } from './renderer.js'
 import ControlsHelp from './ControlsHelp.jsx'
 
 const SIM_MS = 1000 / TICK_RATE
@@ -80,6 +80,7 @@ function CommandoScreen({ seed, mission, options, audio, muted, onToggleMute, on
     const renderer = createCommandoRenderer(canvas)
     preloadBackdrop(MISSIONS[mission].theme) // ready by the end of the mission intro
     preloadSprites(options.character)
+    preloadSprites(ENEMY_SHEET)
     const state = createGame(seed, mission, options)
     const inputs = []
     let acc = 0
