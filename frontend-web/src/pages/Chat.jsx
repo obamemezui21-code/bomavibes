@@ -79,6 +79,8 @@ import StickerMaker from '../components/chat/StickerMaker.jsx'
 import MotoChallengeCard from '../components/chat/MotoChallengeCard.jsx'
 import WeMetPrompt from '../components/chat/WeMetPrompt.jsx'
 import DateSpotSheet from '../components/chat/DateSpotSheet.jsx'
+import { fetchAllMessages } from '../firebase/chatExport.js'
+import { conversationToText, exportFileName } from '../lib/exportConversation.js'
 import { DATE_NUDGE_MIN_MESSAGES, closeDateNudge, isDateNudgeClosed } from '../lib/dateSpots.js'
 import { deleteSticker, listMyStickers } from '../firebase/stickers.js'
 
@@ -414,6 +416,7 @@ function Chat() {
   const [showStickerMaker, setShowStickerMaker] = useState(false)
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [showDateSpots, setShowDateSpots] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [showHeaderMenu, setShowHeaderMenu] = useState(false) // phone-only ⋮ menu in the conversation header
   // Conversations whose "idées de rendez-vous" nudge was closed this visit (also kept in localStorage).
   const [closedDateNudges, setClosedDateNudges] = useState(() => new Set())
@@ -964,6 +967,41 @@ function Chat() {
     setShowGroupPicker(true)
   }
 
+  // The whole conversation as a .txt file (lib/exportConversation.js). On
+  // phones the share sheet lets the member save it or send it anywhere.
+  async function handleDownloadConversation() {
+    if (!active || isExporting) return
+    setIsExporting(true)
+    try {
+      const messages = await fetchAllMessages(active.id)
+      const text = conversationToText(messages, {
+        myId: user.id,
+        myName: publicProfile?.firstName || user.firstName,
+        otherName: active.profile.firstName,
+      })
+      const name = exportFileName(active.profile.firstName)
+      const file = new File([text], name, { type: 'text/plain;charset=utf-8' })
+      const touch = window.matchMedia?.('(pointer: coarse)').matches
+      if (touch && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: name }).catch(() => {})
+      } else {
+        const url = URL.createObjectURL(file)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = name
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+        showToast('Conversation téléchargée.', 'success')
+      }
+    } catch {
+      showToast('Impossible de télécharger la conversation, réessayez.', 'error')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   async function handleReportUser(reason, description, alsoBlock) {
     if (!active) return
     setIsSubmittingSafety(true)
@@ -1307,7 +1345,8 @@ function Chat() {
                       only the calls stay visible, the rest is in the ⋮ menu. */}
                   <button
                     type="button"
-                    onClick={() => showToast('Bientôt disponible.', 'info')}
+                    onClick={handleDownloadConversation}
+                    disabled={isExporting}
                     className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20 sm:flex"
                     aria-label="Télécharger la conversation"
                   >
@@ -1376,7 +1415,7 @@ function Chat() {
                               {
                                 label: 'Télécharger la conversation',
                                 Icon: Download,
-                                onClick: () => showToast('Bientôt disponible.', 'info'),
+                                onClick: handleDownloadConversation,
                               },
                             ]
                               .filter(Boolean)
