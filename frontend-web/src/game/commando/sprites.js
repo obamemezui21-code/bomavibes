@@ -5,6 +5,14 @@
 // drawn once enlarged in the outline colour, then filled.
 
 const OUTLINE = '#15140f'
+
+// Lighter (amount > 0) or darker (< 0) version of a #rrggbb colour.
+function shade(hex, amount) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex
+  const n = parseInt(hex.slice(1), 16)
+  const ch = (v) => Math.max(0, Math.min(255, Math.round(amount > 0 ? v + (255 - v) * amount : v * (1 + amount))))
+  return `rgb(${ch(n >> 16)},${ch((n >> 8) & 255)},${ch(n & 255)})`
+}
 const GUN = '#2b2b2b'
 const GUN_LIGHT = '#4a4a4a'
 
@@ -166,17 +174,29 @@ export function drawFigure(g, cx, fy, facing, look, pose = {}) {
   const left = Math.round(cx) - 8
   const top = Math.round(fy) - 26
   const place = ([x, y, w, hh]) => [facing === 1 ? left + x : left + 16 - x - w, top + y, w, hh]
+  // Thin outline (half a world pixel: the buffer is drawn at twice the size).
   g.fillStyle = OUTLINE
   for (const b of boxes) {
     if (!b[5]) continue
     const [x, y, w, hh] = place(b)
-    g.fillRect(x - 1, y - 1, w + 2, hh + 2)
+    g.fillRect(x - 0.5, y - 0.5, w + 1, hh + 1)
   }
   for (const b of boxes) {
     const [x, y, w, hh] = place(b)
     const muzzle = !b[5] && (b[4] === '#ff9f1c' || b[4] === '#ffd23f' || b[4] === '#ffffff')
     g.fillStyle = pose.flash && !muzzle ? '#ffffff' : b[4]
     g.fillRect(x, y, w, hh)
+    // Volume: light from the top-left, shadow on the far side and underneath.
+    if (b[5] && !pose.flash && w >= 2 && hh >= 2) {
+      const light = facing === 1 ? x : x + w - 0.5
+      const dark = facing === 1 ? x + w - 0.5 : x
+      g.fillStyle = shade(b[4], 0.22)
+      g.fillRect(x, y, w, 0.5)
+      g.fillRect(light, y, 0.5, hh)
+      g.fillStyle = shade(b[4], -0.3)
+      g.fillRect(dark, y + 0.5, 0.5, hh - 0.5)
+      g.fillRect(x, y + hh - 0.5, w, 0.5)
+    }
   }
 }
 
@@ -191,7 +211,7 @@ export function drawLying(g, cx, fy, look) {
     [16, 0, 6, 6, look.skin],
   ]
   g.fillStyle = OUTLINE
-  for (const [x, y, w, h] of parts) g.fillRect(left + x - 1, top + y - 1, w + 2, h + 2)
+  for (const [x, y, w, h] of parts) g.fillRect(left + x - 0.5, top + y - 0.5, w + 1, h + 1)
   for (const [x, y, w, h, c] of parts) {
     g.fillStyle = c
     g.fillRect(left + x, top + y, w, h)
