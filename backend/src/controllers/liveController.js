@@ -205,6 +205,52 @@ async function commentLive(req, res) {
     }
 }
 
+// Gifts a viewer can send to the host, paid in Ngori (users/{uid}.ngori)
+// and credited in full to the host. Mirrored in frontend-web/src/lib/liveGifts.js.
+const GIFTS = {
+    rose: { emoji: "🌹", label: "une rose", cost: 1 },
+    coeur: { emoji: "💖", label: "un cœur", cost: 3 },
+    feu: { emoji: "🔥", label: "du feu", cost: 5 },
+    couronne: { emoji: "👑", label: "une couronne", cost: 10 },
+};
+
+// POST /api/lives/:id/gift { giftId } → { balance }
+async function giftLive(req, res) {
+    const uid = req.firebaseUser.uid;
+    const gift = GIFTS[req.body?.giftId];
+    if (!gift) return res.status(400).json({ message: "Cadeau inconnu." });
+    try {
+        const { ref, live } = await loadLive(req.params.id);
+        if (live.hostId === uid) throw new LiveError(400, "Vous ne pouvez pas vous offrir un cadeau.");
+        if (await blockedEitherWay(uid, live.hostId)) throw new LiveError(404, "Ce live est terminé.");
+
+        const meRef = db.collection("users").doc(uid);
+        const hostRef = db.collection("users").doc(live.hostId);
+        const balance = await db.runTransaction(async (tx) => {
+            const mine = (await tx.get(meRef)).data()?.ngori || 0;
+            if (mine < gift.cost) throw new LiveError(402, `Il vous faut ${gift.cost} Ngori pour offrir ${gift.label}.`);
+            tx.update(meRef, { ngori: mine - gift.cost });
+            tx.update(hostRef, { ngori: FieldValue.increment(gift.cost) });
+            tx.update(ref, { giftTotal: FieldValue.increment(gift.cost) });
+            return mine - gift.cost;
+        });
+
+        const me = await profileOf(uid);
+        await ref.collection("comments").add({
+            authorId: uid,
+            authorName: me.firstName,
+            authorPhoto: me.photo,
+            type: "gift",
+            giftId: req.body.giftId,
+            text: `a offert ${gift.label} ${gift.emoji}`,
+            createdAt: FieldValue.serverTimestamp(),
+        });
+        res.json({ balance });
+    } catch (err) {
+        sendError(res, err, "Impossible d'envoyer le cadeau.");
+    }
+}
+
 // Keeps viewer counts fresh and closes lives whose host left without "end"
 // (closed tab, lost network).
 async function sweepLives() {
@@ -235,4 +281,4 @@ function startLiveSweep() {
     setInterval(sweepLives, SWEEP_INTERVAL_MS);
 }
 
-module.exports = { liveStatus, startLive, joinLive, endLive, cutLive, commentLive, startLiveSweep };
+module.exports = { liveStatus, startLive, joinLive, endLive, cutLive, commentLive, giftLive, startLiveSweep };

@@ -25,6 +25,7 @@ export const startLive = (title) => api('', { body: { title } }) // → { liveId
 export const joinLive = (liveId) => api(`/${liveId}/join`) // → { url, token, isHost }
 export const endLive = (liveId) => api(`/${liveId}/end`)
 export const commentLive = (liveId, text) => api(`/${liveId}/comments`, { body: { text } })
+export const giftLive = (liveId, giftId) => api(`/${liveId}/gift`, { body: { giftId } }) // → { balance }
 
 // Lives on right now, most watched first.
 export function subscribeToLivesNow(cb) {

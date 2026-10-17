@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Eye, Flag, Heart, Mic, MicOff, Send, SwitchCamera, X } from 'lucide-react'
+import { Eye, Flag, Gift, Heart, Mic, MicOff, Send, SwitchCamera, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { commentLive, endLive, joinLive, subscribeToLive, subscribeToLiveComments } from '../firebase/lives.js'
+import { commentLive, endLive, giftLive, joinLive, subscribeToLive, subscribeToLiveComments } from '../firebase/lives.js'
+import { LIVE_GIFTS, giftById } from '../lib/liveGifts.js'
+import NgoriCoin from '../components/NgoriCoin.jsx'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import ReportModal from '../components/ReportModal.jsx'
@@ -19,7 +21,7 @@ const decoder = new TextDecoder()
 function LiveRoom() {
   const { liveId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, profile: account } = useAuth()
   const { showToast } = useToast()
 
   const [live, setLive] = useState(undefined) // undefined = loading, null = gone
@@ -32,6 +34,9 @@ function LiveRoom() {
   const [showReport, setShowReport] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [audioBlocked, setAudioBlocked] = useState(false)
+  const [showGifts, setShowGifts] = useState(false)
+  const [sendingGift, setSendingGift] = useState(null)
+  const [bigGift, setBigGift] = useState(null) // { key, emoji, from } shown big for a moment
 
   const videoRef = useRef(null)
   const roomRef = useRef(null)
@@ -48,7 +53,23 @@ function LiveRoom() {
   }, [])
 
   useEffect(() => subscribeToLive(liveId, setLive), [liveId])
-  useEffect(() => subscribeToLiveComments(liveId, setComments), [liveId])
+  // Gifts that arrive while watching pop up big in the middle of the screen
+  // (the ones already there when the page opened don't).
+  const seenCommentsRef = useRef(null)
+  useEffect(() => {
+    seenCommentsRef.current = null
+    return subscribeToLiveComments(liveId, (list) => {
+      const seen = seenCommentsRef.current
+      const fresh = seen ? list.filter((c) => c.type === 'gift' && !seen.has(c.id)) : []
+      seenCommentsRef.current = new Set(list.map((c) => c.id))
+      const last = fresh[fresh.length - 1]
+      if (last) {
+        setBigGift({ key: last.id, emoji: giftById(last.giftId)?.emoji || '🎁', from: last.authorName })
+        setTimeout(() => setBigGift((g) => (g?.key === last.id ? null : g)), 2600)
+      }
+      setComments(list)
+    })
+  }, [liveId])
   useEffect(() => {
     commentsEndRef.current?.scrollIntoView({ block: 'end' })
   }, [comments.length])
@@ -131,6 +152,23 @@ function LiveRoom() {
     }
   }
 
+  async function sendGift(gift) {
+    if (sendingGift) return
+    if ((account?.ngori || 0) < gift.cost) {
+      showToast(`Il te faut ${gift.cost} Ngori. Gagne-en avec les jeux et la connexion quotidienne !`, 'info')
+      return
+    }
+    setSendingGift(gift.id)
+    try {
+      await giftLive(liveId, gift.id)
+      setShowGifts(false)
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setSendingGift(null)
+    }
+  }
+
   async function toggleMic() {
     const next = !micOn
     setMicOn(next)
@@ -200,6 +238,12 @@ function LiveRoom() {
           <Eye size={12} strokeWidth={2.5} />
           {live?.viewers || 0}
         </span>
+        {isHost && live?.giftTotal > 0 && (
+          <span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 text-xs" title="Ngori reçus pendant ce live">
+            <NgoriCoin size={13} />
+            {live.giftTotal}
+          </span>
+        )}
         {!isHost && live && (
           <button
             type="button"
@@ -276,7 +320,12 @@ function LiveRoom() {
           <div className="relative max-h-[38svh] overflow-y-auto px-4 [mask-image:linear-gradient(to_bottom,transparent,black_25%)]">
             <div className="space-y-1.5 pt-8">
               {comments.map((c) => (
-                <p key={c.id} className="max-w-[80%] text-sm leading-snug [overflow-wrap:anywhere] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)]">
+                <p
+                  key={c.id}
+                  className={`max-w-[80%] text-sm leading-snug [overflow-wrap:anywhere] [text-shadow:0_1px_3px_rgba(0,0,0,0.6)] ${
+                    c.type === 'gift' ? 'w-fit rounded-full bg-gold/25 px-2.5 py-0.5 font-semibold' : ''
+                  }`}
+                >
                   <span className={`font-semibold ${c.authorId === live?.hostId ? 'text-coral-300' : 'text-white/80'}`}>
                     {c.authorName}
                   </span>{' '}
@@ -323,6 +372,16 @@ function LiveRoom() {
                 </button>
               </>
             ) : (
+              <>
+              <button
+                type="button"
+                onClick={() => setShowGifts((v) => !v)}
+                className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md ${showGifts ? 'bg-gold text-ink' : 'bg-white/15'}`}
+                aria-label="Offrir un cadeau"
+                aria-expanded={showGifts}
+              >
+                <Gift size={18} />
+              </button>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.8 }}
@@ -332,8 +391,66 @@ function LiveRoom() {
               >
                 <Heart size={18} fill="currentColor" strokeWidth={0} />
               </motion.button>
+              </>
             )}
           </form>
+
+          {/* Gift picker, just above the bottom bar */}
+          <AnimatePresence>
+            {showGifts && !isHost && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                className="absolute inset-x-3 bottom-[calc(max(1rem,env(safe-area-inset-bottom))+3.75rem)] rounded-2xl bg-black/75 p-3 backdrop-blur-md"
+              >
+                <div className="mb-2 flex items-center justify-between text-xs text-white/80">
+                  <span>Offre un cadeau à {live?.hostName}</span>
+                  <span className="flex items-center gap-1 font-semibold">
+                    <NgoriCoin size={14} />
+                    {account?.ngori || 0}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {LIVE_GIFTS.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      disabled={!!sendingGift}
+                      onClick={() => sendGift(g)}
+                      className={`flex flex-col items-center gap-0.5 rounded-xl py-2 transition hover:bg-white/10 disabled:opacity-60 ${
+                        (account?.ngori || 0) < g.cost ? 'opacity-45' : ''
+                      }`}
+                    >
+                      <span className="text-2xl">{sendingGift === g.id ? '…' : g.emoji}</span>
+                      <span className="text-[11px]">{g.name}</span>
+                      <span className="flex items-center gap-0.5 text-[10px] text-gold">
+                        <NgoriCoin size={10} />
+                        {g.cost}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* A gift that just arrived, big in the middle */}
+          <AnimatePresence>
+            {bigGift && (
+              <motion.div
+                key={bigGift.key}
+                initial={{ opacity: 0, scale: 0.4 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.4 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-1"
+              >
+                <span className="text-7xl drop-shadow-lg">{bigGift.emoji}</span>
+                <span className="rounded-full bg-black/50 px-3 py-1 text-sm font-semibold">{bigGift.from} a offert un cadeau</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       )}
 
