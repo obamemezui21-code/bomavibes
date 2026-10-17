@@ -51,7 +51,14 @@ function Games() {
               whileTap={{ scale: 0.98 }}
               className={`relative block w-full overflow-hidden rounded-[28px] bg-gradient-to-br ${game.gradient} p-5 text-left text-white shadow-xl shadow-violet-900/20`}
             >
-              <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+              {game.cover ? (
+                <>
+                  <img src={game.cover} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/10" />
+                </>
+              ) : (
+                <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+              )}
               <div className="relative flex items-end gap-4">
                 <div className="min-w-0 flex-1">
                   {game.isNew && (
@@ -66,7 +73,7 @@ function Games() {
                     <NgoriCoin size={14} /> Jusqu’à {game.dailyCap} Ngori par jour
                   </p>
                 </div>
-                <div className="flex shrink-0 items-end">
+                <div className={`flex shrink-0 items-end ${game.cover ? 'hidden' : ''}`}>
                   {game.pictures.map((src, k) => (
                     <img
                       key={src}

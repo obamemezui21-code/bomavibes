@@ -4,12 +4,14 @@ import motoKevin from '../assets/game/moto-kevin.webp'
 import motoAicha from '../assets/game/moto-aicha.webp'
 import commandoMboumba from '../assets/game/commando-mboumba.svg'
 import commandoMoussavou from '../assets/game/commando-moussavou.svg'
+import commandoCover from '../assets/game/commando-cover.webp'
 
 // Every game of the "Jeux" module (pages/Games.jsx), in display order. A new
 // game only needs its entry here (and its route in App.jsx) to show up.
 //   pictures: Kévin's then Aïcha's, as shown on the card (round: portraits in medallions)
 //   dailyCap: Ngori it can earn per day (each game has its own cap)
 //   isNew: shows a "Nouveau" badge
+//   cover: optional artwork filling the card (the pictures are then left out)
 export const GAMES = [
   {
     id: 'commando-okoume',
@@ -18,6 +20,7 @@ export const GAMES = [
     description: 'Avance, saute, tire et démantèle le réseau du Serpent Noir, du port d’Owendo aux chutes de Kongou. Monte en grade jusqu’à Colonel !',
     path: '/commando-okoume',
     pictures: [commandoMboumba, commandoMoussavou],
+    cover: commandoCover,
     round: true,
     gradient: 'from-[#14200c] via-[#2f4a17] to-[#7a2a1a]',
     accent: 'text-amber-300',

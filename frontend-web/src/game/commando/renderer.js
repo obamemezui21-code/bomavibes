@@ -1,15 +1,8 @@
 // COMMANDO OKOUMÉ renderer: 16-bit style pixel art, all drawn in code on a
 // 320×180 buffer that is scaled up with no smoothing. Purely visual — the
 // game itself lives in shared/commando-okoume/engine.mjs.
-import { FP, GROUND_Y, MISSIONS, SCREEN_H, SCREEN_W } from '../../../../shared/commando-okoume/engine.mjs'
-
-const PALETTES = {
-  mboumba: { beret: '#c0392b', top: '#556b2f', spot: '#3d4f22', pants: '#4a5d23', skin: '#5a3825', bun: null },
-  moussavou: { beret: '#16213e', top: '#2c3e70', spot: '#24335c', pants: '#1f2a44', skin: '#6b4226', bun: '#1a1210' },
-  soldier: { beret: '#b03a2e', top: '#a0855b', spot: '#8a7049', pants: '#5d4a36', skin: '#4a2f1d', bun: null },
-  runner: { beret: '#d35400', top: '#7a6a4f', spot: '#6a5b42', pants: '#4b3b2a', skin: '#3e2716', bun: null },
-  sniper: { beret: '#3d5a1e', top: '#556b2f', spot: '#465c26', pants: '#3b4a22', skin: '#4a2f1d', bun: null },
-}
+import { FP, GROUND_Y, MISSIONS, SCREEN_H, SCREEN_W, WEAPONS } from '../../../../shared/commando-okoume/engine.mjs'
+import { LOOKS, drawFigure, drawLying, drawPuff } from './sprites.js'
 
 const THEMES = {
   port: {
@@ -214,64 +207,8 @@ export function createCommandoRenderer(canvas) {
     })
   }
 
-  // ---- Characters -----------------------------------------------------------
-  // A 12×24 soldier, feet at (cx, fy). part(dx, dy, w, h) is mirrored when
-  // facing left.
-  function drawSoldier(cx, fy, facing, pal, o = {}) {
-    const top = fy - 24
-    const part = (dx, dy, w, h, c) => {
-      const x = facing === 1 ? cx - 6 + dx : cx + 6 - dx - w
-      r(x, top + dy, w, h, o.flash ? '#ffffff' : c)
-    }
-    if (o.rolling) {
-      g.fillStyle = o.flash ? '#ffffff' : pal.top
-      g.beginPath()
-      g.arc(cx, fy - 8, 8, 0, Math.PI * 2)
-      g.fill()
-      r(cx - 3, fy - 13, 6, 3, pal.beret)
-      return
-    }
-    const crouch = o.kneel ? 6 : 0
-    // Legs (two frames of walking, tucked when in the air).
-    const step = o.airborne ? 0 : o.frame % 2
-    if (o.airborne) {
-      part(3, 15, 3, 5, pal.pants)
-      part(7, 15, 3, 5, pal.pants)
-      part(2, 19, 4, 2, '#1a1a1a')
-      part(7, 19, 4, 2, '#1a1a1a')
-    } else if (o.kneel) {
-      part(2, 18, 8, 4, pal.pants)
-      part(1, 22, 4, 2, '#1a1a1a')
-      part(8, 22, 3, 2, '#1a1a1a')
-    } else {
-      part(3 - step, 15, 3, 7, pal.pants)
-      part(7 + step, 15, 3, 7, pal.pants)
-      part(2 - step, 22, 4, 2, '#1a1a1a')
-      part(7 + step, 22, 4, 2, '#1a1a1a')
-    }
-    // Torso with camouflage spots.
-    part(2, 6 + crouch, 8, 9, pal.top)
-    part(3, 8 + crouch, 2, 2, pal.spot)
-    part(7, 11 + crouch, 2, 2, pal.spot)
-    // Head, beret / hat.
-    part(3, 1 + crouch, 6, 5, pal.skin)
-    part(7, 3 + crouch, 1, 1, '#ffffff')
-    part(2, crouch, 8, 2, pal.beret)
-    if (pal.bun) part(1, 2 + crouch, 2, 2, pal.bun)
-    if (o.wideHat) part(0, 1 + crouch, 12, 1, pal.beret)
-    // Arms and weapon.
-    if (o.noGun) {
-      part(8, 9 + crouch, 3, 2, pal.skin)
-      part(10, 6 + crouch, 1, 6, '#bdc3c7') // machete
-    } else if (o.up) {
-      part(7, 2 + crouch, 3, 6, pal.skin)
-      part(8, -6 + crouch, 2, 9, '#2b2b2b')
-    } else {
-      part(6, 9 + crouch, 4, 2, pal.skin)
-      part(8, 9 + crouch, o.longGun ? 12 : 8, 2, '#2b2b2b')
-      part(9, 11 + crouch, 2, 2, '#2b2b2b')
-    }
-  }
+  // ---- Characters (sprites.js) --------------------------------------------
+  let corpses = [] // poachers just put out of action: lying, then a puff of smoke
 
   function drawEnemy(e, cam, time) {
     const x = e.x / FP - cam
@@ -302,13 +239,11 @@ export function createCommandoRenderer(canvas) {
       r(x - 1, y + 2, 2, 2, Math.floor(time * 4) % 2 ? '#ff3b30' : '#7a1c17')
       return
     }
-    drawSoldier(x, y, e.facing, PALETTES[e.type], {
-      frame: Math.floor(time * 8),
+    drawFigure(g, x, y, e.facing, LOOKS[e.type], {
+      kind: e.type === 'sniper' ? 'kneel' : e.type === 'runner' ? 'run' : 'stand',
+      frame: Math.floor(time * 10),
+      gun: e.type === 'runner' ? 'none' : e.type === 'sniper' ? 'long' : 'rifle',
       flash,
-      noGun: e.type === 'runner',
-      kneel: e.type === 'sniper',
-      longGun: e.type === 'sniper',
-      wideHat: e.type === 'sniper',
     })
   }
 
@@ -427,19 +362,55 @@ export function createCommandoRenderer(canvas) {
 
   function drawPlayer(state, cam, time) {
     const p = state.player
-    if (p.invuln > 0 && Math.floor(time * 20) % 2) return // blinking after a hit
     const rolling = state.character === 'mboumba' && p.special > 0
-    drawSoldier(p.x / FP - cam, p.y / FP, p.facing, PALETTES[state.character], {
-      frame: Math.floor(p.walkTick / 6),
-      airborne: !p.onGround,
-      up: state.input.up,
-      rolling,
+    const hurt = p.invuln > 70 && !rolling
+    if (p.invuln > 0 && !hurt && !rolling && Math.floor(time * 20) % 2) return // blinking after a hit
+    const x = p.x / FP - cam
+    const y = p.y / FP
+    if (rolling) {
+      g.fillStyle = '#15140f'
+      g.beginPath()
+      g.arc(x, y - 8, 9, 0, Math.PI * 2)
+      g.fill()
+      g.fillStyle = LOOKS.mboumba.top
+      g.beginPath()
+      g.arc(x, y - 8, 8, 0, Math.PI * 2)
+      g.fill()
+      r(x - 3, y - 14, 6, 3, LOOKS.mboumba.hat)
+      return
+    }
+    const rate = WEAPONS[p.weapon].rate
+    const throwing = p.weapon === 'grenade' && p.fireCooldown > rate - 8
+    const kind = hurt
+      ? 'hurt'
+      : !p.onGround
+        ? 'jump'
+        : throwing
+          ? 'throw'
+          : state.input.up
+            ? 'up'
+            : state.input.move !== 0
+              ? 'run'
+              : 'stand'
+    drawFigure(g, x, y, p.facing, LOOKS[state.character], {
+      kind: kind === 'jump' && state.input.up ? 'up' : kind,
+      frame: Math.floor(p.walkTick / 5),
+      muzzle: p.weapon !== 'grenade' && p.fireCooldown >= rate - 2,
     })
     // Elite shots: a cyan glow around Moussavou.
     if (state.character === 'moussavou' && p.special > 0) {
       g.strokeStyle = '#7df9ff'
       g.lineWidth = 1
-      g.strokeRect(Math.round(p.x / FP - cam - 8), Math.round(p.y / FP - 26), 16, 26)
+      g.strokeRect(Math.round(x - 10), Math.round(y - 30), 20, 30)
+    }
+  }
+
+  function drawCorpses(cam, dt) {
+    corpses = corpses.filter((c) => (c.t += dt) < 0.95)
+    for (const c of corpses) {
+      const x = c.x - cam
+      if (c.t < 0.45) drawLying(g, x, c.y, c.look)
+      else drawPuff(g, x, c.y, (c.t - 0.45) / 0.5)
     }
   }
 
@@ -478,7 +449,10 @@ export function createCommandoRenderer(canvas) {
     handleEvents(state) {
       const p = state.player
       for (const e of state.events) {
-        if (e.type === 'kill') burst(e.x / FP, e.y / FP - 10, '#f39c12', 14, 90)
+        if (e.type === 'kill') {
+          if (LOOKS[e.enemy]) corpses.push({ look: LOOKS[e.enemy], x: e.x / FP, y: e.y / FP, t: 0 })
+          else burst(e.x / FP, e.y / FP - 10, '#f39c12', 14, 90)
+        }
         else if (e.type === 'explosion') {
           burst(e.x / FP, e.y / FP, '#e67e22', 18, 110, 3)
           burst(e.x / FP, e.y / FP, '#f1c40f', 10, 70)
@@ -506,6 +480,7 @@ export function createCommandoRenderer(canvas) {
       for (const it of state.items) drawItem(it, cam, time)
       drawBoss(state, cam, time)
       for (const e of state.enemies) drawEnemy(e, cam, time)
+      drawCorpses(cam, dt)
       drawPlayer(state, cam, time)
       drawShots(state, cam)
       drawParticles(cam, dt)

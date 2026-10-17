@@ -10,6 +10,7 @@ import NgoriCoin from '../components/NgoriCoin.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import mboumbaPortrait from '../assets/game/commando-mboumba.svg'
 import moussavouPortrait from '../assets/game/commando-moussavou.svg'
+import cover from '../assets/game/commando-cover.webp'
 
 const PORTRAITS = { mboumba: mboumbaPortrait, moussavou: moussavouPortrait }
 const CHARACTER_KEY = 'commando.character'
@@ -138,7 +139,10 @@ function CommandoOkoume() {
 
       <div className="mx-auto max-w-lg space-y-5 px-4 pt-5">
         {/* Grade card */}
-        <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#14200c] via-[#2f4a17] to-[#7a2a1a] p-5 text-white shadow-xl">
+        <div className="relative overflow-hidden rounded-[28px] bg-[#14200c] p-5 text-white shadow-xl">
+          <img src={cover} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/20" />
+          <div className="relative">
           <p className="font-mono text-[11px] tracking-[0.25em] text-amber-300">UNITÉ OKOUMÉ · GABON</p>
           <p className="mt-1 font-display text-2xl font-bold">Commando Okoumé</p>
           <p className="mt-1 text-sm text-white/80">
@@ -169,6 +173,7 @@ function CommandoOkoume() {
               </p>
             </div>
           )}
+          </div>
         </div>
 
         {/* Commando choice */}
