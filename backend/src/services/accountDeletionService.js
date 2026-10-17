@@ -9,6 +9,7 @@ const { removeVerificationFiles } = require("../controllers/verificationControll
 
 const db = admin.firestore();
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "profile-photos");
+const VOICE_ROOT = path.join(__dirname, "..", "..", "uploads", "voice-notes");
 // Firestore caps a single batch at 500 writes — chunk so this stays correct
 // for a user with many matches/messages instead of only working by luck.
 const BATCH_LIMIT = 500;
@@ -44,6 +45,14 @@ async function eraseAccount(uid) {
     ]);
     await batchDeleteAll([...asSwiper.docs, ...asTarget.docs].map((doc) => doc.ref));
 
+    // Private "We Met" answers given by or about this member.
+    const [weMetMine, weMetAbout] = await Promise.all([
+        db.collection("weMet").where("uid", "==", uid).get(),
+        db.collection("weMet").where("otherId", "==", uid).get(),
+    ]);
+    await batchDeleteAll([...weMetMine.docs, ...weMetAbout.docs].map((doc) => doc.ref));
+    await db.collection("crushTime").doc(uid).delete().catch(() => {});
+
     await db.collection("profiles").doc(uid).delete().catch(() => {});
 
     const userSnap = await db.collection("users").doc(uid).get();
@@ -55,6 +64,8 @@ async function eraseAccount(uid) {
     });
 
     fs.rmSync(path.join(UPLOAD_ROOT, uid), { recursive: true, force: true });
+    // Voice notes and the profile voice prompt (their chats are deleted above).
+    fs.rmSync(path.join(VOICE_ROOT, uid), { recursive: true, force: true });
     // Identity document and selfie, if a verification was still pending.
     removeVerificationFiles(uid);
     await db.collection("verificationRequests").doc(uid).delete().catch(() => {});

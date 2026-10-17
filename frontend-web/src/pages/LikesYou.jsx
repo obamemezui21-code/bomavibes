@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Check, Heart, Lock, MessageCircleHeart, Sparkles, Star } from 'lucide-react'
+import { ArrowLeft, Check, ChevronRight, Heart, Lock, MessageCircleHeart, Sparkles, Star, Target } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { getIncomingLikers, isQuotaError, recordSwipeAndMatch } from '../firebase/swipes.js'
@@ -100,6 +100,20 @@ function LikesYou() {
               <span className="font-semibold text-ink">{count}</span> personne{count > 1 ? 's' : ''}{' '}
               {count > 1 ? "t'ont" : "t'a"} déjà aimé·e.
             </p>
+            <button
+              type="button"
+              onClick={() => navigate('/crush-time')}
+              className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-pink-500 p-4 text-left text-white shadow-lg shadow-violet-500/20"
+            >
+              <Target size={24} strokeWidth={2} className="shrink-0" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-base font-semibold">CrushTime</span>
+                <span className="block text-xs text-white/85">
+                  Devine qui t'a aimé·e parmi 4 profils et matche gratuitement. 3 essais par jour.
+                </span>
+              </span>
+              <ChevronRight size={20} strokeWidth={2.25} className="shrink-0 text-white/80" />
+            </button>
             {data.compliments?.length > 0 && (
               <div className="mt-4 space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft/60">

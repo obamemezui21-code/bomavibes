@@ -293,6 +293,7 @@ async function getIncomingLikers(req, res) {
                     verified: !!p.verified,
                     datingGoal: p.datingGoal || null,
                     prompts: p.prompts || [],
+                    voicePrompt: p.voicePrompt || null,
                     hideAge: !!p.hideAge,
                 };
             }),

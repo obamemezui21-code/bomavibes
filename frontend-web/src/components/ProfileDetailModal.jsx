@@ -40,6 +40,7 @@ import { useIdentity } from '../context/IdentityContext.jsx'
 import ReportModal from './ReportModal.jsx'
 import BlockConfirmModal from './BlockConfirmModal.jsx'
 import ComplimentModal from './ComplimentModal.jsx'
+import VoicePromptPlayer from './VoicePromptPlayer.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
 import { complimentAbout } from '../lib/compliments.js'
@@ -407,6 +408,18 @@ function ProfileDetailModal({
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+
+            {profile.voicePrompt?.url && (
+              <div className="mt-3">
+                <VoicePromptPlayer voicePrompt={profile.voicePrompt}>
+                  {canCompliment && (
+                    <ComplimentButton
+                      onClick={() => startCompliment(complimentAbout(profile.voicePrompt.question, '🎤 Note vocale'))}
+                    />
+                  )}
+                </VoicePromptPlayer>
               </div>
             )}
 

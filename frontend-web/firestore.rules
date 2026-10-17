@@ -152,7 +152,8 @@ service cloud.firestore {
       // and the 🔥 login-streak badge
       // are written by the backend only.
       function perksUnchanged() {
-        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible', 'streakBadge', 'streakDay', 'legacyMember']);
+        // voicePrompt: set by the backend only, so its url is always one of our uploads (voiceController.js).
+        return unchangedFields(['visibility', 'visibilityUntil', 'boostedUntil', 'invisible', 'streakBadge', 'streakDay', 'legacyMember', 'voicePrompt']);
       }
 
       allow create: if isOwner(userId) && validPublicProfile() && perksUnchanged()

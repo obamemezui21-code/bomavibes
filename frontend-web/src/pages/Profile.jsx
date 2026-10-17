@@ -16,6 +16,7 @@ import SupportModal from '../components/SupportModal.jsx'
 import VerificationCard from '../components/VerificationCard.jsx'
 import SubscriptionCard from '../components/SubscriptionCard.jsx'
 import ProfilePromptsEditor from '../components/ProfilePromptsEditor.jsx'
+import VoicePromptEditor from '../components/VoicePromptEditor.jsx'
 import {
   CHILDREN_OPTIONS,
   DATING_GOALS,
@@ -607,6 +608,8 @@ function Profile() {
           </div>
 
           <ProfilePromptsEditor prompts={form.prompts} onChange={(prompts) => setForm((f) => ({ ...f, prompts }))} />
+
+          <VoicePromptEditor voicePrompt={publicProfile?.voicePrompt} />
 
           <div>
             <label className={labelClass}>Langues</label>

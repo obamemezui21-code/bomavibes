@@ -54,3 +54,15 @@ export const PROFILE_PROMPTS = [
 ]
 export const MAX_PROFILE_PROMPTS = 3
 export const PROMPT_ANSWER_MAX = 200
+
+// Voice prompt: one recorded answer (VOICE_PROMPT_MAX_SECONDS at most) on
+// the profile, set through the backend (voiceController.uploadVoicePrompt).
+export const VOICE_PROMPTS = [
+  'Dis bonjour avec ta plus belle voix…',
+  'Raconte ton meilleur souvenir de vacances…',
+  'Une expression de chez toi que tu adores…',
+  'Ce qui te fait rire à coup sûr…',
+  'Ton premier rendez-vous idéal…',
+  'Chante-nous un petit morceau…',
+]
+export const VOICE_PROMPT_MAX_SECONDS = 30
