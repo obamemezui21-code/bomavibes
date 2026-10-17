@@ -9,8 +9,8 @@ import CommandoScreen from '../game/commando/CommandoScreen.jsx'
 import ControlsHelp from '../game/commando/ControlsHelp.jsx'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import mboumbaPortrait from '../assets/game/commando-mboumba.svg'
-import moussavouPortrait from '../assets/game/commando-moussavou.svg'
+import mboumbaPortrait from '../assets/game/commando-mboumba.webp'
+import moussavouPortrait from '../assets/game/commando-moussavou.webp'
 import cover from '../assets/game/commando-cover.webp'
 
 const PORTRAITS = { mboumba: mboumbaPortrait, moussavou: moussavouPortrait }
@@ -197,7 +197,7 @@ function CommandoOkoume() {
                     active ? 'bg-white ring-2 ring-amber-400 dark:bg-surface-tint' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'
                   } disabled:opacity-60`}
                 >
-                  <img src={PORTRAITS[id]} alt="" className="h-14 w-14 rounded-xl" style={{ imageRendering: 'pixelated' }} />
+                  <img src={PORTRAITS[id]} alt={c.name} className="h-16 w-16 rounded-xl object-cover" />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink">{c.name}</p>
                     <p className="text-[11px] text-ink-soft/70">{c.corps}</p>

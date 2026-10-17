@@ -2,8 +2,8 @@ import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
 import motoKevin from '../assets/game/moto-kevin.webp'
 import motoAicha from '../assets/game/moto-aicha.webp'
-import commandoMboumba from '../assets/game/commando-mboumba.svg'
-import commandoMoussavou from '../assets/game/commando-moussavou.svg'
+import commandoMboumba from '../assets/game/commando-mboumba.webp'
+import commandoMoussavou from '../assets/game/commando-moussavou.webp'
 import commandoCover from '../assets/game/commando-cover.webp'
 
 // Every game of the "Jeux" module (pages/Games.jsx), in display order. A new
