@@ -18,6 +18,7 @@ import {
   Heart,
   Info,
   MapPin,
+  MapPinned,
   Mic,
   MessageCircle,
   MessageCircleHeart,
@@ -73,6 +74,8 @@ import LocationMessage from '../components/chat/LocationMessage.jsx'
 import StickerMaker from '../components/chat/StickerMaker.jsx'
 import MotoChallengeCard from '../components/chat/MotoChallengeCard.jsx'
 import WeMetPrompt from '../components/chat/WeMetPrompt.jsx'
+import DateSpotSheet from '../components/chat/DateSpotSheet.jsx'
+import { DATE_NUDGE_MIN_MESSAGES, closeDateNudge, isDateNudgeClosed } from '../lib/dateSpots.js'
 import { deleteSticker, listMyStickers } from '../firebase/stickers.js'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
@@ -377,6 +380,7 @@ function Chat() {
     sendAttachmentMessage,
     sendStickerMessage,
     sendLocationMessage,
+    sendVenueInviteMessage,
     editMessage,
     deleteMessage,
     toggleMessageReaction,
@@ -404,6 +408,9 @@ function Chat() {
   const [editingStickers, setEditingStickers] = useState(false)
   const [showStickerMaker, setShowStickerMaker] = useState(false)
   const [showAttachMenu, setShowAttachMenu] = useState(false)
+  const [showDateSpots, setShowDateSpots] = useState(false)
+  // Conversations whose "idées de rendez-vous" nudge was closed this visit (also kept in localStorage).
+  const [closedDateNudges, setClosedDateNudges] = useState(() => new Set())
   const [confirmLocation, setConfirmLocation] = useState(false)
   const [isLocating, setIsLocating] = useState(false)
   const [editingMessageId, setEditingMessageId] = useState(null)
@@ -444,6 +451,14 @@ function Chat() {
 
   const activeId = conversationId || conversations[0]?.id
   const active = conversations.find((c) => c.id === activeId)
+  // Once a conversation is going and no place was proposed yet.
+  const showDateNudge =
+    !!active &&
+    !editingMessageId &&
+    active.messages.length >= DATE_NUDGE_MIN_MESSAGES &&
+    !active.messages.some((m) => m.type === 'venue-invite') &&
+    !closedDateNudges.has(active.id) &&
+    !isDateNudgeClosed(active.id)
 
   const prevActiveIdRef = useRef(null)
 
@@ -1549,6 +1564,7 @@ function Chat() {
                               </button>
                             </div>
                           ) : isVenueInvite ? (
+                            <div className="flex min-w-0 max-w-full flex-col gap-1.5">
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1573,6 +1589,32 @@ function Chat() {
                                 )}
                               </div>
                             </button>
+                            {/* Quick answers to an invite received, while it's the last message. */}
+                            {!m.fromMe && i === active.messages.length - 1 && (
+                              <div className="flex gap-1.5">
+                                {[
+                                  `Ça me dit ! 😍 On se retrouve à ${m.venue.name} ?`,
+                                  'Une autre fois peut-être 🙏',
+                                ].map((reply, k) => (
+                                  <button
+                                    key={reply}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      sendMessage(active.id, reply)
+                                    }}
+                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition ${
+                                      k === 0
+                                        ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-white'
+                                        : 'bg-white text-ink ring-1 ring-ink/10 hover:bg-ink/5 dark:bg-surface-tint'
+                                    }`}
+                                  >
+                                    {k === 0 ? 'Ça me dit !' : 'Une autre fois'}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            </div>
                           ) : isMotoChallenge ? (
                             <MotoChallengeCard
                               challenge={m.challenge}
@@ -1694,6 +1736,29 @@ function Chat() {
                   aria-label="Annuler la réponse"
                 >
                   <X size={14} strokeWidth={2.25} />
+                </button>
+              </div>
+            )}
+            {showDateNudge && (
+              <div className="flex shrink-0 items-center gap-2 border-t border-ink/8 bg-pink-500/5 px-4 py-2">
+                <MapPinned size={15} strokeWidth={2.25} className="shrink-0 text-pink-500" />
+                <button
+                  type="button"
+                  onClick={() => setShowDateSpots(true)}
+                  className="min-w-0 flex-1 truncate text-left text-xs font-medium text-ink"
+                >
+                  Ça accroche ? <span className="font-semibold text-pink-600">Proposez un lieu pour vous voir</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeDateNudge(active.id)
+                    setClosedDateNudges((prev) => new Set(prev).add(active.id))
+                  }}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-ink-soft/60 hover:bg-ink/10"
+                  aria-label="Masquer"
+                >
+                  <X size={13} strokeWidth={2.25} />
                 </button>
               </div>
             )}
@@ -1865,6 +1930,19 @@ function Chat() {
                                   <MapPin size={17} strokeWidth={2.25} />
                                 </span>
                                 Ma position
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setShowAttachMenu(false)
+                                  setShowDateSpots(true)
+                                }}
+                                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink transition hover:bg-ink/5"
+                              >
+                                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-pink-500/12 text-pink-500">
+                                  <MapPinned size={17} strokeWidth={2.25} />
+                                </span>
+                                Idée de rendez-vous
                               </button>
                             </motion.div>
                           </>
@@ -2041,6 +2119,20 @@ function Chat() {
 
       {lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
 
+      {showDateSpots && active && (
+        <DateSpotSheet
+          me={publicProfile}
+          them={active.profile}
+          onClose={() => setShowDateSpots(false)}
+          onInvite={async (venue) => {
+            try {
+              await sendVenueInviteMessage(active.id, venue)
+            } catch {
+              showToast("Impossible d'envoyer l'invitation, réessayez.", 'error')
+            }
+          }}
+        />
+      )}
       {confirmLocation && active && (
         <ConfirmDialog
           title="Partager votre position ?"

@@ -291,6 +291,7 @@ export function ConversationsProvider({ children }) {
             verified: !!profile.verified,
             interests: profile.interests || [],
             prompts: profile.prompts || [],
+            voicePrompt: profile.voicePrompt || null,
             photo:
               photoVariant(profile.photos?.[0], 'thumb') ||
               fallbackAvatar(profile.firstName || 'Bomavibes', 'e8c468'),
