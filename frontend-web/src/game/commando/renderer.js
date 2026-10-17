@@ -656,8 +656,12 @@ export function createCommandoRenderer(canvas) {
   function drawBackdrop(img, cam) {
     // Fit the image height to the screen, scroll slower than the action and
     // alternate it with its mirror image so the loop has no visible seam.
+    // (2 px trimmed off each side: image edges are often slightly darker,
+    // and the mirror would double that line.)
+    const trim = 2
+    const sw = img.width - trim * 2
     const scale = view.h / img.height
-    const iw = img.width * scale
+    const iw = sw * scale
     const offset = (cam * PARALLAX * (view.h / SCREEN_H)) % (2 * iw)
     out.save()
     out.beginPath()
@@ -665,13 +669,15 @@ export function createCommandoRenderer(canvas) {
     out.clip()
     out.imageSmoothingEnabled = true
     for (let k = Math.floor(offset / iw); view.x + k * iw - offset < view.x + view.w; k++) {
-      const dx = view.x + k * iw - offset
-      if (k % 2 === 0) out.drawImage(img, dx, view.y, iw, view.h)
+      // Whole pixels, overlapping by one, so no hairline shows at the joins.
+      const dx = Math.floor(view.x + k * iw - offset)
+      const w = Math.ceil(iw) + 1
+      if (k % 2 === 0) out.drawImage(img, trim, 0, sw, img.height, dx, view.y, w, view.h)
       else {
         out.save()
-        out.translate(dx + iw, view.y)
+        out.translate(dx + w, view.y)
         out.scale(-1, 1)
-        out.drawImage(img, 0, 0, iw, view.h)
+        out.drawImage(img, trim, 0, sw, img.height, 0, 0, w, view.h)
         out.restore()
       }
     }
