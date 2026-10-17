@@ -55,6 +55,16 @@ const MOTO_BOMA = {
     challengeTtlMs: 7 * 24 * 60 * 60 * 1000,
 };
 
+// COMMANDO OKOUMÉ, the run-and-gun: Ngori = the stars of a won mission
+// (1 to 3), within its own daily cap; same safeguards as the races.
+const COMMANDO = {
+    dailyCap: 5,
+    maxStartsPerDay: 40,
+    minStartIntervalMs: 3000,
+    maxRunMs: 20 * 60 * 1000,
+    minTimeRatio: 0.9,
+};
+
 // LE MOT DU JOUR, the daily word game: one game per day, paid once won.
 const MOT_DU_JOUR = {
     winReward: 2,
@@ -116,4 +126,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, COMMANDO, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };

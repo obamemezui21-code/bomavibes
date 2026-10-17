@@ -2,6 +2,8 @@ import kevinPortrait from '../assets/game/kevin.webp'
 import aichaPortrait from '../assets/game/aicha.webp'
 import motoKevin from '../assets/game/moto-kevin.webp'
 import motoAicha from '../assets/game/moto-aicha.webp'
+import commandoMboumba from '../assets/game/commando-mboumba.svg'
+import commandoMoussavou from '../assets/game/commando-moussavou.svg'
 
 // Every game of the "Jeux" module (pages/Games.jsx), in display order. A new
 // game only needs its entry here (and its route in App.jsx) to show up.
@@ -9,6 +11,19 @@ import motoAicha from '../assets/game/moto-aicha.webp'
 //   dailyCap: Ngori it can earn per day (each game has its own cap)
 //   isNew: shows a "Nouveau" badge
 export const GAMES = [
+  {
+    id: 'commando-okoume',
+    name: 'Commando Okoumé',
+    tagline: 'Action rétro à travers le Gabon',
+    description: 'Avance, saute, tire et démantèle le réseau du Serpent Noir, du port d’Owendo aux chutes de Kongou. Monte en grade jusqu’à Colonel !',
+    path: '/commando-okoume',
+    pictures: [commandoMboumba, commandoMoussavou],
+    round: true,
+    gradient: 'from-[#14200c] via-[#2f4a17] to-[#7a2a1a]',
+    accent: 'text-amber-300',
+    dailyCap: 5,
+    isNew: true,
+  },
   {
     id: 'vibe-check',
     name: 'Vibe Check',

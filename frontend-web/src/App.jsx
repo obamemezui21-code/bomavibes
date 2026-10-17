@@ -56,6 +56,7 @@ const Cine = lazy(() => import('./pages/Cine.jsx'))
 const Ngori = lazy(() => import('./pages/Ngori.jsx'))
 const NgoriRun = lazy(() => import('./pages/NgoriRun.jsx'))
 const MotoBoma = lazy(() => import('./pages/MotoBoma.jsx'))
+const CommandoOkoume = lazy(() => import('./pages/CommandoOkoume.jsx'))
 const MotDuJour = lazy(() => import('./pages/MotDuJour.jsx'))
 const VibeCheck = lazy(() => import('./pages/VibeCheck.jsx'))
 const Games = lazy(() => import('./pages/Games.jsx'))
@@ -192,6 +193,7 @@ function App() {
             <Route path="/jeux" element={<Games />} />
             <Route path="/ngori-run" element={<NgoriRun />} />
             <Route path="/moto-boma" element={<MotoBoma />} />
+            <Route path="/commando-okoume" element={<CommandoOkoume />} />
             <Route path="/mot-du-jour" element={<MotDuJour />} />
             <Route path="/vibe-check" element={<VibeCheck />} />
             <Route path="/annonces" element={<Announcements />} />
