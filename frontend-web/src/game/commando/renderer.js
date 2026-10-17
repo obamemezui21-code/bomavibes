@@ -8,6 +8,7 @@
 // Purely visual — the game itself lives in shared/commando-okoume/engine.mjs.
 import { FP, GROUND_Y, MISSIONS, SCREEN_H, SCREEN_W, WEAPONS } from '../../../../shared/commando-okoume/engine.mjs'
 import { LOOKS, drawFigure, drawLying, drawPuff } from './sprites.js'
+import { drawBoss as paintBoss } from './bosses.js'
 
 const RES = 2 // buffer pixels per world pixel
 const PARALLAX = 0.3 // how fast the painted backdrop scrolls
@@ -81,6 +82,7 @@ export function createCommandoRenderer(canvas) {
   let corpses = [] // poachers just put out of action: lying, then a puff of smoke
   let shake = 0
   let wasOnGround = true
+  const bossLayer = { canvas: document.createElement('canvas'), res: RES }
   let view = { x: 0, y: 0, w: SCREEN_W, h: SCREEN_H }
 
   const q = (v) => Math.round(v * RES) / RES
@@ -391,62 +393,11 @@ export function createCommandoRenderer(canvas) {
   function drawBoss(state, cam, time) {
     const b = state.boss
     if (!b) return
-    const x = b.x / FP - cam
-    const y = b.y / FP
-    const flash = b.flash > 0
-    const c = (col) => (flash ? '#ffffff' : col)
-    if (b.type === 'grutier') {
-      r(0, y - 12, SCREEN_W, 4, '#6b7778')
-      r(0, y - 12, SCREEN_W, 0.5, '#aab3b4')
-      r(x + 20, y - 8, 16, 8, '#2c3e50')
-      r(x - 0.5, y - 0.5, b.w + 1, b.h + 1, '#15140f')
-      g.fillStyle = flash ? '#ffffff' : vgrad(y, y + b.h, '#f7d046', '#b8900c')
-      g.fillRect(q(x), y, b.w, b.h)
-      r(x + 4, y + 6, b.w - 8, 18, '#22313f')
-      r(x + 6, y + 8, 14, 12, '#85c1e9')
-      r(x + 30, y + 8, 18, 12, '#85c1e9')
-      r(x + 6, y + 8, 4, 12, '#d6eaf8')
-      r(x + 30, y + 8, 4, 12, '#d6eaf8')
-      for (let s = 0; s < 6; s++) r(x + 4 + s * 8, y + 52, 4, 6, s % 2 ? '#15140f' : '#f1c40f')
-      r(x + 8, y + 30, 40, 4, c('#d4ac0d'))
-      r(x - 12, y + 43.5, 16, 3, '#2b2b2b')
-      r(x + 24, y + b.h, 1, 14, '#2b2b2b')
-      r(x + 20, y + b.h + 14, 10, 4, '#7f8c8d')
-    } else if (b.type === 'gorille') {
-      g.fillStyle = flash ? '#ffffff' : vgrad(y, y + 40, '#46596b', '#1f2b36')
-      g.fillRect(q(x + 6), y + 6, 32, 30)
-      r(x + 12, y, 20, 14, c('#2c3e50'))
-      r(x + 12, y, 20, 1, '#5d7186')
-      r(x + 15, y + 5, 4, 2.5, '#ff3b30')
-      r(x + 25, y + 5, 4, 2.5, '#ff3b30')
-      r(x + 15, y + 5, 1.5, 1, '#ffb3ad')
-      r(x, y + 10, 8, 30, c('#2c3e50'))
-      r(x + 36, y + 10, 8, 30, c('#2c3e50'))
-      r(x, y + 10, 1, 30, '#5d7186')
-      r(x + 10, y + 36, 9, 16, c('#22313f'))
-      r(x + 25, y + 36, 9, 16, c('#22313f'))
-      r(x + 14, y + 18, 16, 6, '#95a5a6')
-      r(x + 14, y + 18, 16, 1, '#cfd8d9')
-      for (let s = 0; s < 4; s++) r(x + 15 + s * 4, y + 20, 1, 1, '#5a6566')
-    } else {
-      g.fillStyle = flash ? '#ffffff' : vgrad(y + 24, y + 48, '#8a3a0a', '#3d1700')
-      g.fillRect(q(x), y + 24, b.w, 24)
-      r(x, y + 24, b.w, 1.5, c('#b85a1a'))
-      for (let s = 4; s < b.w; s += 9) r(x + s, y + 30, 2, 2, '#c7781f')
-      r(x + 40, y + 4, 26, 20, c('#7f8c8d'))
-      r(x + 40, y + 4, 26, 1, '#b0babb')
-      r(x + 44, y + 8, 8, 6, '#85c1e9')
-      r(x + 56, y - 8, 5, 12, '#2c2c2c')
-      for (let s = 0; s < 3; s++) {
-        const sy = (time * 20 + s * 8) % 24
-        g.globalAlpha = 0.6 - sy / 48
-        r(x + 55 + s, y - 10 - sy, 4 + sy / 6, 3, '#9aa3a4')
-        g.globalAlpha = 1
-      }
-      r(x + 4, y + 2, 30, 4, c('#d68910'))
-      r(x - 4, y + 2, 10, 10, c('#b9770e'))
-      r(x - 10, y + 30, 12, 2.5, '#2b2b2b')
-    }
+    paintBoss(g, state, cam, time, bossLayer, (x, y, kind) => {
+      if (kind === 'smoke') smoke(x, y, 1)
+      else burst(x, y, '#ffd23f', 3, 60, 1)
+    })
+    // Where the next crate will fall.
     const a = b.action
     if (a?.kind === 'drop' && a.t < 40 && Math.floor(time * 10) % 2) {
       const sx = a.x / FP - cam

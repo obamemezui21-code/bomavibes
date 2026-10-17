@@ -7,7 +7,7 @@
 const OUTLINE = '#15140f'
 
 // Lighter (amount > 0) or darker (< 0) version of a #rrggbb colour.
-function shade(hex, amount) {
+export function shade(hex, amount) {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex
   const n = parseInt(hex.slice(1), 16)
   const ch = (v) => Math.max(0, Math.min(255, Math.round(amount > 0 ? v + (255 - v) * amount : v * (1 + amount))))
