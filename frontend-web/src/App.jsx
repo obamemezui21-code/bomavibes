@@ -39,6 +39,7 @@ const PostDetail = lazy(() => import('./pages/PostDetail.jsx'))
 const Matches = lazy(() => import('./pages/Matches.jsx'))
 const LikesYou = lazy(() => import('./pages/LikesYou.jsx'))
 const CrushTime = lazy(() => import('./pages/CrushTime.jsx'))
+const LiveRoom = lazy(() => import('./pages/LiveRoom.jsx'))
 const Announcements = lazy(() => import('./pages/Announcements.jsx'))
 const Notifications = lazy(() => import('./pages/Notifications.jsx'))
 const Chat = lazy(() => import('./pages/Chat.jsx'))
@@ -186,6 +187,7 @@ function App() {
             <Route path="/cine" element={<Cine />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/crush-time" element={<CrushTime />} />
+            <Route path="/lives/:liveId" element={<LiveRoom />} />
             <Route path="/ngori" element={<Ngori />} />
             <Route path="/jeux" element={<Games />} />
             <Route path="/ngori-run" element={<NgoriRun />} />

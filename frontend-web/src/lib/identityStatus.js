@@ -26,6 +26,7 @@ export const VERIFIED_ONLY = {
   calls: 'Les appels audio et vidéo sont réservés aux profils vérifiés.',
   superlike: 'Les super likes sont réservés aux profils vérifiés.',
   publish: 'Publier dans le fil et les stories est réservé aux profils vérifiés.',
+  lives: 'Lancer un live est réservé aux profils vérifiés.',
 }
 
 // Where a member stands with the identity verification:

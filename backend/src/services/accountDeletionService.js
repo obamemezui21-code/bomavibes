@@ -53,6 +53,13 @@ async function eraseAccount(uid) {
     await batchDeleteAll([...weMetMine.docs, ...weMetAbout.docs].map((doc) => doc.ref));
     await db.collection("crushTime").doc(uid).delete().catch(() => {});
 
+    // Lives they hosted: closed and removed (comments included).
+    const livesSnap = await db.collection("lives").where("hostId", "==", uid).get();
+    for (const liveDoc of livesSnap.docs) {
+        const comments = await liveDoc.ref.collection("comments").get();
+        await batchDeleteAll([...comments.docs.map((d) => d.ref), liveDoc.ref]);
+    }
+
     await db.collection("profiles").doc(uid).delete().catch(() => {});
 
     const userSnap = await db.collection("users").doc(uid).get();

@@ -277,6 +277,7 @@ function startGroupCallSweep() {
 }
 
 module.exports = {
+    liveKitConfig,
     MAX_MEMBERS,
     createGroupCall,
     declineGroupCall,

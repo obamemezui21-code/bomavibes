@@ -433,6 +433,18 @@ service cloud.firestore {
 
     // Group calls (LiveKit media server): created and updated only by the
     // backend (groupCallController.js); everyone invited can follow theirs.
+    // Lives (liveController.js): written by the backend only, watched by
+    // every signed-in member (the app hides lives of people blocked either way).
+    match /lives/{liveId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow write: if false;
+      }
+    }
+
     match /groupCalls/{callId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.members;
       allow write: if false;

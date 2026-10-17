@@ -64,6 +64,11 @@ async function listReports(req, res) {
             : [];
         const postsById = new Map(postDocs.filter((docSnap) => docSnap.exists).map((docSnap) => [docSnap.id, docSnap.data()]));
 
+        // A report made during a live carries contextRef.liveId (LiveRoom.jsx).
+        const liveIds = [...new Set(reports.map((r) => r.contextRef?.liveId).filter(Boolean))];
+        const liveDocs = liveIds.length ? await db.getAll(...liveIds.map((id) => db.collection("lives").doc(id))) : [];
+        const livesById = new Map(liveDocs.filter((d) => d.exists).map((d) => [d.id, d.data()]));
+
         const enriched = reports.map((r) => {
             const postId = r.contextRef?.postId;
             const postData = postId ? postsById.get(postId) : null;
@@ -74,6 +79,9 @@ async function listReports(req, res) {
                 reporterEmail: usersById.get(r.reporterId)?.email ?? null,
                 reportedUserEmail: usersById.get(r.reportedUserId)?.email ?? null,
                 reportedUserBanned: !!usersById.get(r.reportedUserId)?.banned,
+                live: r.contextRef?.liveId
+                    ? { id: r.contextRef.liveId, status: livesById.get(r.contextRef.liveId)?.status || "ended" }
+                    : null,
                 post: postId
                     ? postData
                         ? { id: postId, type: postData.type, text: postData.text ?? null, photoUrl: postData.photoUrl ?? null }

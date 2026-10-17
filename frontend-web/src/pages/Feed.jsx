@@ -25,6 +25,7 @@ import ReportModal from '../components/ReportModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { useIdentity } from '../context/IdentityContext.jsx'
+import LiveStrip from '../components/LiveStrip.jsx'
 
 function Feed() {
   const {
@@ -232,6 +233,8 @@ function Feed() {
         <h1 className="font-display text-2xl font-semibold text-ink">Actualités</h1>
         <p className="mt-0.5 text-sm text-ink-soft/70">Partagez vos moments BomaVibes ✨</p>
       </div>
+
+      <LiveStrip />
 
       <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
         <div className="flex shrink-0 flex-col items-center gap-1">

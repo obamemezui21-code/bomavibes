@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ShieldCheck, ShieldX, Trash2, UserCheck, UserX } from 'lucide-react'
-import { deleteAdminPost, fetchAdminReports, setAdminUserBanned, updateAdminReportStatus } from '../firebase/admin.js'
+import { Radio, ShieldCheck, ShieldX, Trash2, UserCheck, UserX } from 'lucide-react'
+import { cutAdminLive, deleteAdminPost, fetchAdminReports, setAdminUserBanned, updateAdminReportStatus } from '../firebase/admin.js'
 import { useToast } from '../context/ToastContext.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 
@@ -105,6 +105,12 @@ function AdminReports() {
           prev.map((r) => (r.post?.id === report.post.id ? { ...r, post: { id: report.post.id, deleted: true } } : r)),
         )
         showToast('Publication supprimée.', 'success')
+      } else if (type === 'cutLive') {
+        await cutAdminLive(report.live.id)
+        setReports((prev) =>
+          prev.map((r) => (r.live?.id === report.live.id ? { ...r, live: { ...r.live, status: 'ended' } } : r)),
+        )
+        showToast('Live coupé.', 'success')
       }
       setConfirmAction(null)
     } catch {
@@ -167,6 +173,16 @@ function AdminReports() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] text-ink-soft/40">{formatDate(report.createdAt)}</p>
               <div className="flex flex-wrap gap-2">
+                {report.live?.status === 'live' && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmAction({ type: 'cutLive', report })}
+                    className="flex items-center gap-1 rounded-full bg-coral-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-coral-600"
+                  >
+                    <Radio size={13} strokeWidth={2.25} />
+                    Couper le live
+                  </button>
+                )}
                 {report.post && !report.post.deleted && (
                   <button
                     type="button"
@@ -229,20 +245,32 @@ function AdminReports() {
       {confirmAction && (
         <ConfirmModal
           title={
-            confirmAction.type === 'deletePost'
+            confirmAction.type === 'cutLive'
+              ? 'Couper ce live ?'
+              : confirmAction.type === 'deletePost'
               ? 'Supprimer cette publication ?'
               : confirmAction.type === 'ban'
                 ? 'Bannir cet utilisateur ?'
                 : 'Réactiver cet utilisateur ?'
           }
           description={
-            confirmAction.type === 'deletePost'
+            confirmAction.type === 'cutLive'
+              ? 'Le live s’arrête immédiatement pour tous les spectateurs.'
+              : confirmAction.type === 'deletePost'
               ? 'La publication et ses commentaires seront définitivement supprimés.'
               : confirmAction.type === 'ban'
                 ? `${confirmAction.report.reportedUserEmail || confirmAction.report.reportedUserId} ne pourra plus se connecter à BomaVibes.`
                 : `${confirmAction.report.reportedUserEmail || confirmAction.report.reportedUserId} pourra de nouveau se connecter.`
           }
-          confirmLabel={confirmAction.type === 'unban' ? 'Réactiver' : confirmAction.type === 'ban' ? 'Bannir' : 'Supprimer'}
+          confirmLabel={
+            confirmAction.type === 'cutLive'
+              ? 'Couper'
+              : confirmAction.type === 'unban'
+                ? 'Réactiver'
+                : confirmAction.type === 'ban'
+                  ? 'Bannir'
+                  : 'Supprimer'
+          }
           confirmingLabel="Un instant…"
           danger={confirmAction.type !== 'unban'}
           isConfirming={isConfirming}

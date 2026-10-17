@@ -58,6 +58,11 @@ export function setAdminUserBanned(uid, banned) {
   })
 }
 
+// Moderation cuts a live (liveController.cutLive).
+export function cutAdminLive(liveId) {
+  return authedFetch(`/api/admin/lives/${liveId}/end`, { method: 'POST' })
+}
+
 export function deleteAdminPost(postId) {
   return authedFetch(`/api/admin/posts/${postId}`, { method: 'DELETE' })
 }

@@ -1,4 +1,4 @@
-# Appels de groupe (et lives) — serveur média LiveKit
+# Appels de groupe et lives — serveur média LiveKit
 
 Les appels à deux passent directement d'un téléphone à l'autre (voir
 `coturn-setup.md`). Les appels de groupe (jusqu'à 8 personnes) passent par un
@@ -86,6 +86,11 @@ grep -c '^LIVEKIT_' /var/www/bomavibes/backend/.env       # 3
 
 Puis dans l'app : ouvrir une conversation › bouton 👥 › choisir 2 matchs ›
 Audio ou Vidéo. Les invités reçoivent une sonnerie « Appel de groupe ».
+
+Les lives utilisent le même serveur : dans le **Fil**, une bande « En direct »
+apparaît avec le bouton « Lancer un live » (profils vérifiés). Tant que
+LIVEKIT_* manque dans backend/.env, les appels de groupe et les lives restent
+cachés dans l'app.
 
 Journaux du serveur média : `docker logs --tail 50 livekit`.
 Mise à jour : `docker pull livekit/livekit-server && docker rm -f livekit`
