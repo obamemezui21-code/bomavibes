@@ -20,6 +20,7 @@ import {
   MapPin,
   MapPinned,
   Mic,
+  MoreVertical,
   MessageCircle,
   MessageCircleHeart,
   Paperclip,
@@ -413,6 +414,7 @@ function Chat() {
   const [showStickerMaker, setShowStickerMaker] = useState(false)
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [showDateSpots, setShowDateSpots] = useState(false)
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false) // phone-only ⋮ menu in the conversation header
   // Conversations whose "idées de rendez-vous" nudge was closed this visit (also kept in localStorage).
   const [closedDateNudges, setClosedDateNudges] = useState(() => new Set())
   const [confirmLocation, setConfirmLocation] = useState(false)
@@ -1301,10 +1303,12 @@ function Chat() {
                 </button>
 
                 <div className="flex shrink-0 items-center gap-1.5">
+                  {/* Wide screens: every action as its own button. On phones,
+                      only the calls stay visible, the rest is in the ⋮ menu. */}
                   <button
                     type="button"
                     onClick={() => showToast('Bientôt disponible.', 'info')}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
+                    className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20 sm:flex"
                     aria-label="Télécharger la conversation"
                   >
                     <Download size={16} strokeWidth={2} />
@@ -1312,7 +1316,7 @@ function Chat() {
                   <button
                     type="button"
                     onClick={() => setShowReport(true)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
+                    className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20 sm:flex"
                     aria-label="Signaler"
                   >
                     <Flag size={16} strokeWidth={2} />
@@ -1337,12 +1341,66 @@ function Chat() {
                     <button
                       type="button"
                       onClick={handleStartGroupCall}
-                      className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
+                      className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20 sm:flex"
                       aria-label="Appel de groupe"
                     >
                       <Users size={16} strokeWidth={2} />
                     </button>
                   )}
+                  <div className="relative sm:hidden">
+                    <button
+                      type="button"
+                      onClick={() => setShowHeaderMenu((v) => !v)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full text-white/85 transition ${
+                        showHeaderMenu ? 'bg-white/25' : 'bg-white/10 hover:bg-white/20'
+                      }`}
+                      aria-label="Plus d'options"
+                      aria-expanded={showHeaderMenu}
+                    >
+                      <MoreVertical size={16} strokeWidth={2} />
+                    </button>
+                    <AnimatePresence>
+                      {showHeaderMenu && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setShowHeaderMenu(false)} />
+                          <motion.div
+                            initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute right-0 top-11 z-40 w-56 overflow-hidden rounded-2xl border border-ink/10 bg-white p-1.5 text-ink shadow-xl dark:bg-surface-tint"
+                          >
+                            {[
+                              groupCallsAvailable && { label: 'Appel de groupe', Icon: Users, onClick: handleStartGroupCall },
+                              { label: 'Signaler', Icon: Flag, onClick: () => setShowReport(true), danger: true },
+                              {
+                                label: 'Télécharger la conversation',
+                                Icon: Download,
+                                onClick: () => showToast('Bientôt disponible.', 'info'),
+                              },
+                            ]
+                              .filter(Boolean)
+                              .map(({ label, Icon, onClick, danger }) => (
+                                <button
+                                  key={label}
+                                  type="button"
+                                  onClick={() => {
+                                    setShowHeaderMenu(false)
+                                    onClick()
+                                  }}
+                                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-ink/5 ${
+                                    danger ? 'text-coral-500' : ''
+                                  }`}
+                                >
+                                  <Icon size={17} strokeWidth={2.25} />
+                                  {label}
+                                </button>
+                              ))}
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
             )}
