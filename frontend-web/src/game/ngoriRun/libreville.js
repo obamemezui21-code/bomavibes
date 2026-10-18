@@ -131,6 +131,23 @@ export function passerbyFor(k, billboards = []) {
   return isFree(at, billboards) ? { at, ...PASSERSBY[k % PASSERSBY.length] } : null
 }
 
+// The black-and-white SW (Star Waz) flags all along the route: one every
+// FLAG_EVERY m, sides alternating (-1 left, 1 right), kept clear of the
+// stalls, passers-by, street lamps, signs and arches.
+export const FLAG_EVERY = 11
+const LAMP_EVERY = 14 // m, right side, as both renderers draw them
+
+export function flagFor(k) {
+  if (k < 0) return null
+  const at = k * FLAG_EVERY + 8.5
+  const side = k % 2 ? 1 : -1
+  const inStallRow = (((at - STALL_OFFSET) % STALL_EVERY) + STALL_EVERY) % STALL_EVERY
+  if (inStallRow < 3 || inStallRow > STALL_EVERY - 3 || Math.abs(inStallRow - 28) < 3) return null
+  if (side > 0 && Math.abs((((at - 7) % LAMP_EVERY) + LAMP_EVERY) % LAMP_EVERY - LAMP_EVERY / 2) > LAMP_EVERY / 2 - 2) return null
+  if (LANDMARKS.some((l) => Math.abs(l.at - at) < 6) || DISTRICTS.some(([from]) => Math.abs(from - at) < 8)) return null
+  return { at, side }
+}
+
 // Index of the stall at or just past `metres`.
 export const stallIndexAt = (metres) => Math.ceil((metres - STALL_OFFSET) / STALL_EVERY)
 

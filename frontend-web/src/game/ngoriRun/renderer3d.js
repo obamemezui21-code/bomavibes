@@ -37,6 +37,8 @@ import {
   STALL_EVERY,
   districtAt,
   passerbyFor,
+  FLAG_EVERY,
+  flagFor,
   stallFor,
 } from './libreville.js'
 
@@ -972,6 +974,48 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     return g
   }
 
+  // The SW (Star Waz) flags: a black cloth with white letters and border on
+  // a light pole. One cloth shape per side (it hangs away from the road);
+  // waveFlags() ripples their vertices every frame.
+  const flagMat = panelMat(
+    'flag|SW',
+    256,
+    160,
+    (ctx, w, h) => {
+      ctx.fillStyle = '#0a0a0a'
+      ctx.fillRect(0, 0, w, h)
+      ctx.strokeStyle = '#ffffff'
+      ctx.lineWidth = h * 0.07
+      ctx.strokeRect(h * 0.06, h * 0.06, w - h * 0.12, h * 0.88)
+      fitText(ctx, 'SW', 900, h * 0.62, w * 0.8)
+      ctx.fillStyle = '#ffffff'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('SW', w / 2, h * 0.53)
+    },
+    { side: THREE.DoubleSide },
+  )
+  const flagGeos = [-1, 1].map((side) => keep(new THREE.PlaneGeometry(1.5, 0.95, 10, 1).translate(side * 0.75, -0.475, 0)))
+  const flagRest = flagGeos.map((g) => Float32Array.from(g.attributes.position.array))
+  function waveFlags(time) {
+    flagGeos.forEach((g, n) => {
+      const pos = g.attributes.position
+      const rest = flagRest[n]
+      for (let i = 0; i < pos.count; i++) {
+        const x = Math.abs(rest[i * 3])
+        const reach = x / 1.5
+        pos.array[i * 3 + 1] = rest[i * 3 + 1] + Math.sin(time * 5 - x * 3.5 + 1) * 0.03 * reach
+        pos.array[i * 3 + 2] = Math.sin(time * 5 - x * 3.5) * 0.12 * reach
+      }
+      pos.needsUpdate = true
+    })
+  }
+  function buildFlag(side) {
+    const cloth = new THREE.Mesh(flagGeos[side > 0 ? 1 : 0], flagMat)
+    cloth.position.y = 3.3
+    return group(pole(0.035, 3.4, lambert('#d4d4d8')), cloth)
+  }
+
   function buildLamp() {
     const dark = lambert('#2b2236')
     const head = cube(0.4, 0.12, 0.25, basic('#ffe9b0'), -0.9, 5.45)
@@ -1532,6 +1576,12 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       const zr = k * 1400 + 700 - dist
       if (inView(zr)) place(`lamp${k}`, buildLamp, zr, ROAD_HALF + 1.1)
     }
+    const flagStep = FLAG_EVERY * 100
+    for (let k = Math.max(0, Math.floor((dist - camBackCm) / flagStep)); k * flagStep < dist + VIEW_CM; k++) {
+      const flag = flagFor(k)
+      if (flag && inView(flag.at * 100 - dist)) place(`flag${k}`, () => buildFlag(flag.side), flag.at * 100 - dist, flag.side * (ROAD_HALF + 0.6))
+    }
+    waveFlags(time)
     LANDMARKS.forEach((l, i) => {
       const z = l.at * 100
       if (inView(z - dist)) place(`lm${i}`, () => buildLandmarkSign(l.text), z - dist)

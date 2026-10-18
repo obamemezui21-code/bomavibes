@@ -15,6 +15,8 @@ import {
   STALL_EVERY,
   districtAt,
   passerbyFor,
+  FLAG_EVERY,
+  flagFor,
   stallFor,
 } from './libreville.js'
 
@@ -503,6 +505,42 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.moveTo(tx, ty)
       ctx.quadraticCurveTo(tx + Math.cos(angle) * len * 0.8, ty + Math.sin(angle) * len * 0.9, ex, ey)
       ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+  }
+
+  // A black-and-white SW (Star Waz) flag on a pole, waving outwards.
+  function drawFlag(zr, flag, k, time) {
+    const x = flag.side * (ROAD_HALF + 60)
+    const base = project(x, 0, zr)
+    const top = project(x, 330, zr)
+    const s = base.s
+    const fw = 150 * s * flag.side
+    const fh = 95 * s
+    ctx.globalAlpha = fogAlpha(zr)
+    ctx.strokeStyle = '#d4d4d8'
+    ctx.lineWidth = Math.max(1, 6 * s)
+    ctx.beginPath()
+    ctx.moveTo(base.x, base.y)
+    ctx.lineTo(top.x, top.y - 8 * s)
+    ctx.stroke()
+    const N = 6
+    const wave = (i) => Math.sin(time * 5 + k + i * 0.9) * 9 * s * (i / N)
+    ctx.beginPath()
+    for (let i = 0; i <= N; i++) ctx.lineTo(top.x + (fw * i) / N, top.y + wave(i))
+    for (let i = N; i >= 0; i--) ctx.lineTo(top.x + (fw * i) / N, top.y + fh + wave(i))
+    ctx.closePath()
+    ctx.fillStyle = '#0a0a0a'
+    ctx.fill()
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = Math.max(0.8, 5 * s)
+    ctx.stroke()
+    if (fh > 6) {
+      ctx.fillStyle = '#ffffff'
+      ctx.font = `900 ${Math.round(fh * 0.62)}px system-ui, sans-serif`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('SW', top.x + fw / 2, top.y + fh / 2 + wave(N / 2))
     }
     ctx.globalAlpha = 1
   }
@@ -1015,6 +1053,11 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     const props = []
     for (let k = Math.floor((dist - CAM_BACK) / 1100); k * 1100 < dist + VIEW_DEPTH; k++) props.push({ zr: k * 1100 + 300 - dist, draw: (zr) => drawPalm(zr, k, time) })
     for (let k = Math.floor((dist - CAM_BACK) / 1400); k * 1400 < dist + VIEW_DEPTH; k++) props.push({ zr: k * 1400 + 700 - dist, draw: (zr) => drawLamp(zr) })
+    const flagStep = FLAG_EVERY * 100
+    for (let k = Math.max(0, Math.floor((dist - CAM_BACK) / flagStep)); k * flagStep < dist + VIEW_DEPTH; k++) {
+      const flag = flagFor(k)
+      if (flag) props.push({ zr: flag.at * 100 - dist, draw: (zr) => drawFlag(zr, flag, k, time) })
+    }
     for (const l of LANDMARKS) {
       const z = l.at * 100
       if (z - dist > VIEW_DEPTH || z - dist < -CAM_BACK) continue
