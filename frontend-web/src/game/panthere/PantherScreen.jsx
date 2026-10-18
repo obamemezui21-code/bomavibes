@@ -420,7 +420,7 @@ function PantherScreen({ seed, options, audio, muted, onToggleMute, onEnd }) {
             audio.unlock()
             fireRef.current?.()
           }}
-          className="h-20 w-20 border-red-300/60 bg-red-500/35 text-sm"
+          className="pointer-events-auto h-20 w-20 border-red-300/60 bg-red-500/35 text-sm"
         >
           TIR
         </TouchButton>
