@@ -595,65 +595,183 @@ export function createPantherRenderer(canvas) {
   }
 
   // ── The rifle (screen space) ───────────────────────────────────────────
-  function drawRifle(rifle, aimX, aimY) {
+  // Seen from behind the shooter's shoulder: it rises from the bottom of the
+  // screen, under the scope, and points at its centre (it follows the aim).
+  // Every part is a band along that axis, narrower further away, shaded
+  // across like a cylinder; the scope sits on top, down the middle.
+  const RIFLE_LOOKS = {
+    carabine: { stock: ['#3b200e', '#a0622e', '#6b3d1e'], metal: ['#14161a', '#6a7282', '#2a2e36'], guard: ['#3b200e', '#9a5c2a', '#62381a'], bolt: true },
+    precision: { stock: ['#262b1d', '#7a8560', '#454d36'], metal: ['#111311', '#5d6458', '#262a24'], guard: ['#262b1d', '#76815c', '#434a34'], bolt: true, brake: true },
+    assaut: { stock: ['#0e0f11', '#55585f', '#24262a'], metal: ['#0b0c0e', '#4d5058', '#1d1f23'], guard: ['#0e0f11', '#50535a', '#222428'], rail: true },
+  }
+  const SCOPE_TUBE = ['#050506', '#4a4e57', '#16171a']
+
+  function drawRifle(rifle, cx, cy, R) {
     const g = ctx
+    const look = RIFLE_LOOKS[rifle] || RIFLE_LOOKS.carabine
     const size = Math.min(cssW, cssH) * dpr
-    const bx = cssW * dpr + size * 0.02
-    const by = cssH * dpr + size * 0.06
-    const angle = Math.min(-2.55, Math.max(-2.95, Math.atan2(aimY - by, aimX - bx)))
-    const len = size * (rifle === 'precision' ? 0.72 : 0.62)
-    const back = kick * size * 0.05
-    g.save()
-    g.translate(bx, by)
-    g.rotate(angle)
-    g.scale(1, -1) // it points left: flipped so the scope stays on top
-    g.translate(-back, 0)
-    const th = size * 0.045
-    const metal = rifle === 'carabine' ? '#3a3a40' : rifle === 'precision' ? '#4a5238' : '#2a2a2e'
-    const stock = rifle === 'carabine' ? '#8a5428' : rifle === 'precision' ? '#5a6244' : '#323236'
-    // Stock, body, barrel.
-    g.fillStyle = stock
-    g.beginPath()
-    g.moveTo(-len * 0.05, -th * 0.8)
-    g.lineTo(len * 0.3, -th * 0.7)
-    g.lineTo(len * 0.3, th * 1.2)
-    g.lineTo(-len * 0.05, th * 2.2)
-    g.closePath()
-    g.fill()
-    g.fillStyle = metal
-    g.fillRect(len * 0.28, -th * 0.75, len * 0.32, th * 1.5)
-    g.fillRect(len * 0.6, -th * 0.35, len * 0.4, th * 0.7)
-    if (rifle === 'assaut') g.fillRect(len * 0.42, th * 0.6, len * 0.08, th * 2.6) // magazine
-    if (rifle === 'precision') {
-      g.fillRect(len * 0.86, -th * 0.5, len * 0.08, th) // muzzle brake
-      g.strokeStyle = metal
-      g.lineWidth = th * 0.25
-      g.beginPath()
-      g.moveTo(len * 0.7, th * 0.3)
-      g.lineTo(len * 0.66, th * 2.6)
-      g.moveTo(len * 0.7, th * 0.3)
-      g.lineTo(len * 0.76, th * 2.6)
-      g.stroke() // bipod
+    const width = canvas.width
+    const height = canvas.height
+    // Axis: from below the bottom edge (a little towards the middle) to just
+    // under the scope's ring, pointing at its centre; pushed back by recoil.
+    const nx = width / 2 + (cx - width / 2) * 0.55
+    const ny = height + size * 0.32
+    const dx0 = cx - nx
+    const dy0 = cy - ny
+    const full = Math.hypot(dx0, dy0) || 1
+    const ux = dx0 / full
+    const uy = dy0 / full
+    const reach = Math.max(size * 0.3, full - R * 0.8)
+    const back = kick * size * 0.06
+    const sx = nx - ux * back
+    const sy = ny - uy * back
+    const px = -uy // across the rifle, to its right
+    const py = ux
+    const wNear = size * 0.46
+    const wFar = size * 0.12
+    const wid = (t) => wNear + (wFar - wNear) * t
+    const at = (t, s) => {
+      const w = (wid(t) / 2) * s
+      return [sx + ux * reach * t + px * w, sy + uy * reach * t + py * w]
     }
-    // The scope on top.
-    g.fillStyle = '#0d0d0f'
-    g.fillRect(len * 0.32, -th * 2.1, len * 0.26, th * 1.0)
-    g.fillRect(len * 0.28, -th * 2.3, len * 0.05, th * 1.4)
-    g.fillRect(len * 0.55, -th * 2.35, len * 0.06, th * 1.5)
-    g.fillStyle = 'rgba(120,180,255,0.6)'
-    g.fillRect(len * 0.6, -th * 2.2, len * 0.008, th * 1.2)
-    g.fillStyle = metal
-    g.fillRect(len * 0.38, -th * 1.15, len * 0.03, th * 0.45)
-    g.fillRect(len * 0.5, -th * 1.15, len * 0.03, th * 0.45)
+
+    // A band from t0 to t1, half-width f0 → f1 (share of the rifle's width),
+    // shifted sideways by `off`, shaded across with `colors` [dark, light, mid].
+    function band(t0, t1, f0, f1, colors, off = 0) {
+      const a = at(t0, off - f0)
+      const b = at(t1, off - f1)
+      const c = at(t1, off + f1)
+      const d = at(t0, off + f0)
+      const tm = (t0 + t1) / 2
+      const fm = (f0 + f1) / 2
+      const l = at(tm, off - fm)
+      const r = at(tm, off + fm)
+      const grad = g.createLinearGradient(l[0], l[1], r[0], r[1])
+      grad.addColorStop(0, colors[0])
+      grad.addColorStop(0.32, colors[1])
+      grad.addColorStop(0.62, colors[2])
+      grad.addColorStop(1, colors[0])
+      g.fillStyle = grad
+      g.beginPath()
+      g.moveTo(a[0], a[1])
+      g.lineTo(b[0], b[1])
+      g.lineTo(c[0], c[1])
+      g.lineTo(d[0], d[1])
+      g.closePath()
+      g.fill()
+      g.strokeStyle = 'rgba(0,0,0,0.55)'
+      g.lineWidth = Math.max(1, size * 0.002)
+      g.stroke()
+    }
+    // A cross-section (end of a tube) at t: an ellipse seen from behind.
+    function ring(t, f, fill, off = 0, squash = 0.32) {
+      const [x, y] = at(t, off)
+      const w = (wid(t) / 2) * f
+      g.save()
+      g.translate(x, y)
+      g.rotate(Math.atan2(py, px))
+      g.fillStyle = fill
+      g.beginPath()
+      g.ellipse(0, 0, w, w * squash, 0, 0, Math.PI * 2)
+      g.fill()
+      g.restore()
+    }
+    function line(t0, s0, t1, s1, color, lw) {
+      const a = at(t0, s0)
+      const b = at(t1, s1)
+      g.strokeStyle = color
+      g.lineWidth = lw
+      g.beginPath()
+      g.moveTo(a[0], a[1])
+      g.lineTo(b[0], b[1])
+      g.stroke()
+    }
+
+    g.save()
+    g.lineJoin = 'round'
+    g.lineCap = 'round'
+    // Stock and cheek rest, receiver, handguard.
+    band(0, 0.34, 1, 0.9, look.stock)
+    band(0.05, 0.3, 0.35, 0.32, ['rgba(0,0,0,0.25)', 'rgba(255,255,255,0.12)', 'rgba(0,0,0,0.1)'], -0.45)
+    band(0.32, 0.62, 0.74, 0.68, look.metal)
+    // Ejection port and bolt (or the charging handle).
+    band(0.42, 0.52, 0.2, 0.18, ['#050506', '#2b2d33', '#0d0e10'], 0.48)
+    if (look.bolt) {
+      line(0.43, 0.72, 0.4, 1.35, '#8a909c', size * 0.012)
+      const [kx, ky] = at(0.4, 1.4)
+      const knob = g.createRadialGradient(kx - size * 0.004, ky - size * 0.004, 0, kx, ky, size * 0.016)
+      knob.addColorStop(0, '#c9ced8')
+      knob.addColorStop(1, '#2a2d33')
+      g.fillStyle = knob
+      g.beginPath()
+      g.arc(kx, ky, size * 0.016, 0, Math.PI * 2)
+      g.fill()
+    } else {
+      band(0.36, 0.4, 0.12, 0.12, look.metal, -0.8)
+    }
+    band(0.6, 1, 0.62, 0.56, look.guard)
+    if (look.rail) {
+      for (let k = 0; k < 9; k++) {
+        const t = 0.63 + k * 0.042
+        line(t, -0.62, t, -0.42, 'rgba(0,0,0,0.6)', size * 0.004)
+        line(t, 0.42, t, 0.62, 'rgba(0,0,0,0.6)', size * 0.004)
+      }
+    } else {
+      // Chequering on the wood (or vents on the precision rifle's handguard).
+      for (let k = 0; k < 6; k++) {
+        const t = 0.66 + k * 0.05
+        line(t, -0.55, t + 0.03, -0.35, 'rgba(0,0,0,0.35)', size * 0.003)
+        line(t, 0.35, t + 0.03, 0.55, 'rgba(0,0,0,0.35)', size * 0.003)
+      }
+    }
+    if (look.brake) band(0.93, 1, 0.3, 0.3, look.metal) // muzzle brake peeking out
+    // Highlight down the left edge of the metal.
+    line(0.33, -0.58, 0.61, -0.54, 'rgba(255,255,255,0.18)', size * 0.004)
+
+    // The scope: eyepiece, tube, rings, turrets, objective bell.
+    band(0.32, 0.4, 0.44, 0.42, SCOPE_TUBE)
+    band(0.4, 0.86, 0.3, 0.3, SCOPE_TUBE)
+    for (const t of [0.45, 0.75]) {
+      band(t, t + 0.05, 0.46, 0.45, look.metal)
+      const [sx1, sy1] = at(t + 0.025, 0.43)
+      g.fillStyle = '#9aa0ab'
+      g.beginPath()
+      g.arc(sx1, sy1, size * 0.004, 0, Math.PI * 2)
+      g.fill()
+    }
+    band(0.86, 1.02, 0.32, 0.5, SCOPE_TUBE)
+    // Turrets: elevation on top, windage on the right, both knurled.
+    ring(0.6, 0.3, '#1d1f24', 0, 0.9)
+    ring(0.6, 0.22, '#3a3d45', 0, 0.9)
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2
+      const [tx, ty] = at(0.6, 0)
+      const r = (wid(0.6) / 2) * 0.3
+      g.strokeStyle = 'rgba(255,255,255,0.15)'
+      g.lineWidth = Math.max(1, size * 0.002)
+      g.beginPath()
+      g.moveTo(tx + Math.cos(a) * r * 0.75, ty + Math.sin(a) * r * 0.75)
+      g.lineTo(tx + Math.cos(a) * r, ty + Math.sin(a) * r)
+      g.stroke()
+    }
+    band(0.57, 0.63, 0.2, 0.2, ['#0b0c0e', '#4a4e57', '#1a1b1f'], 0.48)
+    // Eyepiece glass: dark, with a blue glint.
+    ring(0.32, 0.44, '#020203')
+    ring(0.32, 0.3, 'rgba(70,130,220,0.22)', -0.08, 0.25)
+    // Highlight down the tube.
+    line(0.4, -0.16, 0.86, -0.14, 'rgba(255,255,255,0.22)', size * 0.004)
+
+    // Muzzle flash, at the far end under the scope.
     if (muzzle > 0) {
-      const fx = len * 1.0
-      const fl = g.createRadialGradient(fx, 0, 0, fx, 0, th * 4 * muzzle)
+      const [fx, fy] = at(1.05, 0)
+      const r = size * 0.16 * muzzle
+      const fl = g.createRadialGradient(fx, fy, 0, fx, fy, r)
       fl.addColorStop(0, 'rgba(255,250,220,1)')
-      fl.addColorStop(0.4, 'rgba(255,190,80,0.8)')
+      fl.addColorStop(0.35, 'rgba(255,190,80,0.85)')
       fl.addColorStop(1, 'rgba(255,120,40,0)')
       g.fillStyle = fl
       g.beginPath()
-      g.arc(fx, 0, th * 4 * muzzle, 0, Math.PI * 2)
+      g.arc(fx, fy, r, 0, Math.PI * 2)
       g.fill()
     }
     g.restore()
@@ -736,7 +854,7 @@ export function createPantherRenderer(canvas) {
     g.arc(cx, cy, R * 1.04, 0, Math.PI * 2, true)
     g.fill('evenodd')
 
-    drawRifle(state.rifle, cx, cy + R)
+    drawRifle(state.rifle, cx, cy, R)
     const over = state.targets.some((t) => {
       if (t.state === 'hit' || t.row < 0 || KINDS[t.kind].protected) return false
       const { w, h } = sizeOf(t)
