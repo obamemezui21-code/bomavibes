@@ -1,6 +1,7 @@
-// COMMANDO OKOUMÉ sound: 8-bit style effects and a hip-hop beat,
-// all synthesised with Web Audio (nothing to download).
-// The AudioContext starts on the first tap, as browsers require.
+// COMMANDO OKOUMÉ sound: 8-bit style effects synthesised with Web Audio, and
+// the games' shared music track (music.js), with a synthesised hip-hop beat
+// as a fallback. The AudioContext starts on the first tap, as browsers require.
+import { muteTrack, pauseTrack, playTrack, unlockTrack } from '../music.js'
 
 const MUTE_KEY = 'commando.muted'
 
@@ -46,6 +47,7 @@ export function createCommandoAudio(initiallyMuted) {
   let timer = null
   let nextTime = 0
   let stepIndex = 0
+  let musicOn = false
 
   function ensure() {
     if (ctx) {
@@ -197,28 +199,39 @@ export function createCommandoAudio(initiallyMuted) {
     if (CHORDS[i]) chord(CHORDS[i], t)
   }
 
+  // The synthesised beat: only when the shared track can't play.
+  function startSynth() {
+    if (!musicOn || !ensure() || timer) return
+    nextTime = ctx.currentTime + 0.05
+    stepIndex = 0
+    timer = setInterval(() => {
+      while (nextTime < ctx.currentTime + 0.2) {
+        scheduleStep(stepIndex % LOOP, nextTime)
+        stepIndex += 1
+        nextTime += STEP
+      }
+    }, 50)
+  }
+
   return {
     unlock() {
       ensure()
+      unlockTrack()
     },
     startMusic() {
-      if (!ensure() || timer) return
-      nextTime = ctx.currentTime + 0.05
-      stepIndex = 0
-      timer = setInterval(() => {
-        while (nextTime < ctx.currentTime + 0.2) {
-          scheduleStep(stepIndex % LOOP, nextTime)
-          stepIndex += 1
-          nextTime += STEP
-        }
-      }, 50)
+      if (!ensure() || musicOn) return
+      musicOn = true
+      playTrack(muted, startSynth)
     },
     stopMusic() {
+      musicOn = false
+      pauseTrack()
       clearInterval(timer)
       timer = null
     },
     setMuted(value) {
       muted = value
+      muteTrack(value)
       if (master) master.gain.value = value ? 0 : 0.5
     },
     play(name) {
@@ -266,6 +279,8 @@ export function createCommandoAudio(initiallyMuted) {
       }
     },
     dispose() {
+      musicOn = false
+      pauseTrack()
       clearInterval(timer)
       ctx?.close().catch(() => {})
       ctx = null

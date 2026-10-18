@@ -1,6 +1,8 @@
-// NGORI RUN sound: effects and a light afro-pop loop, all synthesised with
-// Web Audio — nothing to download. The AudioContext is created on the first
-// tap (browsers refuse to play sound before a user gesture).
+// NGORI RUN (and Moto Boma) sound: effects synthesised with Web Audio, and the
+// games' shared music track (music.js), with a synthesised afro-pop loop as a
+// fallback. The AudioContext is created on the first tap (browsers refuse to
+// play sound before a user gesture).
+import { muteTrack, pauseTrack, playTrack, unlockTrack } from '../music.js'
 
 const MUTE_KEY = 'ngoriRun.muted'
 
@@ -50,6 +52,7 @@ export function createGameAudio(initiallyMuted) {
   let musicTimer = null
   let nextStepTime = 0
   let stepIndex = 0
+  let musicOn = false
 
   function ensure() {
     if (ctx) {
@@ -208,8 +211,24 @@ export function createGameAudio(initiallyMuted) {
     }
   }
 
+  // The synthesised loop: only when the shared track can't play.
+  function startSynth() {
+    const c = ensure()
+    if (!musicOn || !c || musicTimer) return
+    nextStepTime = c.currentTime + 0.1
+    musicTimer = setInterval(() => {
+      while (nextStepTime < c.currentTime + 0.2) {
+        scheduleStep(stepIndex++, nextStepTime)
+        nextStepTime += STEP
+      }
+    }, 50)
+  }
+
   return {
-    unlock: () => ensure(),
+    unlock() {
+      ensure()
+      unlockTrack()
+    },
     play(name) {
       if (muted) return
       try {
@@ -219,15 +238,9 @@ export function createGameAudio(initiallyMuted) {
       }
     },
     startMusic() {
-      const c = ensure()
-      if (!c || musicTimer) return
-      nextStepTime = c.currentTime + 0.1
-      musicTimer = setInterval(() => {
-        while (nextStepTime < c.currentTime + 0.2) {
-          scheduleStep(stepIndex++, nextStepTime)
-          nextStepTime += STEP
-        }
-      }, 50)
+      if (!ensure() || musicOn) return
+      musicOn = true
+      playTrack(muted, startSynth)
     },
     // A street vendor's call, in the browser's own French voice (none on
     // some devices: then simply silent).
@@ -246,15 +259,20 @@ export function createGameAudio(initiallyMuted) {
       }
     },
     stopMusic() {
+      musicOn = false
+      pauseTrack()
       clearInterval(musicTimer)
       musicTimer = null
     },
     setMuted(value) {
       muted = value
+      muteTrack(value)
       if (master) master.gain.setTargetAtTime(value ? 0 : 0.9, ctx.currentTime, 0.05)
     },
     close() {
       if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel()
+      musicOn = false
+      pauseTrack()
       clearInterval(musicTimer)
       musicTimer = null
       ctx?.close().catch(() => {})
