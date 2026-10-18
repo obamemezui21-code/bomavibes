@@ -4,7 +4,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Pause, Play, Volume2, Volume
 import { POWER_TICKS, TICK_RATE, createRun, scoreOf, step } from '../../../../shared/ngori-run/engine.mjs'
 import { createRenderer } from './renderer.js'
 import { loadRenderer3d } from './graphics.js'
-import { DISTRICTS, PHRASES, districtAt, pick, stallFor, stallIndexAt } from './libreville.js'
+import { DISTRICTS, PHRASES, districtAt, pick } from './libreville.js'
 import NgoriCoin from '../../components/NgoriCoin.jsx'
 
 const SIM_MS = 1000 / TICK_RATE
@@ -18,8 +18,6 @@ const KEYS = {
 const POWERUP_LABEL = { magnet: '🧲 Aimant', multiplier: '🔥 ×2', boost: '⚡ Boost', moto: '🏍️ Moto' }
 const BONUS_LABEL = { combo: 'Combo', distance: 'Distance' }
 const HONK_AHEAD = 2600 // cm: a taxi in your lane honks when this close
-const VENDOR_CALL_AHEAD = 12 // m: the vendor shouts just before you pass
-const VENDOR_CALL_GAP_MS = 9000
 
 // One run of NGORI RUN, full screen. Runs the shared simulation at a fixed
 // 60 ticks/s, records every gesture with the tick it was applied on, and
@@ -92,8 +90,6 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
     let started = false
     let lastCombo = 0
     const honked = new Set()
-    let lastStallCalled = -1
-    let lastCallAt = 0
 
     function resize() {
       renderer?.resize(wrap.clientWidth, wrap.clientHeight)
@@ -215,14 +211,6 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
             honked.add(o.id)
             audio.play('honk')
           }
-        }
-        const metres = state.dist / 100
-        const k = stallIndexAt(metres)
-        const stall = k !== lastStallCalled ? stallFor(k, billboardsRef.current) : null
-        if (stall && stall.at - metres <= VENDOR_CALL_AHEAD && now - lastCallAt > VENDOR_CALL_GAP_MS) {
-          lastStallCalled = k
-          lastCallAt = now
-          audio.say(stall.call)
         }
       }
 

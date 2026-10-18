@@ -242,22 +242,6 @@ export function createGameAudio(initiallyMuted) {
       musicOn = true
       playTrack(muted, startSynth)
     },
-    // A street vendor's call, in the browser's own French voice (none on
-    // some devices: then simply silent).
-    say(text) {
-      if (muted || typeof speechSynthesis === 'undefined') return
-      try {
-        speechSynthesis.cancel()
-        const u = new SpeechSynthesisUtterance(text)
-        u.lang = 'fr-FR'
-        u.rate = 1.1
-        u.pitch = 1.2
-        u.volume = 0.8
-        speechSynthesis.speak(u)
-      } catch {
-        // sound is never critical
-      }
-    },
     stopMusic() {
       musicOn = false
       pauseTrack()
@@ -270,7 +254,6 @@ export function createGameAudio(initiallyMuted) {
       if (master) master.gain.setTargetAtTime(value ? 0 : 0.9, ctx.currentTime, 0.05)
     },
     close() {
-      if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel()
       musicOn = false
       pauseTrack()
       clearInterval(musicTimer)
