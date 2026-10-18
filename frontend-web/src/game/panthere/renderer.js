@@ -12,8 +12,19 @@ const BACKDROP_URL = '/commando/bg-lope.webp'
 // Sprite sheets (backend/scripts/buildCommandoSprites.js): the poachers are
 // Commando Okoumé's; each animal variant (engine: 0 gorilla, 1 antelope) and
 // the monster have their own. Until one loads, its figure is drawn by hand.
-const SHEETS = ['braconniers', 'gorille', 'sitatunga', 'monstre']
-const ANIMAL_SHEETS = ['gorille', 'sitatunga']
+const SHEETS = ['braconniers', 'gorille', 'sitatunga', 'elephant', 'pangolin', 'monstre', 'marais']
+// By engine variant: the sheet and how tall the figure is drawn for its hit box
+// (horns, trunks and tails stick out of it); the monsters' head anchor or not.
+const ANIMAL_SHEETS = [
+  { name: 'gorille', height: 1.15, steps: 5 },
+  { name: 'sitatunga', height: 1.35, steps: 7 },
+  { name: 'elephant', height: 1.05, steps: 4 },
+  { name: 'pangolin', height: 1.1, steps: 6 },
+]
+const MONSTER_SHEETS = [
+  { name: 'monstre', height: 1.12, byHead: true },
+  { name: 'marais', height: 1.1, byHead: false },
+]
 
 let backdrop = null
 const sheets = {}
@@ -199,13 +210,14 @@ export function createPantherRenderer(canvas) {
     const bob = Math.sin(time * 4 + t.id) * h * 0.03
     const base = baseOf(t) + bob
     const aiming = isAiming(t)
-    if (sheets.monstre) {
+    const look = MONSTER_SHEETS[t.variant] || MONSTER_SHEETS[0]
+    if (sheets[look.name]) {
       // Breathes while it waits, strikes when it's about to attack, recoils when shot.
       const pose = t.state === 'hit' ? 'hurt' : aiming ? 'throw' : Math.floor(time * 1.6 + t.id) % 2 ? 'up' : 'stand'
       const facing = t.vx ? Math.sign(t.vx) : x > W / 2 ? -1 : 1
       g.save()
       if (t.state === 'hit') g.globalAlpha = Math.max(0, 1 - t.t / 30)
-      drawFrame(g, 'monstre', pose, 0, x, baseOf(t), h * 1.12, facing, true)
+      drawFrame(g, look.name, pose, 0, x, baseOf(t), h * look.height, facing, look.byHead)
       g.restore()
       return
     }
@@ -297,11 +309,11 @@ export function createPantherRenderer(canvas) {
     const step = t.moving ? Math.sin(time * 9 + t.id) : 0
     g.save()
     if (t.state === 'hit') g.globalAlpha = Math.max(0, 1 - t.t / 30)
-    const name = ANIMAL_SHEETS[t.variant]
-    if (sheets[name]) {
-      const height = h * (t.variant ? 1.35 : 1.15)
-      const frame = t.moving ? Math.floor(time * (t.variant ? 7 : 5) + t.id) : 0
-      drawFrame(g, name, t.moving ? 'run' : 'stand', frame, x, base, height, facing)
+    const look = ANIMAL_SHEETS[t.variant] || ANIMAL_SHEETS[0]
+    if (sheets[look.name]) {
+      const height = h * look.height
+      const frame = t.moving ? Math.floor(time * look.steps + t.id) : 0
+      drawFrame(g, look.name, t.moving ? 'run' : 'stand', frame, x, base, height, facing)
       g.restore()
       drawBadge(g, t, x, base - height, w)
       return

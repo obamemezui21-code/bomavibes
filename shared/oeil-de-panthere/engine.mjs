@@ -51,6 +51,13 @@ export const KINDS = {
   animal: { w: 100, h: 86, points: 50, hp: 1, protected: true },
   or: { w: 30, h: 30, points: 75, hp: 1 },
 }
+// Kinds drawn in several looks (target.variant), each with its own size:
+// the monsters (forest, swamp) and the animals (gorilla, sitatunga, forest
+// elephant, pangolin).
+export const VARIANT_SIZES = {
+  monstre: [[86, 112], [120, 112]],
+  animal: [[100, 86], [100, 86], [140, 115], [110, 48]],
+}
 const ROW_BONUS = [2, 1, 1] // far targets are worth double
 const GOLD_FIRST = 900
 const GOLD_EVERY = 1100
@@ -104,8 +111,9 @@ export function createGame(seed, options = {}) {
 // Size of a target in units, for its row.
 export function sizeOf(target) {
   const kind = KINDS[target.kind]
+  const [w, h] = VARIANT_SIZES[target.kind]?.[target.variant] || [kind.w, kind.h]
   const scale = target.row < 0 ? 100 : ROWS[target.row].scale
-  return { w: Math.trunc((kind.w * scale) / 100), h: Math.trunc((kind.h * scale) / 100) }
+  return { w: Math.trunc((w * scale) / 100), h: Math.trunc((h * scale) / 100) }
 }
 
 // Ground line of a target (the coin: its centre's height + half its size).
@@ -138,7 +146,7 @@ function spawn(state) {
   const target = {
     id: state.nextId++,
     kind,
-    variant: randomInt(state, 2),
+    variant: randomInt(state, VARIANT_SIZES[kind]?.length || 2),
     row,
     x: (40 + randomInt(state, W - 80)) * FP,
     vx: 0,
