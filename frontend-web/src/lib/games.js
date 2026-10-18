@@ -14,6 +14,19 @@ import commandoCover from '../assets/game/commando-cover.webp'
 //   cover: optional artwork filling the card (the pictures are then left out)
 export const GAMES = [
   {
+    id: 'oeil-de-panthere',
+    name: 'Œil de Panthère',
+    tagline: 'Tir de précision au fusil à lunette',
+    description: 'Fusil à lunette en main, abats braconniers, monstres de la forêt et cibles dans la Lopé… sans toucher les animaux protégés !',
+    path: '/oeil-de-panthere',
+    pictures: [],
+    cover: '/commando/bg-lope.webp',
+    gradient: 'from-[#1a1208] via-[#3b2a12] to-[#7a3a12]',
+    accent: 'text-amber-300',
+    dailyCap: 5,
+    isNew: true,
+  },
+  {
     id: 'commando-okoume',
     name: 'Commando Okoumé',
     tagline: 'Action rétro à travers le Gabon',

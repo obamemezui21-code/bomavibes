@@ -7,11 +7,14 @@ import { GAMES } from '../lib/games.js'
 import { practiceSeed } from '../game/practice.js'
 import CommandoScreen from '../game/commando/CommandoScreen.jsx'
 import { createCommandoAudio, loadMuted as loadCommandoMuted, saveMuted as saveCommandoMuted } from '../game/commando/audio.js'
+import PantherScreen from '../game/panthere/PantherScreen.jsx'
+import { createPantherAudio } from '../game/panthere/audio.js'
 import MotoScreen from '../game/motoBoma/MotoScreen.jsx'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import { formatTicks, MEDAL_EMOJI, MEDAL_LABEL } from '../game/motoBoma/format.js'
 import { simulateGame } from '../../../shared/commando-okoume/engine.mjs'
+import { simulateGame as simulatePanther } from '../../../shared/oeil-de-panthere/engine.mjs'
 import { DEFAULT_COURSE, simulateRace } from '../../../shared/moto-boma/engine.mjs'
 import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 
@@ -19,18 +22,28 @@ import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 // account (bomavibes.tech/jouer). Guests play in practice mode — the run never
 // reaches the server: no Ngori, no ranking — and are invited to sign up at
 // the end. Commando Okoumé: mission 1 only.
-const GUEST_GAMES = ['commando-okoume', 'moto-boma', 'ngori-run']
+const GUEST_GAMES = ['oeil-de-panthere', 'commando-okoume', 'moto-boma', 'ngori-run']
 const COMMANDO_OPTIONS = { character: 'mboumba', maxHp: 4 }
+const PANTHER_OPTIONS = { rifle: 'carabine' }
 const TOUCH = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
 
 // What an account adds, per game, for the end-of-game invitation.
 const WITH_ACCOUNT = {
+  'oeil-de-panthere': 'choisir ton fusil (précision ou assaut), gagner des Ngori et entrer au classement des meilleurs tireurs',
   'commando-okoume': 'débloquer les missions 2 et 3, monter en grade jusqu’à Colonel, jouer l’Adjudante Moussavou et gagner des Ngori',
   'moto-boma': 'gagner des Ngori, entrer au classement et défier tes matchs en duel',
   'ngori-run': 'gagner des Ngori à chaque course et entrer au classement',
 }
 
 function resultLines(gameId, play, payload) {
+  if (gameId === 'oeil-de-panthere') {
+    const r = simulatePanther(play.seed, PANTHER_OPTIONS, payload.inputs, payload.endTick)
+    return {
+      title: r.completed ? 'Fin de la chasse !' : 'Tu as été touché',
+      lines: [`Score : ${r.score}`, `Précision : ${r.accuracy} %`, `${r.kills.braconnier} braconnier${r.kills.braconnier > 1 ? 's' : ''} et ${r.kills.monstre} monstre${r.kills.monstre > 1 ? 's' : ''} abattus`],
+      stars: r.stars,
+    }
+  }
   if (gameId === 'commando-okoume') {
     const r = simulateGame(play.seed, 1, COMMANDO_OPTIONS, payload.inputs, payload.endTick)
     return {
@@ -60,11 +73,13 @@ function GuestGames() {
   const [result, setResult] = useState(null)
   const [commandoAudio] = useState(() => createCommandoAudio(loadCommandoMuted()))
   const [runAudio] = useState(() => createGameAudio(loadMuted()))
+  const [pantherAudio] = useState(() => createPantherAudio(loadMuted()))
   const [muted, setMuted] = useState(loadMuted)
   const playCount = useRef(0) // a fresh game screen for every game
 
   function start(gameId) {
-    if (gameId === 'commando-okoume') commandoAudio.unlock()
+    if (gameId === 'oeil-de-panthere') pantherAudio.unlock()
+    else if (gameId === 'commando-okoume') commandoAudio.unlock()
     else runAudio.unlock()
     setResult(null)
     playCount.current += 1
@@ -88,6 +103,7 @@ function GuestGames() {
     saveCommandoMuted(next)
     runAudio.setMuted?.(next)
     commandoAudio.setMuted(next)
+    pantherAudio.setMuted(next)
   }
 
   return (
@@ -123,6 +139,7 @@ function GuestGames() {
                   <h2 className="mt-1 font-display text-3xl font-black italic tracking-tight">{game.name}</h2>
                   <p className="mt-2 text-sm text-white/80">{game.description}</p>
                   {game.id === 'commando-okoume' && <p className="mt-2 text-xs text-white/70">Mission 1 en accès libre.</p>}
+                  {game.id === 'oeil-de-panthere' && <p className="mt-2 text-xs text-white/70">Avec la carabine de chasse.</p>}
                 </div>
                 {!game.cover && (
                   <div className="flex shrink-0 items-end">
@@ -173,6 +190,9 @@ function GuestGames() {
       </main>
 
       {/* The game itself, full screen */}
+      {play?.gameId === 'oeil-de-panthere' && (
+        <PantherScreen key={play.key} seed={play.seed} options={PANTHER_OPTIONS} audio={pantherAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />
+      )}
       {play?.gameId === 'commando-okoume' && (
         <CommandoScreen
           key={play.key}

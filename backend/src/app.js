@@ -36,6 +36,7 @@ const vibeCheckRoutes = require("./routes/vibeCheckRoutes");
 const weMetRoutes = require("./routes/weMetRoutes");
 const crushTimeRoutes = require("./routes/crushTimeRoutes");
 const commandoRoutes = require("./routes/commandoRoutes");
+const pantherRoutes = require("./routes/pantherRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
@@ -98,6 +99,7 @@ app.use("/api/vibe-check", vibeCheckRoutes);
 app.use("/api/we-met", weMetRoutes);
 app.use("/api/crush-time", crushTimeRoutes);
 app.use("/api/commando", commandoRoutes);
+app.use("/api/panthere", pantherRoutes);
 app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
 
