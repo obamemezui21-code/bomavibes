@@ -1,0 +1,24 @@
+{
+ "name": "fusil-assaut",
+ "height": 545,
+ "frames": {
+  "stand": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 318,
+    "h": 545,
+    "anchorX": 225,
+    "muzzle": [
+     295,
+     380
+    ],
+    "muzzleUp": [
+     252,
+     0
+    ]
+   }
+  ]
+ },
+ "figureHeight": 545
+}

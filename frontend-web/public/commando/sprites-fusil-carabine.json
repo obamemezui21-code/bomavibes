@@ -1,0 +1,24 @@
+{
+ "name": "fusil-carabine",
+ "height": 548,
+ "frames": {
+  "stand": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 299,
+    "h": 548,
+    "anchorX": 277,
+    "muzzle": [
+     298,
+     11
+    ],
+    "muzzleUp": [
+     284,
+     0
+    ]
+   }
+  ]
+ },
+ "figureHeight": 548
+}

@@ -12,7 +12,25 @@ const BACKDROP_URL = '/commando/bg-lope.webp'
 // Sprite sheets (backend/scripts/buildCommandoSprites.js): the poachers are
 // Commando Okoumé's; each animal variant (engine: 0 gorilla, 1 antelope) and
 // the monster have their own. Until one loads, its figure is drawn by hand.
-const SHEETS = ['braconniers', 'gorille', 'sitatunga', 'elephant', 'pangolin', 'monstre', 'marais']
+const SHEETS = [
+  'braconniers',
+  'gorille',
+  'sitatunga',
+  'elephant',
+  'pangolin',
+  'monstre',
+  'marais',
+  'fusil-carabine',
+  'fusil-precision',
+  'fusil-assaut',
+]
+// The rifles' pictures (first-person, stock cut at the bottom): where the
+// stock leaves the picture and where the muzzle is, in the frame's pixels.
+const RIFLE_ART = {
+  carabine: { bottom: [82, 548], muzzle: [285, 0] },
+  precision: { bottom: [84, 549], muzzle: [256, 0] },
+  assaut: { bottom: [139, 545], muzzle: [257, 0] },
+}
 // By engine variant: the sheet and how tall the figure is drawn for its hit box
 // (horns, trunks and tails stick out of it); the monsters' head anchor or not.
 const ANIMAL_SHEETS = [
@@ -606,7 +624,56 @@ export function createPantherRenderer(canvas) {
   }
   const SCOPE_TUBE = ['#050506', '#4a4e57', '#16171a']
 
+  // The rifle's picture: the stock comes in from the bottom right (the
+  // shoulder) and the muzzle goes just inside the scope's ring, so the rifle
+  // turns with the aim. Returns false until the picture has loaded.
+  function drawRifleArt(rifle, cx, cy, R) {
+    const sh = sheets[`fusil-${rifle}`]
+    const art = RIFLE_ART[rifle]
+    const f = sh?.manifest.frames.stand?.[0]
+    if (!f || !art) return false
+    const g = ctx
+    const size = Math.min(cssW, cssH) * dpr
+    const px0 = canvas.width / 2 + (cx - canvas.width / 2) * 0.5 + size * 0.16
+    const py0 = canvas.height + size * 0.12
+    const toward = Math.hypot(cx - px0, cy - py0) || 1
+    const ux = (cx - px0) / toward
+    const uy = (cy - py0) / toward
+    const back = kick * size * 0.07
+    const px = px0 - ux * back
+    const py = py0 - uy * back
+    const length = Math.max(size * 0.3, toward - R * 0.3)
+    const [bx, by] = art.bottom
+    const [mx, my] = art.muzzle
+    const own = Math.hypot(mx - bx, my - by)
+    const scale = length / own
+    const angle = Math.atan2(uy, ux) - Math.atan2(my - by, mx - bx)
+    g.save()
+    g.translate(px, py)
+    g.rotate(angle)
+    g.scale(scale, scale)
+    g.drawImage(sh.img, f.x, f.y, f.w, f.h, -bx, -by, f.w, f.h)
+    g.restore()
+    if (muzzle > 0) {
+      // The flash shows just outside the ring, where the barrel goes under it.
+      const d = toward - R * 1.08
+      const fx = px0 + ux * d
+      const fy = py0 + uy * d
+      const r = size * 0.12 * muzzle
+      const fl = g.createRadialGradient(fx, fy, 0, fx, fy, r)
+      fl.addColorStop(0, 'rgba(255,250,220,0.95)')
+      fl.addColorStop(0.35, 'rgba(255,190,80,0.75)')
+      fl.addColorStop(1, 'rgba(255,120,40,0)')
+      g.fillStyle = fl
+      g.beginPath()
+      g.arc(fx, fy, r, 0, Math.PI * 2)
+      g.fill()
+    }
+    return true
+  }
+
   function drawRifle(rifle, cx, cy, R) {
+    if (drawRifleArt(rifle, cx, cy, R)) return
     const g = ctx
     const look = RIFLE_LOOKS[rifle] || RIFLE_LOOKS.carabine
     const size = Math.min(cssW, cssH) * dpr

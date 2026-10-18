@@ -1,0 +1,24 @@
+{
+ "name": "fusil-precision",
+ "height": 549,
+ "frames": {
+  "stand": [
+   {
+    "x": 0,
+    "y": 0,
+    "w": 282,
+    "h": 549,
+    "anchorX": 242,
+    "muzzle": [
+     281,
+     154
+    ],
+    "muzzleUp": [
+     255,
+     0
+    ]
+   }
+  ]
+ },
+ "figureHeight": 549
+}
