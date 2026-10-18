@@ -9,11 +9,14 @@ import { H, KINDS, RIFLES, RISE_TICKS, ROWS, W, baseOf, isAiming, shownOf, sizeO
 
 const FP = 16
 const BACKDROP_URL = '/commando/bg-lope.webp'
-const SHEET = 'braconniers'
+// Sprite sheets (backend/scripts/buildCommandoSprites.js): the poachers are
+// Commando Okoumé's; each animal variant (engine: 0 gorilla, 1 antelope) and
+// the monster have their own. Until one loads, its figure is drawn by hand.
+const SHEETS = ['braconniers', 'gorille', 'sitatunga', 'monstre']
+const ANIMAL_SHEETS = ['gorille', 'sitatunga']
 
-// Backdrop and poacher sprites, shared with Commando Okoumé.
 let backdrop = null
-let sheet = null
+const sheets = {}
 let loading = null
 export function preloadArt() {
   loading ||= Promise.all([
@@ -26,23 +29,42 @@ export function preloadArt() {
       img.onerror = () => resolve()
       img.src = BACKDROP_URL
     }),
-    fetch(`/commando/sprites-${SHEET}.json`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('missing'))))
-      .then(
-        (manifest) =>
-          new Promise((resolve) => {
-            const img = new Image()
-            img.onload = () => {
-              sheet = { img, manifest }
-              resolve()
-            }
-            img.onerror = () => resolve()
-            img.src = `/commando/sprites-${SHEET}.webp`
-          }),
-      )
-      .catch(() => {}),
+    ...SHEETS.map((name) =>
+      fetch(`/commando/sprites-${name}.json`)
+        .then((res) => (res.ok ? res.json() : Promise.reject(new Error('missing'))))
+        .then(
+          (manifest) =>
+            new Promise((resolve) => {
+              const img = new Image()
+              img.onload = () => {
+                sheets[name] = { img, manifest }
+                resolve()
+              }
+              img.onerror = () => resolve()
+              img.src = `/commando/sprites-${name}.webp`
+            }),
+        )
+        .catch(() => {}),
+    ),
   ])
   return loading
+}
+
+// One frame of a sheet, feet on `base`, `height` units tall for the figure,
+// facing right (1) or left (-1); centred on x, or on the head with byHead.
+function drawFrame(g, name, pose, index, x, base, height, facing, byHead = false) {
+  const sh = sheets[name]
+  const frames = sh?.manifest.frames[pose] || sh?.manifest.frames.stand
+  if (!frames) return false
+  const f = frames[index % frames.length]
+  const sc = height / sh.manifest.figureHeight
+  g.save()
+  g.translate(x, base)
+  g.scale(facing, 1)
+  const ax = byHead ? f.anchorX : f.w / 2
+  g.drawImage(sh.img, f.x, f.y, f.w, f.h, -ax * sc, -f.h * sc, f.w * sc, f.h * sc)
+  g.restore()
+  return true
 }
 
 // Bumpy tops of each row's bushes, fixed.
@@ -157,16 +179,9 @@ export function createPantherRenderer(canvas) {
     if (t.state === 'hit') pose = 'lying'
     else if (isAiming(t)) pose = 'kneel'
     else if (t.moving) pose = 'run'
-    const frames = sheet?.manifest.frames[pose] || sheet?.manifest.frames.stand
     g.save()
     if (t.state === 'hit') g.globalAlpha = Math.max(0, 1 - t.t / 30)
-    if (frames) {
-      const f = frames[pose === 'run' ? Math.floor(time * 10) % frames.length : 0]
-      const sc = h / sheet.manifest.figureHeight
-      g.translate(x, base)
-      g.scale(facing, 1)
-      g.drawImage(sheet.img, f.x, f.y, f.w, f.h, -f.anchorX * sc, -f.h * sc, f.w * sc, f.h * sc)
-    } else {
+    if (!drawFrame(g, 'braconniers', pose, Math.floor(time * 10), x, base, h, facing, true)) {
       // Until the sheet loads: a dark silhouette with a rifle.
       g.fillStyle = '#2d2a22'
       g.fillRect(x - h * 0.13, base - h * 0.8, h * 0.26, h * 0.8)
@@ -184,6 +199,16 @@ export function createPantherRenderer(canvas) {
     const bob = Math.sin(time * 4 + t.id) * h * 0.03
     const base = baseOf(t) + bob
     const aiming = isAiming(t)
+    if (sheets.monstre) {
+      // Breathes while it waits, strikes when it's about to attack, recoils when shot.
+      const pose = t.state === 'hit' ? 'hurt' : aiming ? 'throw' : Math.floor(time * 1.6 + t.id) % 2 ? 'up' : 'stand'
+      const facing = t.vx ? Math.sign(t.vx) : x > W / 2 ? -1 : 1
+      g.save()
+      if (t.state === 'hit') g.globalAlpha = Math.max(0, 1 - t.t / 30)
+      drawFrame(g, 'monstre', pose, 0, x, baseOf(t), h * 1.12, facing, true)
+      g.restore()
+      return
+    }
     g.save()
     if (t.state === 'hit') {
       const p = t.t / 30
@@ -272,6 +297,15 @@ export function createPantherRenderer(canvas) {
     const step = t.moving ? Math.sin(time * 9 + t.id) : 0
     g.save()
     if (t.state === 'hit') g.globalAlpha = Math.max(0, 1 - t.t / 30)
+    const name = ANIMAL_SHEETS[t.variant]
+    if (sheets[name]) {
+      const height = h * (t.variant ? 1.35 : 1.15)
+      const frame = t.moving ? Math.floor(time * (t.variant ? 7 : 5) + t.id) : 0
+      drawFrame(g, name, t.moving ? 'run' : 'stand', frame, x, base, height, facing)
+      g.restore()
+      drawBadge(g, t, x, base - height, w)
+      return
+    }
     g.translate(x, base)
     g.scale(facing, 1)
     if (t.variant === 0) {
@@ -346,10 +380,14 @@ export function createPantherRenderer(canvas) {
       g.stroke()
     }
     g.restore()
-    // "Protected" badge.
+    drawBadge(g, t, x, base - h, w)
+  }
+
+  // The green "protected" badge above an animal.
+  function drawBadge(g, t, x, top, w) {
     if (t.state !== 'hit') {
       const r = Math.max(3, w * 0.08)
-      const by = base - h - r * 1.2
+      const by = top - r * 1.2
       g.fillStyle = '#16a34a'
       g.beginPath()
       g.arc(x, by, r, 0, Math.PI * 2)
