@@ -38,9 +38,9 @@ export const DEFAULT_RIFLE = 'carabine'
 
 // Ground line and size (%) of each depth row, far to near.
 export const ROWS = [
-  { y: 196, scale: 42 },
-  { y: 256, scale: 68 },
-  { y: 340, scale: 100 },
+  { y: 200, scale: 58 },
+  { y: 262, scale: 88 },
+  { y: 346, scale: 125 },
 ]
 // Sizes at 100 %. head: the top share of the height that counts double.
 // cible: the hit zone is its disc (radius = w / 2) at the top of the post.
