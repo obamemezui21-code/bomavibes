@@ -652,6 +652,27 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   }
   birdGroup.visible = false
   runnerGroup.add(birdGroup)
+
+  // In the river: the runner becomes a fish (silver-blue, orange fins).
+  const fishGroup = new THREE.Group()
+  {
+    const body = new THREE.Mesh(keep(new THREE.SphereGeometry(0.35, 16, 12)), lambert('#5b8fa8'))
+    body.scale.set(0.85, 1.25, 2)
+    const orange = lambert('#f97316')
+    const dorsal = new THREE.Mesh(keep(new THREE.ConeGeometry(0.1, 0.5, 6)), orange)
+    dorsal.position.set(0, 0.5, 0.05)
+    const tail = new THREE.Group()
+    const fin = new THREE.Mesh(keep(new THREE.ConeGeometry(0.32, 0.5, 4)), orange)
+    fin.rotation.x = -Math.PI / 2
+    fin.scale.set(1, 1, 0.25)
+    fin.position.z = 0.25
+    tail.add(fin)
+    tail.position.z = 0.65
+    fishGroup.add(body, dorsal, tail)
+    fishGroup.userData.tail = tail
+  }
+  fishGroup.visible = false
+  runnerGroup.add(fishGroup)
   // The hawk's picture, once loaded, replaces those shapes: one plane facing
   // the camera, showing one frame of the sheet at a time.
   let hawkTex = null
@@ -1783,6 +1804,15 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       motoSprite.rotateZ(motoTilt({ ...view, laneTarget: state.lane }))
     }
     riverRun = 'swim' in state
+    const fish = !!state.swim && !flying && view.crashT <= 0
+    fishGroup.visible = fish
+    if (fish) {
+      runnerSprite.visible = false
+      runnerFallback.visible = false
+      fishGroup.position.y = (state.slide ? -0.6 : 0.25) + y
+      fishGroup.userData.tail.rotation.y = Math.sin(view.time * 11) * 0.5
+      fishGroup.rotation.z = THREE.MathUtils.clamp((state.lane - view.laneVis) * 0.5, -0.35, 0.35)
+    }
     const sink = state.swim && !flying ? (state.slide ? 1.6 : 0.85) : 0 // swimming: chest-deep, or under when diving
     runnerSprite.position.y = y - sink
     runnerFallback.position.y = y - sink

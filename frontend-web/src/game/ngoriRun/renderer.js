@@ -1496,7 +1496,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     const p = project(x, 0, 30)
     const u = p.s
     const diving = state.slide > 0
-    const top = diving ? 150 : Math.max(0, 95 - lifted)
+    const top = diving ? 220 : Math.max(0, 40 - lifted) // the fish swims half out of the water
     if (top > 0) {
       ctx.fillStyle = WATER[0]
       ctx.fillRect(p.x - 95 * u, p.y - top * u, 190 * u, (top + 30) * u)
@@ -1522,11 +1522,89 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     }
   }
 
+  // In the river the runner becomes a fish (a big "capitaine", silver-blue
+  // with orange fins), seen from behind: tail sweeping, fins paddling, a
+  // splash of light on the scales; a leap throws it out of the water.
+  function drawFish(state, view, x) {
+    const jumpT = state.jump ? Math.min(1, (state.jump + view.alpha) / JUMP_TICKS) : 0
+    const y = state.jump ? 4 * 150 * jumpT * (1 - jumpT) : 0
+    const p = project(x, y - 10, 30)
+    const u = p.s * 1.25
+    const sweep = Math.sin(view.time * 11) * 0.45
+    ctx.save()
+    ctx.translate(p.x, p.y)
+    ctx.rotate(Math.max(-0.35, Math.min(0.35, (state.lane - view.laneVis) * 0.5)) + (state.jump ? (jumpT - 0.5) * 0.4 : 0))
+    // Tail fin, sweeping side to side.
+    ctx.save()
+    ctx.translate(0, -18 * u)
+    ctx.rotate(sweep)
+    ctx.fillStyle = '#f97316'
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.quadraticCurveTo(-34 * u, 30 * u, -40 * u, 56 * u)
+    ctx.quadraticCurveTo(0, 38 * u, 40 * u, 56 * u)
+    ctx.quadraticCurveTo(34 * u, 30 * u, 0, 0)
+    ctx.fill()
+    ctx.restore()
+    // Pectoral fins.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#fb923c'
+      ctx.beginPath()
+      ctx.ellipse(side * 42 * u, -52 * u, 22 * u, 9 * u, side * (0.5 + Math.sin(view.time * 8 + side) * 0.3), 0, Math.PI * 2)
+      ctx.fill()
+    }
+    // Body, from behind: a tall oval, silver on the sides, blue on the back.
+    const body = ctx.createLinearGradient(-36 * u, 0, 36 * u, 0)
+    body.addColorStop(0, '#5b8fa8')
+    body.addColorStop(0.35, '#cfe6ef')
+    body.addColorStop(0.5, '#2f6f8f')
+    body.addColorStop(0.65, '#cfe6ef')
+    body.addColorStop(1, '#5b8fa8')
+    ctx.fillStyle = body
+    ctx.beginPath()
+    ctx.ellipse(0, -70 * u, 36 * u, 62 * u, 0, 0, Math.PI * 2)
+    ctx.fill()
+    // Scales.
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'
+    ctx.lineWidth = Math.max(0.6, 1.5 * u)
+    for (let r = 0; r < 4; r++) {
+      for (let c = -1; c <= 1; c++) {
+        ctx.beginPath()
+        ctx.arc(c * 18 * u, -100 * u + r * 18 * u, 8 * u, 0.2, Math.PI - 0.2)
+        ctx.stroke()
+      }
+    }
+    // Dorsal fin along the back.
+    ctx.fillStyle = '#ea580c'
+    ctx.beginPath()
+    ctx.moveTo(-6 * u, -120 * u)
+    ctx.quadraticCurveTo(0, -170 * u, 6 * u, -120 * u)
+    ctx.lineTo(4 * u, -60 * u)
+    ctx.lineTo(-4 * u, -60 * u)
+    ctx.fill()
+    // Eyes peeking out on each side of the head.
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#fef9c3'
+      ctx.beginPath()
+      ctx.arc(side * 30 * u, -112 * u, 6 * u, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#111'
+      ctx.beginPath()
+      ctx.arc(side * 31 * u, -112 * u, 3 * u, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.restore()
+  }
+
   // The runner, seen from behind: afro puff, pink headphones, BomaVibes jacket.
   function drawRunner(state, view) {
     const x = (view.laneVis - 1) * LANE_W
     if (state.bird) {
       drawBird(state, view, x, birdAltitude(state, view.alpha))
+      return
+    }
+    if (state.swim && view.crashT <= 0) {
+      drawFish(state, view, x)
       return
     }
     const jumpT = state.jump ? Math.min(1, (state.jump + view.alpha) / JUMP_TICKS) : 0
