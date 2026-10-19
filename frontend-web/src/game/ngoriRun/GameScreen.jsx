@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Pause, Play, Volume2, VolumeX } from 'lucide-react'
-import { BIRD_TICKS, POWER_TICKS, TICK_RATE, createRun, scoreOf, step } from '../../../../shared/ngori-run/engine.mjs'
+import { BIRD_TICKS, POWER_TICKS, TICK_RATE, createRun, scoreOf, step, summarize } from '../../../../shared/ngori-run/engine.mjs'
+import { progressAfter } from '../../../../shared/ngori-run/missions.mjs'
 import { createRenderer } from './renderer.js'
 import { createStormOverlay, stormLevel } from '../storm.js'
 import { loadRenderer3d } from './graphics.js'
@@ -26,7 +27,9 @@ const HONK_AHEAD = 2600 // cm: a taxi in your lane honks when this close
 // hands { inputs, endTick, claimed } to onEnd — the server replays it.
 // graphics '3d' draws it with Three.js (renderer3d.js), falling back to the
 // 2D canvas if that can't start; the simulation is the same either way.
-function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, onToggleMute, showButtons, onEnd }) {
+// missions: today's daily missions (null in training) — announced the moment
+// this run completes one; the server pays them after its replay.
+function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, onToggleMute, showButtons, missions, onEnd }) {
   const canvasRef = useRef(null)
   const stormRef = useRef(null)
   const wrapRef = useRef(null)
@@ -40,6 +43,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
   const rendererRef = useRef(null)
   const endRef = useRef(null)
   const billboardsRef = useRef(billboards)
+  const missionsRef = useRef(missions)
 
   useEffect(() => {
     onEndRef.current = onEnd
@@ -99,6 +103,8 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
     let started = false
     let lastCombo = 0
     const honked = new Set()
+    // "games" only counts once the run is over: nothing to announce mid-run.
+    let missionsLeft = (missionsRef.current || []).filter((m) => !m.done && m.metric !== 'games')
 
     function resize() {
       renderer?.resize(wrap.clientWidth, wrap.clientHeight)
@@ -257,6 +263,15 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
 
       if (now - lastHud > 100) {
         lastHud = now
+        if (missionsLeft.length) {
+          const sofar = summarize(state)
+          const done = missionsLeft.find((m) => progressAfter(m, m.progress, sofar) >= m.goal)
+          if (done) {
+            missionsLeft = missionsLeft.filter((m) => m !== done)
+            audio.play('bonus')
+            showToast(`🎯 Mission accomplie : ${done.label} ! +${done.reward} Ngori`)
+          }
+        }
         setHud({
           distance: Math.floor(state.dist / 100),
           district,

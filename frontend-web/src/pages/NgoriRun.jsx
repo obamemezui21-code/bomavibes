@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, BarChart3, Dumbbell, Gift, HelpCircle, Play, Trophy, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, BarChart3, Check, Dumbbell, Gift, HelpCircle, Play, Target, Trophy, Volume2, VolumeX } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { finishNgoriRun, getMyNgoriRunStats, getNgoriRunLeaderboard, startNgoriRun } from '../firebase/ngoriRun.js'
@@ -13,6 +13,7 @@ import { loadRenderer3d, webglSupported } from '../game/ngoriRun/graphics.js'
 import { districtAt, placeVenues } from '../game/ngoriRun/libreville.js'
 import { fetchPublishedVenues } from '../firebase/venues.js'
 import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
+import { MISSION_TIERS } from '../../../shared/ngori-run/missions.mjs'
 import { practiceId, practiceSeed } from '../game/practice.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 import kevinPortrait from '../assets/game/kevin.webp'
@@ -94,6 +95,55 @@ function GoalBar({ balance, dark }) {
       <p className={`mt-1.5 text-xs ${dark ? 'text-white/70' : 'text-ink-soft/60'}`}>
         Encore <strong>{goal.missing} Ngori</strong> pour débloquer {goal.reward.label.toLowerCase()} ({goal.reward.duration}).
       </p>
+    </div>
+  )
+}
+
+// "1 200 / 3 000 m" — distances in metres, everything else as a count.
+function missionCount(m) {
+  return m.metric === 'distance' ? `${fmt(m.progress)} / ${fmt(m.goal)} m` : `${m.progress} / ${m.goal}`
+}
+
+// Today's three missions (shared/ngori-run/missions.mjs), paid by the
+// server on top of the game's daily cap.
+function DailyMissions({ missions }) {
+  if (!missions?.length) return null
+  const doneCount = missions.filter((m) => m.done).length
+  return (
+    <div className="mt-4 rounded-2xl bg-surface p-4 shadow-sm">
+      <div className="flex items-center gap-2">
+        <Target size={18} className="text-violet-600" strokeWidth={2.25} />
+        <p className="flex-1 font-display text-base font-bold text-ink">Missions du jour</p>
+        <span className="rounded-full bg-violet-500/12 px-2.5 py-0.5 text-xs font-bold text-violet-600">{doneCount}/3</span>
+      </div>
+      <p className="mt-0.5 text-xs text-ink-soft/60">Nouvelles missions chaque jour · Ngori en plus de la limite du jeu</p>
+      <ul className="mt-3 space-y-2.5">
+        {missions.map((m) => (
+          <li key={m.id} className={`flex items-center gap-3 rounded-xl p-2.5 ${m.done ? 'bg-emerald-500/10' : 'bg-ink/[0.03]'}`}>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-lg shadow-sm dark:bg-surface-tint">
+              {m.done ? <Check size={18} className="text-emerald-600" strokeWidth={3} /> : m.emoji}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-semibold ${m.done ? 'text-ink-soft line-through decoration-emerald-600/50' : 'text-ink'}`}>{m.label}</p>
+              <div className="mt-1 flex items-center gap-2">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink/10">
+                  <div
+                    className={`h-full rounded-full ${m.done ? 'bg-emerald-500' : 'bg-violet-500'}`}
+                    style={{ width: `${Math.min(1, m.progress / m.goal) * 100}%` }}
+                  />
+                </div>
+                <span className="shrink-0 text-[11px] tabular-nums text-ink-soft/60">{missionCount(m)}</span>
+              </div>
+            </div>
+            <span className="flex shrink-0 flex-col items-end">
+              <span className="flex items-center gap-0.5 text-sm font-bold text-ink">
+                +{m.reward} <NgoriCoin size={14} />
+              </span>
+              <span className="text-[10px] text-ink-soft/50">{MISSION_TIERS[m.tier]}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
@@ -188,6 +238,7 @@ function Stats({ refreshKey }) {
     ['💰', 'Ngori gagnés', fmt(s.totalEarned)],
     ['🎮', 'Parties', fmt(s.games)],
     ['🔥', 'Meilleur combo', `×${s.bestCombo}`],
+    ['🎯', 'Missions réussies', fmt(s.missionsDone)],
     ['🏆', 'Classement', rank ? `${rank}ᵉ cette semaine` : '—'],
     ['📅', "Gagnés aujourd'hui", `${data.earnedToday} / ${data.dailyCap}`],
   ]
@@ -243,6 +294,7 @@ function Help({ dailyCap }) {
     ['🏁 Distance', 'Bonus à 500 m (+1), 1 km (+2), 2 km (+3) et 5 km (+5). La vitesse augmente toutes les 30 secondes.'],
     ['⚡ Bonus rares', '🛡️ Bouclier : encaisse un choc. 🧲 Aimant : attire les Ngori. ×2 : double les Ngori. ⚡ Boost : vitesse et invincibilité. 🏍️ Moto (très rare) : tu montes en moto, 2 fois plus vite, et tu renverses tout sur ton passage pendant 6 secondes.'],
     ['💰 Gains', `Tes Ngori ramassés sont crédités sur ton solde, jusqu'à ${dailyCap} Ngori par jour grâce au jeu. Ensuite tu peux continuer à jouer pour le classement !`],
+    ['🎯 Missions du jour', 'Chaque jour, 3 nouvelles missions (facile, moyenne, difficile), les mêmes pour tout le monde. Chacune réussie rapporte des Ngori en plus de la limite du jeu. Les courses d’entraînement ne comptent pas.'],
   ]
   return (
     <div className="space-y-2.5">
@@ -261,6 +313,7 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
   const r = outcome?.result || local
   const practice = !!outcome?.practice
   const capped = outcome && !practice && outcome.credited < r.total && !outcome.anomaly
+  const completed = (outcome?.missions || []).filter((m) => outcome.completedMissions?.includes(m.id))
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -346,6 +399,29 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
           </div>
         )}
 
+        {completed.length > 0 && (
+          <div className="mt-3 rounded-2xl bg-gold/15 p-3.5 ring-1 ring-gold/40">
+            <p className="text-center text-xs font-bold uppercase tracking-wide text-amber-200">
+              🎯 {completed.length > 1 ? 'Missions accomplies' : 'Mission accomplie'}
+            </p>
+            <ul className="mt-2 space-y-1 text-sm">
+              {completed.map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-2">
+                  <span>
+                    {m.emoji} {m.label}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1 font-bold">
+                    +{m.reward} <NgoriCoin size={14} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {outcome.missions.every((m) => m.done) && (
+              <p className="mt-2 text-center text-xs text-amber-100/80">Les 3 missions du jour sont faites, bravo ! Rendez-vous demain 🇬🇦</p>
+            )}
+          </div>
+        )}
+
         {!practice && (
           <div className="mt-4">
             <p className="mb-2 text-center text-sm font-semibold">Tu es maintenant à {balance} Ngori</p>
@@ -401,6 +477,7 @@ function NgoriRun() {
   const [outcome, setOutcome] = useState(null)
   const [saveError, setSaveError] = useState(null)
   const [today, setToday] = useState(null) // { earnedToday, dailyCap }
+  const [missions, setMissions] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const balance = account?.ngori || 0
 
@@ -424,7 +501,10 @@ function NgoriRun() {
 
   useEffect(() => {
     getMyNgoriRunStats()
-      .then((d) => setToday({ earnedToday: d.earnedToday, dailyCap: d.dailyCap }))
+      .then((d) => {
+        setToday({ earnedToday: d.earnedToday, dailyCap: d.dailyCap })
+        setMissions(d.missions || null)
+      })
       .catch(() => {})
   }, [refreshKey])
 
@@ -451,6 +531,7 @@ function NgoriRun() {
       const r = await startNgoriRun()
       setRun({ runId: r.runId, seed: r.seed })
       setToday({ earnedToday: r.earnedToday, dailyCap: r.dailyCap })
+      if (r.missions) setMissions(r.missions)
       setPhase('playing')
     } catch (err) {
       showToast(err.message === 'request failed' ? 'Impossible de lancer la course, réessaie.' : err.message, 'error')
@@ -465,7 +546,8 @@ function NgoriRun() {
         const res = await finishNgoriRun(run.runId, data)
         setOutcome(res)
         setToday({ earnedToday: res.earnedToday, dailyCap: res.dailyCap })
-        if (res.credited > 0) audio.play('reward')
+        if (res.missions) setMissions(res.missions)
+        if (res.credited > 0 || res.missionReward > 0) audio.play('reward')
         setRefreshKey((k) => k + 1)
       } catch (err) {
         // 409: already saved (e.g. a retry after a timeout that did go through).
@@ -622,6 +704,8 @@ function NgoriRun() {
           )}
         </div>
 
+        <DailyMissions missions={missions} />
+
         <button
           type="button"
           onClick={() => navigate('/moto-boma')}
@@ -670,6 +754,7 @@ function NgoriRun() {
           muted={muted}
           onToggleMute={toggleMute}
           showButtons={showButtons}
+          missions={run.practice ? null : missions}
           onEnd={handleEnd}
         />
       )}

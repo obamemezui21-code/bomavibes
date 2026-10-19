@@ -171,6 +171,11 @@ export function createRun(seed) {
     nextBirdCharge: BIRD_EVERY_M,
     combo: 0,
     bestCombo: 0,
+    // Counted for the daily missions (shared/ngori-run/missions.mjs) only.
+    rivers: 0, // rivers swum all the way across
+    flights: 0,
+    powerupsTaken: 0,
+    smashes: 0, // obstacles knocked over on the motorbike
     coins: 0, // Ngori picked up on the road
     bonus: 0, // Ngori from combos and distance milestones
     points: 0, // score from coins and bonuses
@@ -247,6 +252,7 @@ function applyAction(state, action) {
     if (state.bird || state.moto || !state.birdCharges) return
     state.birdCharges--
     state.bird = BIRD_TICKS
+    state.flights++
     state.jump = 0
     state.slide = 0
     // A trail of Ngori up in the sky, weaving across the lanes.
@@ -284,6 +290,7 @@ export function step(state, actions = []) {
   const swim = riverAt(Math.floor(state.dist / 100))
   if (swim !== state.swim) {
     state.swim = swim
+    if (!swim) state.rivers++
     state.events.push({ type: swim ? 'river-in' : 'river-out' })
     // No motorbike in the water.
     if (swim && state.moto) {
@@ -312,6 +319,7 @@ export function step(state, actions = []) {
     if (state.moto) {
       // The bike knocks it out of the way.
       o.hit = true
+      state.smashes++
       state.events.push({ type: 'smash', obstacle: o.type })
       continue
     }
@@ -357,6 +365,7 @@ export function step(state, actions = []) {
   for (const p of state.powerups) {
     if (p.taken || high || p.lane !== state.lane || p.z < state.prevDist || p.z >= front) continue
     p.taken = true
+    state.powerupsTaken++
     if (p.type === 'shield') state.shield = true
     else state[p.type] = POWER_TICKS[p.type]
     state.events.push({ type: 'powerup', powerup: p.type })
@@ -414,6 +423,10 @@ export function summarize(state) {
     bonus: state.bonus,
     total: state.coins + state.bonus,
     bestCombo: state.bestCombo,
+    rivers: state.rivers,
+    flights: state.flights,
+    powerups: state.powerupsTaken,
+    smashes: state.smashes,
     crashed: state.crashed,
   }
 }

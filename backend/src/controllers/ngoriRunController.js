@@ -16,12 +16,23 @@ const { FieldValue } = admin.firestore;
 //   ngoriRunStats/{uid}                        personal bests and totals
 //   ngoriRunLeaderboard/{week}/entries/{uid}   weekly best score, first name + photo only
 //   usage/{uid}.run*                           today's starts and Ngori earned in the game
+//   usage/{uid}.runMissions                    { day, progress: { [missionId]: n } } — daily missions
 
 // The engine is an ES module shared with the app: loaded once, lazily.
 let enginePromise = null;
 function loadEngine() {
     enginePromise ||= import("../../../shared/ngori-run/engine.mjs");
     return enginePromise;
+}
+let missionsPromise = null;
+function loadMissions() {
+    missionsPromise ||= import("../../../shared/ngori-run/missions.mjs");
+    return missionsPromise;
+}
+
+// Today's mission progress, or nothing when it's from another day.
+function savedMissions(usage, today) {
+    return usage?.runMissions?.day === today ? usage.runMissions : null;
 }
 
 class RunError extends Error {
@@ -54,7 +65,7 @@ function anomalyOf({ run, result, claimed, now }) {
     return null;
 }
 
-// POST /api/ngori-run/start → { runId, seed, earnedToday, dailyCap }
+// POST /api/ngori-run/start → { runId, seed, earnedToday, dailyCap, missions }
 async function startRun(req, res) {
     const uid = req.firebaseUser.uid;
     const usageRef = db.collection("usage").doc(uid);
@@ -63,7 +74,8 @@ async function startRun(req, res) {
     const today = periodKey("day", now);
     const seed = crypto.randomInt(0, 2 ** 32);
     try {
-        const earned = await db.runTransaction(async (tx) => {
+        const missions = await loadMissions();
+        const { earned, saved } = await db.runTransaction(async (tx) => {
             const usage = (await tx.get(usageRef)).data() || {};
             const { starts, earned } = todayUsage(usage, today);
             if (starts >= NGORI_RUN.maxStartsPerDay) {
@@ -74,9 +86,15 @@ async function startRun(req, res) {
             }
             tx.set(usageRef, { runDay: today, runStarts: starts + 1, runLastStartAt: now }, { merge: true });
             tx.set(runRef, { uid, seed, startedAt: now, status: "running" });
-            return earned;
+            return { earned, saved: savedMissions(usage, today) };
         });
-        res.json({ runId: runRef.id, seed, earnedToday: earned, dailyCap: NGORI_RUN.dailyCap });
+        res.json({
+            runId: runRef.id,
+            seed,
+            earnedToday: earned,
+            dailyCap: NGORI_RUN.dailyCap,
+            missions: missions.missionsView(today, saved, NGORI_RUN.missionRewards),
+        });
     } catch (err) {
         sendError(res, err, "Impossible de lancer la course");
     }
@@ -84,7 +102,8 @@ async function startRun(req, res) {
 
 // POST /api/ngori-run/finish { runId, inputs: [[tick, action]…], endTick, claimed: { score, distance } }
 // Replays the run, then pays min(Ngori earned in the run, what's left of
-// today's cap). A run can only be finished once.
+// today's cap), plus the reward of every daily mission it completes (on top
+// of the cap). A run can only be finished once.
 async function finishRun(req, res) {
     const uid = req.firebaseUser.uid;
     const { runId, inputs, endTick, claimed } = req.body || {};
@@ -102,7 +121,7 @@ async function finishRun(req, res) {
     const boardRef = db.collection("ngoriRunLeaderboard").doc(week).collection("entries").doc(uid);
 
     try {
-        const engine = await loadEngine();
+        const [engine, missions] = await Promise.all([loadEngine(), loadMissions()]);
         const runSnap = await runRef.get();
         const run = runSnap.data();
         if (!run || run.uid !== uid) throw new RunError(404, "Course inconnue");
@@ -131,13 +150,35 @@ async function finishRun(req, res) {
 
             const { earned } = todayUsage(usageSnap.data(), today);
             const credited = payable ? Math.max(0, Math.min(result.total, NGORI_RUN.dailyCap - earned)) : 0;
-            const balance = (userSnap.data()?.ngori || 0) + credited;
+
+            // Daily missions: only a run that pays moves them forward.
+            const progress = { ...(savedMissions(usageSnap.data(), today)?.progress || {}) };
+            const completed = [];
+            let missionReward = 0;
+            if (payable) {
+                for (const m of missions.missionsFor(today)) {
+                    const before = progress[m.id] || 0;
+                    progress[m.id] = missions.progressAfter(m, before, result);
+                    if (before < m.goal && progress[m.id] >= m.goal) {
+                        completed.push(m.id);
+                        missionReward += NGORI_RUN.missionRewards[m.tier];
+                    }
+                }
+            }
+
+            const balance = (userSnap.data()?.ngori || 0) + credited + missionReward;
             const stats = statsSnap.data() || {};
             const board = boardSnap.data();
 
-            tx.update(runRef, { status: payable ? "finished" : "rejected", result, credited, anomaly, finishedAt: now });
-            if (credited) tx.update(userRef, { ngori: balance });
-            tx.set(usageRef, { runEarnDay: today, runEarned: earned + credited }, { merge: true });
+            tx.update(runRef, { status: payable ? "finished" : "rejected", result, credited, missionReward, anomaly, finishedAt: now });
+            if (credited || missionReward) tx.update(userRef, { ngori: balance });
+            // mergeFields: runMissions is replaced whole, so yesterday's
+            // progress doesn't linger next to today's.
+            tx.set(
+                usageRef,
+                { runEarnDay: today, runEarned: earned + credited, runMissions: { day: today, progress } },
+                { mergeFields: ["runEarnDay", "runEarned", "runMissions"] },
+            );
             tx.set(
                 statsRef,
                 {
@@ -146,7 +187,8 @@ async function finishRun(req, res) {
                     bestScore: Math.max(stats.bestScore || 0, payable ? result.score : 0),
                     bestCombo: Math.max(stats.bestCombo || 0, payable ? result.bestCombo : 0),
                     totalCollected: (stats.totalCollected || 0) + (payable ? result.total : 0),
-                    totalEarned: (stats.totalEarned || 0) + credited,
+                    totalEarned: (stats.totalEarned || 0) + credited + missionReward,
+                    missionsDone: (stats.missionsDone || 0) + completed.length,
                     lastPlayedAt: FieldValue.serverTimestamp(),
                 },
                 { merge: true },
@@ -167,6 +209,9 @@ async function finishRun(req, res) {
             }
             return {
                 credited,
+                missionReward,
+                completedMissions: completed,
+                missions: missions.missionsView(today, { progress }, NGORI_RUN.missionRewards),
                 balance,
                 earnedToday: earned + credited,
                 newBestScore: payable && result.score > (stats.bestScore || 0),
@@ -212,10 +257,13 @@ async function getLeaderboard(req, res) {
     }
 }
 
-// GET /api/ngori-run/me → personal stats + today's progress toward the cap.
+// GET /api/ngori-run/me → personal stats, today's progress toward the cap
+// and today's missions.
 async function getMyRunStats(req, res) {
     const uid = req.firebaseUser.uid;
+    const today = periodKey("day");
     try {
+        const missions = await loadMissions();
         const [statsSnap, usageSnap] = await Promise.all([
             db.collection("ngoriRunStats").doc(uid).get(),
             db.collection("usage").doc(uid).get(),
@@ -229,9 +277,11 @@ async function getMyRunStats(req, res) {
                 bestCombo: s.bestCombo || 0,
                 totalCollected: s.totalCollected || 0,
                 totalEarned: s.totalEarned || 0,
+                missionsDone: s.missionsDone || 0,
             },
-            earnedToday: todayUsage(usageSnap.data(), periodKey("day")).earned,
+            earnedToday: todayUsage(usageSnap.data(), today).earned,
             dailyCap: NGORI_RUN.dailyCap,
+            missions: missions.missionsView(today, savedMissions(usageSnap.data(), today), NGORI_RUN.missionRewards),
         });
     } catch (err) {
         sendError(res, err, "Impossible de charger vos statistiques");

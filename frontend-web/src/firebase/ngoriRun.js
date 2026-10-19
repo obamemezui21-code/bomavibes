@@ -18,12 +18,12 @@ async function api(path, options = {}) {
   return body
 }
 
-// → { runId, seed, earnedToday, dailyCap }
+// → { runId, seed, earnedToday, dailyCap, missions }
 export function startNgoriRun() {
   return api('/api/ngori-run/start', { method: 'POST' })
 }
 
-// → { result, credited, balance, earnedToday, dailyCap, anomaly, newBestScore, newBestDistance }
+// → { result, credited, missionReward, completedMissions, missions, balance, earnedToday, dailyCap, anomaly, newBestScore, newBestDistance }
 export function finishNgoriRun(runId, { inputs, endTick, claimed }) {
   return api('/api/ngori-run/finish', { method: 'POST', body: JSON.stringify({ runId, inputs, endTick, claimed }) })
 }
@@ -33,7 +33,8 @@ export function getNgoriRunLeaderboard() {
   return api('/api/ngori-run/leaderboard')
 }
 
-// → { stats: { games, bestDistance, bestScore, bestCombo, totalCollected, totalEarned }, earnedToday, dailyCap }
+// → { stats: { games, bestDistance, bestScore, bestCombo, totalCollected, totalEarned, missionsDone }, earnedToday, dailyCap, missions }
+// missions: today's three [{ id, tier, label, emoji, metric, mode, goal, progress, done, reward }] (shared/ngori-run/missions.mjs)
 export function getMyNgoriRunStats() {
   return api('/api/ngori-run/me')
 }

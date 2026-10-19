@@ -40,6 +40,9 @@ const NGORI_RUN = {
     // Real time must be at least this share of the simulated time (pauses
     // only make it longer; a replay "played" faster than real time is forged).
     minTimeRatio: 0.9,
+    // Daily missions (shared/ngori-run/missions.mjs): Ngori for an easy,
+    // medium and hard one, paid on top of dailyCap.
+    missionRewards: [1, 1, 2],
 };
 
 // MOTO BOMA, the motorbike race: its own daily cap, same safeguards.
