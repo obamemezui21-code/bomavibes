@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { FLAG_BORDER, FLAG_DESIGNS, flagLogoReady, paintFlag } from '../flags.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { JUMP_TICKS, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
@@ -974,27 +975,23 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     return g
   }
 
-  // The SW (Star Waz) flags: a black cloth with white letters and border on
-  // a light pole. One cloth shape per side (it hangs away from the road);
-  // waveFlags() ripples their vertices every frame.
-  const flagMat = panelMat(
-    'flag|SW',
-    256,
-    160,
-    (ctx, w, h) => {
-      ctx.fillStyle = '#0a0a0a'
-      ctx.fillRect(0, 0, w, h)
-      ctx.strokeStyle = '#ffffff'
-      ctx.lineWidth = h * 0.07
-      ctx.strokeRect(h * 0.06, h * 0.06, w - h * 0.12, h * 0.88)
-      fitText(ctx, 'SW', 900, h * 0.62, w * 0.8)
-      ctx.fillStyle = '#ffffff'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('SW', w / 2, h * 0.53)
-    },
-    { side: THREE.DoubleSide },
-  )
+  // The flags (BomaVibes, Gabon, SW, 2NK3, game/flags.js): a cloth with its
+  // border on a light pole. One cloth shape per side (it hangs away from the
+  // road); waveFlags() ripples their vertices every frame. The BomaVibes
+  // cloth is painted again once the logo has loaded.
+  const flagMat = (design) =>
+    panelMat(
+      `flag|${design}|${flagLogoReady()}`,
+      256,
+      160,
+      (ctx, w, h) => {
+        paintFlag(ctx, design, 0, 0, w, h)
+        ctx.strokeStyle = FLAG_BORDER[design]
+        ctx.lineWidth = h * 0.07
+        ctx.strokeRect(h * 0.035, h * 0.035, w - h * 0.07, h * 0.93)
+      },
+      { side: THREE.DoubleSide },
+    )
   const flagGeos = [-1, 1].map((side) => keep(new THREE.PlaneGeometry(1.5, 0.95, 10, 1).translate(side * 0.75, -0.475, 0)))
   const flagRest = flagGeos.map((g) => Float32Array.from(g.attributes.position.array))
   function waveFlags(time) {
@@ -1010,8 +1007,8 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       pos.needsUpdate = true
     })
   }
-  function buildFlag(side) {
-    const cloth = new THREE.Mesh(flagGeos[side > 0 ? 1 : 0], flagMat)
+  function buildFlag(side, design) {
+    const cloth = new THREE.Mesh(flagGeos[side > 0 ? 1 : 0], flagMat(FLAG_DESIGNS[design] || 'sw'))
     cloth.position.y = 3.3
     return group(pole(0.035, 3.4, lambert('#d4d4d8')), cloth)
   }
@@ -1579,7 +1576,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     const flagStep = FLAG_EVERY * 100
     for (let k = Math.max(0, Math.floor((dist - camBackCm) / flagStep)); k * flagStep < dist + VIEW_CM; k++) {
       const flag = flagFor(k)
-      if (flag && inView(flag.at * 100 - dist)) place(`flag${k}`, () => buildFlag(flag.side), flag.at * 100 - dist, flag.side * (ROAD_HALF + 0.6))
+      if (flag && inView(flag.at * 100 - dist)) place(`flag${k}|${flagLogoReady()}`, () => buildFlag(flag.side, flag.design), flag.at * 100 - dist, flag.side * (ROAD_HALF + 0.6))
     }
     waveFlags(time)
     LANDMARKS.forEach((l, i) => {

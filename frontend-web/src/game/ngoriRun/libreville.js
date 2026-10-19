@@ -131,7 +131,7 @@ export function passerbyFor(k, billboards = []) {
   return isFree(at, billboards) ? { at, ...PASSERSBY[k % PASSERSBY.length] } : null
 }
 
-// The black-and-white SW (Star Waz) flags all along the route: one every
+// The flags all along the route (BomaVibes, Gabon, SW, 2NK3): one every
 // FLAG_EVERY m, sides alternating (-1 left, 1 right), kept clear of the
 // stalls, passers-by, street lamps, signs and arches.
 export const FLAG_EVERY = 11
@@ -145,7 +145,8 @@ export function flagFor(k) {
   if (inStallRow < 3 || inStallRow > STALL_EVERY - 3 || Math.abs(inStallRow - 28) < 3) return null
   if (side > 0 && Math.abs((((at - 7) % LAMP_EVERY) + LAMP_EVERY) % LAMP_EVERY - LAMP_EVERY / 2) > LAMP_EVERY / 2 - 2) return null
   if (LANDMARKS.some((l) => Math.abs(l.at - at) < 6) || DISTRICTS.some(([from]) => Math.abs(from - at) < 8)) return null
-  return { at, side }
+  // Which flag (game/flags.js FLAG_DESIGNS), in turn on each side of the road.
+  return { at, side, design: Math.floor(k / 2) % 4 }
 }
 
 // Index of the stall at or just past `metres`.

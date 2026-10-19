@@ -6,6 +6,7 @@ import monumentsUrl from '../../assets/game/monuments.webp'
 import motoKevinUrl from '../../assets/game/moto-kevin.webp'
 import motoAichaUrl from '../../assets/game/moto-aicha.webp'
 import trafficUrl from '../../assets/game/traffic.webp'
+import { FLAG_BORDER, FLAG_DESIGNS, paintFlag } from '../flags.js'
 import {
   DIRECTION_SIGNS,
   DISTRICTS,
@@ -509,8 +510,9 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.globalAlpha = 1
   }
 
-  // A black-and-white SW (Star Waz) flag on a pole, waving outwards.
+  // A flag on a pole (BomaVibes, Gabon, SW or 2NK3), waving outwards.
   function drawFlag(zr, flag, k, time) {
+    const design = FLAG_DESIGNS[flag.design] || 'sw'
     const x = flag.side * (ROAD_HALF + 60)
     const base = project(x, 0, zr)
     const top = project(x, 330, zr)
@@ -530,18 +532,13 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     for (let i = 0; i <= N; i++) ctx.lineTo(top.x + (fw * i) / N, top.y + wave(i))
     for (let i = N; i >= 0; i--) ctx.lineTo(top.x + (fw * i) / N, top.y + fh + wave(i))
     ctx.closePath()
-    ctx.fillStyle = '#0a0a0a'
-    ctx.fill()
-    ctx.strokeStyle = '#ffffff'
+    ctx.save()
+    ctx.clip()
+    paintFlag(ctx, design, Math.min(top.x, top.x + fw), top.y + wave(N / 2), Math.abs(fw), fh)
+    ctx.restore()
+    ctx.strokeStyle = FLAG_BORDER[design]
     ctx.lineWidth = Math.max(0.8, 5 * s)
     ctx.stroke()
-    if (fh > 6) {
-      ctx.fillStyle = '#ffffff'
-      ctx.font = `900 ${Math.round(fh * 0.62)}px system-ui, sans-serif`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('SW', top.x + fw / 2, top.y + fh / 2 + wave(N / 2))
-    }
     ctx.globalAlpha = 1
   }
 

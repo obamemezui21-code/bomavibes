@@ -1,4 +1,5 @@
 import { H, KINDS, RIFLES, RISE_TICKS, ROWS, W, baseOf, isAiming, shownOf, sizeOf } from '../../../../shared/oeil-de-panthere/engine.mjs'
+import { FLAG_BORDER, FLAG_DESIGNS, paintFlag } from '../flags.js'
 
 // ŒIL DE PANTHÈRE's drawing: the Lopé at dusk with three rows of bushes the
 // targets rise from, the rifle, and the scope — a magnified circle of the
@@ -507,6 +508,41 @@ export function createPantherRenderer(canvas) {
     g.fillRect(-10, bottom - 2, W + 30, 2)
   }
 
+  // The camp's flags (BomaVibes, Gabon, SW, 2NK3) at the back of the field,
+  // behind the far row: scenery only, a shot there is a miss.
+  function drawCampFlags(g, time) {
+    const base = ROWS[0].y + 2
+    FLAG_DESIGNS.forEach((design, i) => {
+      const x = 70 + i * 167
+      const top = base - 66
+      const fw = 40
+      const fh = 26
+      g.strokeStyle = '#d4d4d8'
+      g.lineWidth = 1.6
+      g.beginPath()
+      g.moveTo(x, base)
+      g.lineTo(x, top - 2)
+      g.stroke()
+      g.fillStyle = '#fcd116'
+      g.beginPath()
+      g.arc(x, top - 2.5, 1.6, 0, Math.PI * 2)
+      g.fill()
+      const N = 6
+      const wave = (j) => Math.sin(time * 4 + i * 1.7 + j * 0.9) * 2.6 * (j / N)
+      g.beginPath()
+      for (let j = 0; j <= N; j++) g.lineTo(x + (fw * j) / N, top + wave(j))
+      for (let j = N; j >= 0; j--) g.lineTo(x + (fw * j) / N, top + fh + wave(j))
+      g.closePath()
+      g.save()
+      g.clip()
+      paintFlag(g, design, x, top + wave(N / 2), fw, fh)
+      g.restore()
+      g.strokeStyle = FLAG_BORDER[design]
+      g.lineWidth = 1.2
+      g.stroke()
+    })
+  }
+
   function drawScene(state, time) {
     const g = sctx
     g.setTransform(k, 0, 0, k, 0, 0)
@@ -549,6 +585,7 @@ export function createPantherRenderer(canvas) {
     }
     g.stroke()
 
+    drawCampFlags(g, time)
     for (const t of state.targets) if (t.row < 0) drawCoin(g, t, time)
 
     for (let r = 0; r < ROWS.length; r++) {
