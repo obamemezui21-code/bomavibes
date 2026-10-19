@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Pause, Play, Volume2, VolumeX } from 'lucide-react'
-import { POWER_TICKS, TICK_RATE, createRun, scoreOf, step } from '../../../../shared/ngori-run/engine.mjs'
+import { BIRD_TICKS, POWER_TICKS, TICK_RATE, createRun, scoreOf, step } from '../../../../shared/ngori-run/engine.mjs'
 import { createRenderer } from './renderer.js'
 import { loadRenderer3d } from './graphics.js'
 import { DISTRICTS, PHRASES, districtAt, pick } from './libreville.js'
@@ -14,8 +14,9 @@ const KEYS = {
   ArrowRight: 'R', d: 'R',
   ArrowUp: 'U', w: 'U', z: 'U', ' ': 'U',
   ArrowDown: 'D', s: 'D',
+  b: 'B', B: 'B', e: 'B', E: 'B',
 }
-const POWERUP_LABEL = { magnet: '🧲 Aimant', multiplier: '🔥 ×2', boost: '⚡ Boost', moto: '🏍️ Moto' }
+const POWERUP_LABEL = { magnet: '🧲 Aimant', multiplier: '🔥 ×2', boost: '⚡ Boost', moto: '🏍️ Moto', bird: '🦅 Oiseau' }
 const BONUS_LABEL = { combo: 'Combo', distance: 'Distance' }
 const HONK_AHEAD = 2600 // cm: a taxi in your lane honks when this close
 
@@ -29,7 +30,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
   const wrapRef = useRef(null)
   const pendingRef = useRef([])
   const pausedRef = useRef(false)
-  const [hud, setHud] = useState({ distance: 0, district: districtAt(0), score: 0, coins: 0, combo: 0, shield: false, timers: {} })
+  const [hud, setHud] = useState({ distance: 0, district: districtAt(0), score: 0, coins: 0, combo: 0, shield: false, timers: {}, birds: 1, flying: false })
   const [countdown, setCountdown] = useState(3)
   const [paused, setPaused] = useState(false)
   const [toast, setToast] = useState(null)
@@ -136,6 +137,15 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
         } else if (e.type === 'smash') {
           audio.play('shield')
           renderer?.popup('BAM !', '#d8b4fe', laneVis, 30)
+        } else if (e.type === 'bird-start') {
+          audio.play('powerup')
+          showToast('🦅 Tu t’envoles ! Attrape les Ngori du ciel')
+        } else if (e.type === 'bird-end') {
+          audio.play('jump')
+          showToast('🦶 Retour sur terre !')
+        } else if (e.type === 'bird-ready') {
+          audio.play('bonus')
+          showToast('🦅 Nouvel envol disponible !')
         } else if (e.type === 'moto-end') {
           showToast('🏍️ Fin de la balade, on repart à pied !')
         } else if (e.type === 'shield') {
@@ -162,7 +172,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
           const actions = pendingRef.current.splice(0)
           for (const a of actions) {
             inputs.push([state.tick, a])
-            audio.play(a === 'U' ? 'jump' : a === 'D' ? 'slide' : 'lane')
+            if (a !== 'B') audio.play(a === 'U' ? 'jump' : a === 'D' ? 'slide' : 'lane')
           }
           step(state, actions)
           handleEvents()
@@ -228,7 +238,10 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
             multiplier: state.multiplier / POWER_TICKS.multiplier,
             boost: state.boost / POWER_TICKS.boost,
             moto: state.moto / POWER_TICKS.moto,
+            bird: state.bird / BIRD_TICKS,
           },
+          birds: state.birdCharges,
+          flying: state.bird > 0,
         })
         const left = Math.ceil((startAt - now) / 1000)
         setCountdown(left > 0 ? left : 0)
@@ -404,10 +417,29 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
             {countdown}
           </motion.span>
           <p className="mt-4 rounded-full bg-black/40 px-4 py-1.5 text-sm text-white/85 backdrop-blur-md">
-            Glisse ← → pour changer de voie · ↑ sauter · ↓ glisser
+            Glisse ← → pour changer de voie · ↑ sauter · ↓ glisser · 🦅 s’envoler
           </p>
         </div>
       )}
+
+      {/* Turn into a bird and fly over the landscape (key B or E) */}
+      <button
+        type="button"
+        disabled={!hud.birds || hud.flying}
+        onPointerDown={(e) => {
+          e.stopPropagation()
+          audio.unlock()
+          act('B')
+        }}
+        className={`absolute right-4 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-sky-300/70 bg-sky-500/40 font-display text-[10px] font-bold backdrop-blur-md transition active:scale-95 disabled:opacity-40 ${
+          showButtons ? 'bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]' : 'bottom-[max(1.5rem,env(safe-area-inset-bottom))]'
+        }`}
+        aria-label="Se transformer en oiseau"
+        title="Se transformer en oiseau (touche B)"
+      >
+        <span className="text-2xl leading-none">🦅</span>
+        OISEAU ×{hud.birds}
+      </button>
 
       {showButtons && (
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

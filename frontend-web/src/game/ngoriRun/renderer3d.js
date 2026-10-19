@@ -28,6 +28,8 @@ import {
   isTaxi,
   motoTilt,
   trafficCarFor,
+  SKY_CM,
+  birdAltitude,
 } from './renderer.js'
 import {
   DIRECTION_SIGNS,
@@ -616,6 +618,37 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   motoSprite.visible = false
   motoSprite.renderOrder = 5
   runnerGroup.add(motoSprite)
+
+  // The bird the runner turns into: a great blue turaco, wings flapping
+  // (the red of its flight feathers at the tips), seen from behind.
+  const birdGroup = new THREE.Group()
+  {
+    const blue = lambert('#1f6fb2')
+    const body = new THREE.Mesh(keep(new THREE.SphereGeometry(0.26, 14, 10)), blue)
+    body.scale.set(1, 1.5, 1.1)
+    const belly = new THREE.Mesh(keep(new THREE.SphereGeometry(0.2, 12, 8)), lambert('#c8d84a'))
+    belly.position.set(0, -0.12, -0.08)
+    const head = new THREE.Mesh(keep(new THREE.SphereGeometry(0.19, 12, 8)), lambert('#163f73'))
+    head.position.y = 0.5
+    const crest = new THREE.Mesh(keep(new THREE.ConeGeometry(0.08, 0.3, 8)), lambert('#0f2a4d'))
+    crest.position.y = 0.75
+    const tail = new THREE.Mesh(keep(new THREE.ConeGeometry(0.12, 0.6, 8)), lambert('#2d8a3e'))
+    tail.position.y = -0.55
+    tail.rotation.x = Math.PI
+    birdGroup.add(body, belly, head, crest, tail)
+    const wingGeo = keep(new THREE.BoxGeometry(1.2, 0.05, 0.5).translate(0.6, 0, 0))
+    const tipGeo = keep(new THREE.BoxGeometry(0.45, 0.06, 0.45).translate(1.3, 0, 0))
+    birdGroup.userData.wings = [-1, 1].map((side) => {
+      const wing = new THREE.Group()
+      wing.add(new THREE.Mesh(wingGeo, blue), new THREE.Mesh(tipGeo, lambert('#d61f3c')))
+      wing.scale.x = side
+      wing.position.set(side * 0.15, 0.1, 0)
+      birdGroup.add(wing)
+      return wing
+    })
+  }
+  birdGroup.visible = false
+  runnerGroup.add(birdGroup)
 
   // MOTO BOMA duel: the challenger's replayed race, as a see-through bike
   // with their first name above it.
@@ -1649,7 +1682,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     for (const c of state.coinsOnRoad) {
       const zr = c.z - dist
       if (c.taken || !inView(zr)) continue
-      const obj = place(`c${c.id}`, () => buildCoin(c), zr, laneX(c.lane), 0.6 + Math.sin(time * 4 + c.id) * 0.08)
+      const obj = place(`c${c.id}`, () => buildCoin(c), zr, laneX(c.lane), (c.sky ? SKY_CM * M : 0.6) + Math.sin(time * 4 + c.id) * 0.08)
       obj.userData.spin.rotation.y = time * 3.5 + c.id
     }
     for (const p of state.powerups) {
@@ -1668,9 +1701,19 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     runnerGroup.position.set(x, 0, RUNNER_Z)
     // On the motorbike its picture replaces the runner, leaning into lane changes.
     const riding = !!(state.moto || state.riding) && motoLoaded
+    const flying = state.bird > 0
     motoSprite.visible = riding
-    runnerSprite.visible = sheetLoaded && !riding
-    runnerFallback.visible = !sheetLoaded && !riding
+    runnerSprite.visible = sheetLoaded && !riding && !flying
+    runnerFallback.visible = !sheetLoaded && !riding && !flying
+    birdGroup.visible = flying
+    if (flying) {
+      const alt = birdAltitude(state, view.alpha) * M
+      birdGroup.position.y = alt + 0.6
+      const flap = Math.sin(view.time * 9) * 0.6
+      birdGroup.userData.wings[0].rotation.z = -flap
+      birdGroup.userData.wings[1].rotation.z = flap
+      birdGroup.rotation.z = THREE.MathUtils.clamp((state.lane - view.laneVis) * 0.5, -0.35, 0.35)
+    }
     if (riding) {
       motoSprite.position.y = y
       motoSprite.quaternion.copy(camera.quaternion)
@@ -1815,13 +1858,14 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       sy = (Math.random() - 0.5) * 0.25 * k
     }
     const targetX = camX + sx
-    const targetY = camH + sy + Math.sin(view.time * 2.3) * 0.12 + (state.jump ? 0.18 : 0)
+    const flight = birdAltitude(state, view.alpha) * M // the camera follows the bird up
+    const targetY = camH + sy + Math.sin(view.time * 2.3) * 0.12 + (state.jump ? 0.18 : 0) + flight * 0.85
     const targetZ = RUNNER_Z + camBack + 0.25
     camera.position.x += (targetX - camera.position.x) * 0.24
     camera.position.y += (targetY - camera.position.y) * 0.22
     camera.position.z += (targetZ - camera.position.z) * 0.22
     const lookX = targetX * 0.82 + laneBias * 0.8
-    const lookY = 0.78 + Math.sin(view.time * 1.6) * 0.08 + (state.jump ? 0.16 : 0)
+    const lookY = 0.78 + Math.sin(view.time * 1.6) * 0.08 + (state.jump ? 0.16 : 0) + flight * 0.55
     camera.lookAt(lookX, lookY, RUNNER_Z - 16)
     camera.rotation.z += THREE.MathUtils.clamp(-laneVelocity * 0.006, -0.035, 0.035)
     const targetFov = baseFov + (state.moto ? 8 : state.boost ? 5 : Math.min(2, Math.max(0, (state.speed - 25) * 0.18)))

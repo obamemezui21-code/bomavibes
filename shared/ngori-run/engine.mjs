@@ -14,7 +14,7 @@
 export const TICK_RATE = 60
 export const LANES = 3
 export const MAX_TICKS = 15 * 60 * TICK_RATE // a run can't last more than 15 min
-export const ACTIONS = ['L', 'R', 'U', 'D'] // lane left, lane right, jump, slide
+export const ACTIONS = ['L', 'R', 'U', 'D', 'B'] // lane left, lane right, jump, slide, bird
 
 export const JUMP_TICKS = 36
 export const SLIDE_TICKS = 40
@@ -45,6 +45,23 @@ const CLASSIC_POWERUPS = POWERUPS.slice(0, 4)
 const MOTO_CHANCE = 15
 // Invulnerable for a moment after getting off the bike.
 const MOTO_GRACE_TICKS = 45
+// The bird: the runner turns into a bird, flies over the landscape for a few
+// seconds (out of reach of the obstacles, a trail of Ngori in the sky), then
+// lands. One flight to start with, one more every BIRD_EVERY_M metres (at
+// most BIRD_MAX_CHARGES kept). bird = ticks of flight left.
+export const BIRD_TICKS = 5 * TICK_RATE
+export const BIRD_RISE = 40 // ticks taking off
+export const BIRD_LAND = 40 // ticks coming down
+export const BIRD_EVERY_M = 400
+export const BIRD_MAX_CHARGES = 2
+const BIRD_GRACE_TICKS = 45
+const SKY_COINS = 12
+
+// Up in the sky: higher than the obstacles and the road's coins.
+export function birdHigh(state) {
+  return state.bird > BIRD_LAND && state.bird <= BIRD_TICKS - BIRD_RISE / 2
+}
+
 export const POWER_TICKS = { magnet: 8 * TICK_RATE, multiplier: 8 * TICK_RATE, boost: 4 * TICK_RATE, moto: 6 * TICK_RATE }
 
 // Combo = Ngori picked up in a row; missing one resets it.
@@ -111,6 +128,9 @@ export function createRun(seed) {
     multiplier: 0,
     boost: 0,
     moto: 0,
+    bird: 0,
+    birdCharges: 1,
+    nextBirdCharge: BIRD_EVERY_M,
     combo: 0,
     bestCombo: 0,
     coins: 0, // Ngori picked up on the road
@@ -184,6 +204,20 @@ function applyAction(state, action) {
   } else if (action === 'U') {
     state.slide = 0
     if (!state.jump) state.jump = 1
+  } else if (action === 'B') {
+    if (state.bird || state.moto || !state.birdCharges) return
+    state.birdCharges--
+    state.bird = BIRD_TICKS
+    state.jump = 0
+    state.slide = 0
+    // A trail of Ngori up in the sky, weaving across the lanes.
+    let lane = state.lane
+    for (let i = 0; i < SKY_COINS; i++) {
+      state.coinsOnRoad.push({ id: state.nextId++, z: state.dist + 1200 + i * 380, lane, gold: i === SKY_COINS - 1, sky: true, taken: false })
+      const turn = randomInt(state, 3) - 1
+      lane = Math.max(0, Math.min(LANES - 1, lane + turn))
+    }
+    state.events.push({ type: 'bird-start' })
   } else if (action === 'D') {
     // Swiping down mid-air drops straight into a slide.
     state.jump = 0
@@ -208,7 +242,7 @@ export function step(state, actions = []) {
   if (state.slide) state.slide = state.slide >= SLIDE_TICKS ? 0 : state.slide + 1
 
   const base = baseSpeed(state.tick)
-  state.speed = state.moto ? base * 2 : state.boost ? base + (base >> 1) : base
+  state.speed = state.moto ? base * 2 : state.boost ? base + (base >> 1) : state.bird ? base + (base >> 2) : base
   state.prevDist = state.dist
   state.dist += state.speed
   state.scoreAcc += state.speed * (levelAt(state.tick) + 1)
@@ -216,8 +250,9 @@ export function step(state, actions = []) {
   while (state.nextRowZ < state.dist + GENERATE_AHEAD) generateRow(state)
 
   const front = state.dist + PLAYER_LEN
+  const high = birdHigh(state)
   const airborne = state.jump >= AIR_FROM && state.jump <= AIR_TO
-  const invulnerable = state.boost > 0 || state.grace > 0
+  const invulnerable = state.boost > 0 || state.grace > 0 || state.bird > 0
 
   for (const o of state.obstacles) {
     if (o.hit || o.lane !== state.lane) continue
@@ -247,6 +282,7 @@ export function step(state, actions = []) {
   const reach = state.magnet ? front + 600 : front
   for (const c of state.coinsOnRoad) {
     if (c.taken || c.z < state.prevDist || c.z >= reach) continue
+    if (!!c.sky !== high) continue // sky coins only up there, road coins only down here
     if (!state.magnet && c.lane !== state.lane) continue
     c.taken = true
     const value = (c.gold ? 3 : 1) * (state.multiplier ? 2 : 1)
@@ -263,12 +299,13 @@ export function step(state, actions = []) {
   for (const c of state.coinsOnRoad) {
     if (c.taken || c.missed || c.z >= state.prevDist) continue
     c.missed = true
+    if (c.sky) continue // a sky coin left behind doesn't break the combo
     if (state.combo) state.events.push({ type: 'combo-lost' })
     state.combo = 0
   }
 
   for (const p of state.powerups) {
-    if (p.taken || p.lane !== state.lane || p.z < state.prevDist || p.z >= front) continue
+    if (p.taken || high || p.lane !== state.lane || p.z < state.prevDist || p.z >= front) continue
     p.taken = true
     if (p.type === 'shield') state.shield = true
     else state[p.type] = POWER_TICKS[p.type]
@@ -281,10 +318,22 @@ export function step(state, actions = []) {
     state.nextDistanceBonus++
   }
 
+  while (metres >= state.nextBirdCharge) {
+    state.nextBirdCharge += BIRD_EVERY_M
+    if (state.birdCharges < BIRD_MAX_CHARGES) {
+      state.birdCharges++
+      state.events.push({ type: 'bird-ready' })
+    }
+  }
+
   if (state.grace) state.grace--
   if (state.magnet) state.magnet--
   if (state.multiplier) state.multiplier--
   if (state.boost) state.boost--
+  if (state.bird && --state.bird === 0) {
+    state.grace = BIRD_GRACE_TICKS
+    state.events.push({ type: 'bird-end' })
+  }
   if (state.moto && --state.moto === 0) {
     state.grace = MOTO_GRACE_TICKS
     state.events.push({ type: 'moto-end' })

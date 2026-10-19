@@ -1,4 +1,4 @@
-import { JUMP_TICKS, OBSTACLES, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
+import { BIRD_LAND, BIRD_RISE, BIRD_TICKS, JUMP_TICKS, OBSTACLES, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
 import roadsideUrl from '../../assets/game/roadside.webp'
 import horizonsUrl from '../../assets/game/horizons.webp'
@@ -168,6 +168,17 @@ const MONUMENT_SPOTS = LANDMARKS.filter((l) => l.visual === 'monument').map((l) 
 }))
 
 // Stable pseudo-random from an integer — scenery only, never the game.
+// The bird's flight: how high it is (cm), easing up after take-off and down
+// before landing; the sky coins float at its cruising height.
+export const SKY_CM = 700
+const ease = (t) => t * t * (3 - 2 * t)
+export function birdAltitude(state, alpha = 0) {
+  if (!state.bird) return 0
+  const up = ease(Math.min(1, (BIRD_TICKS - state.bird + alpha) / BIRD_RISE))
+  const down = ease(Math.max(0, Math.min(1, (state.bird - alpha) / BIRD_LAND)))
+  return SKY_CM * Math.min(up, down)
+}
+
 export function hash(n) {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b)
   x ^= x >>> 13
@@ -199,6 +210,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   let F = 1
   let horizonY = 0
   let camH = 500
+  let lift = 0 // the camera rises with the bird
   let camX = 0
   let skyGradient = null
   let seaGradient = null
@@ -236,7 +248,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   function project(x, y, zr) {
     const depth = Math.max(zr + CAM_BACK, 40)
     const s = F / depth
-    return { x: W / 2 + (x - camX) * s, y: horizonY + (camH - y) * s, s }
+    return { x: W / 2 + (x - camX) * s, y: horizonY + (camH + lift - y) * s, s }
   }
 
   function groundQuad(xl0, xr0, zr0, xl1, xr1, zr1, color) {
@@ -1223,7 +1235,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
 
   function drawCoin(c, zr, time) {
     const r = c.gold ? 36 : 27
-    const p = project(laneX(c.lane), 60 + Math.sin(time * 4 + c.id) * 8, zr)
+    const p = project(laneX(c.lane), (c.sky ? SKY_CM : 60) + Math.sin(time * 4 + c.id) * 8, zr)
     const rx = Math.max(1, r * p.s * Math.abs(Math.cos(time * 3.5 + c.id)))
     const ry = r * p.s
     ctx.globalAlpha = fogAlpha(zr)
@@ -1283,9 +1295,86 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.fill()
   }
 
+  // The bird the runner turns into: a great blue turaco seen from behind,
+  // wings flapping, the red of its wing feathers showing. A puff of feathers
+  // when it changes shape.
+  function drawBird(state, view, x, alt) {
+    const ground = project(x, 0, 30)
+    const p = project(x, alt + 40, 30)
+    const u = p.s
+    const elapsed = BIRD_TICKS - state.bird + view.alpha
+    const rising = elapsed < BIRD_RISE
+    const flap = Math.sin(view.time * (rising ? 14 : 8))
+    ctx.fillStyle = `rgba(0,0,0,${0.25 * (1 - alt / (SKY_CM * 1.6))})`
+    ctx.beginPath()
+    ctx.ellipse(ground.x, ground.y, 70 * u, 14 * u, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.save()
+    ctx.translate(p.x, p.y)
+    ctx.rotate(Math.max(-0.3, Math.min(0.3, (view.laneTarget ?? state.lane) - view.laneVis)) * 0.6)
+    for (const side of [-1, 1]) {
+      const tipY = -30 * u - flap * 80 * u
+      ctx.fillStyle = '#1f6fb2'
+      ctx.beginPath()
+      ctx.moveTo(side * 14 * u, -40 * u)
+      ctx.quadraticCurveTo(side * 90 * u, -70 * u - flap * 40 * u, side * 170 * u, tipY)
+      ctx.quadraticCurveTo(side * 100 * u, -10 * u - flap * 20 * u, side * 14 * u, -10 * u)
+      ctx.fill()
+      ctx.fillStyle = '#d61f3c'
+      ctx.beginPath()
+      ctx.moveTo(side * 120 * u, -45 * u - flap * 55 * u)
+      ctx.quadraticCurveTo(side * 150 * u, -40 * u - flap * 70 * u, side * 170 * u, tipY)
+      ctx.quadraticCurveTo(side * 140 * u, -15 * u - flap * 45 * u, side * 110 * u, -22 * u - flap * 35 * u)
+      ctx.fill()
+    }
+    ctx.fillStyle = '#2d8a3e'
+    ctx.beginPath()
+    ctx.moveTo(-12 * u, 10 * u)
+    ctx.lineTo(0, 70 * u)
+    ctx.lineTo(12 * u, 10 * u)
+    ctx.fill() // tail
+    ctx.fillStyle = '#1f6fb2'
+    ctx.beginPath()
+    ctx.ellipse(0, -20 * u, 26 * u, 44 * u, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#c8d84a'
+    ctx.beginPath()
+    ctx.ellipse(0, 4 * u, 18 * u, 22 * u, 0, 0, Math.PI * 2)
+    ctx.fill() // yellow-green belly
+    ctx.fillStyle = '#163f73'
+    ctx.beginPath()
+    ctx.arc(0, -66 * u, 20 * u, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#0f2a4d'
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath()
+      ctx.ellipse(i * 5 * u, -90 * u, 4 * u, 14 * u, i * 0.25, 0, Math.PI * 2)
+      ctx.fill() // crest
+    }
+    const left = state.bird - view.alpha
+    const puff = elapsed < 20 ? elapsed / 20 : left < 20 ? 1 - left / 20 : -1
+    if (puff >= 0 && puff <= 1) {
+      ctx.globalAlpha = 1 - puff
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2
+        const d = (30 + puff * 150) * u
+        ctx.fillStyle = i % 2 ? '#ffffff' : '#fcd116'
+        ctx.beginPath()
+        ctx.ellipse(Math.cos(a) * d, -40 * u + Math.sin(a) * d, 9 * u, 4 * u, a, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.globalAlpha = 1
+    }
+    ctx.restore()
+  }
+
   // The runner, seen from behind: afro puff, pink headphones, BomaVibes jacket.
   function drawRunner(state, view) {
     const x = (view.laneVis - 1) * LANE_W
+    if (state.bird) {
+      drawBird(state, view, x, birdAltitude(state, view.alpha))
+      return
+    }
     const jumpT = state.jump ? Math.min(1, (state.jump + view.alpha) / JUMP_TICKS) : 0
     const y = state.jump ? 4 * 130 * jumpT * (1 - jumpT) : 0
     const sliding = state.slide > 0 && state.slide < SLIDE_TICKS
@@ -1486,6 +1575,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
 
   function render(state, view) {
     const now = performance.now()
+    lift = birdAltitude(state, view.alpha) * 0.8
     const playerX = (view.laneVis - 1) * LANE_W
     camX += (playerX * 0.55 - camX) * Math.min(1, view.dt * 8)
 
