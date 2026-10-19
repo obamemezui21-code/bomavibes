@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Pause, Play, Volume2, VolumeX } from 'lucide-react'
 import { BIRD_TICKS, POWER_TICKS, TICK_RATE, createRun, scoreOf, step } from '../../../../shared/ngori-run/engine.mjs'
 import { createRenderer } from './renderer.js'
+import { createStormOverlay, stormLevel } from '../storm.js'
 import { loadRenderer3d } from './graphics.js'
 import { DISTRICTS, PHRASES, districtAt, pick } from './libreville.js'
 import NgoriCoin from '../../components/NgoriCoin.jsx'
@@ -27,6 +28,7 @@ const HONK_AHEAD = 2600 // cm: a taxi in your lane honks when this close
 // 2D canvas if that can't start; the simulation is the same either way.
 function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, onToggleMute, showButtons, onEnd }) {
   const canvasRef = useRef(null)
+  const stormRef = useRef(null)
   const wrapRef = useRef(null)
   const pendingRef = useRef([])
   const pausedRef = useRef(false)
@@ -52,6 +54,12 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
   useEffect(() => {
     const canvas = canvasRef.current
     const wrap = wrapRef.current
+    // The storm, over the game (see game/storm.js); lightning at random
+    // moments while it rages, thunder a little after the flash.
+    const storm = createStormOverlay(stormRef.current)
+    let nextStrike = 0
+    let stormOn = false
+    const thunderTimers = []
     // The 3D renderer loads during the countdown; until then nothing is drawn.
     let renderer = null
     let cancelled = false
@@ -94,6 +102,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
 
     function resize() {
       renderer?.resize(wrap.clientWidth, wrap.clientHeight)
+      storm.resize(wrap.clientWidth, wrap.clientHeight)
     }
     resize()
     const observer = new ResizeObserver(resize)
@@ -194,6 +203,23 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
       }
       renderer?.render(state, view)
 
+      const level = stormLevel(Math.floor(state.dist / 100))
+      const running = !pausedRef.current && !state.over && now >= startAt
+      storm.render(level, view.dt)
+      if (running) audio.setRain?.(level)
+      if (level > 0 && !stormOn) {
+        stormOn = true
+        showToast('⛈️ L’orage gronde sur Libreville !')
+        nextStrike = now + 1500
+      } else if (level === 0) stormOn = false
+      if (running && level > 0.6 && now >= nextStrike) {
+        storm.strike()
+        const near = Math.random() < 0.5
+        thunderTimers.push(setTimeout(() => audio.play(near ? 'thunder' : 'farThunder'), near ? 150 : 700 + Math.random() * 900))
+        navigator.vibrate?.(near ? 60 : 0)
+        nextStrike = now + 2500 + Math.random() * 5000
+      }
+
       const here = districtAt(Math.floor(state.dist / 100))
       if (here !== district) {
         district = here
@@ -267,6 +293,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
       observer.disconnect()
       clearTimeout(toastTimer)
       document.removeEventListener('visibilitychange', onVisibility)
+      thunderTimers.forEach(clearTimeout)
       audio.stopMusic()
       cancelled = true
       renderer?.dispose?.()
@@ -335,6 +362,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
         onPointerCancel={onPointerUp}
       >
         <canvas ref={canvasRef} className="block h-full w-full" />
+        <canvas ref={stormRef} className="pointer-events-none absolute inset-0 h-full w-full" />
       </div>
 
       {/* HUD */}

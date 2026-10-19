@@ -111,7 +111,44 @@ export function createGameAudio(initiallyMuted) {
     src.stop(t + dur + 0.02)
   }
 
+  // Rain: a looped hiss, louder as the storm thickens (setRain).
+  let rain = null
+  function setRainLevel(level) {
+    const c = level > 0 ? ensure() : ctx
+    if (!c) return
+    if (!rain) {
+      if (level <= 0) return
+      const src = c.createBufferSource()
+      src.buffer = noiseBuffer
+      src.loop = true
+      const hp = c.createBiquadFilter()
+      hp.type = 'highpass'
+      hp.frequency.value = 900
+      const lp = c.createBiquadFilter()
+      lp.type = 'lowpass'
+      lp.frequency.value = 7000
+      const gain = c.createGain()
+      gain.gain.value = 0
+      src.connect(hp).connect(lp).connect(gain).connect(master)
+      src.start()
+      rain = { src, gain }
+    }
+    rain.gain.gain.setTargetAtTime(Math.max(0, level) * 0.16, c.currentTime, 0.4)
+  }
+
   const effects = {
+    // Thunder: a sharp crack when close, then a long rolling rumble.
+    thunder: () => {
+      noise({ dur: 0.25, vol: 0.35, filter: 'highpass', freq: 1800 })
+      noise({ at: 0.02, dur: 3.2, vol: 0.6, filter: 'lowpass', freq: 260 })
+      noise({ at: 0.6, dur: 2.4, vol: 0.4, filter: 'lowpass', freq: 160 })
+      tone({ freq: 55, slideTo: 32, dur: 2.5, vol: 0.3, type: 'sine' })
+    },
+    // Far away: only the rumble.
+    farThunder: () => {
+      noise({ dur: 2.8, vol: 0.32, filter: 'lowpass', freq: 180 })
+      tone({ freq: 45, slideTo: 30, dur: 2.2, vol: 0.18, type: 'sine' })
+    },
     coin: () => {
       tone({ freq: 988, dur: 0.08, vol: 0.12, type: 'square' })
       tone({ freq: 1319, at: 0.07, dur: 0.16, vol: 0.12, type: 'square' })
@@ -242,7 +279,15 @@ export function createGameAudio(initiallyMuted) {
       musicOn = true
       playTrack(muted, startSynth)
     },
+    setRain(level) {
+      try {
+        setRainLevel(muted ? 0 : level)
+      } catch {
+        // sound is never critical
+      }
+    },
     stopMusic() {
+      setRainLevel(0)
       musicOn = false
       pauseTrack()
       clearInterval(musicTimer)
