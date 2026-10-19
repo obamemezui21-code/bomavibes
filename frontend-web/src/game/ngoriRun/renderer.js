@@ -221,6 +221,39 @@ export function hawkFrame(manifest, state, view) {
   return frames[index % frames.length]
 }
 
+// The shark the runner turns into in the river (sprite sheet from the
+// team's Gemini picture), seen from behind. Poses: run = swimming (2
+// frames), up / throw = curving left / right, jump = leaping out mouth open,
+// kneel = diving. Until it loads, a fish is drawn.
+export const SHARK_HEIGHT_CM = 270
+const shark = { sheet: null, loading: false }
+export function sharkSheet() {
+  if (!shark.sheet && !shark.loading && typeof fetch !== 'undefined') {
+    shark.loading = true
+    fetch('/commando/sprites-requin.json')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('missing'))))
+      .then((manifest) => {
+        const img = new Image()
+        img.onload = () => {
+          shark.sheet = { img, manifest }
+        }
+        img.src = '/commando/sprites-requin.webp'
+      })
+      .catch(() => {})
+  }
+  return shark.sheet
+}
+export function sharkFrame(manifest, state, view) {
+  const turn = state.lane - view.laneVis
+  let pose = 'run'
+  if (state.jump) pose = 'jump'
+  else if (state.slide) pose = 'kneel'
+  else if (turn < -0.2) pose = 'up'
+  else if (turn > 0.2) pose = 'throw'
+  const frames = manifest.frames[pose] || manifest.frames.run
+  return frames[Math.floor(view.time * 6) % frames.length]
+}
+
 // The river monster's picture (Œil de Panthère's swamp monster).
 const swampMonster = { sheet: null, loading: false }
 export function swampSheet() {
@@ -269,6 +302,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   const airportZ = airport ? airport.at * 100 : -1e9
   const ctx = canvas.getContext('2d', { alpha: false })
   hawkSheet() // ready before the first flight
+  sharkSheet()
   let W = 0
   let H = 0
   let F = 1
@@ -1528,6 +1562,18 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   function drawFish(state, view, x) {
     const jumpT = state.jump ? Math.min(1, (state.jump + view.alpha) / JUMP_TICKS) : 0
     const y = state.jump ? 4 * 150 * jumpT * (1 - jumpT) : 0
+    const sheet = sharkSheet()
+    if (sheet) {
+      const f = sharkFrame(sheet.manifest, state, view)
+      const p = project(x, y, 30)
+      const sc = (SHARK_HEIGHT_CM * p.s) / sheet.manifest.frames.run[0].h
+      ctx.save()
+      ctx.translate(p.x, p.y + 40 * p.s)
+      if (!state.jump && !state.slide) ctx.rotate(Math.sin(view.time * 6) * 0.06) // the body sways as it swims
+      ctx.drawImage(sheet.img, f.x, f.y, f.w, f.h, (-f.w / 2) * sc, -f.h * sc, f.w * sc, f.h * sc)
+      ctx.restore()
+      return
+    }
     const p = project(x, y - 10, 30)
     const u = p.s * 1.25
     const sweep = Math.sin(view.time * 11) * 0.45

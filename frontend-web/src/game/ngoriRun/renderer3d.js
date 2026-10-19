@@ -33,6 +33,9 @@ import {
   birdAltitude,
   hawkFrame,
   hawkSheet,
+  SHARK_HEIGHT_CM,
+  sharkFrame,
+  sharkSheet,
 } from './renderer.js'
 import {
   DIRECTION_SIGNS,
@@ -673,6 +676,16 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   }
   fishGroup.visible = false
   runnerGroup.add(fishGroup)
+  // The shark's picture, once loaded, replaces that fish.
+  let sharkTex = null
+  const sharkSprite = new THREE.Mesh(
+    keep(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0)),
+    keep(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.05, side: THREE.DoubleSide })),
+  )
+  sharkSprite.visible = false
+  sharkSprite.renderOrder = 5
+  runnerGroup.add(sharkSprite)
+  sharkSheet()
   // The hawk's picture, once loaded, replaces those shapes: one plane facing
   // the camera, showing one frame of the sheet at a time.
   let hawkTex = null
@@ -1805,7 +1818,26 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     }
     riverRun = 'swim' in state
     const fish = !!state.swim && !flying && view.crashT <= 0
-    fishGroup.visible = fish
+    const sharkArt = fish ? sharkSheet() : null
+    if (sharkArt && !sharkTex) {
+      sharkTex = keep(new THREE.Texture(sharkArt.img))
+      sharkTex.colorSpace = THREE.SRGBColorSpace
+      sharkTex.needsUpdate = true
+      sharkSprite.material.map = sharkTex
+      sharkSprite.material.needsUpdate = true
+    }
+    sharkSprite.visible = fish && !!sharkTex
+    fishGroup.visible = fish && !sharkTex
+    if (sharkSprite.visible) {
+      const { manifest, img } = sharkArt
+      const f = sharkFrame(manifest, state, view)
+      const sc = (SHARK_HEIGHT_CM * M) / manifest.frames.run[0].h
+      sharkTex.repeat.set(f.w / img.width, f.h / img.height)
+      sharkTex.offset.set(f.x / img.width, 1 - (f.y + f.h) / img.height)
+      sharkSprite.scale.set(f.w * sc, f.h * sc, 1)
+      sharkSprite.position.y = y - (state.slide ? 1.2 : 0.4)
+      sharkSprite.quaternion.copy(camera.quaternion)
+    }
     if (fish) {
       runnerSprite.visible = false
       runnerFallback.visible = false
