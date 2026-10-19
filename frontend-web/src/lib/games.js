@@ -14,6 +14,17 @@ import commandoCover from '../assets/game/commando-cover.webp'
 //   cover: optional artwork filling the card (the pictures are then left out)
 export const GAMES = [
   {
+    id: 'ngori-run',
+    name: 'NGORI RUN',
+    tagline: 'Course à pied au bord de mer',
+    description: 'Cours, saute, glisse, esquive les taxis et ramasse des Ngori de Louis jusqu’au Cap Estérias.',
+    path: '/ngori-run',
+    pictures: [kevinPortrait, aichaPortrait],
+    round: true,
+    gradient: 'from-[#2a0f45] via-[#5b1f6e] to-[#e9467d]',
+    accent: 'text-gold',
+    dailyCap: 5,
+  },  {
     id: 'oeil-de-panthere',
     name: 'Œil de Panthère',
     tagline: 'Tir de précision au fusil à lunette',
@@ -78,16 +89,5 @@ export const GAMES = [
     dailyCap: 5,
     isNew: true,
   },
-  {
-    id: 'ngori-run',
-    name: 'NGORI RUN',
-    tagline: 'Course à pied au bord de mer',
-    description: 'Cours, saute, glisse, esquive les taxis et ramasse des Ngori de Louis jusqu’au Cap Estérias.',
-    path: '/ngori-run',
-    pictures: [kevinPortrait, aichaPortrait],
-    round: true,
-    gradient: 'from-[#2a0f45] via-[#5b1f6e] to-[#e9467d]',
-    accent: 'text-gold',
-    dailyCap: 5,
-  },
+
 ]

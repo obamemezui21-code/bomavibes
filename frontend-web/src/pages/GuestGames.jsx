@@ -22,7 +22,7 @@ import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 // account (bomavibes.tech/jouer). Guests play in practice mode — the run never
 // reaches the server: no Ngori, no ranking — and are invited to sign up at
 // the end. Commando Okoumé: mission 1 only.
-const GUEST_GAMES = ['oeil-de-panthere', 'commando-okoume', 'moto-boma', 'ngori-run']
+const GUEST_GAMES = ['ngori-run', 'oeil-de-panthere', 'commando-okoume', 'moto-boma']
 const COMMANDO_OPTIONS = { character: 'mboumba', maxHp: 4 }
 const PANTHER_OPTIONS = { rifle: 'carabine' }
 const TOUCH = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
