@@ -28,8 +28,11 @@ import {
   isTaxi,
   motoTilt,
   trafficCarFor,
+  HAWK_WINGSPAN_CM,
   SKY_CM,
   birdAltitude,
+  hawkFrame,
+  hawkSheet,
 } from './renderer.js'
 import {
   DIRECTION_SIGNS,
@@ -649,6 +652,17 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   }
   birdGroup.visible = false
   runnerGroup.add(birdGroup)
+  // The hawk's picture, once loaded, replaces those shapes: one plane facing
+  // the camera, showing one frame of the sheet at a time.
+  let hawkTex = null
+  const hawkSprite = new THREE.Mesh(
+    keep(new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0)),
+    keep(new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.05, fog: false, side: THREE.DoubleSide })),
+  )
+  hawkSprite.visible = false
+  hawkSheet() // ready before the first flight
+  hawkSprite.renderOrder = 5
+  runnerGroup.add(hawkSprite)
 
   // MOTO BOMA duel: the challenger's replayed race, as a see-through bike
   // with their first name above it.
@@ -1705,7 +1719,26 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     motoSprite.visible = riding
     runnerSprite.visible = sheetLoaded && !riding && !flying
     runnerFallback.visible = !sheetLoaded && !riding && !flying
-    birdGroup.visible = flying
+    const hawk = flying ? hawkSheet() : null
+    if (hawk && !hawkTex) {
+      hawkTex = keep(new THREE.Texture(hawk.img))
+      hawkTex.colorSpace = THREE.SRGBColorSpace
+      hawkTex.needsUpdate = true
+      hawkSprite.material.map = hawkTex
+      hawkSprite.material.needsUpdate = true
+    }
+    birdGroup.visible = flying && !hawkTex
+    hawkSprite.visible = flying && !!hawkTex
+    if (hawkSprite.visible) {
+      const { manifest, img } = hawk
+      const f = hawkFrame(manifest, state, { ...view, laneTarget: state.lane })
+      const sc = (HAWK_WINGSPAN_CM * M) / manifest.frames.stand[0].w
+      hawkTex.repeat.set(f.w / img.width, f.h / img.height)
+      hawkTex.offset.set(f.x / img.width, 1 - (f.y + f.h) / img.height)
+      hawkSprite.scale.set(f.w * sc, f.h * sc, 1)
+      hawkSprite.position.y = birdAltitude(state, view.alpha) * M + 0.2
+      hawkSprite.quaternion.copy(camera.quaternion)
+    }
     if (flying) {
       const alt = birdAltitude(state, view.alpha) * M
       birdGroup.position.y = alt + 0.6

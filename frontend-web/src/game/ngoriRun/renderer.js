@@ -179,6 +179,48 @@ export function birdAltitude(state, alpha = 0) {
   return SKY_CM * Math.min(up, down)
 }
 
+// The hawk the runner turns into (sprite sheet cut from the team's Gemini
+// picture by backend/scripts/buildCommandoSprites.js), seen from behind.
+// Poses: run = 4 wing beats, stand = gliding, up / throw = banking left /
+// right, kneel = landing, talons out. Until it loads, a turaco is drawn.
+export const HAWK_WINGSPAN_CM = 360
+const hawk = { sheet: null, loading: false }
+export function hawkSheet() {
+  if (!hawk.sheet && !hawk.loading && typeof fetch !== 'undefined') {
+    hawk.loading = true
+    fetch('/commando/sprites-epervier.json')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('missing'))))
+      .then((manifest) => {
+        const img = new Image()
+        img.onload = () => {
+          hawk.sheet = { img, manifest }
+        }
+        img.src = '/commando/sprites-epervier.webp'
+      })
+      .catch(() => {})
+  }
+  return hawk.sheet
+}
+
+// Which frame of the hawk: beating its wings after take-off and now and
+// then, gliding in between, banking into lane changes, talons out to land.
+export function hawkFrame(manifest, state, view) {
+  const elapsed = BIRD_TICKS - state.bird + view.alpha
+  const left = state.bird - view.alpha
+  let pose = 'stand'
+  let index = 0
+  const turn = (view.laneTarget ?? state.lane) - view.laneVis
+  if (left < BIRD_LAND * 0.8) pose = 'kneel'
+  else if (turn < -0.2) pose = 'up'
+  else if (turn > 0.2) pose = 'throw'
+  else if (elapsed < BIRD_RISE + 30 || view.time % 2.2 < 0.7) {
+    pose = 'run'
+    index = Math.floor(view.time * 11) % 4
+  }
+  const frames = manifest.frames[pose] || manifest.frames.stand
+  return frames[index % frames.length]
+}
+
 export function hash(n) {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b)
   x ^= x >>> 13
@@ -205,6 +247,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   const airport = LANDMARKS.find((l) => l.visual === 'plane')
   const airportZ = airport ? airport.at * 100 : -1e9
   const ctx = canvas.getContext('2d', { alpha: false })
+  hawkSheet() // ready before the first flight
   let W = 0
   let H = 0
   let F = 1
@@ -1302,6 +1345,18 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     const ground = project(x, 0, 30)
     const p = project(x, alt + 40, 30)
     const u = p.s
+    const sheet = hawkSheet()
+    if (sheet) {
+      ctx.fillStyle = 'rgba(0,0,0,' + 0.25 * (1 - alt / (SKY_CM * 1.6)) + ')'
+      ctx.beginPath()
+      ctx.ellipse(ground.x, ground.y, 90 * u, 16 * u, 0, 0, Math.PI * 2)
+      ctx.fill()
+      const f = hawkFrame(sheet.manifest, state, { ...view, laneTarget: state.lane })
+      const glide = sheet.manifest.frames.stand[0]
+      const sc = (HAWK_WINGSPAN_CM * u) / glide.w
+      ctx.drawImage(sheet.img, f.x, f.y, f.w, f.h, p.x - (f.w / 2) * sc, p.y + 50 * u - f.h * sc, f.w * sc, f.h * sc)
+      return
+    }
     const elapsed = BIRD_TICKS - state.bird + view.alpha
     const rising = elapsed < BIRD_RISE
     const flap = Math.sin(view.time * (rising ? 14 : 8))
