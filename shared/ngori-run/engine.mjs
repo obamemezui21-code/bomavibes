@@ -33,6 +33,35 @@ export const OBSTACLES = {
   sign: { len: 60, clear: 'slide', weight: 2 },
   car: { len: 420, clear: null, weight: 3 },
   works: { len: 220, clear: null, weight: 2 },
+  // In the river (never on the road: weight 0): a crocodile and a log to
+  // leap over, a river monster rising out of the water to dive under.
+  croco: { len: 260, clear: 'jump', weight: 0, water: 3 },
+  tronc: { len: 90, clear: 'jump', weight: 0, water: 2 },
+  monstre: { len: 120, clear: 'slide', weight: 0, water: 3 },
+}
+const WATER_TYPES = Object.keys(OBSTACLES).filter((t) => OBSTACLES[t].water)
+const WATER_WEIGHT_TOTAL = WATER_TYPES.reduce((sum, t) => sum + OBSTACLES[t].water, 0)
+
+// The river: the road runs into the forest and the runner swims across a
+// river (slower; leap = jump, dive = slide) before getting back on the road.
+// One at RIVER_FIRST_M, then every RIVER_EVERY_M, RIVER_LEN_M long; the
+// forest stands around it for RIVER_FOREST_M on each side.
+export const RIVER_FIRST_M = 1200
+export const RIVER_EVERY_M = 2600
+export const RIVER_LEN_M = 220
+export const RIVER_FOREST_M = 300
+export function riverAt(metres) {
+  return metres >= RIVER_FIRST_M && (metres - RIVER_FIRST_M) % RIVER_EVERY_M < RIVER_LEN_M
+}
+// The river crossing nearest after (or around) `metres`: { from, to } in m.
+export function riverNear(metres) {
+  const k = Math.max(0, Math.floor((metres - RIVER_FIRST_M + RIVER_FOREST_M) / RIVER_EVERY_M))
+  const from = RIVER_FIRST_M + k * RIVER_EVERY_M
+  return { from, to: from + RIVER_LEN_M }
+}
+export function forestAt(metres) {
+  const { from, to } = riverNear(metres)
+  return metres >= from - RIVER_FOREST_M && metres < to + RIVER_FOREST_M
 }
 const OBSTACLE_TYPES = Object.keys(OBSTACLES)
 const OBSTACLE_WEIGHT_TOTAL = OBSTACLE_TYPES.reduce((sum, t) => sum + OBSTACLES[t].weight, 0)
@@ -103,7 +132,15 @@ function randomInt(state, n) {
   return nextRandom(state) % n
 }
 
-function pickObstacle(state) {
+function pickObstacle(state, water) {
+  if (water) {
+    let roll = randomInt(state, WATER_WEIGHT_TOTAL)
+    for (const type of WATER_TYPES) {
+      roll -= OBSTACLES[type].water
+      if (roll < 0) return type
+    }
+    return WATER_TYPES[0]
+  }
   let roll = randomInt(state, OBSTACLE_WEIGHT_TOTAL)
   for (const type of OBSTACLE_TYPES) {
     roll -= OBSTACLES[type].weight
@@ -129,6 +166,7 @@ export function createRun(seed) {
     boost: 0,
     moto: 0,
     bird: 0,
+    swim: false,
     birdCharges: 1,
     nextBirdCharge: BIRD_EVERY_M,
     combo: 0,
@@ -154,6 +192,7 @@ function generateRow(state) {
   const z = state.nextRowZ
   const roll = randomInt(state, 100)
   const count = level === 0 ? (roll < 70 ? 1 : 2) : roll < 45 ? 1 : roll < 85 ? 2 : 3
+  const water = riverAt(Math.floor(z / 100))
 
   const lanes = [0, 1, 2]
   // Shuffle the lanes, then block the first `count` of them.
@@ -164,9 +203,9 @@ function generateRow(state) {
   let longest = 0
   const blocked = []
   for (let i = 0; i < count; i++) {
-    let type = pickObstacle(state)
+    let type = pickObstacle(state, water)
     // A full row always keeps one way through: never three lane-only blocks.
-    if (count === 3 && i === 2 && blocked.every((b) => !OBSTACLES[b.type].clear) && !OBSTACLES[type].clear) {
+    if (!water && count === 3 && i === 2 && blocked.every((b) => !OBSTACLES[b.type].clear) && !OBSTACLES[type].clear) {
       type = 'barrier'
     }
     blocked.push({ id: state.nextId++, z, lane: lanes[i], type })
@@ -242,7 +281,18 @@ export function step(state, actions = []) {
   if (state.slide) state.slide = state.slide >= SLIDE_TICKS ? 0 : state.slide + 1
 
   const base = baseSpeed(state.tick)
-  state.speed = state.moto ? base * 2 : state.boost ? base + (base >> 1) : state.bird ? base + (base >> 2) : base
+  const swim = riverAt(Math.floor(state.dist / 100))
+  if (swim !== state.swim) {
+    state.swim = swim
+    state.events.push({ type: swim ? 'river-in' : 'river-out' })
+    // No motorbike in the water.
+    if (swim && state.moto) {
+      state.moto = 0
+      state.grace = MOTO_GRACE_TICKS
+      state.events.push({ type: 'moto-end' })
+    }
+  }
+  state.speed = state.moto ? base * 2 : state.boost ? base + (base >> 1) : state.bird ? base + (base >> 2) : state.swim ? base - (base >> 2) : base
   state.prevDist = state.dist
   state.dist += state.speed
   state.scoreAcc += state.speed * (levelAt(state.tick) + 1)

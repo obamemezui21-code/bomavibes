@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { FLAG_BORDER, FLAG_DESIGNS, flagLogoReady, paintFlag } from '../flags.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
-import { JUMP_TICKS, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
+import { JUMP_TICKS, RIVER_LEN_M, SLIDE_TICKS, forestAt, riverNear } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
 import roadsideUrl from '../../assets/game/roadside.webp'
 import horizonsUrl from '../../assets/game/horizons.webp'
@@ -1353,6 +1353,23 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   // Each obstacle's group spans its length from z = 0 (its near end) to
   // -len, like the engine's o.z … o.z + len.
   function buildObstacle(o) {
+    if (o.type === 'tronc') {
+      const log = new THREE.Mesh(poleGeo, lambert('#6b4423'))
+      log.scale.set(0.36, 1.7, 0.36)
+      log.rotation.z = Math.PI / 2
+      log.position.set(0.85, 0.12, -0.45)
+      return group(log)
+    }
+    if (o.type === 'croco') {
+      const green = lambert('#2f4a24')
+      const eye = basic('#facc15')
+      return group(cube(0.8, 0.22, 2.6, green, 0, 0, -1.3), cube(0.5, 0.18, 0.6, lambert('#3a5a2c'), 0, 0, -0.1), cube(0.1, 0.1, 0.1, eye, -0.2, 0.2, -0.55), cube(0.1, 0.1, 0.1, eye, 0.2, 0.2, -0.55))
+    }
+    if (o.type === 'monstre') {
+      const dark = lambert('#1d2b16')
+      const eye = basic('#4ade80')
+      return group(cube(1.1, 2.4, 0.9, dark, 0, 0, -0.6), cube(0.14, 0.14, 0.05, eye, -0.25, 2.0, -0.13), cube(0.14, 0.14, 0.05, eye, 0.25, 2.0, -0.13), cube(1.8, 0.2, 0.4, dark, 0, 1.5, -0.4))
+    }
     if (o.type === 'barrier') {
       const post = lambert('#d4d4d8')
       const stripes = stripesMat('barrier', '#e11d48', '#f8fafc', 5)
@@ -1590,14 +1607,27 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     }
   }
 
+  // NGORI RUN's river crossings: a sheet of water over the road and banks.
+  let riverRun = false
+  const riverGeo = keep(new THREE.PlaneGeometry(80, RIVER_LEN_M).rotateX(-Math.PI / 2).translate(0, 0.05, -RIVER_LEN_M / 2))
+  const riverMat = keep(new THREE.MeshLambertMaterial({ color: '#1f6f86' }))
+  function buildRiver() {
+    return new THREE.Mesh(riverGeo, riverMat)
+  }
+
   function updateScenery(dist, time) {
+    if (riverRun) {
+      const { from } = riverNear(Math.floor(dist / 100))
+      const zr = from * 100 - dist
+      if (inView(zr, zr + RIVER_LEN_M * 100)) place(`river${from}`, buildRiver, zr)
+    }
     const first = Math.floor((dist - camBackCm) / 1500)
     const last = Math.floor((dist + VIEW_CM) / 1500)
     for (let k = first; k <= last; k++) {
       const z0 = k * 1500
       if (z0 + 1500 > stadiumZ - 600 && z0 < stadiumZ + 3600) continue // the stadium stands here
       if (monuments && LANDMARKS.some((l) => l.visual === 'monument' && z0 + 1500 > l.at * 100 - 600 && z0 < l.at * 100 + monuments[l.monument].lengthCm)) continue
-      if (FOREST_DISTRICTS.includes(districtAt(Math.floor(z0 / 100)))) {
+      if (FOREST_DISTRICTS.includes(districtAt(Math.floor(z0 / 100))) || (riverRun && forestAt(Math.floor(z0 / 100)))) {
         for (let j = 0; j < 3; j++) {
           const n = k * 3 + j
           const zr = k * 1500 + 100 + j * 500 - dist
@@ -1752,8 +1782,10 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       motoSprite.quaternion.copy(camera.quaternion)
       motoSprite.rotateZ(motoTilt({ ...view, laneTarget: state.lane }))
     }
-    runnerSprite.position.y = y
-    runnerFallback.position.y = y
+    riverRun = 'swim' in state
+    const sink = state.swim && !flying ? (state.slide ? 1.6 : 0.85) : 0 // swimming: chest-deep, or under when diving
+    runnerSprite.position.y = y - sink
+    runnerFallback.position.y = y - sink
     runnerFallback.scale.y = sliding ? 0.5 : 1
     runnerFallback.rotation.z = view.crashT > 0 ? Math.min(1, view.crashT * 2.5) * 1.2 : 0
     runnerSprite.quaternion.copy(camera.quaternion)

@@ -1,4 +1,4 @@
-import { BIRD_LAND, BIRD_RISE, BIRD_TICKS, JUMP_TICKS, OBSTACLES, SLIDE_TICKS } from '../../../../shared/ngori-run/engine.mjs'
+import { BIRD_LAND, BIRD_RISE, BIRD_TICKS, JUMP_TICKS, OBSTACLES, SLIDE_TICKS, forestAt, riverAt } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
 import roadsideUrl from '../../assets/game/roadside.webp'
 import horizonsUrl from '../../assets/game/horizons.webp'
@@ -221,6 +221,27 @@ export function hawkFrame(manifest, state, view) {
   return frames[index % frames.length]
 }
 
+// The river monster's picture (Œil de Panthère's swamp monster).
+const swampMonster = { sheet: null, loading: false }
+export function swampSheet() {
+  if (!swampMonster.sheet && !swampMonster.loading && typeof fetch !== 'undefined') {
+    swampMonster.loading = true
+    fetch('/commando/sprites-marais.json')
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('missing'))))
+      .then((manifest) => {
+        const img = new Image()
+        img.onload = () => {
+          swampMonster.sheet = { img, manifest }
+        }
+        img.src = '/commando/sprites-marais.webp'
+      })
+      .catch(() => {})
+  }
+  return swampMonster.sheet
+}
+const WATER = ['#1f6f86', '#1a6278']
+const WILD = ['#24401c', '#1f3818']
+
 export function hash(n) {
   let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b)
   x ^= x >>> 13
@@ -254,6 +275,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
   let horizonY = 0
   let camH = 500
   let lift = 0 // the camera rises with the bird
+  let forestRiver = false // NGORI RUN: forest around the river crossings
   let camX = 0
   let skyGradient = null
   let seaGradient = null
@@ -431,7 +453,8 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     }
   }
 
-  function drawGround(dist) {
+  // river: NGORI RUN only (its state knows when the runner swims).
+  function drawGround(dist, river) {
     // Sea fills everything below the horizon; land and road are laid over it.
     ctx.fillStyle = seaGradient
     ctx.fillRect(0, horizonY, W, H - horizonY)
@@ -442,10 +465,18 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       const zr1 = z + SEG - dist
       if (zr1 <= zr0) continue
       const alt = Math.floor(z / SEG) % 2 === 0
-      // Right: plaza in front of the buildings.
-      groundQuad(ROAD_HALF, 6000, zr0, ROAD_HALF, 6000, zr1, alt ? COLORS.plaza : COLORS.plazaAlt)
+      const m = Math.floor(z / 100)
+      if (river && riverAt(m)) {
+        // The river, bank to bank, with ripples.
+        groundQuad(-6000, 6000, zr0, -6000, 6000, zr1, alt ? WATER[0] : WATER[1])
+        groundQuad(-6000, 6000, zr0 + 20, -6000, 6000, zr0 + 32, 'rgba(190,230,240,0.18)')
+        continue
+      }
+      const wild = river && forestAt(m)
+      // Right: plaza in front of the buildings (forest floor near the river).
+      groundQuad(ROAD_HALF, 6000, zr0, ROAD_HALF, 6000, zr1, wild ? WILD[alt ? 0 : 1] : alt ? COLORS.plaza : COLORS.plazaAlt)
       // Left: the seafront promenade.
-      groundQuad(-ROAD_HALF - 380, -ROAD_HALF, zr0, -ROAD_HALF - 380, -ROAD_HALF, zr1, alt ? COLORS.promenade : COLORS.promenadeAlt)
+      groundQuad(-ROAD_HALF - 380, -ROAD_HALF, zr0, -ROAD_HALF - 380, -ROAD_HALF, zr1, wild ? WILD[alt ? 1 : 0] : alt ? COLORS.promenade : COLORS.promenadeAlt)
       groundQuad(-ROAD_HALF, ROAD_HALF, zr0, -ROAD_HALF, ROAD_HALF, zr1, alt ? COLORS.road : COLORS.roadAlt)
       // Curbs.
       groundQuad(-ROAD_HALF - 22, -ROAD_HALF, zr0, -ROAD_HALF - 22, -ROAD_HALF, zr1, alt ? COLORS.curb : COLORS.curbAlt)
@@ -1098,7 +1129,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       const z0 = k * 1500
       if (z0 + 1500 > stadiumZ - 600 && z0 < stadiumZ + 3600) continue // the stadium stands here
       if (monumentsReady() && MONUMENT_SPOTS.some((m) => z0 + 1500 > m.z - 600 && z0 < m.z + m.lengthCm)) continue
-      if (FOREST_DISTRICTS.includes(districtAt(Math.floor(z0 / 100)))) drawForest(k, dist)
+      if (FOREST_DISTRICTS.includes(districtAt(Math.floor(z0 / 100))) || (forestRiver && forestAt(Math.floor(z0 / 100)))) drawForest(k, dist)
       else drawBuilding(k, dist)
     }
     if (stadiumZ - dist < VIEW_DEPTH && stadiumZ + 3000 - dist > -CAM_BACK + 60) drawStadium(stadiumZ - dist)
@@ -1260,6 +1291,39 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.fillStyle = '#111'
       ctx.fillRect(body.left + bw * 0.06, body.bottom - bh * 0.06, bw * 0.2, bh * 0.06)
       ctx.fillRect(body.right - bw * 0.26, body.bottom - bh * 0.06, bw * 0.2, bh * 0.06)
+    } else if (o.type === 'tronc') {
+      // A floating log across the lane.
+      top(xc, 170, 34, zr, zr + def.len, '#6b4423')
+      face(xc, 170, 0, 34, zr, '#7a4f2a')
+      groundQuad(xc - 100, xc + 100, zr - 10, xc - 100, xc + 100, zr, 'rgba(220,240,250,0.35)')
+    } else if (o.type === 'croco') {
+      // A crocodile, only its back, eyes and snout above the water.
+      top(xc, 90, 18, zr + 40, zr + def.len, '#2f4a24')
+      for (let i = 0; i < 6; i++) top(xc, 18, 30, zr + 60 + i * 30, zr + 70 + i * 30, '#22381a')
+      top(xc, 60, 16, zr, zr + 50, '#3a5a2c')
+      for (const dx of [-22, 22]) {
+        const eye = project(xc + dx, 34, zr + 55)
+        ctx.fillStyle = '#facc15'
+        ctx.beginPath()
+        ctx.arc(eye.x, eye.y, Math.max(1.2, 7 * eye.s), 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#111'
+        ctx.fillRect(eye.x - 1.5 * eye.s, eye.y - 6 * eye.s, 3 * eye.s, 12 * eye.s)
+      }
+      groundQuad(xc - 70, xc + 70, zr - 12, xc - 70, xc + 70, zr, 'rgba(220,240,250,0.3)')
+    } else if (o.type === 'monstre') {
+      // A river monster rising out of the water, claws out.
+      const sheet = swampSheet()
+      const base = project(xc, -20, zr + 40)
+      if (sheet) {
+        const f = sheet.manifest.frames.throw[0]
+        const h = 290 * base.s
+        const w = (h * f.w) / f.h
+        ctx.drawImage(sheet.img, f.x, f.y, f.w, f.h, base.x - w / 2, base.y - h, w, h)
+      } else {
+        face(xc, 120, 0, 240, zr + 40, '#1d2b16')
+      }
+      groundQuad(xc - 110, xc + 110, zr + 20, xc - 110, xc + 110, zr + 60, 'rgba(220,240,250,0.4)')
     } else if (o.type === 'works') {
       top(xc, 160, 140, zr, zr + def.len, '#c2410c')
       const panel = face(xc, 160, 0, 140, zr, '#f97316')
@@ -1421,6 +1485,41 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.globalAlpha = 1
     }
     ctx.restore()
+  }
+
+  // Swimming: the water covers the runner up to the chest (all of them when
+  // diving), with ripples around; a leap lifts them out of it.
+  function drawSwimWater(state, view) {
+    const jumpT = state.jump ? Math.min(1, (state.jump + view.alpha) / JUMP_TICKS) : 0
+    const lifted = state.jump ? 4 * 130 * jumpT * (1 - jumpT) : 0
+    const x = (view.laneVis - 1) * LANE_W
+    const p = project(x, 0, 30)
+    const u = p.s
+    const diving = state.slide > 0
+    const top = diving ? 150 : Math.max(0, 95 - lifted)
+    if (top > 0) {
+      ctx.fillStyle = WATER[0]
+      ctx.fillRect(p.x - 95 * u, p.y - top * u, 190 * u, (top + 30) * u)
+    }
+    ctx.strokeStyle = 'rgba(225,245,255,0.75)'
+    ctx.lineWidth = Math.max(1, 3 * u)
+    for (let i = 0; i < 3; i++) {
+      const r = ((view.time * 1.6 + i / 3) % 1) * 90 + 30
+      ctx.globalAlpha = 1 - r / 120
+      ctx.beginPath()
+      ctx.ellipse(p.x, p.y - Math.max(0, top - 6) * u, r * u, r * 0.22 * u, 0, 0, Math.PI * 2)
+      ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+    if (diving) {
+      ctx.fillStyle = 'rgba(225,245,255,0.8)'
+      for (let i = 0; i < 5; i++) {
+        const by = ((view.time * 2 + i * 0.2) % 1) * 60
+        ctx.beginPath()
+        ctx.arc(p.x + Math.sin(i * 2.1 + view.time * 3) * 30 * u, p.y - (top - by) * u, 5 * u, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
   }
 
   // The runner, seen from behind: afro puff, pink headphones, BomaVibes jacket.
@@ -1640,7 +1739,9 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.translate((Math.random() - 0.5) * 18 * k, (Math.random() - 0.5) * 18 * k)
     }
     drawSky(view.time, view.dist)
-    drawGround(view.dist)
+    const ngori = 'swim' in state
+    forestRiver = ngori
+    drawGround(view.dist, ngori)
     drawSeaSparkles(view.time)
     drawScenery(view.dist, view.time)
 
@@ -1652,6 +1753,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     for (const c of state.coinsOnRoad) if (!c.taken) items.push({ zr: c.z - view.dist, draw: (zr) => drawCoin(c, zr, view.time) })
     for (const p of state.powerups) if (!p.taken) items.push({ zr: p.z - view.dist, draw: (zr) => drawPowerup(p, zr, view.time) })
     items.push({ zr: 30, draw: () => drawRunner(state, view) })
+    if (state.swim && !state.bird) items.push({ zr: 29, draw: () => drawSwimWater(state, view) })
     // MOTO BOMA duel: the challenger's replayed race, as a see-through bike.
     if (state.ghost) items.push({ zr: 30 + state.ghost.zr, draw: (zr) => drawGhost(state.ghost, zr, view.time) })
     for (const [from, name] of DISTRICTS) {

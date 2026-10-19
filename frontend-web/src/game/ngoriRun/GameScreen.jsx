@@ -146,6 +146,11 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
         } else if (e.type === 'smash') {
           audio.play('shield')
           renderer?.popup('BAM !', '#d8b4fe', laneVis, 30)
+        } else if (e.type === 'river-in') {
+          audio.play('slide')
+          showToast('🌊 La rivière ! Saute les crocos et les troncs, plonge sous les monstres')
+        } else if (e.type === 'river-out') {
+          showToast('🌳 Sorti de l’eau, on repart !')
         } else if (e.type === 'bird-start') {
           audio.play('powerup')
           showToast('🦅 Tu t’envoles ! Attrape les Ngori du ciel')
