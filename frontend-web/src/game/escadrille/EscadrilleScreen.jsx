@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Pause, Play, Volume2, VolumeX, X } from 'lucide-react'
 import { FP, H, JETS, KINDS, TICK_RATE, W, ZONES, bossOf, createGame, step, zoneAt } from '../../../../shared/escadrille-ogooue/engine.mjs'
-import { createEscadrilleRenderer } from './renderer.js'
+import { createEscadrilleRenderer, preloadArt } from './renderer.js'
 import EscadrilleHelp from './EscadrilleHelp.jsx'
 
 const SIM_MS = 1000 / TICK_RATE
@@ -56,6 +56,7 @@ function EscadrilleScreen({ seed, options, audio, muted, onToggleMute, onEnd }) 
     const canvas = canvasRef.current
     const wrap = wrapRef.current
     const renderer = createEscadrilleRenderer(canvas)
+    preloadArt()
     rendererRef.current = renderer
     const state = createGame(seed, options)
     stateRef.current = state

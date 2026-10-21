@@ -1,4 +1,4 @@
-import { FP, H, JETS, KINDS, SCROLL, W, ZONES } from '../../../../shared/escadrille-ogooue/engine.mjs'
+import { FP, H, JETS, KINDS, SCROLL, W, ZONES, waterAt } from '../../../../shared/escadrille-ogooue/engine.mjs'
 
 // ESCADRILLE OGOUÉ's drawing: Gabon seen from the cockpit, scrolling north —
 // the ocean along Libreville's coast, which narrows into the Ogooué through
@@ -503,9 +503,68 @@ function makeSprites() {
   return { jets, ...all, orb, tracer, bonus, clouds }
 }
 
+// Gemini's pictures (backend/scripts/buildEscadrilleSprites.js), with the
+// width they're drawn at, in units. Until one loads (or if it's missing), the
+// canvas drawing above stands in.
+const ART = {
+  'jet-aigle': 38,
+  'jet-faucon': 34,
+  'jet-calao': 42,
+  'avion-helice': 34,
+  'avion-delta': 34,
+  'avion-jet': 34,
+  helico: 36,
+  drone: 26,
+  vedette: 38,
+  tourelle: 40,
+  parachute: 16,
+  boss: 160,
+}
+// Where the afterburners are on the jets' pictures, in units from the centre.
+const ART_ENGINES = { aigle: [[0, 23]], faucon: [[0, 22.5]], calao: [[-4.7, 22.3], [4.7, 22.3]] }
+const artImages = {}
+let artLoading = null
+
+export function preloadArt() {
+  artLoading ||= Promise.all(
+    Object.keys(ART).map(
+      (name) =>
+        new Promise((resolve) => {
+          const img = new Image()
+          img.onload = () => {
+            artImages[name] = img
+            resolve()
+          }
+          img.onerror = () => resolve()
+          img.src = `/escadrille/${name}.webp`
+        }),
+    ),
+  ).then(() => {
+    SPRITES = null // rebuilt with the pictures
+  })
+  return artLoading
+}
+
+function artSprite(name) {
+  const img = artImages[name]
+  if (!img) return null
+  const c = makeCanvas(img.naturalWidth, img.naturalHeight)
+  c.getContext('2d').drawImage(img, 0, 0)
+  const w = ART[name]
+  const sp = { canvas: c, w, h: (w * img.naturalHeight) / img.naturalWidth, art: true }
+  sp.shadow = shadowOf(sp)
+  sp.flash = flashOf(sp)
+  return sp
+}
+
 let SPRITES = null
 function sprites() {
-  SPRITES ||= makeSprites()
+  if (!SPRITES) {
+    SPRITES = makeSprites()
+    for (const id of Object.keys(JETS)) SPRITES.jets[id] = artSprite(`jet-${id}`) || SPRITES.jets[id]
+    for (const key of ['drone', 'helico', 'vedette', 'tourelle', 'parachute', 'boss']) SPRITES[`${key}Art`] = artSprite(key)
+    SPRITES.avions = ['avion-helice', 'avion-delta', 'avion-jet'].map(artSprite).filter(Boolean)
+  }
   return SPRITES
 }
 
@@ -523,29 +582,11 @@ export function drawJetPreview(canvas, id) {
 }
 
 // ── The ground ─────────────────────────────────────────────────────────────
-function coastX(v) {
-  return 118 + 46 * Math.sin(v / 170) + 18 * Math.sin(v / 53)
-}
-function riverX(v) {
-  return 180 + 80 * Math.sin(v / 240) + 24 * Math.sin(v / 83)
-}
-
 // How much of each leg (0 coast, 1 river, 2 mountains) a point of the ground belongs to.
 function legs(v) {
   const t1 = smooth((v - (ZONE_V[1] - 700)) / 700)
   const t2 = smooth((v - (ZONE_V[2] - 500)) / 500)
   return [1 - t1, t1 * (1 - t2), t2]
-}
-
-// The water at a point of the ground: [left, right] edges.
-function waterAt(v) {
-  const t1 = smooth((v - (ZONE_V[1] - 700)) / 700)
-  const t2 = smooth((v - (ZONE_V[2] - 500)) / 500)
-  const rx = riverX(v)
-  const width = lerp(66 + 18 * Math.sin(v / 130), 14, t2)
-  const left = lerp(coastX(v), rx - width / 2, t1)
-  const right = lerp(W + 60, rx + width / 2, t1)
-  return [left, right]
 }
 
 const LAND = ['#3f6d2f', '#2b5223', '#55614a']
@@ -755,7 +796,7 @@ function renderChunk(c, k) {
 // ── The renderer ───────────────────────────────────────────────────────────
 export function createEscadrilleRenderer(canvas) {
   const ctx = canvas.getContext('2d')
-  const S = sprites()
+  let S = sprites()
   let cssW = 1
   let cssH = 1
   let dpr = 1
@@ -903,8 +944,10 @@ export function createEscadrilleRenderer(canvas) {
     const y = e.y / FP
     const lit = e.flash > 0
     if (e.kind === 'drone') {
-      if (shadow) return blit(g, S.drone.shadow, x + 10, y + 16)
-      blit(g, lit ? S.drone.flash : S.drone, x, y)
+      const sp = S.droneArt || S.drone
+      if (shadow) return blit(g, sp.shadow, x + 10, y + 16)
+      blit(g, lit ? sp.flash : sp, x, y)
+      if (sp.art) return undefined
       for (const [dx, dy] of [[-8, -8], [8, -8], [-8, 8], [8, 8]]) drawRotor(g, x + dx, y + dy, 5, time + dx, 2)
       if (Math.floor(time * 4) % 2) {
         g.fillStyle = '#ff3b30'
@@ -912,8 +955,10 @@ export function createEscadrilleRenderer(canvas) {
       }
     } else if (e.kind === 'avion') {
       const angle = Math.atan2(e.vy, e.vx) - Math.PI / 2
-      if (shadow) return blit(g, S.avion.shadow, x + 14, y + 22, angle)
-      blit(g, lit ? S.avion.flash : S.avion, x, y, angle)
+      const sp = S.avions.length ? S.avions[e.id % S.avions.length] : S.avion
+      if (shadow) return blit(g, sp.shadow, x + 14, y + 22, angle)
+      blit(g, lit ? sp.flash : sp, x, y, angle)
+      if (sp.art) return undefined
       // propeller at the nose
       const nx = x - Math.sin(angle) * 16
       const ny = y + Math.cos(angle) * 16
@@ -922,10 +967,11 @@ export function createEscadrilleRenderer(canvas) {
       g.fillStyle = 'rgba(40,40,40,0.35)'
       g.fill()
     } else if (e.kind === 'helico') {
-      if (shadow) return blit(g, S.helico.shadow, x + 16, y + 26)
-      blit(g, lit ? S.helico.flash : S.helico, x, y)
+      const sp = S.helicoArt || S.helico
+      if (shadow) return blit(g, sp.shadow, x + 16, y + 26)
+      blit(g, lit ? sp.flash : sp, x, y)
       drawRotor(g, x, y + 2, 22, time, 4)
-      drawRotor(g, x + 5, y - 20, 4, time * 1.5, 2)
+      if (!sp.art) drawRotor(g, x + 5, y - 20, 4, time * 1.5, 2)
     } else if (e.kind === 'vedette') {
       const dir = e.vx >= 0 ? 1 : -1
       // wake
@@ -942,16 +988,19 @@ export function createEscadrilleRenderer(canvas) {
       g.save()
       g.translate(x, y)
       g.scale(dir, 1)
-      blit(g, lit ? S.vedette.flash : S.vedette, 0, 0)
+      const sp = S.vedetteArt || S.vedette
+      blit(g, lit ? sp.flash : sp, 0, 0)
       g.restore()
     } else if (e.kind === 'tourelle') {
+      if (S.tourelleArt) return blit(g, lit ? S.tourelleArt.flash : S.tourelleArt, x, y)
       blit(g, lit ? S.tourellePad.flash : S.tourellePad, x, y)
       const a = Math.atan2(state.player.y - e.y, state.player.x - e.x)
       blit(g, lit ? S.tourelleGun.flash : S.tourelleGun, x, y, a)
     } else if (e.kind === 'boss') {
-      if (shadow) return blit(g, S.boss.shadow, x + 26, y + 40)
-      // engine glow (exhaust north) and smoke as it gets damaged
-      for (const ex of [-46, -22, 22, 46]) {
+      const sp = S.bossArt || S.boss
+      if (shadow) return blit(g, sp.shadow, x + 26, y + 40)
+      // engine glow (exhaust north; the picture has its own) and smoke as it gets damaged
+      for (const ex of sp.art ? [] : [-46, -22, 22, 46]) {
         const gx = x + ex
         const gy = y - 19
         const rg = g.createRadialGradient(gx, gy, 0, gx, gy, 10)
@@ -960,7 +1009,7 @@ export function createEscadrilleRenderer(canvas) {
         g.fillStyle = rg
         g.fillRect(gx - 10, gy - 10, 20, 20)
       }
-      blit(g, lit ? S.boss.flash : S.boss, x, y)
+      blit(g, lit ? sp.flash : sp, x, y)
       const hurtRatio = 1 - e.hp / KINDS.boss.hp
       if (Math.random() < hurtRatio * 0.6) {
         const ex = [-46, -22, 22, 46][Math.floor(Math.random() * 4)]
@@ -984,9 +1033,9 @@ export function createEscadrilleRenderer(canvas) {
     g.restore()
     if (p.inv > 0 && Math.floor(p.inv / 5) % 2 === 0) return
     // afterburner
-    const L = JET_LOOKS[state.jet]
+    const engines = sp.art ? ART_ENGINES[state.jet] : JET_LOOKS[state.jet].engines
     const len = 8 + Math.sin(time * 50) * 2 + (p.ty < p.y ? 6 : 0)
-    for (const [ex, ey] of L.engines) flameAt(g, x + ex, y + ey, len, 2)
+    for (const [ex, ey] of engines) flameAt(g, x + ex, y + ey, len, 2)
     g.save()
     g.translate(x, y)
     g.scale(1 - Math.abs(bank) * 0.18, 1) // banking narrows the wings
@@ -1017,6 +1066,27 @@ export function createEscadrilleRenderer(canvas) {
     const open = Math.min(1, c.t / 20)
     g.save()
     g.globalAlpha = Math.min(1, 5 - life)
+    const art = !c.mine && S.parachuteArt // the player's own chute keeps its colours
+    if (art) {
+      // the picture's canopy and pilot, with the cords drawn between them
+      const top = y - art.h / 2
+      g.strokeStyle = 'rgba(40,40,40,0.8)'
+      g.lineWidth = 0.4
+      g.beginPath()
+      for (const side of [-0.45, 0, 0.45]) {
+        g.moveTo(x + side * art.w * open, top + art.h * 0.36)
+        g.lineTo(x, top + art.h * 0.72)
+      }
+      g.stroke()
+      g.save()
+      g.translate(x, top + art.h * 0.36)
+      g.scale(open, open)
+      g.translate(-x, -(top + art.h * 0.36))
+      blit(g, art, x, y)
+      g.restore()
+      g.restore()
+      return
+    }
     g.strokeStyle = 'rgba(40,40,40,0.8)'
     g.lineWidth = 0.4
     g.beginPath()
@@ -1115,6 +1185,7 @@ export function createEscadrilleRenderer(canvas) {
     lastFrame += steps * (1000 / 60)
     while (steps-- > 0) updateFx()
 
+    S = sprites()
     const g = ctx
     g.setTransform(dpr, 0, 0, dpr, 0, 0)
     g.fillStyle = '#05080b'

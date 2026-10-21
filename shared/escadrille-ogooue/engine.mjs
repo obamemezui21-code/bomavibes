@@ -99,6 +99,36 @@ function iatan2(dy, dx) {
   return ((a % 256) + 256) % 256
 }
 
+// ── The ground ─────────────────────────────────────────────────────────────
+// Where the water is, shared with the drawing so the boats sail on it: for a
+// distance v flown (units from the start), its [left, right] edges in units.
+// The ocean off Libreville's coast narrows into the Ogooué, which becomes a
+// stream in the mountains.
+const ZONE_V = ZONES.map((z) => Math.trunc((z.from * SCROLL) / FP))
+
+// sin(v / period) in 1/1024 (period in units).
+function wave(v, period) {
+  return isin(Math.trunc((v * 41) / period))
+}
+
+// 0 → 1024 eased, as v goes from a to a + span.
+function ease(v, a, span) {
+  const t = Math.max(0, Math.min(1024, Math.trunc(((v - a) * 1024) / span)))
+  return Math.trunc((t * t * (3072 - 2 * t)) / (1024 * 1024))
+}
+
+export function waterAt(v) {
+  const t1 = ease(v, ZONE_V[1] - 700, 700)
+  const t2 = ease(v, ZONE_V[2] - 500, 500)
+  const coast = 118 + Math.trunc((46 * wave(v, 170) + 18 * wave(v, 53)) / 1024)
+  const river = 180 + Math.trunc((80 * wave(v, 240) + 24 * wave(v, 83)) / 1024)
+  const wide = 66 + Math.trunc((18 * wave(v, 130)) / 1024)
+  const width = wide + Math.trunc(((14 - wide) * t2) / 1024)
+  const left = coast + Math.trunc(((river - Math.trunc(width / 2) - coast) * t1) / 1024)
+  const right = W + 60 + Math.trunc(((river + Math.trunc(width / 2) - W - 60) * t1) / 1024)
+  return [left, right]
+}
+
 export function jetOf(options) {
   return JETS[options?.jet] ? options.jet : DEFAULT_JET
 }
@@ -226,18 +256,29 @@ function spawnWave(state) {
       addEnemy(state, 'drone', { x: (W - 40) * FP, y: -40 * FP, path: 'dive', vx: 0, vy: 34, phase: 128 })
     }
   } else {
-    // Ground targets: speedboats on the coast and the river, turrets in the mountains.
+    // Ground targets: speedboats on the water, turrets on land (mostly in the mountains).
     const n = 1 + Math.trunc(d / 45)
     for (let i = 0; i < n; i++) {
-      const kind = zone === 2 || (zone === 1 && randomInt(state, 3) === 0) ? 'tourelle' : 'vedette'
-      addEnemy(state, kind, {
-        x: (50 + randomInt(state, W - 100)) * FP,
-        y: (-30 - i * 70) * FP,
-        path: kind === 'vedette' ? 'boat' : 'ground',
-        vx: kind === 'vedette' ? (randomInt(state, 2) ? 10 : -10) : 0,
-        vy: SCROLL,
-        cool: 70 + i * 25,
-      })
+      const y = -30 - i * 70
+      const [left, right] = waterAt(Math.trunc(state.scroll / FP) + H - y)
+      const water = Math.min(right, W - 20) - Math.max(left, 20)
+      const boat = water >= 40 && (zone === 0 || (zone === 1 && randomInt(state, 3) > 0))
+      const fields = { y: y * FP, vy: SCROLL, cool: 70 + i * 25, vx: 0 }
+      if (boat) {
+        // Sails to and fro across its stretch of water (it stays on the same
+        // stretch: it drifts down with the ground).
+        const minX = Math.max(left, 20) + 18
+        const maxX = Math.min(right, W - 20) - 18
+        fields.x = (minX + randomInt(state, Math.max(1, maxX - minX))) * FP
+        fields.minX = minX * FP
+        fields.maxX = Math.max(minX, maxX) * FP
+        if (maxX - minX > 30) fields.vx = randomInt(state, 2) ? 10 : -10
+        addEnemy(state, 'vedette', { ...fields, path: 'boat' })
+      } else {
+        let x = 40 + randomInt(state, W - 80)
+        if (x > left - 26 && x < right + 26) x = left >= 70 ? left - 30 : Math.min(W - 30, right + 30)
+        addEnemy(state, 'tourelle', { ...fields, x: x * FP, path: 'ground' })
+      }
     }
   }
 
@@ -446,7 +487,7 @@ function moveEnemy(state, e) {
   } else if (e.path === 'boat') {
     e.y += e.vy
     e.x += e.vx
-    if (e.x < 30 * FP || e.x > (W - 30) * FP) e.vx = -e.vx
+    if ((e.x <= e.minX && e.vx < 0) || (e.x >= e.maxX && e.vx > 0)) e.vx = -e.vx
   } else if (e.path === 'ground') {
     e.y += e.vy
   } else if (e.path === 'boss') {

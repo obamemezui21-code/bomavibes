@@ -5,7 +5,7 @@ import { ArrowLeft, Plane, Star, Trophy, Volume2, VolumeX } from 'lucide-react'
 import { DEFAULT_JET, JETS, STAR_SCORES } from '../../../shared/escadrille-ogooue/engine.mjs'
 import { finishEscadrilleGame, getEscadrille, startEscadrilleGame } from '../firebase/escadrille.js'
 import { createEscadrilleAudio, loadMuted, saveMuted } from '../game/escadrille/audio.js'
-import { drawJetPreview } from '../game/escadrille/renderer.js'
+import { drawJetPreview, preloadArt } from '../game/escadrille/renderer.js'
 import EscadrilleScreen from '../game/escadrille/EscadrilleScreen.jsx'
 import EscadrilleHelp from '../game/escadrille/EscadrilleHelp.jsx'
 import NgoriCoin from '../components/NgoriCoin.jsx'
@@ -51,6 +51,11 @@ function JetPicture({ id }) {
     c.width = 64 * dpr
     c.height = 64 * dpr
     drawJetPreview(c, id)
+    let live = true
+    preloadArt().then(() => live && drawJetPreview(c, id)) // again with Gemini's picture
+    return () => {
+      live = false
+    }
   }, [id])
   return <canvas ref={ref} className="h-16 w-16" aria-hidden="true" />
 }

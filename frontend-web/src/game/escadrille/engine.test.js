@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   BOSS_TICK,
   FP,
+  H,
   JETS,
   KINDS,
   bossOf,
@@ -10,6 +11,7 @@ import {
   starsFor,
   step,
   validateInputs,
+  waterAt,
 } from '../../../../shared/escadrille-ogooue/engine.mjs'
 import { playBot } from './bot.js'
 
@@ -92,6 +94,30 @@ describe('ESCADRILLE OGOUÉ engine', () => {
     }
     expect(state.won).toBe(true)
     expect(state.kills.boss).toBe(1)
+  })
+
+  it('puts the speedboats on the water and the turrets on land', () => {
+    const state = createGame(17)
+    let boats = 0
+    let turrets = 0
+    while (state.tick < BOSS_TICK) {
+      state.player.inv = 1000
+      step(state)
+      for (const e of state.enemies) {
+        if (e.t !== 1 || !KINDS[e.kind].ground) continue
+        const [left, right] = waterAt(Math.trunc(state.scroll / FP) + H - Math.trunc(e.y / FP))
+        const x = e.x / FP
+        if (e.kind === 'vedette') {
+          boats++
+          expect(x > left && x < right).toBe(true)
+        } else {
+          turrets++
+          expect(x < left - 20 || x > right + 20).toBe(true)
+        }
+      }
+    }
+    expect(boats).toBeGreaterThan(0)
+    expect(turrets).toBeGreaterThan(0)
   })
 
   it('validates the recorded gestures', () => {
