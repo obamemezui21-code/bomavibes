@@ -8,7 +8,6 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { hasAdminAccess } from '../lib/roles.js'
 import logo from '../assets/bomavibes-icon.webp'
-import NgoriCoin from './NgoriCoin.jsx'
 
 const iconButtonClass =
   'flex h-10 w-10 items-center justify-center rounded-full border border-ink/10 bg-surface text-ink transition hover:bg-ink/8 active:scale-95'
@@ -83,16 +82,6 @@ function AppTopBar() {
         >
           {theme === 'dark' ? <Sun size={20} strokeWidth={2.25} /> : <Moon size={20} strokeWidth={2.25} />}
         </button>
-
-        <NavLink
-          to="/ngori"
-          className="flex h-10 items-center gap-1.5 rounded-full bg-gold/20 pl-1.5 pr-3 text-sm font-bold text-ink transition hover:bg-gold/30 active:scale-95"
-          aria-label={`Mes Ngori : ${profile?.ngori || 0}`}
-          title="Mes Ngori"
-        >
-          <NgoriCoin size={24} />
-          {profile?.ngori || 0}
-        </NavLink>
 
         <NavLink to="/notifications" className={`relative ${tintedButtonClass} ${BELL_TINT}`} aria-label="Notifications">
           <Bell size={20} strokeWidth={2.25} />
