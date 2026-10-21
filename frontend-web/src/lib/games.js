@@ -24,7 +24,21 @@ export const GAMES = [
     gradient: 'from-[#2a0f45] via-[#5b1f6e] to-[#e9467d]',
     accent: 'text-gold',
     dailyCap: 5,
-  },  {
+  },
+  {
+    id: 'escadrille-ogooue',
+    name: 'Escadrille Ogooué',
+    tagline: 'Combat aérien au-dessus du Gabon',
+    description: 'Pilote ton chasseur de la côte aux Monts de Cristal, abats drones, hélicos et avions pirates du Serpent Noir… jusqu’au Condor Noir !',
+    path: '/escadrille-ogooue',
+    pictures: [],
+    cover: '/escadrille/cover.svg',
+    gradient: 'from-[#0b2233] via-[#0e4d6e] to-[#1d8fb8]',
+    accent: 'text-sky-300',
+    dailyCap: 5,
+    isNew: true,
+  },
+  {
     id: 'oeil-de-panthere',
     name: 'Œil de Panthère',
     tagline: 'Tir de précision au fusil à lunette',

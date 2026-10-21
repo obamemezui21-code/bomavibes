@@ -54,6 +54,7 @@ async function eraseAccount(uid) {
     await db.collection("crushTime").doc(uid).delete().catch(() => {});
     await db.collection("commandoProgress").doc(uid).delete().catch(() => {});
     await db.collection("pantherProgress").doc(uid).delete().catch(() => {});
+    await db.collection("escadrilleProgress").doc(uid).delete().catch(() => {});
 
     // Lives they hosted: closed and removed (comments included).
     const livesSnap = await db.collection("lives").where("hostId", "==", uid).get();

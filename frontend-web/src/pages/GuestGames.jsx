@@ -9,12 +9,15 @@ import CommandoScreen from '../game/commando/CommandoScreen.jsx'
 import { createCommandoAudio, loadMuted as loadCommandoMuted, saveMuted as saveCommandoMuted } from '../game/commando/audio.js'
 import PantherScreen from '../game/panthere/PantherScreen.jsx'
 import { createPantherAudio } from '../game/panthere/audio.js'
+import EscadrilleScreen from '../game/escadrille/EscadrilleScreen.jsx'
+import { createEscadrilleAudio } from '../game/escadrille/audio.js'
 import MotoScreen from '../game/motoBoma/MotoScreen.jsx'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import { formatTicks, MEDAL_EMOJI, MEDAL_LABEL } from '../game/motoBoma/format.js'
 import { simulateGame } from '../../../shared/commando-okoume/engine.mjs'
 import { simulateGame as simulatePanther } from '../../../shared/oeil-de-panthere/engine.mjs'
+import { ZONES, simulateGame as simulateEscadrille } from '../../../shared/escadrille-ogooue/engine.mjs'
 import { DEFAULT_COURSE, simulateRace } from '../../../shared/moto-boma/engine.mjs'
 import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 
@@ -22,13 +25,15 @@ import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 // account (bomavibes.tech/jouer). Guests play in practice mode — the run never
 // reaches the server: no Ngori, no ranking — and are invited to sign up at
 // the end. Commando Okoumé: mission 1 only.
-const GUEST_GAMES = ['ngori-run', 'oeil-de-panthere', 'commando-okoume', 'moto-boma']
+const GUEST_GAMES = ['ngori-run', 'escadrille-ogooue', 'oeil-de-panthere', 'commando-okoume', 'moto-boma']
 const COMMANDO_OPTIONS = { character: 'mboumba', maxHp: 4 }
 const PANTHER_OPTIONS = { rifle: 'carabine' }
+const ESCADRILLE_OPTIONS = { jet: 'aigle' }
 const TOUCH = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
 
 // What an account adds, per game, for the end-of-game invitation.
 const WITH_ACCOUNT = {
+  'escadrille-ogooue': 'piloter le Faucon ou le Calao, gagner des Ngori et entrer au classement des meilleurs pilotes',
   'oeil-de-panthere': 'choisir ton fusil (précision ou assaut), gagner des Ngori et entrer au classement des meilleurs tireurs',
   'commando-okoume': 'débloquer les missions 2 et 3, monter en grade jusqu’à Colonel, jouer l’Adjudante Moussavou et gagner des Ngori',
   'moto-boma': 'gagner des Ngori, entrer au classement et défier tes matchs en duel',
@@ -36,6 +41,14 @@ const WITH_ACCOUNT = {
 }
 
 function resultLines(gameId, play, payload) {
+  if (gameId === 'escadrille-ogooue') {
+    const r = simulateEscadrille(play.seed, ESCADRILLE_OPTIONS, payload.inputs, payload.endTick)
+    return {
+      title: r.won ? 'Mission accomplie !' : 'Abattu !',
+      lines: [`Score : ${r.score.toLocaleString('fr-FR')}`, `${r.totalKills} appareil${r.totalKills > 1 ? 's' : ''} du Serpent Noir abattu${r.totalKills > 1 ? 's' : ''}`, r.won ? 'Le Condor Noir est tombé !' : `Zone atteinte : ${ZONES[r.zone].name}`],
+      stars: r.stars,
+    }
+  }
   if (gameId === 'oeil-de-panthere') {
     const r = simulatePanther(play.seed, PANTHER_OPTIONS, payload.inputs, payload.endTick)
     return {
@@ -74,11 +87,13 @@ function GuestGames() {
   const [commandoAudio] = useState(() => createCommandoAudio(loadCommandoMuted()))
   const [runAudio] = useState(() => createGameAudio(loadMuted()))
   const [pantherAudio] = useState(() => createPantherAudio(loadMuted()))
+  const [escadrilleAudio] = useState(() => createEscadrilleAudio(loadMuted()))
   const [muted, setMuted] = useState(loadMuted)
   const playCount = useRef(0) // a fresh game screen for every game
 
   function start(gameId) {
-    if (gameId === 'oeil-de-panthere') pantherAudio.unlock()
+    if (gameId === 'escadrille-ogooue') escadrilleAudio.unlock()
+    else if (gameId === 'oeil-de-panthere') pantherAudio.unlock()
     else if (gameId === 'commando-okoume') commandoAudio.unlock()
     else runAudio.unlock()
     setResult(null)
@@ -104,6 +119,7 @@ function GuestGames() {
     runAudio.setMuted?.(next)
     commandoAudio.setMuted(next)
     pantherAudio.setMuted(next)
+    escadrilleAudio.setMuted(next)
   }
 
   return (
@@ -140,6 +156,7 @@ function GuestGames() {
                   <p className="mt-2 text-sm text-white/80">{game.description}</p>
                   {game.id === 'commando-okoume' && <p className="mt-2 text-xs text-white/70">Mission 1 en accès libre.</p>}
                   {game.id === 'oeil-de-panthere' && <p className="mt-2 text-xs text-white/70">Avec la carabine de chasse.</p>}
+                  {game.id === 'escadrille-ogooue' && <p className="mt-2 text-xs text-white/70">Avec le chasseur Aigle.</p>}
                 </div>
                 {!game.cover && (
                   <div className="flex shrink-0 items-end">
@@ -190,6 +207,9 @@ function GuestGames() {
       </main>
 
       {/* The game itself, full screen */}
+      {play?.gameId === 'escadrille-ogooue' && (
+        <EscadrilleScreen key={play.key} seed={play.seed} options={ESCADRILLE_OPTIONS} audio={escadrilleAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />
+      )}
       {play?.gameId === 'oeil-de-panthere' && (
         <PantherScreen key={play.key} seed={play.seed} options={PANTHER_OPTIONS} audio={pantherAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />
       )}

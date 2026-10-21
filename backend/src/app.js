@@ -37,6 +37,7 @@ const weMetRoutes = require("./routes/weMetRoutes");
 const crushTimeRoutes = require("./routes/crushTimeRoutes");
 const commandoRoutes = require("./routes/commandoRoutes");
 const pantherRoutes = require("./routes/pantherRoutes");
+const escadrilleRoutes = require("./routes/escadrilleRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
@@ -52,6 +53,9 @@ app.set("trust proxy", "loopback");
 
 // Middlewares
 app.use(cors());
+// A sortie of Escadrille Ogooué records the jet's course every 2 ticks: up to
+// ~120 KB for the longest ones, over the default limit.
+app.use("/api/escadrille/finish", express.json({ limit: "300kb" }));
 app.use(express.json());
 app.use("/api", apiLimiter);
 
@@ -100,6 +104,7 @@ app.use("/api/we-met", weMetRoutes);
 app.use("/api/crush-time", crushTimeRoutes);
 app.use("/api/commando", commandoRoutes);
 app.use("/api/panthere", pantherRoutes);
+app.use("/api/escadrille", escadrilleRoutes);
 app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
 

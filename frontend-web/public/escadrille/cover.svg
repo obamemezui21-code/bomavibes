@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 572" width="1024" height="572">
+  <!-- Escadrille Ogooué: three jets over the Ogooué, the Condor Noir ahead. -->
+  <defs>
+    <linearGradient id="land" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c5a40"/>
+      <stop offset="0.45" stop-color="#25502a"/>
+      <stop offset="1" stop-color="#1d4419"/>
+    </linearGradient>
+    <linearGradient id="river" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6f9aa0"/>
+      <stop offset="1" stop-color="#2f6a6c"/>
+    </linearGradient>
+    <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6edf2" stop-opacity="0.7"/>
+      <stop offset="0.4" stop-color="#e6edf2" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#e6edf2" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="jetBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#465140"/>
+      <stop offset="0.5" stop-color="#a3b196"/>
+      <stop offset="1" stop-color="#465140"/>
+    </linearGradient>
+    <linearGradient id="canopy" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d8f4ff"/>
+      <stop offset="0.45" stop-color="#3fa7d6"/>
+      <stop offset="1" stop-color="#0b2a40"/>
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.3" stop-color="#ffd65a"/>
+      <stop offset="0.75" stop-color="#ff6e1e" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ff3c14" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="cloud">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.85"/>
+      <stop offset="0.6" stop-color="#fff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow">
+      <stop offset="0" stop-color="#ffc878" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ff5014" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="canopyTrees" width="46" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="11" fill="#1b4119"/>
+      <circle cx="8" cy="8" r="7.5" fill="#2a6025"/>
+      <circle cx="6" cy="6" r="3.5" fill="#4a8a3a"/>
+      <circle cx="34" cy="28" r="12" fill="#1b4119"/>
+      <circle cx="32" cy="26" r="8" fill="#2f6a28"/>
+      <circle cx="30" cy="24" r="3.8" fill="#55963f"/>
+      <circle cx="36" cy="4" r="7" fill="#1f4a1c"/>
+      <circle cx="35" cy="3" r="4.5" fill="#3a7130"/>
+      <circle cx="14" cy="34" r="8" fill="#1f4a1c"/>
+      <circle cx="13" cy="33" r="5" fill="#2d6526"/>
+    </pattern>
+    <g id="jet">
+      <path d="M-4 -36 L0 -46 L4 -36 L6 -14 L36 14 L36 20 L6 16 L6 28 L20 36 L20 40 L4 38 L0 42 L-4 38 L-20 40 L-20 36 L-6 28 L-6 16 L-36 20 L-36 14 L-6 -14 Z" fill="url(#jetBody)" stroke="#1c2219" stroke-width="1.2"/>
+      <rect x="11" y="31" width="2.4" height="6" fill="#009e60"/><rect x="13.4" y="31" width="2.4" height="6" fill="#fcd116"/><rect x="15.8" y="31" width="2.4" height="6" fill="#3a75c4"/>
+      <rect x="-13.4" y="31" width="2.4" height="6" fill="#009e60"/><rect x="-15.8" y="31" width="2.4" height="6" fill="#fcd116"/><rect x="-18.2" y="31" width="2.4" height="6" fill="#3a75c4"/>
+      <ellipse cx="0" cy="-22" rx="3.6" ry="9" fill="url(#canopy)" stroke="#0d1a22" stroke-width="0.8"/>
+      <rect x="-23" y="0" width="2.4" height="14" fill="#ddd"/><rect x="20.6" y="0" width="2.4" height="14" fill="#ddd"/>
+      <path d="M-4 42 Q0 74 4 42 Z" fill="url(#flame)"/>
+    </g>
+  </defs>
+
+  <!-- ground -->
+  <rect width="1024" height="572" fill="url(#land)"/>
+  <rect width="1024" height="572" fill="url(#canopyTrees)" opacity="0.95"/>
+  <!-- mountains far ahead -->
+  <path d="M0 120 L80 70 L150 105 L240 40 L330 95 L420 55 L520 100 L610 30 L700 85 L790 50 L880 100 L960 60 L1024 90 L1024 0 L0 0 Z" fill="#59684f"/>
+  <path d="M80 70 L110 92 M240 40 L268 70 M610 30 L640 66 M790 50 L815 78 M420 55 L440 80" stroke="#c9cdc2" stroke-width="5" opacity="0.5"/>
+  <!-- the Ogooué -->
+  <path d="M430 572 C 380 470, 600 420, 540 330 C 480 240, 650 200, 600 120 C 570 70, 640 30, 620 0 L 660 0 C 690 40, 615 80, 650 125 C 700 205, 535 250, 595 330 C 660 430, 450 470, 520 572 Z" fill="url(#river)"/>
+  <path d="M430 572 C 380 470, 600 420, 540 330 C 480 240, 650 200, 600 120 C 570 70, 640 30, 620 0" fill="none" stroke="#c9b98a" stroke-width="5" opacity="0.8"/>
+  <path d="M520 572 C 450 470, 660 430, 595 330 C 535 250, 700 205, 650 125 C 615 80, 690 40, 660 0" fill="none" stroke="#c9b98a" stroke-width="5" opacity="0.8"/>
+  <rect width="1024" height="572" fill="url(#haze)"/>
+
+  <!-- shadows of the jets on the ground -->
+  <g fill="#000" opacity="0.25">
+    <use href="#jet" transform="translate(560 470) scale(1.9)"/>
+    <use href="#jet" transform="translate(410 520) scale(1.5)"/>
+    <use href="#jet" transform="translate(720 520) scale(1.5)"/>
+  </g>
+
+  <!-- the Condor Noir, ahead -->
+  <g transform="translate(512 96) scale(1.6)">
+    <circle cx="-46" cy="-18" r="12" fill="url(#glow)"/><circle cx="-22" cy="-18" r="12" fill="url(#glow)"/>
+    <circle cx="22" cy="-18" r="12" fill="url(#glow)"/><circle cx="46" cy="-18" r="12" fill="url(#glow)"/>
+    <path d="M0 26 L24 20 L78 -6 L76 -12 L52 -10 L40 -22 L20 -16 L0 -20 L-20 -16 L-40 -22 L-52 -10 L-76 -12 L-78 -6 L-24 20 Z" fill="#23272d" stroke="#07080a" stroke-width="1"/>
+    <path d="M-78 -6 L-24 20 L0 26 L24 20 L78 -6" fill="none" stroke="#c0392b" stroke-width="1.6"/>
+    <path d="M-9 -9 C 9 -13, -9 5, 9 1" fill="none" stroke="#c0392b" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="0" cy="16" rx="7" ry="5" fill="#7a1f1a"/>
+  </g>
+  <!-- its bullets -->
+  <g fill="#ff7a2e">
+    <circle cx="470" cy="190" r="5"/><circle cx="512" cy="200" r="5"/><circle cx="554" cy="190" r="5"/>
+    <circle cx="430" cy="235" r="5"/><circle cx="594" cy="235" r="5"/>
+  </g>
+  <g fill="#fff6d0"><circle cx="470" cy="190" r="2"/><circle cx="512" cy="200" r="2"/><circle cx="554" cy="190" r="2"/><circle cx="430" cy="235" r="2"/><circle cx="594" cy="235" r="2"/></g>
+
+  <!-- tracers -->
+  <g stroke="#ffd84a" stroke-width="3" stroke-linecap="round">
+    <path d="M500 330 L500 312"/><path d="M524 330 L524 312"/><path d="M500 290 L500 272"/><path d="M524 290 L524 272"/>
+    <path d="M352 380 L352 362"/><path d="M372 380 L372 362"/><path d="M652 380 L652 362"/><path d="M672 380 L672 362"/>
+  </g>
+
+  <!-- the three jets -->
+  <use href="#jet" transform="translate(512 420) scale(1.9)"/>
+  <use href="#jet" transform="translate(362 470) scale(1.5)"/>
+  <use href="#jet" transform="translate(662 470) scale(1.5)"/>
+
+  <!-- clouds -->
+  <ellipse cx="140" cy="330" rx="150" ry="70" fill="url(#cloud)"/>
+  <ellipse cx="900" cy="250" rx="170" ry="80" fill="url(#cloud)"/>
+  <ellipse cx="820" cy="560" rx="160" ry="60" fill="url(#cloud)" opacity="0.8"/>
+</svg>
