@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, LayoutGrid, Menu, Moon, ShieldCheck, Sun } from 'lucide-react'
+import { LayoutGrid, Menu, Moon, ShieldCheck, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
-import { useConversations } from '../context/ConversationsContext.jsx'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { hasAdminAccess } from '../lib/roles.js'
 import logo from '../assets/bomavibes-icon.webp'
@@ -21,7 +20,6 @@ const tintedButtonClass = 'flex h-10 w-10 items-center justify-center rounded-fu
 const desktopTintedButtonClass = `hidden desktop:flex ${tintedButtonClass.replace(/^flex /, '')}`
 
 const THEME_TINT = 'bg-indigo-500/15 text-indigo-500 hover:bg-indigo-500/25'
-const BELL_TINT = 'bg-sun/20 text-sun hover:bg-sun/30'
 
 const menuItemClass =
   'flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-ink transition hover:bg-ink/5'
@@ -29,7 +27,6 @@ const menuItemClass =
 function AppTopBar() {
   const { profile, publicProfile } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const { notificationsCount } = useConversations()
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
   const photoUrl = publicProfile?.photos?.[0]
@@ -82,15 +79,6 @@ function AppTopBar() {
         >
           {theme === 'dark' ? <Sun size={20} strokeWidth={2.25} /> : <Moon size={20} strokeWidth={2.25} />}
         </button>
-
-        <NavLink to="/notifications" className={`relative ${tintedButtonClass} ${BELL_TINT}`} aria-label="Notifications">
-          <Bell size={20} strokeWidth={2.25} />
-          {notificationsCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex min-w-4 items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-bold text-white">
-              {notificationsCount > 9 ? '9+' : notificationsCount}
-            </span>
-          )}
-        </NavLink>
 
         <div ref={menuRef} className="relative desktop:hidden">
           <button
