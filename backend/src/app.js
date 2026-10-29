@@ -39,6 +39,7 @@ const commandoRoutes = require("./routes/commandoRoutes");
 const pantherRoutes = require("./routes/pantherRoutes");
 const escadrilleRoutes = require("./routes/escadrilleRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
+const locationRoutes = require("./routes/locationRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
@@ -107,6 +108,7 @@ app.use("/api/commando", commandoRoutes);
 app.use("/api/panthere", pantherRoutes);
 app.use("/api/escadrille", escadrilleRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api/location", locationRoutes);
 app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
 

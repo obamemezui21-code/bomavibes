@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -48,6 +48,7 @@ import { complimentAbout } from '../lib/compliments.js'
 import Watermark from './privacy/Watermark.jsx'
 import ShieldCover from './privacy/ShieldCover.jsx'
 import { PROTECT_PROPS } from './privacy/protect.js'
+import { distancesTo } from '../lib/geolocation.js'
 
 // Small round button on a bio / prompt card: compliment that answer.
 function ComplimentButton({ onClick }) {
@@ -91,11 +92,15 @@ function InfoBlock({ title, chips }) {
   )
 }
 
-function formatDistance(km) {
+// Estimate from the two cities' centres, when the server has no position for
+// one of the two members (lib/nearby.js).
+function formatCityDistance(km) {
   if (km == null) return null
-  if (km < 5) return 'Dans votre ville'
-  return `À ${km < 100 ? Math.round(km) : Math.round(km / 10) * 10} km`
+  if (km < 5) return 'Dans ta ville'
+  return `À environ ${km < 100 ? Math.round(km) : Math.round(km / 10) * 10} km de toi`
 }
+
+const capitalize = (text) => (text ? text[0].toUpperCase() + text.slice(1) : null)
 
 const RING_RADIUS = 17
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
@@ -155,6 +160,21 @@ function ProfileDetailModal({
     ? profile.photos
     : [fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')]
   const [index, setIndex] = useState(0)
+  // "À 5 km de toi": rounded by the server from both members' positions
+  // (lib/geolocation.js), never computed from coordinates here.
+  const showDistance = !isSelf && !profile.hideDistance
+  const [serverDistance, setServerDistance] = useState(null)
+  useEffect(() => {
+    if (!showDistance) return undefined
+    let live = true
+    distancesTo([profile.id]).then((d) => live && setServerDistance(d[profile.id]))
+    return () => {
+      live = false
+    }
+  }, [showDistance, profile.id])
+  const distanceLabel = showDistance
+    ? capitalize(serverDistance?.label) || formatCityDistance(distanceKmBetween(publicProfile, profile))
+    : null
   const [showMenu, setShowMenu] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [showBlock, setShowBlock] = useState(false)
@@ -212,7 +232,7 @@ function ProfileDetailModal({
   const lifestyle = profile.lifestyle || {}
   const infoChips = [
     { Icon: Heart, title: 'Recherche', label: profile.datingGoal },
-    !isSelf && !profile.hideDistance && { Icon: Navigation, title: 'Distance', label: formatDistance(distanceKmBetween(publicProfile, profile)) },
+    { Icon: Navigation, title: 'Distance', label: distanceLabel },
     { Icon: Baby, title: 'Enfants', label: profile.children },
     { Icon: lifestyle.smoking === 'Non-fumeur' ? CigaretteOff : Cigarette, title: 'Tabac', label: lifestyle.smoking },
     { Icon: Wine, title: 'Alcool', label: lifestyle.alcohol },
@@ -345,6 +365,12 @@ function ProfileDetailModal({
                   <MapPin size={11} strokeWidth={2.5} />
                   {profile.city}
                   {profile.country ? `, ${profile.country}` : ''}
+                </span>
+              )}
+              {distanceLabel && (
+                <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]">
+                  <Navigation size={11} strokeWidth={2.5} aria-hidden="true" />
+                  {distanceLabel}
                 </span>
               )}
               <div className="mt-2 flex items-center gap-2">

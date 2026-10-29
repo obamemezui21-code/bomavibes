@@ -20,6 +20,7 @@ import Button from '../components/ui/Button.jsx'
 import SupportModal from '../components/SupportModal.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 import { openCookieSettings } from '../lib/cookieConsent.js'
+import { LOCATION_ERRORS, forgetLocation, shareLocation } from '../lib/geolocation.js'
 
 function Toggle({ checked, onChange, disabled }) {
   return (
@@ -49,6 +50,57 @@ function Row({ title, subtitle, children }) {
       </div>
       {children}
     </div>
+  )
+}
+
+// The member's position for "à 5 km de toi" (lib/geolocation.js): refresh it,
+// or wipe it from the server (it then stays off until turned back on here or
+// on Discover).
+function LocationRow() {
+  const { showToast } = useToast()
+  const [busy, setBusy] = useState(false)
+
+  async function update() {
+    setBusy(true)
+    const result = await shareLocation({ ask: true })
+    setBusy(false)
+    if (result.ok) showToast('Position mise à jour.', 'success')
+    else showToast(LOCATION_ERRORS[result.reason] || LOCATION_ERRORS.unavailable, 'error')
+  }
+
+  async function forget() {
+    setBusy(true)
+    try {
+      await forgetLocation()
+      showToast('Position effacée de nos serveurs. Les distances sont de nouveau estimées depuis votre ville.', 'success')
+    } catch {
+      showToast('Impossible d’effacer la position, réessayez.', 'error')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Row title="Ma position" subtitle="Sert seulement à calculer une distance arrondie. Jamais montrée aux autres membres.">
+      <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+        <button
+          type="button"
+          onClick={update}
+          disabled={busy}
+          className="rounded-full bg-violet-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-600 disabled:opacity-50"
+        >
+          Mettre à jour
+        </button>
+        <button
+          type="button"
+          onClick={forget}
+          disabled={busy}
+          className="rounded-full border border-ink/12 px-3 py-1.5 text-xs font-medium text-ink/80 transition hover:bg-ink/5 disabled:opacity-50"
+        >
+          Effacer
+        </button>
+      </div>
+    </Row>
   )
 }
 
@@ -289,7 +341,7 @@ function Settings() {
   const newMessages = profile?.notifyMessages ?? true
   const newFeed = profile?.notifyFeed ?? true
   const emailAnnouncements = profile?.emailAnnouncements ?? true
-  const showDistance = !publicProfile?.hideDistance
+  const hideDistance = !!publicProfile?.hideDistance
   const showAge = !publicProfile?.hideAge
   // Incognito is the Jadéite Impériale invisible mode, enforced server side.
   const canGoInvisible = activePlan(profile).invisible
@@ -426,13 +478,14 @@ function Settings() {
           </Section>
 
           <Section title="Confidentialité">
-            <Row title="Afficher ma distance" subtitle="Les autres voient à combien de km vous êtes">
+            <Row title="Masquer ma distance" subtitle="Les autres ne voient plus à combien de km vous êtes">
               <Toggle
-                checked={showDistance}
-                onChange={(v) => savePrivacy('profiles', 'hideDistance', !v)}
+                checked={hideDistance}
+                onChange={(v) => savePrivacy('profiles', 'hideDistance', v)}
                 disabled={savingPrivacy}
               />
             </Row>
+            <LocationRow />
             <Row title="Afficher mon âge" subtitle="Votre âge à côté de votre prénom">
               <Toggle
                 checked={showAge}

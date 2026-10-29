@@ -44,6 +44,7 @@ import MostCompatibleCard from '../components/MostCompatibleCard.jsx'
 import { dailyMostCompatible } from '../lib/mostCompatible.js'
 import { dailySelection } from '../lib/dailySelection.js'
 import DailySelection from '../components/DailySelection.jsx'
+import LocationPrompt from '../components/LocationPrompt.jsx'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
@@ -628,6 +629,8 @@ function Discover() {
 
           {!(hasUnseenAnnouncement && latestAnnouncement) && <SupportPromptCard />}
         </div>
+
+        <LocationPrompt />
 
         {!isLoading && mostCompatible && (
           <MostCompatibleCard pick={mostCompatible} onOpen={() => setExpandedProfile(mostCompatible.profile)} />
