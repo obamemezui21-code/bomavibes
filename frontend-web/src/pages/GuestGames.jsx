@@ -11,6 +11,8 @@ import PantherScreen from '../game/panthere/PantherScreen.jsx'
 import { createPantherAudio } from '../game/panthere/audio.js'
 import EscadrilleScreen from '../game/escadrille/EscadrilleScreen.jsx'
 import { createEscadrilleAudio } from '../game/escadrille/audio.js'
+import PerlesScreen from '../game/perles/PerlesScreen.jsx'
+import { createPerlesAudio } from '../game/perles/audio.js'
 import MotoScreen from '../game/motoBoma/MotoScreen.jsx'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
@@ -18,6 +20,7 @@ import { formatTicks, MEDAL_EMOJI, MEDAL_LABEL } from '../game/motoBoma/format.j
 import { simulateGame } from '../../../shared/commando-okoume/engine.mjs'
 import { simulateGame as simulatePanther } from '../../../shared/oeil-de-panthere/engine.mjs'
 import { ZONES, simulateGame as simulateEscadrille } from '../../../shared/escadrille-ogooue/engine.mjs'
+import { LEVELS as PERLES_LEVELS, simulateGame as simulatePerles } from '../../../shared/perles-punu/engine.mjs'
 import { DEFAULT_COURSE, simulateRace } from '../../../shared/moto-boma/engine.mjs'
 import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 
@@ -25,7 +28,7 @@ import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 // account (bomavibes.tech/jouer). Guests play in practice mode — the run never
 // reaches the server: no Ngori, no ranking — and are invited to sign up at
 // the end. Commando Okoumé: mission 1 only.
-const GUEST_GAMES = ['ngori-run', 'escadrille-ogooue', 'oeil-de-panthere', 'commando-okoume', 'moto-boma']
+const GUEST_GAMES = ['ngori-run', 'perles-punu', 'escadrille-ogooue', 'oeil-de-panthere', 'commando-okoume', 'moto-boma']
 const COMMANDO_OPTIONS = { character: 'mboumba', maxHp: 4 }
 const PANTHER_OPTIONS = { rifle: 'carabine' }
 const ESCADRILLE_OPTIONS = { jet: 'aigle' }
@@ -33,6 +36,7 @@ const TOUCH = typeof window !== 'undefined' && window.matchMedia?.('(pointer: co
 
 // What an account adds, per game, for the end-of-game invitation.
 const WITH_ACCOUNT = {
+  'perles-punu': 'gagner des Ngori à chaque partie et entrer au classement des meilleurs joueurs',
   'escadrille-ogooue': 'piloter le Faucon ou le Calao, gagner des Ngori et entrer au classement des meilleurs pilotes',
   'oeil-de-panthere': 'choisir ton fusil (précision ou assaut), gagner des Ngori et entrer au classement des meilleurs tireurs',
   'commando-okoume': 'débloquer les missions 2 et 3, monter en grade jusqu’à Colonel, jouer l’Adjudante Moussavou et gagner des Ngori',
@@ -41,6 +45,18 @@ const WITH_ACCOUNT = {
 }
 
 function resultLines(gameId, play, payload) {
+  if (gameId === 'perles-punu') {
+    const r = simulatePerles(play.seed, payload.inputs, payload.endTick)
+    return {
+      title: r.won ? 'Le fleuve est libre !' : 'Partie terminée',
+      lines: [
+        `Score : ${r.score.toLocaleString('fr-FR')}`,
+        `${r.matched} perle${r.matched > 1 ? 's' : ''} éclatée${r.matched > 1 ? 's' : ''}`,
+        r.won ? 'Les 5 niveaux réussis !' : `Niveau atteint : ${PERLES_LEVELS[r.level].name}`,
+      ],
+      stars: r.stars,
+    }
+  }
   if (gameId === 'escadrille-ogooue') {
     const r = simulateEscadrille(play.seed, ESCADRILLE_OPTIONS, payload.inputs, payload.endTick)
     return {
@@ -88,11 +104,13 @@ function GuestGames() {
   const [runAudio] = useState(() => createGameAudio(loadMuted()))
   const [pantherAudio] = useState(() => createPantherAudio(loadMuted()))
   const [escadrilleAudio] = useState(() => createEscadrilleAudio(loadMuted()))
+  const [perlesAudio] = useState(() => createPerlesAudio(loadMuted()))
   const [muted, setMuted] = useState(loadMuted)
   const playCount = useRef(0) // a fresh game screen for every game
 
   function start(gameId) {
-    if (gameId === 'escadrille-ogooue') escadrilleAudio.unlock()
+    if (gameId === 'perles-punu') perlesAudio.unlock()
+    else if (gameId === 'escadrille-ogooue') escadrilleAudio.unlock()
     else if (gameId === 'oeil-de-panthere') pantherAudio.unlock()
     else if (gameId === 'commando-okoume') commandoAudio.unlock()
     else runAudio.unlock()
@@ -120,6 +138,7 @@ function GuestGames() {
     commandoAudio.setMuted(next)
     pantherAudio.setMuted(next)
     escadrilleAudio.setMuted(next)
+    perlesAudio.setMuted(next)
   }
 
   return (
@@ -207,6 +226,9 @@ function GuestGames() {
       </main>
 
       {/* The game itself, full screen */}
+      {play?.gameId === 'perles-punu' && (
+        <PerlesScreen key={play.key} seed={play.seed} audio={perlesAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />
+      )}
       {play?.gameId === 'escadrille-ogooue' && (
         <EscadrilleScreen key={play.key} seed={play.seed} options={ESCADRILLE_OPTIONS} audio={escadrilleAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />
       )}

@@ -60,6 +60,7 @@ const MotoBoma = lazy(() => import('./pages/MotoBoma.jsx'))
 const CommandoOkoume = lazy(() => import('./pages/CommandoOkoume.jsx'))
 const OeilDePanthere = lazy(() => import('./pages/OeilDePanthere.jsx'))
 const EscadrilleOgooue = lazy(() => import('./pages/EscadrilleOgooue.jsx'))
+const PerlesPunu = lazy(() => import('./pages/PerlesPunu.jsx'))
 const MotDuJour = lazy(() => import('./pages/MotDuJour.jsx'))
 const VibeCheck = lazy(() => import('./pages/VibeCheck.jsx'))
 const Games = lazy(() => import('./pages/Games.jsx'))
@@ -201,6 +202,7 @@ function App() {
             <Route path="/commando-okoume" element={<CommandoOkoume />} />
             <Route path="/oeil-de-panthere" element={<OeilDePanthere />} />
             <Route path="/escadrille-ogooue" element={<EscadrilleOgooue />} />
+            <Route path="/perles-punu" element={<PerlesPunu />} />
             <Route path="/mot-du-jour" element={<MotDuJour />} />
             <Route path="/vibe-check" element={<VibeCheck />} />
             <Route path="/annonces" element={<Announcements />} />

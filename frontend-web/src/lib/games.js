@@ -14,6 +14,19 @@ import commandoCover from '../assets/game/commando-cover.webp'
 //   cover: optional artwork filling the card (the pictures are then left out)
 export const GAMES = [
   {
+    id: 'perles-punu',
+    name: 'Perles Punu',
+    tagline: 'Tir de perles le long du fleuve',
+    description: 'Le masque Punu lance des perles : fais-en éclater 3 de la même couleur avant qu’elles n’atteignent la chute, de la Lopé à Kongou !',
+    path: '/perles-punu',
+    pictures: [],
+    cover: '/perles/cover.svg',
+    gradient: 'from-[#1f2a14] via-[#4c6a27] to-[#d98e1f]',
+    accent: 'text-amber-300',
+    dailyCap: 5,
+    isNew: true,
+  },
+  {
     id: 'ngori-run',
     name: 'NGORI RUN',
     tagline: 'Course à pied au bord de mer',

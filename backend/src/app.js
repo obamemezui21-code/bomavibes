@@ -38,6 +38,7 @@ const crushTimeRoutes = require("./routes/crushTimeRoutes");
 const commandoRoutes = require("./routes/commandoRoutes");
 const pantherRoutes = require("./routes/pantherRoutes");
 const escadrilleRoutes = require("./routes/escadrilleRoutes");
+const perlesRoutes = require("./routes/perlesRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
 const locationRoutes = require("./routes/locationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
@@ -61,6 +62,8 @@ app.use(cors());
 // A sortie of Escadrille Ogooué records the jet's course every 2 ticks: up to
 // ~120 KB for the longest ones, over the default limit.
 app.use("/api/escadrille/finish", express.json({ limit: "300kb" }));
+// A long game of Perles Punu (30 min, a throw every 10 ticks) can pass 100 KB.
+app.use("/api/perles/finish", express.json({ limit: "300kb" }));
 app.use(express.json());
 app.use("/api", apiLimiter);
 
@@ -110,6 +113,7 @@ app.use("/api/crush-time", crushTimeRoutes);
 app.use("/api/commando", commandoRoutes);
 app.use("/api/panthere", pantherRoutes);
 app.use("/api/escadrille", escadrilleRoutes);
+app.use("/api/perles", perlesRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/chat", chatRoutes);
