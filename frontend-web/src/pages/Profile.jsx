@@ -20,10 +20,12 @@ import VoicePromptEditor from '../components/VoicePromptEditor.jsx'
 import {
   CHILDREN_OPTIONS,
   DATING_GOALS,
+  EDUCATION_LEVELS,
   LANGUAGES,
   LIFESTYLE_GROUPS,
   MAX_PERSONALITY_TRAITS,
   PERSONALITY_TRAITS,
+  RELATIONSHIP_STATUSES,
   RELIGIONS,
 } from '../lib/onboardingOptions.js'
 import { inputClass, labelClass, chipClass } from '../lib/formStyles.js'
@@ -42,6 +44,8 @@ const emptyForm = {
   jobTitle: '',
   workplace: '',
   children: '',
+  relationshipStatus: '',
+  education: '',
   bio: '',
   languages: [],
   personalityTraits: [],
@@ -82,6 +86,8 @@ function Profile() {
       jobTitle: publicProfile?.jobTitle || '',
       workplace: publicProfile?.workplace || '',
       children: publicProfile?.children || '',
+      relationshipStatus: publicProfile?.relationshipStatus || '',
+      education: publicProfile?.education || '',
       bio: publicProfile?.bio || '',
       languages: publicProfile?.languages || [],
       personalityTraits: publicProfile?.personalityTraits || [],
@@ -229,6 +235,8 @@ function Profile() {
           jobTitle: form.jobTitle.trim() || null,
           workplace: form.workplace.trim() || null,
           children: form.children || null,
+          relationshipStatus: form.relationshipStatus || null,
+          education: form.education || null,
           bio: form.bio || null,
           languages: form.languages,
           personalityTraits: form.personalityTraits,
@@ -614,6 +622,42 @@ function Profile() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Situation amoureuse (optionnel)</label>
+            <div className="flex flex-wrap gap-2">
+              {RELATIONSHIP_STATUSES.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  aria-pressed={form.relationshipStatus === option}
+                  onClick={() => setForm((f) => ({ ...f, relationshipStatus: f.relationshipStatus === option ? '' : option }))}
+                  className={chipClass(form.relationshipStatus === option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="education" className={labelClass}>
+              Niveau d’études (optionnel)
+            </label>
+            <select
+              id="education"
+              value={form.education}
+              onChange={(e) => setForm((f) => ({ ...f, education: e.target.value }))}
+              className={inputClass}
+            >
+              <option value="">Préférer ne pas préciser</option>
+              {EDUCATION_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

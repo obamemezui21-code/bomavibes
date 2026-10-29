@@ -21,6 +21,20 @@ export const DATING_GOALS = [
   'Sortie', 'Discussion',
 ]
 
+// Profile fields added for Discover's filters (2026-10-29), both optional.
+export const RELATIONSHIP_STATUSES = ['Célibataire', 'Séparé·e', 'Divorcé·e', 'Veuf·ve', 'C’est compliqué']
+
+export const EDUCATION_LEVELS = [
+  'BEPC',
+  'Baccalauréat',
+  'Formation professionnelle',
+  'BTS / DUT',
+  'Licence',
+  'Master',
+  'Doctorat',
+  'Autodidacte',
+]
+
 export const RELIGIONS = [
   'Christianisme', 'Islam', 'Judaïsme', 'Bouddhisme', 'Hindouisme',
   'Spiritualité', 'Autre', 'Sans religion',

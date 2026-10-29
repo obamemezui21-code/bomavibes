@@ -134,6 +134,8 @@ service cloud.firestore {
           && isOptionalString('jobTitle', 80)
           && isOptionalString('workplace', 80)
           && isOptionalString('children', 60)
+          && isOptionalString('relationshipStatus', 40)
+          && isOptionalString('education', 60)
           && (!('height' in data) || data.height == null || (data.height is number && data.height >= 120 && data.height <= 230))
           && (!('age' in data) || data.age == null || (data.age is number && data.age >= 18 && data.age <= 120))
           && (!('interests' in data) || (data.interests is list && data.interests.size() <= 20))

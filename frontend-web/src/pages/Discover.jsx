@@ -1,10 +1,9 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
   ChevronDown,
-  Globe2,
   Heart,
   CalendarHeart,
   Layers,
@@ -12,7 +11,6 @@ import {
   MapPin,
   Megaphone,
   MessageCircle,
-  Plane,
   RotateCcw,
   Search,
   Send,
@@ -36,8 +34,6 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { INTEREST_ICONS, matchPercent } from '../lib/interests.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
-import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
-import { RELIGIONS } from '../lib/onboardingOptions.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { useIdentity } from '../context/IdentityContext.jsx'
 import MostCompatibleCard from '../components/MostCompatibleCard.jsx'
@@ -45,6 +41,9 @@ import { dailyMostCompatible } from '../lib/mostCompatible.js'
 import { dailySelection } from '../lib/dailySelection.js'
 import DailySelection from '../components/DailySelection.jsx'
 import LocationPrompt from '../components/LocationPrompt.jsx'
+import { DEFAULT_FILTERS, activeFilterCount, loadKey, matchesFilters, passesDistance, sortProfiles } from '../lib/discoverFilters.js'
+import { distancesTo } from '../lib/geolocation.js'
+import { distanceKmBetween } from '../lib/nearby.js'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
@@ -66,7 +65,6 @@ function readInterestsHidden() {
   }
 }
 
-const DEFAULT_FILTERS = { minAge: 18, maxAge: 60, gender: 'TOUS' }
 const DECK_SIZE = 5
 const NEARBY_CHIP = 'À proximité'
 const GOAL_CHIPS = [NEARBY_CHIP, 'Relation sérieuse', 'Amitié', 'Sortie', 'Discussion']
@@ -98,15 +96,13 @@ function Discover() {
   const [expandedProfile, setExpandedProfile] = useState(null)
   const [search, setSearch] = useState('')
   const [activeChip, setActiveChip] = useState(null)
-  const [countryFilter, setCountryFilter] = useState('')
-  const [religionFilter, setReligionFilter] = useState('')
-  const [travelingOnly, setTravelingOnly] = useState(false)
-  const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [paywall, setPaywall] = useState(null)
   const [interestFilter, setInterestFilter] = useState('')
   const [viewMode, setViewMode] = useState('cards') // always opens on Cartes; Swipe is chosen per visit
   const [showSearch, setShowSearch] = useState(false)
-  const [showMoreFilters, setShowMoreFilters] = useState(false)
+  // Rounded distances from the server (lib/geolocation.js), only fetched
+  // when the distance filter or sort needs them.
+  const [distances, setDistances] = useState({})
   const [showAllInterests, setShowAllInterests] = useState(false)
   const [interestsHidden, setInterestsHidden] = useState(readInterestsHidden)
   const [matchedProfile, setMatchedProfile] = useState(null)
@@ -119,7 +115,7 @@ function Discover() {
 
   async function loadCandidates(currentFilters, { includeRefused = false, allowCache = false } = {}) {
     if (!user?.id) return
-    const key = JSON.stringify(currentFilters) + (includeRefused ? ':revoir' : '')
+    const key = loadKey(currentFilters) + (includeRefused ? ':revoir' : '')
     // Coming back to Discover within a few minutes: reuse the list instead
     // of re-reading every profile (see getCachedCandidates).
     if (allowCache) {
@@ -137,6 +133,9 @@ function Discover() {
         seenIds: seenIdsRef.current,
         includeRefused,
         myInterests: publicProfile?.interests || [],
+        accept: (candidate) => matchesFilters(candidate, currentFilters),
+        // Narrow filters: read further, so enough profiles match.
+        maxPages: activeFilterCount(currentFilters) ? 8 : undefined,
       })
       cacheKeyRef.current = key
       setCachedCandidates(user.id, key, candidates, { refreshTime: true })
@@ -160,24 +159,37 @@ function Discover() {
     if (user?.id && cacheKeyRef.current) setCachedCandidates(user.id, cacheKeyRef.current, profiles)
   }, [profiles, user?.id])
 
+  const needsDistances = filters.maxDistanceKm != null || filters.sort === 'distance'
+  useEffect(() => {
+    if (!needsDistances || !profiles.length) return undefined
+    let live = true
+    distancesTo(profiles.map((p) => p.id)).then((d) => live && setDistances(d))
+    return () => {
+      live = false
+    }
+  }, [needsDistances, profiles])
+
+  // A profile's distance in km: the server's rounded one, else the two
+  // cities' centres; null when neither is known.
+  const distanceOf = useCallback(
+    (p) => distances[p.id]?.km ?? distanceKmBetween(publicProfile, p),
+    [distances, publicProfile],
+  )
+
   const searched = useMemo(() => {
-    let list = profiles
+    let list = profiles.filter((p) => passesDistance(distanceOf(p), filters))
     if (activeChip === NEARBY_CHIP) {
       if (publicProfile?.city) list = list.filter((p) => p.city === publicProfile.city)
     } else if (activeChip) {
       list = list.filter((p) => p.datingGoal === activeChip)
     }
-    if (countryFilter) list = list.filter((p) => p.country === countryFilter)
-    if (religionFilter) list = list.filter((p) => p.religion === religionFilter)
-    if (travelingOnly) list = list.filter((p) => p.isTraveling)
-    if (verifiedOnly) list = list.filter((p) => p.verified)
     if (interestFilter) list = list.filter((p) => p.interests?.includes(interestFilter))
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((p) => p.firstName?.toLowerCase().includes(q))
     }
-    return list
-  }, [profiles, search, activeChip, countryFilter, religionFilter, travelingOnly, verifiedOnly, interestFilter, publicProfile])
+    return sortProfiles(list, filters.sort, distanceOf)
+  }, [profiles, search, activeChip, interestFilter, publicProfile, filters, distanceOf])
 
   // The user's own interests first (the ones they're most likely to filter
   // by), then the rest of the catalogue.
@@ -208,7 +220,7 @@ function Discover() {
     if (viewMode === 'swipe' && topProfile?.id) seenIdsRef.current.add(topProfile.id)
   }, [viewMode, topProfile?.id])
 
-  const extraFiltersCount = [countryFilter, religionFilter, travelingOnly, verifiedOnly].filter(Boolean).length
+  const filterCount = activeFilterCount(filters)
 
 
   function openProfile(profile) {
@@ -396,7 +408,9 @@ function Discover() {
 
   function handleCloseFilters() {
     setShowFilters(false)
-    loadCandidates(filters)
+    // Same profiles to read (only the sort or the distance changed): the list
+    // already loaded is reused.
+    loadCandidates(filters, { allowCache: true })
   }
 
   function handleResetFilters() {
@@ -487,6 +501,22 @@ function Discover() {
           <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
             <button
               type="button"
+              onClick={() => setShowFilters(true)}
+              aria-label={filterCount ? `Filtres, ${filterCount} actif${filterCount > 1 ? 's' : ''}` : 'Filtres'}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+                filterCount ? 'border-violet-400/60 bg-violet-500/10 text-violet-700 dark:text-violet-300' : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
+              }`}
+            >
+              <SlidersHorizontal size={14} strokeWidth={2.25} aria-hidden="true" />
+              Filtres
+              {filterCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-violet-600 px-1 text-[11px] font-bold text-white">
+                  {filterCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveChip(null)}
               className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                 !activeChip
@@ -510,79 +540,7 @@ function Discover() {
                 {goal}
               </button>
             ))}
-            <button
-              type="button"
-              onClick={() => setShowMoreFilters((v) => !v)}
-              className={`flex shrink-0 items-center gap-1 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-                showMoreFilters || extraFiltersCount > 0
-                  ? 'border-violet-400/60 text-violet-600'
-                  : 'border-ink/12 text-ink-soft/70 hover:bg-ink/5'
-              }`}
-            >
-              Plus{extraFiltersCount > 0 ? ` (${extraFiltersCount})` : ''}
-              <ChevronDown size={14} strokeWidth={2.25} className={`transition ${showMoreFilters ? 'rotate-180' : ''}`} />
-            </button>
           </div>
-
-          {showMoreFilters && (
-            <div className="mt-2 flex items-center gap-2 overflow-x-auto pb-1">
-              <div className="relative shrink-0">
-                <Globe2 size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
-                <select
-                  value={countryFilter}
-                  onChange={(e) => setCountryFilter(e.target.value)}
-                  className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
-                >
-                  <option value="">Tous pays</option>
-                  {CONTINENT_ORDER.map((continent) => (
-                    <optgroup key={continent} label={continent}>
-                      {COUNTRIES.filter((c) => c.continent === continent).map((c) => (
-                        <option key={c.code} value={c.name}>
-                          {c.flag} {c.name}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-              </div>
-              <div className="relative shrink-0">
-                <select
-                  value={religionFilter}
-                  onChange={(e) => setReligionFilter(e.target.value)}
-                  className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 px-3 text-xs font-medium text-ink-soft/80 outline-none"
-                >
-                  <option value="">Toutes religions</option>
-                  {RELIGIONS.map((religion) => (
-                    <option key={religion} value={religion}>
-                      {religion}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="relative shrink-0">
-                <Plane size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-soft/50" />
-                <select
-                  value={travelingOnly ? 'traveling' : ''}
-                  onChange={(e) => setTravelingOnly(e.target.value === 'traveling')}
-                  className="appearance-none rounded-full border border-ink/12 bg-ink/[0.03] py-1.5 pl-7 pr-6 text-xs font-medium text-ink-soft/80 outline-none"
-                >
-                  <option value="">Tous</option>
-                  <option value="traveling">En voyage</option>
-                </select>
-              </div>
-              <button
-                type="button"
-                onClick={() => setVerifiedOnly((v) => !v)}
-                aria-pressed={verifiedOnly}
-                className={`flex shrink-0 items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  verifiedOnly ? 'border-sky-500 bg-sky-500 text-white' : 'border-ink/12 bg-ink/[0.03] text-ink-soft/80'
-                }`}
-              >
-                <Check size={12} strokeWidth={3} />
-                Vérifiés uniquement
-              </button>
-            </div>
-          )}
 
           {viewMode === 'swipe' && <div className="mt-3">{interestsSection}</div>}
         </div>

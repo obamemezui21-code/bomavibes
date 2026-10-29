@@ -115,16 +115,20 @@ function scoreCandidate(candidate, { mySwipe, hasSeenThisSession, myInterests, n
  * @param {Set<string>} [options.seenIds] - candidate ids already shown this session (client-tracked, not persisted)
  * @param {boolean} [options.includeRefused] - re-include previously passed profiles ("Revoir les profils")
  * @param {string[]} [options.myInterests] - current user's interests, for the compatibility bonus
+ * @param {(candidate) => boolean} [options.accept] - Discover's filters (lib/discoverFilters.js):
+ *   only the profiles it keeps count towards the minimum, so loading goes on
+ *   (up to options.maxPages pages) until enough of them match
+ * @param {number} [options.maxPages]
  */
 export async function fetchDiscoverCandidates(uid, filters, options = {}) {
-  const { seenIds = new Set(), includeRefused = false, myInterests = [] } = options
+  const { seenIds = new Set(), includeRefused = false, myInterests = [], accept = null, maxPages = MAX_PAGES } = options
   const [mySwipes, blockedIds] = await Promise.all([getMySwipes(uid), fetchBlockedIds(uid)])
   const now = Date.now()
 
   const candidates = []
   let lastDoc = null
 
-  for (let page = 0; page < MAX_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const constraints = []
     if (filters.gender && filters.gender !== 'TOUS') {
       constraints.push(where('gender', '==', filters.gender))
@@ -147,8 +151,6 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
       if (data.photoStatus?.ok === false && now > PHOTO_DEADLINE.getTime()) continue
       // Invisible mode (Jadéite Impériale): hidden from Discover while the plan runs.
       if (data.invisible && toMillis(data.visibilityUntil) > now) continue
-      if (filters.minAge != null && data.age != null && data.age < filters.minAge) continue
-      if (filters.maxAge != null && data.age != null && data.age > filters.maxAge) continue
 
       const mySwipe = mySwipes.get(id) || null
       const isRefused = mySwipe?.direction === 'pass'
@@ -162,6 +164,7 @@ export async function fetchDiscoverCandidates(uid, filters, options = {}) {
         createdAtMs: toMillis(data.createdAt),
         alreadySwiped: !!mySwipe, // liked before (resurfacing) or passed
       }
+      if (accept && !accept(candidate)) continue
 
       if (isRefused) {
         candidate.score = REFUSED_SCORE
