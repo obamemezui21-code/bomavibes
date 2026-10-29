@@ -458,8 +458,29 @@ function ProfileDetailModal({
                 </div>
               </div>
             )}
+            {/* Always in view at the end of a profile, not only in the ⋮ menu. */}
             {!isSelf && (
-              <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-ink-soft/60">
+              <div className="mt-6 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowReport(true)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-ink/12 py-2.5 text-sm font-semibold text-ink-soft transition hover:bg-ink/5"
+                >
+                  <Flag size={15} strokeWidth={2.25} />
+                  Signaler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBlock(true)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-coral-500/40 py-2.5 text-sm font-semibold text-coral-500 transition hover:bg-coral-500/5"
+                >
+                  <ShieldOff size={15} strokeWidth={2.25} />
+                  Bloquer
+                </button>
+              </div>
+            )}
+            {!isSelf && (
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-ink-soft/60">
                 <Lock size={11} aria-hidden="true" /> Photos privées : capture et partage interdits.
               </p>
             )}

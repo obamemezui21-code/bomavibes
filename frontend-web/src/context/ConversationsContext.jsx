@@ -11,6 +11,7 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  Timestamp,
   updateDoc,
   where,
 } from 'firebase/firestore'
@@ -21,6 +22,7 @@ import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
 import { photoVariant } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
+import { EPHEMERAL_PREVIEW, expiryFor, isExpired, remainingLabel } from '../lib/ephemeral.js'
 import { usePageVisible } from '../lib/usePageVisible.js'
 import { useAuth } from './AuthContext.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
@@ -250,6 +252,8 @@ export function ConversationsProvider({ children }) {
             edited: !!data.editedAt,
             pending: d.metadata.hasPendingWrites,
             replyTo: data.replyTo || null,
+            expiresAt: data.expiresAt?.toDate?.() || null,
+            ttl: data.ttl ?? null,
           }
         }),
       }))
@@ -269,7 +273,9 @@ export function ConversationsProvider({ children }) {
         const profile = profilesById[otherUid]
         if (!profile) return null
         const otherLastReadAt = match.lastReadAt?.[otherUid]?.toMillis?.() ?? null
-        const messages = (activeMessages[match.id] || []).map((m) => {
+        // Ephemeral messages vanish at expiresAt; the server deletes them soon after.
+        const messages = (activeMessages[match.id] || []).filter((m) => !isExpired(m, now)).map((m) => {
+          if (m.expiresAt) m = { ...m, expiresIn: remainingLabel(m.expiresAt, now) }
           if (!m.fromMe) return m
           const status = m.pending ? 'sending' : otherLastReadAt && m.date.getTime() <= otherLastReadAt ? 'read' : 'sent'
           return { ...m, status }
@@ -312,6 +318,7 @@ export function ConversationsProvider({ children }) {
           lastSeenLabel: online ? 'En ligne' : isInvisible ? null : formatLastSeen(profile.lastActive, now),
           isTyping: isRecent(match.typing?.[otherUid], TYPING_THRESHOLD_MS, now),
           hasOlderMessages: !!hasOlderMessages[match.id],
+          ephemeralTtl: match.ephemeral?.ttl || 0,
         }
       })
       .filter(Boolean)
@@ -356,16 +363,33 @@ export function ConversationsProvider({ children }) {
     )
   }
 
+  // While a conversation's messages are ephemeral (POST /api/chat/:id/ephemeral),
+  // each new one carries its expiry (firestore.rules require it), and the
+  // list and notifications only say "Message éphémère", never the content.
+  function ephemeralTtlOf(matchId) {
+    return matches.find((m) => m.id === matchId)?.ephemeral?.ttl || 0
+  }
+
+  function ephemeralFields(matchId) {
+    const expiresAt = expiryFor(ephemeralTtlOf(matchId), Date.now())
+    return expiresAt ? { expiresAt: Timestamp.fromDate(expiresAt) } : {}
+  }
+
+  function previewFor(matchId, preview) {
+    return ephemeralTtlOf(matchId) ? EPHEMERAL_PREVIEW : preview
+  }
+
   async function sendMessage(matchId, text, replyTo) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
+      ...ephemeralFields(matchId),
       text,
       createdAt: serverTimestamp(),
       ...(replyTo
         ? {
             replyTo: {
               messageId: replyTo.id,
-              text: messagePreviewText(replyTo),
+              text: replyTo.expiresAt ? EPHEMERAL_PREVIEW : messagePreviewText(replyTo),
               senderId: replyTo.senderId,
             },
           }
@@ -376,19 +400,20 @@ export function ConversationsProvider({ children }) {
     await updateDoc(doc(db, 'matches', matchId), {
       // Only a preview lives on the match (rules cap it at 2000 chars); the
       // full text stays in the message itself.
-      lastMessage: text.slice(0, 500),
+      lastMessage: previewFor(matchId, text.slice(0, 500)),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text, matchId, messageId: messageRef.id })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, text), matchId, messageId: messageRef.id })
     }
   }
 
   async function sendVoiceMessage(matchId, audioUrl, duration) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
+      ...ephemeralFields(matchId),
       text: '',
       type: 'voice',
       audioUrl,
@@ -399,19 +424,20 @@ export function ConversationsProvider({ children }) {
     const otherUid = match?.users.find((u) => u !== uid)
     const preview = '🎤 Message vocal'
     await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: preview,
+      lastMessage: previewFor(matchId, preview),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
     }
   }
 
   async function sendAttachmentMessage(matchId, attachment) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
+      ...ephemeralFields(matchId),
       text: '',
       type: attachment.type,
       fileUrl: attachment.url,
@@ -423,13 +449,13 @@ export function ConversationsProvider({ children }) {
     const otherUid = match?.users.find((u) => u !== uid)
     const preview = messagePreviewText({ type: attachment.type, fileName: attachment.fileName })
     await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: preview,
+      lastMessage: previewFor(matchId, preview),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
     }
   }
 
@@ -438,6 +464,7 @@ export function ConversationsProvider({ children }) {
   async function sendStickerMessage(matchId, sticker) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
+      ...ephemeralFields(matchId),
       text: '',
       type: 'sticker',
       ...(typeof sticker === 'string' ? { stickerId: sticker } : { stickerUrl: sticker.url }),
@@ -447,19 +474,20 @@ export function ConversationsProvider({ children }) {
     const otherUid = match?.users.find((u) => u !== uid)
     const preview = messagePreviewText({ type: 'sticker' })
     await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: preview,
+      lastMessage: previewFor(matchId, preview),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
     }
   }
 
   async function sendPostMessage(matchId, post) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
+      ...ephemeralFields(matchId),
       text: '',
       type: 'post',
       post,
@@ -469,13 +497,13 @@ export function ConversationsProvider({ children }) {
     const otherUid = match?.users.find((u) => u !== uid)
     const preview = messagePreviewText({ type: 'post' })
     await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: preview,
+      lastMessage: previewFor(matchId, preview),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
     }
   }
 
@@ -484,6 +512,7 @@ export function ConversationsProvider({ children }) {
   async function sendLocationMessage(matchId, { lat, lng, accuracy }) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
+      ...ephemeralFields(matchId),
       text: '',
       type: 'location',
       location: {
@@ -497,19 +526,20 @@ export function ConversationsProvider({ children }) {
     const otherUid = match?.users.find((u) => u !== uid)
     const preview = messagePreviewText({ type: 'location' })
     await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: preview,
+      lastMessage: previewFor(matchId, preview),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
     }
   }
 
   async function sendVenueInviteMessage(matchId, venue) {
     const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
       senderId: uid,
+      ...ephemeralFields(matchId),
       text: '',
       type: 'venue-invite',
       venue: {
@@ -526,13 +556,13 @@ export function ConversationsProvider({ children }) {
     const otherUid = match?.users.find((u) => u !== uid)
     const preview = messagePreviewText({ type: 'venue-invite' })
     await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: preview,
+      lastMessage: previewFor(matchId, preview),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
 
     if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: preview, matchId, messageId: messageRef.id })
+      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
     }
   }
 

@@ -372,8 +372,22 @@ service cloud.firestore {
               && loc.lng is number && loc.lng >= -180 && loc.lng <= 180);
         }
 
+        // Ephemeral messages (set by POST /api/chat/:matchId/ephemeral): while
+        // the setting is on, every message carries an expiresAt no later than
+        // the chosen duration (an hour of slack for clocks that are off) —
+        // the backend deletes it then. Call logs (firebase/calls.js) may
+        // leave it out.
+        function validExpiry() {
+          let ttl = get(/databases/$(database)/documents/matches/$(matchId)).data.get('ephemeral', {}).get('ttl', 0);
+          let exp = request.resource.data.get('expiresAt', null);
+          return exp == null
+            ? (ttl == 0 || request.resource.data.get('type', 'text') == 'call')
+            : (exp is timestamp && exp > request.time && exp <= request.time + duration.value(ttl + 3600, 's'));
+        }
+
         allow read: if isMatchParticipant();
         allow create: if isMatchParticipant()
+          && validExpiry()
           && request.resource.data.senderId == request.auth.uid
           && request.resource.data.get('type', 'text')
             in ['text', 'voice', 'image', 'file', 'sticker', 'post', 'venue-invite', 'call', 'location']

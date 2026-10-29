@@ -38,7 +38,9 @@ import {
   Send,
   Share2,
   Smile,
+  ShieldOff,
   Sticker,
+  Timer,
   Trash2,
   TriangleAlert,
   Users,
@@ -73,6 +75,10 @@ import { matchPercent } from '../lib/interests.js'
 import { icebreakersFor } from '../lib/icebreakers.js'
 import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
+import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
+import EphemeralSheet from '../components/chat/EphemeralSheet.jsx'
+import { setEphemeralMessages } from '../firebase/chatSettings.js'
+import { ephemeralLabel, ephemeralNotice } from '../lib/ephemeral.js'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
 import LocationMessage from '../components/chat/LocationMessage.jsx'
@@ -417,7 +423,7 @@ function Chat() {
   const [showStickerMaker, setShowStickerMaker] = useState(false)
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [showDateSpots, setShowDateSpots] = useState(false)
-  const [showHeaderMenu, setShowHeaderMenu] = useState(false) // phone-only ⋮ menu in the conversation header
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false) // ⋮ menu in the conversation header
   // Conversations whose "idées de rendez-vous" nudge was closed this visit (also kept in localStorage).
   const [closedDateNudges, setClosedDateNudges] = useState(() => new Set())
   const [confirmLocation, setConfirmLocation] = useState(false)
@@ -429,6 +435,8 @@ function Chat() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [showBlock, setShowBlock] = useState(false)
+  const [showEphemeral, setShowEphemeral] = useState(false)
   const [showGroupPicker, setShowGroupPicker] = useState(false)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -986,6 +994,32 @@ function Chat() {
     }
   }
 
+  async function handleBlockUser() {
+    if (!active) return
+    setIsSubmittingSafety(true)
+    try {
+      await blockUser(user.id, active.otherUid)
+      await refreshBlockedIds()
+      showToast(`Vous avez bloqué ${active.profile.firstName}.`, 'info')
+      setShowBlock(false)
+      navigate('/chat')
+    } catch {
+      showToast('Impossible de bloquer ce profil, réessayez.', 'error')
+    } finally {
+      setIsSubmittingSafety(false)
+    }
+  }
+
+  async function handleEphemeralChange(ttl) {
+    try {
+      await setEphemeralMessages(active.id, ttl)
+      showToast(ttl ? `Messages éphémères activés : ${ephemeralLabel(ttl)}.` : 'Messages éphémères désactivés.', 'success')
+    } catch (err) {
+      showToast(err.message, 'error')
+      throw err
+    }
+  }
+
   // ProfileDetailModal already performs the actual block write itself before
   // calling this — just handle the chat-specific fallout (refresh the
   // blocked-ids cache, leave a conversation that no longer applies).
@@ -1294,8 +1328,25 @@ function Chat() {
                     className="h-10 w-10 shrink-0 rounded-full border-2 border-white/20 object-cover"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-base font-semibold text-white">{active.profile.firstName}</p>
+                    <p className="flex items-center gap-1 font-display text-base font-semibold text-white">
+                      <span className="truncate">{active.profile.firstName}</span>
+                      {active.profile.verified && (
+                        <span
+                          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sky-500"
+                          title="Profil vérifié par selfie"
+                          aria-label="Profil vérifié"
+                        >
+                          <Check size={10} strokeWidth={3.5} />
+                        </span>
+                      )}
+                    </p>
                     <p className="truncate text-xs">
+                      {active.ephemeralTtl > 0 && (
+                        <span className="mr-1.5 inline-flex items-center gap-0.5 text-violet-200">
+                          <Timer size={11} strokeWidth={2.5} aria-hidden="true" />
+                          {ephemeralLabel(active.ephemeralTtl)} ·
+                        </span>
+                      )}
                       {active.online ? (
                         <span className="text-mint-400">En ligne</span>
                       ) : (
@@ -1306,13 +1357,14 @@ function Chat() {
                 </button>
 
                 <div className="flex shrink-0 items-center gap-1.5">
-                  {/* Wide screens: every action as its own button. On phones,
-                      only the calls stay visible, the rest is in the ⋮ menu. */}
+                  {/* Signaler stays in view on every screen; Bloquer and the
+                      conversation settings are in the ⋮ menu. */}
                   <button
                     type="button"
                     onClick={() => setShowReport(true)}
-                    className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20 sm:flex"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
                     aria-label="Signaler"
+                    title="Signaler"
                   >
                     <Flag size={16} strokeWidth={2} />
                   </button>
@@ -1342,7 +1394,7 @@ function Chat() {
                       <Users size={16} strokeWidth={2} />
                     </button>
                   )}
-                  <div className="relative sm:hidden">
+                  <div className="relative">
                     <button
                       type="button"
                       onClick={() => setShowHeaderMenu((v) => !v)}
@@ -1366,11 +1418,17 @@ function Chat() {
                             className="absolute right-0 top-11 z-40 w-56 overflow-hidden rounded-2xl border border-ink/10 bg-white p-1.5 text-ink shadow-xl dark:bg-surface-tint"
                           >
                             {[
-                              groupCallsAvailable && { label: 'Appel de groupe', Icon: Users, onClick: handleStartGroupCall },
+                              groupCallsAvailable && { label: 'Appel de groupe', Icon: Users, onClick: handleStartGroupCall, phoneOnly: true },
+                              {
+                                label: active.ephemeralTtl ? `Messages éphémères · ${ephemeralLabel(active.ephemeralTtl)}` : 'Messages éphémères',
+                                Icon: Timer,
+                                onClick: () => setShowEphemeral(true),
+                              },
                               { label: 'Signaler', Icon: Flag, onClick: () => setShowReport(true), danger: true },
+                              { label: `Bloquer ${active.profile.firstName || ''}`.trim(), Icon: ShieldOff, onClick: () => setShowBlock(true), danger: true },
                             ]
                               .filter(Boolean)
-                              .map(({ label, Icon, onClick, danger }) => (
+                              .map(({ label, Icon, onClick, danger, phoneOnly }) => (
                                 <button
                                   key={label}
                                   type="button"
@@ -1380,7 +1438,7 @@ function Chat() {
                                   }}
                                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-ink/5 ${
                                     danger ? 'text-coral-500' : ''
-                                  }`}
+                                  } ${phoneOnly ? 'sm:hidden' : ''}`}
                                 >
                                   <Icon size={17} strokeWidth={2.25} />
                                   {label}
@@ -1410,6 +1468,16 @@ function Chat() {
               <p className="flex items-center justify-center gap-1.5 pb-1 text-center text-[11px] text-ink-soft/60">
                 <Lock size={11} aria-hidden="true" /> Conversation privée : capture et partage interdits.
               </p>
+              {active.ephemeralTtl > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowEphemeral(true)}
+                  className="mx-auto flex items-center gap-1.5 rounded-full bg-violet-500/12 px-3 py-1 text-[11px] font-medium text-violet-700 dark:text-violet-200"
+                >
+                  <Timer size={12} strokeWidth={2.5} aria-hidden="true" />
+                  Messages éphémères : les nouveaux messages disparaissent après {ephemeralLabel(active.ephemeralTtl)}.
+                </button>
+              )}
               {active.hasOlderMessages && (
                 <div className="flex justify-center pb-1">
                   <button
@@ -1470,6 +1538,17 @@ function Chat() {
                   const isMotoChallenge = m.type === 'moto-challenge' && !!m.challenge
                   const isCard = isSticker || isPost || isVenueInvite || isCall || isLocation || isMotoChallenge
                   const callMissed = isCall && isMissedCall(m.call, m.fromMe)
+                  if (m.type === 'ephemeral') {
+                    // Posted by the server when either member changes the setting.
+                    return (
+                      <div key={m.id} className="flex justify-center py-1">
+                        <p className="flex max-w-sm items-start gap-1.5 rounded-2xl bg-ink/8 px-3 py-1.5 text-center text-[11px] text-ink-soft dark:bg-white/10">
+                          <Timer size={12} strokeWidth={2.5} className="mt-px shrink-0" aria-hidden="true" />
+                          {ephemeralNotice(m.ttl || 0, m.fromMe, active.profile.firstName)}
+                        </p>
+                      </div>
+                    )
+                  }
                   const bubbleClass = isCard
                     ? 'cursor-pointer select-none'
                     : `min-w-0 max-w-full cursor-pointer select-none rounded-[20px] px-4 py-2.5 text-sm shadow-sm transition ${
@@ -1725,6 +1804,16 @@ function Chat() {
                           >
                             {m.time}
                             {m.edited && ' · modifié'}
+                            {m.expiresIn && (
+                              <span
+                                className="inline-flex items-center gap-0.5"
+                                title="Message éphémère : il disparaîtra"
+                                aria-label={`Disparaît dans ${m.expiresIn}`}
+                              >
+                                <Timer size={10} strokeWidth={2.5} aria-hidden="true" />
+                                {m.expiresIn}
+                              </span>
+                            )}
                             {m.fromMe && (
                               <span className="inline-flex items-center" aria-label={`Statut : ${m.status}`}>
                                 {m.status === 'sending' && <Clock size={11} strokeWidth={2.5} />}
@@ -2206,6 +2295,24 @@ function Chat() {
           onClose={() => setShowReport(false)}
           onSubmit={handleReportUser}
           isSubmitting={isSubmittingSafety}
+        />
+      )}
+
+      {showBlock && active && (
+        <BlockConfirmModal
+          firstName={active.profile.firstName}
+          onCancel={() => setShowBlock(false)}
+          onConfirm={handleBlockUser}
+          isBlocking={isSubmittingSafety}
+        />
+      )}
+
+      {showEphemeral && active && (
+        <EphemeralSheet
+          firstName={active.profile.firstName}
+          ttl={active.ephemeralTtl}
+          onClose={() => setShowEphemeral(false)}
+          onChoose={handleEphemeralChange}
         />
       )}
 
