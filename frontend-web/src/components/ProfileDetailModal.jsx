@@ -180,7 +180,6 @@ function ProfileDetailModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   // undefined = closed, null = general compliment, string = the quoted answer
   const [complimenting, setComplimenting] = useState(undefined)
-  const menuOpen = showMenu || showReport || showBlock || complimenting !== undefined
 
   async function handleReport(reason, description, alsoBlock) {
     setIsSubmitting(true)
@@ -274,8 +273,8 @@ function ProfileDetailModal({
         <div className="h-full overflow-y-auto overscroll-contain">
           {/* Photo — takes most of the screen, the details sheet slides over its bottom edge */}
           <div {...PROTECT_PROPS} className="protected-media relative h-[64svh] w-full shrink-0 md:h-[58%]">
-            {/* Stories-style slideshow; paused while a menu or a sheet is open. */}
-            <PhotoSlideshow photos={photos} alt={profile.firstName} paused={menuOpen}>
+            {/* The photos, changed by hand (tap or swipe). */}
+            <PhotoSlideshow photos={photos} alt={profile.firstName}>
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/35" />
             </PhotoSlideshow>
 

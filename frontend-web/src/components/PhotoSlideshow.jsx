@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { nextIndex, gestureFor } from '../lib/slideshow.js'
 
-export const SLIDE_MS = 3500
 const HOLD_MS = 280
 
 function usePrefersReducedMotion() {
@@ -16,37 +15,20 @@ function usePrefersReducedMotion() {
   return reduced
 }
 
-function usePageHidden() {
-  const [hidden, setHidden] = useState(() => document.hidden)
-  useEffect(() => {
-    const update = () => setHidden(document.hidden)
-    document.addEventListener('visibilitychange', update)
-    return () => document.removeEventListener('visibilitychange', update)
-  }, [])
-  return hidden
-}
-
 /**
- * A profile's photos as stories: they go by on their own every 3.5 s, in a
- * loop, with progress bars at the top. Tap the left / right half for the
- * previous / next photo, hold to pause, swipe sideways to change; arrow keys
- * and space work too. Pauses while the page is hidden or `paused` is set (a
- * menu is open); no automatic advance with "reduce motion". One photo: no
- * bars, nothing moves.
+ * A profile's photos, changed by hand: tap the left / right half for the
+ * previous / next photo, or swipe sideways; arrow keys work too. Bars at the
+ * top show which photo is on. One photo: no bars.
  *
  * The main photo comes first (photos[0]). Overlays (gradient, buttons) go in
  * `children`, drawn over the photos.
  */
-function PhotoSlideshow({ photos, alt, paused = false, children }) {
+function PhotoSlideshow({ photos, alt, children }) {
   const [index, setIndex] = useState(0)
-  const [held, setHeld] = useState(false)
   const reducedMotion = usePrefersReducedMotion()
-  const hidden = usePageHidden()
   const gesture = useRef(null)
   const count = photos.length
   const multiple = count > 1
-  const auto = multiple && !reducedMotion
-  const running = auto && !paused && !held && !hidden
 
   // Another profile: start again from its main photo.
   const photosKey = photos.join('|')
@@ -63,9 +45,9 @@ function PhotoSlideshow({ photos, alt, paused = false, children }) {
       y: e.clientY,
       left: rect.left,
       width: rect.width,
+      // A long press only looks: it doesn't change the photo.
       timer: setTimeout(() => {
         if (gesture.current) gesture.current.held = true
-        setHeld(true)
       }, HOLD_MS),
     }
   }
@@ -75,7 +57,6 @@ function PhotoSlideshow({ photos, alt, paused = false, children }) {
     if (!g || g.id !== e.pointerId) return
     clearTimeout(g.timer)
     gesture.current = null
-    setHeld(false)
     if (cancelled) return
     const step = gestureFor({ dx: e.clientX - g.x, dy: e.clientY - g.y, x: e.clientX - g.left, width: g.width, held: !!g.held })
     if (step) go(step)
@@ -85,7 +66,6 @@ function PhotoSlideshow({ photos, alt, paused = false, children }) {
     if (!multiple) return
     if (e.key === 'ArrowRight') go(1)
     else if (e.key === 'ArrowLeft') go(-1)
-    else if (e.key === ' ') setHeld((h) => !h)
     else return
     e.preventDefault()
   }
@@ -96,7 +76,7 @@ function PhotoSlideshow({ photos, alt, paused = false, children }) {
       style={{ touchAction: 'pan-y' }}
       role="group"
       aria-roledescription="diaporama"
-      aria-label={multiple ? `Photos de ${alt} : flèches gauche et droite pour changer, espace pour mettre en pause` : `Photo de ${alt}`}
+      aria-label={multiple ? `Photos de ${alt} : flèches gauche et droite pour changer` : `Photo de ${alt}`}
       tabIndex={multiple ? 0 : -1}
       onPointerDown={onPointerDown}
       onPointerUp={(e) => endGesture(e, false)}
@@ -114,7 +94,7 @@ function PhotoSlideshow({ photos, alt, paused = false, children }) {
             aria-hidden={i !== index}
             draggable={false}
             loading={near ? 'eager' : 'lazy'}
-            className={`absolute inset-0 h-full w-full object-cover ${reducedMotion ? '' : 'transition-opacity duration-500 ease-out'} ${
+            className={`absolute inset-0 h-full w-full object-cover ${reducedMotion ? '' : 'transition-opacity duration-300 ease-out'} ${
               i === index ? 'opacity-100' : 'opacity-0'
             }`}
           />
@@ -127,23 +107,7 @@ function PhotoSlideshow({ photos, alt, paused = false, children }) {
         <>
           <div className="pointer-events-none absolute inset-x-4 top-[max(0.75rem,env(safe-area-inset-top))] z-[5] flex gap-1.5">
             {photos.map((src, i) => (
-              <span key={src} className="h-1 flex-1 overflow-hidden rounded-full bg-white/35">
-                {i < index && <span className="block h-full w-full bg-white" />}
-                {i === index &&
-                  (auto ? (
-                    <span
-                      key={`${index}-${photosKey}`}
-                      className="block h-full w-full origin-left bg-white"
-                      style={{
-                        animation: `slideshow-progress ${SLIDE_MS}ms linear forwards`,
-                        animationPlayState: running ? 'running' : 'paused',
-                      }}
-                      onAnimationEnd={() => go(1)}
-                    />
-                  ) : (
-                    <span className="block h-full w-full bg-white" />
-                  ))}
-              </span>
+              <span key={src} className={`h-1 flex-1 rounded-full ${i === index ? 'bg-white' : 'bg-white/35'}`} />
             ))}
           </div>
           <p className="sr-only" aria-live="polite">
