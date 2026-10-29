@@ -6,9 +6,10 @@
 const MIN_PHOTO_SIDE = 720;
 // Every profile needs at least this many photos, each a real photo of the member.
 const MIN_PROFILE_PHOTOS = 2;
-// Members whose photos break these rules (not HD, not a real photo of a person,
-// too few) have until then to fix them; after that their account is suspended
-// until they do: hidden from Discover, no likes, the app only opens their profile.
+// Members had until then to put real photos of themselves. After it, an
+// account can be suspended (hidden from Discover, no likes, the app only opens
+// the profile) — but only once a moderator confirmed its photos are refused,
+// never on the automatic analysis alone (services/photoDecision.js).
 const PHOTO_DEADLINE_MS = Date.parse("2026-10-21T23:59:59+01:00");
 // photoController.js stores the "full" variant at most this wide.
 const FULL_MAX_WIDTH = 1080;

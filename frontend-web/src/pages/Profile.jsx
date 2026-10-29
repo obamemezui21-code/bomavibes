@@ -4,12 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Pencil, Settings, X } from 'lucide-react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
-import { uploadProfilePhoto } from '../firebase/photos.js'
+import { appealPhoto, uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { usePhotoQuality } from '../context/PhotoQualityContext.jsx'
 import { COUNTRIES, findCountry, findRegion } from '../lib/geography.js'
-import { MIN_PHOTO_SIDE, MIN_PROFILE_PHOTOS, PHOTO_NOT_HD_MESSAGE, formatDeadline, isHdPhoto } from '../lib/photoQuality.js'
+import { MIN_PROFILE_PHOTOS, PHOTO_NOT_HD_MESSAGE, isHdPhoto } from '../lib/photoQuality.js'
 import CountryPicker from '../components/CountryPicker.jsx'
 import SearchSelect from '../components/SearchSelect.jsx'
 import SupportModal from '../components/SupportModal.jsx'
@@ -60,11 +60,14 @@ const emptyForm = {
 function Profile() {
   const { user, publicProfile, isPublicProfileLoading, logout } = useAuth()
   const { showToast } = useToast()
-  const { lowRes, rejected, missing: photosMissing, blocked: photosBlocked } = usePhotoQuality()
+  const { lowRes, rejected, review: reviewUrls, missing: photosMissing, blocked: photosBlocked } = usePhotoQuality()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
   const [countryCode, setCountryCode] = useState('')
   const [photoSlots, setPhotoSlots] = useState([null, null, null])
+  // Photos whose refusal the member contested (by refusalId or url).
+  const [appealed, setAppealed] = useState({})
+  const [appealing, setAppealing] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -162,11 +165,49 @@ function Profile() {
 
   // A photo already on the profile that must be replaced (see PhotoQualityContext):
   // not HD, or not a real photo of the member (with the reason).
-  const isLowRes = (slot) => Boolean(slot?.url && !slot.file && lowRes.includes(slot.url))
-  const rejectionOf = (slot) => (slot?.url && !slot.file ? rejected.find((r) => r.url === slot.url) : null)
-  const isBadPhoto = (slot) => isLowRes(slot) || Boolean(rejectionOf(slot))
-  const lowResCount = photoSlots.filter(isBadPhoto).length
-  const rejectedReasons = [...new Set(photoSlots.map(rejectionOf).filter(Boolean).map((r) => r.message))]
+  const saved = (slot) => Boolean(slot?.url && !slot.file)
+  const rejectionOf = (slot) => (saved(slot) ? rejected.find((r) => r.url === slot.url) : null)
+
+  // What to say about each photo — one precise reason and what to do — or
+  // null when it's fine. appeal: what to send to ask a moderator to look.
+  function issueOf(slot) {
+    if (slot?.refused) {
+      const { message, refusalId } = slot.refused
+      return { tone: 'refused', badge: 'Photo refusée', text: message, appeal: refusalId ? { refusalId } : null, key: refusalId }
+    }
+    const rejection = rejectionOf(slot)
+    if (rejection?.human) return { tone: 'refused', badge: 'Refusée par l’équipe', text: rejection.message }
+    if (rejection) {
+      const canAppeal = rejection.code !== 'photo-not-ours'
+      return { tone: 'refused', badge: 'Photo refusée', text: rejection.message, appeal: canAppeal ? { url: slot.url } : null, key: slot.url }
+    }
+    if (saved(slot) && lowRes.includes(slot.url)) {
+      return { tone: 'lowres', badge: 'Pas en HD', text: 'Pas en HD : remplace-la par une photo prise avec ton téléphone (au moins 720 pixels de côté).' }
+    }
+    if (saved(slot) && reviewUrls.includes(slot.url)) {
+      return { tone: 'review', badge: 'En vérification', text: 'En cours de vérification par l’équipe : elle reste visible sur ton profil en attendant.' }
+    }
+    return null
+  }
+  const issues = photoSlots.map(issueOf)
+  const ISSUE_STYLES = {
+    refused: { badge: 'bg-coral-500', border: 'border-2 border-coral-500', text: 'text-coral-600 dark:text-coral-400' },
+    lowres: { badge: 'bg-amber-500', border: 'border-2 border-amber-500', text: 'text-amber-700 dark:text-amber-300' },
+    review: { badge: 'bg-violet-500', border: 'border-2 border-violet-400', text: 'text-violet-700 dark:text-violet-300' },
+  }
+
+  async function requestReview(index, issue) {
+    setAppealing(issue.key)
+    try {
+      await appealPhoto(issue.appeal.refusalId ? { ...issue.appeal, slot: index } : issue.appeal)
+      setAppealed((a) => ({ ...a, [issue.key]: true }))
+      showToast('Demande envoyée : l’équipe va vérifier ta photo.', 'success')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setAppealing(null)
+    }
+  }
 
   function removePhotoSlot(index) {
     setPhotoSlots((slots) => slots.map((s, i) => (i === index ? null : s)))
@@ -191,8 +232,8 @@ function Profile() {
       setError('La taille doit être en centimètres (entre 120 et 230)')
       return
     }
-    if (lowResCount) {
-      setError('Remplace ou retire les photos marquées en rouge ou en orange avant d’enregistrer.')
+    if (photoSlots.some((slot) => slot?.refused)) {
+      setError('Retire les photos refusées avant d’enregistrer (si tu as demandé une vérification, elle sera ajoutée une fois validée).')
       return
     }
     if (photoSlots.filter(Boolean).length < MIN_PROFILE_PHOTOS) {
@@ -202,22 +243,35 @@ function Profile() {
 
     setIsSaving(true)
     try {
-      const photoUrls = (
-        await Promise.all(
-          photoSlots.map((slot, i) => {
-            // Each new photo is checked by the server (a real photo of a
-            // person): say which one was refused.
-            if (slot?.file) {
-              return uploadProfilePhoto(user.id, i, slot.file).catch((err) => {
-                if (err?.code?.startsWith('photo-')) err.message = `Photo ${i + 1} : ${err.message}`
-                throw err
-              })
-            }
-            if (slot?.url) return slot.url
-            return null
-          }),
-        )
-      ).filter(Boolean)
+      // Each new photo is checked by the server. What went through is kept
+      // (not uploaded again); a refused photo stays in its slot with its
+      // reason, so the member can contest it.
+      const uploads = await Promise.allSettled(
+        photoSlots.map((slot, i) => (slot?.file ? uploadProfilePhoto(user.id, i, slot.file) : Promise.resolve(slot?.url || null))),
+      )
+      const isRefusal = (r) => r.status === 'rejected' && r.reason?.code?.startsWith('photo-')
+      setPhotoSlots((slots) =>
+        slots.map((slot, i) => {
+          const r = uploads[i]
+          if (!slot?.file) return slot
+          if (r.status === 'fulfilled') return { url: r.value }
+          if (isRefusal(r)) return { ...slot, refused: { code: r.reason.code, message: r.reason.message, refusalId: r.reason.refusalId } }
+          return slot
+        }),
+      )
+      const failed = uploads.find((r) => r.status === 'rejected' && !isRefusal(r))
+      if (failed) throw failed.reason
+      const refusedSlots = uploads.map((r, i) => (isRefusal(r) ? i + 1 : null)).filter(Boolean)
+      if (refusedSlots.length) {
+        const message =
+          refusedSlots.length > 1
+            ? 'Des photos ont été refusées : le motif est indiqué sous les photos.'
+            : `La photo ${refusedSlots[0]} a été refusée : le motif est indiqué sous les photos.`
+        setError(message)
+        showToast(message, 'error')
+        return
+      }
+      const photoUrls = uploads.map((r) => r.value).filter(Boolean)
 
       await setDoc(
         doc(db, 'profiles', user.id),
@@ -352,57 +406,37 @@ function Profile() {
 
           <div>
             <label className={labelClass}>Photos</label>
-            {(lowResCount > 0 || photosMissing > 0) && (
-              <div
-                className={`mb-3 rounded-xl border px-3 py-2.5 text-sm ${
-                  photosBlocked
-                    ? 'border-coral-500/40 bg-coral-500/10 text-coral-600 dark:text-coral-400'
-                    : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200'
-                }`}
-              >
-                <p className="font-semibold">
-                  {photosBlocked
-                    ? 'Ton compte est suspendu : mets de vraies photos de toi pour le réactiver'
-                    : `Vraies photos obligatoires avant le ${formatDeadline()}, sinon ton compte sera suspendu`}
+            {photosBlocked ? (
+              <p className="mb-3 rounded-xl border border-coral-500/40 bg-coral-500/10 px-3 py-2.5 text-sm font-semibold text-coral-600 dark:text-coral-400">
+                Ton compte est suspendu : après vérification par l’équipe, tes photos ne te montrent pas. Ajoute une vraie photo de toi pour le
+                réactiver.
+              </p>
+            ) : (
+              photosMissing > 0 && (
+                <p className="mb-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+                  Ajoute encore {photosMissing > 1 ? `${photosMissing} photos` : '1 photo'} de toi, le visage visible (au moins {MIN_PROFILE_PHOTOS} au total).
                 </p>
-                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs">
-                  <li>Au moins {MIN_PROFILE_PHOTOS} photos de toi, le visage bien visible, prises avec ton téléphone (HD, au moins {MIN_PHOTO_SIDE} pixels de côté).</li>
-                  {photosMissing > 0 && <li>Il te manque {photosMissing > 1 ? `${photosMissing} photos` : '1 photo'}.</li>}
-                  {lowResCount > 0 && (
-                    <li>
-                      {lowResCount > 1 ? `${lowResCount} photos marquées sont à remplacer` : '1 photo marquée est à remplacer'} : retire-
-                      {lowResCount > 1 ? 'les' : 'la'} avec la croix, ajoute une nouvelle photo, puis enregistre.
-                    </li>
-                  )}
-                  {rejectedReasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))}
-                </ul>
-              </div>
+              )
             )}
             <div className="grid grid-cols-3 gap-3">
               {[0, 1, 2].map((i) => {
                 const src = photoSlots[i]?.previewUrl || photoSlots[i]?.url
-                const rejection = rejectionOf(photoSlots[i])
-                const lowResSlot = isBadPhoto(photoSlots[i])
+                const issue = issues[i]
                 return (
                   <div
                     key={i}
                     className={`relative aspect-[3/4] overflow-hidden rounded-2xl border bg-ink/[0.03] ${
-                      rejection ? 'border-2 border-coral-500' : lowResSlot ? 'border-2 border-amber-500' : 'border-dashed border-ink/15'
+                      issue ? ISSUE_STYLES[issue.tone].border : 'border-dashed border-ink/15'
                     }`}
                   >
                     {src ? (
                       <>
                         <img src={src} alt="" className="h-full w-full object-cover" />
-                        {lowResSlot && (
+                        {issue && (
                           <span
-                            className={`absolute inset-x-0 bottom-0 py-1 text-center text-[11px] font-bold text-white ${
-                              rejection ? 'bg-coral-500' : 'bg-amber-500'
-                            }`}
-                            title={rejection?.message}
+                            className={`absolute inset-x-0 bottom-0 py-1 text-center text-[11px] font-bold text-white ${ISSUE_STYLES[issue.tone].badge}`}
                           >
-                            {rejection ? 'Photo refusée' : 'Pas en HD'}
+                            {issue.badge}
                           </span>
                         )}
                         <button
@@ -435,6 +469,37 @@ function Profile() {
                 )
               })}
             </div>
+            {/* One precise reason per photo, with what to do — and a way to
+                ask a moderator when the member thinks the analysis is wrong. */}
+            {issues.some(Boolean) && (
+              <ul className="mt-3 space-y-2">
+                {issues.map((issue, i) =>
+                  issue ? (
+                    <li key={i} className="rounded-xl bg-ink/[0.03] px-3 py-2 text-xs dark:bg-white/5">
+                      <p className={`font-semibold ${ISSUE_STYLES[issue.tone].text}`}>
+                        Photo {i + 1} · {issue.badge}
+                      </p>
+                      <p className="mt-0.5 text-ink-soft">{issue.text}</p>
+                      {issue.appeal &&
+                        (appealed[issue.key] ? (
+                          <p className="mt-1.5 font-medium text-violet-700 dark:text-violet-300">
+                            ✓ Vérification demandée : l’équipe va regarder. Ton compte reste actif en attendant.
+                          </p>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => requestReview(i, issue)}
+                            disabled={appealing === issue.key}
+                            className="mt-1.5 font-semibold text-violet-700 underline underline-offset-2 disabled:opacity-50 dark:text-violet-300"
+                          >
+                            Ce n’est pas correct, demander une vérification
+                          </button>
+                        ))}
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

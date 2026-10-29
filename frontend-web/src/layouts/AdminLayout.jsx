@@ -42,6 +42,7 @@ function buildTabs(role) {
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/payments', label: 'Paiements', icon: Wallet, color: C.emerald })
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/reports', label: 'Signalements', icon: ShieldAlert, color: C.red })
   if (hasModerationAccess(role)) tabs.push({ to: '/admin/verifications', label: 'Vérifications', icon: BadgeCheck, color: C.blue })
+  if (hasModerationAccess(role)) tabs.push({ to: '/admin/photos', label: 'Photos à vérifier', icon: ImageIcon, color: C.purple })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/music', label: 'Musique', icon: Music, color: C.fuchsia })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/notifications', label: 'Notifications', icon: Bell, color: C.amber })
   if (hasFullAdminAccess(role)) tabs.push({ to: '/admin/ai-partners', label: 'Affiliation', icon: Sparkles, color: C.purple })

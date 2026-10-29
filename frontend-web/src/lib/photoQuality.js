@@ -9,10 +9,12 @@ export const MIN_PHOTO_SIDE = 720
 // (backend/src/services/photoAnalysis.js).
 export const MIN_PROFILE_PHOTOS = 2
 
-// Members whose photos break the rules (not HD, not a real photo of them,
-// fewer than MIN_PROFILE_PHOTOS) have until then to fix them; after that their
-// account is suspended until they do: the app only opens their profile page,
-// they're hidden from Discover and can't like (backend PHOTO_DEADLINE_MS).
+// Members had until then to put real photos of themselves. Since October 2026
+// an account is only suspended (the app only opens the profile page, hidden
+// from Discover, no likes) once a moderator has confirmed its photos are
+// refused — never on the automatic analysis alone, and never while one photo
+// is accepted or being checked: the server decides (PhotoQualityContext's
+// `blocked`, backend services/photoDecision.js photosSuspension).
 export const PHOTO_DEADLINE = new Date('2026-10-21T23:59:59+01:00')
 
 export const PHOTO_NOT_HD_MESSAGE = `Photo trop petite : il faut une photo HD d'au moins ${MIN_PHOTO_SIDE} pixels de côté. Prends-en une nouvelle avec ton téléphone plutôt qu'une capture d'écran ou une image reçue sur WhatsApp.`

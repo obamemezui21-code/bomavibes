@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const os = require("os");
 const requireFirebaseAuth = require("../middleware/firebaseAuthMiddleware");
-const { uploadPhoto, photoQuality } = require("../controllers/photoController");
+const { uploadPhoto, photoQuality, appealPhoto } = require("../controllers/photoController");
 
 const upload = multer({
   dest: os.tmpdir(),
@@ -17,5 +17,6 @@ const router = express.Router();
 
 router.post("/", requireFirebaseAuth, upload.single("photo"), uploadPhoto);
 router.get("/quality", requireFirebaseAuth, photoQuality);
+router.post("/appeal", requireFirebaseAuth, appealPhoto);
 
 module.exports = router;

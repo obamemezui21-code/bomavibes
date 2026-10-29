@@ -4,19 +4,23 @@ import { getPhotoQuality } from '../firebase/photos.js'
 import { PHOTO_DEADLINE } from '../lib/photoQuality.js'
 
 const PhotoQualityContext = createContext(null)
+const EMPTY = { lowRes: [], rejected: [], review: [], missing: 0, suspended: false }
 
 // What's wrong with my profile photos (lib/photoQuality.js), re-checked by
-// the server whenever my photos change: not HD (lowRes), not a real photo of
-// me (rejected, with the reason), or too few (missing).
+// the server whenever my photos change: not HD (lowRes), refused (rejected,
+// with one precise reason each — human: confirmed by a moderator), being
+// checked by a moderator (review: accepted meanwhile), or too few (missing).
 //   loading — not known yet
 //   ok      — all good (or the check failed: never lock anyone out on an outage)
-//   todo    — photos to fix; once PHOTO_DEADLINE has passed (`blocked`) the
-//             account is suspended: the app only opens the profile page
+//   todo    — photos to fix
+// `blocked`: the account is suspended (the server decides: only after a
+// moderator confirmed the refusals, never on the analysis alone) — the app
+// only opens the profile page.
 export function PhotoQualityProvider({ children }) {
   const { user, publicProfile } = useAuth()
   const hasProfile = Boolean(publicProfile)
   const photosKey = (publicProfile?.photos || []).join('|')
-  const [result, setResult] = useState({ key: null, lowRes: [], rejected: [], missing: 0 })
+  const [result, setResult] = useState({ key: null, ...EMPTY })
   const [deadlinePassed, setDeadlinePassed] = useState(() => Date.now() > PHOTO_DEADLINE.getTime())
 
   // An app left open across the deadline locks without a reload.
@@ -32,8 +36,19 @@ export function PhotoQualityProvider({ children }) {
     if (!user?.id || !hasProfile) return undefined
     let cancelled = false
     getPhotoQuality()
-      .then((d) => !cancelled && setResult({ key: photosKey, lowRes: d.lowRes || [], rejected: d.rejected || [], missing: d.missing || 0 }))
-      .catch(() => !cancelled && setResult({ key: photosKey, lowRes: [], rejected: [], missing: 0 }))
+      .then(
+        (d) =>
+          !cancelled &&
+          setResult({
+            key: photosKey,
+            lowRes: d.lowRes || [],
+            rejected: d.rejected || [],
+            review: d.review || [],
+            missing: d.missing || 0,
+            suspended: !!d.suspended,
+          }),
+      )
+      .catch(() => !cancelled && setResult({ key: photosKey, ...EMPTY }))
     return () => {
       cancelled = true
     }
@@ -43,12 +58,15 @@ export function PhotoQualityProvider({ children }) {
   const lowRes = known ? result.lowRes : []
   const rejected = known ? result.rejected : []
   const missing = known ? result.missing : 0
+  const review = known ? result.review : []
   const toFix = lowRes.length + rejected.length + missing
   const status = !user?.id || !known ? 'loading' : toFix ? 'todo' : 'ok'
-  const blocked = status === 'todo' && deadlinePassed
+  const blocked = known && result.suspended
 
   return (
-    <PhotoQualityContext.Provider value={{ status, lowRes, rejected, missing, toFix, blocked }}>{children}</PhotoQualityContext.Provider>
+    <PhotoQualityContext.Provider value={{ status, lowRes, rejected, review, missing, toFix, blocked, deadlinePassed }}>
+      {children}
+    </PhotoQualityContext.Provider>
   )
 }
 

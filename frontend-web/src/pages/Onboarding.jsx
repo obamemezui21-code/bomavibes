@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Loader2, Mars, Minus, NonBinary, Plus, RotateCw, Venus, X } from 'lucide-react'
 import { doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
-import { uploadProfilePhoto } from '../firebase/photos.js'
+import { appealPhoto, uploadProfilePhoto } from '../firebase/photos.js'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { findCountry, findRegion } from '../lib/geography.js'
@@ -106,9 +106,21 @@ function Onboarding() {
       (err) => {
         const refused = Boolean(err?.code?.startsWith('photo-'))
         if (refused) showToast(err.message, 'error')
-        updatePhoto(id, refused ? { status: 'refused', message: err.message } : { status: 'failed' })
+        updatePhoto(id, refused ? { status: 'refused', message: err.message, refusalId: err.refusalId || null } : { status: 'failed' })
       },
     )
+  }
+
+  // "Ce n'est pas correct": a moderator looks at the refused photo; validated,
+  // it's added to the profile.
+  async function requestReview(photo) {
+    try {
+      await appealPhoto({ refusalId: photo.refusalId, slot: photo.slot })
+      updatePhoto(photo.id, { appealed: true })
+      showToast('Demande envoyée : l’équipe va vérifier ta photo.', 'success')
+    } catch (err) {
+      showToast(err.message, 'error')
+    }
   }
 
   async function handleAddPhotos(e) {
@@ -416,9 +428,23 @@ function Onboarding() {
                       {refusedPhotos.map((p) => (
                         <li key={p.id}>
                           <span className="font-semibold">Photo {form.photos.indexOf(p) + 1} :</span> {p.message}
+                          {p.refusalId &&
+                            (p.appealed ? (
+                              <span className="mt-0.5 block font-medium text-violet-700 dark:text-violet-300">
+                                ✓ Vérification demandée : si l’équipe la valide, elle sera ajoutée à ton profil.
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => requestReview(p)}
+                                className="mt-0.5 block font-semibold text-violet-700 underline underline-offset-2 dark:text-violet-300"
+                              >
+                                Ce n’est pas correct, demander une vérification
+                              </button>
+                            ))}
                         </li>
                       ))}
-                      <li className="text-red-700/80 dark:text-red-300/80">Retirez-la avec la croix et ajoutez-en une autre.</li>
+                      <li className="text-red-700/80 dark:text-red-300/80">En attendant, retire-la avec la croix et ajoutes-en une autre.</li>
                     </ul>
                   )}
                   {!checkingPhotos && acceptedPhotos < MIN_PROFILE_PHOTOS && (

@@ -67,6 +67,7 @@ const AdminMusic = lazy(() => import('./pages/AdminMusic.jsx'))
 const AdminOverview = lazy(() => import('./pages/AdminOverview.jsx'))
 const AdminReports = lazy(() => import('./pages/AdminReports.jsx'))
 const AdminVerifications = lazy(() => import('./pages/AdminVerifications.jsx'))
+const AdminPhotoReviews = lazy(() => import('./pages/AdminPhotoReviews.jsx'))
 const AdminUsers = lazy(() => import('./pages/AdminUsers.jsx'))
 const AdminUsersDirectory = lazy(() => import('./pages/AdminUsersDirectory.jsx'))
 const AdminLogs = lazy(() => import('./pages/AdminLogs.jsx'))
@@ -239,6 +240,14 @@ function App() {
                 element={
                   <RequireRole check={hasModerationAccess}>
                     <AdminVerifications />
+                  </RequireRole>
+                }
+              />
+              <Route
+                path="photos"
+                element={
+                  <RequireRole check={hasModerationAccess}>
+                    <AdminPhotoReviews />
                   </RequireRole>
                 }
               />

@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const ort = require("onnxruntime-node");
+const { THRESHOLDS, decidePhoto, PHOTO_REASONS } = require("./photoDecision");
 
 // Profile photos must show the member, a real person: every photo is
 // analysed on upload, on the server, before it's stored. Nothing leaves the
@@ -18,12 +19,15 @@ const ort = require("onnxruntime-node");
 //    "Painting" is never a reason to refuse: CLIP calls many real studio
 //    portraits — of dark-skinned women especially — paintings.
 //
-// Then: the face mustn't be tiny, and the photo mustn't be too dark, or
-// blurry where the face is (a blurred background is fine).
+// Then: how big, sharp and lit the face is. What all of this means for the
+// photo — accepted, accepted pending a human look, or refused — is decided in
+// services/photoDecision.js: only what is certain is refused.
 //
-// Thresholds were set on a test set of real photos (studio portraits,
-// selfies, groups, dark and light skin) and of what must be refused
-// (dogs, cats, a chimpanzee, cartoons, anime, masks, statues, drawings).
+// The detector and CLIP vetoes were first tuned on a test set of real photos
+// (studio portraits, selfies, groups, dark and light skin) and of what must
+// be refused (dogs, cats, a chimpanzee, cartoons, anime, masks, statues,
+// drawings); in October 2026 real photos (mirror selfies, gym photos, a phone
+// in front of the face) were still refused, hence the softer decision.
 
 const MODELS_DIR = path.join(__dirname, "..", "..", "models");
 const FACE_MODEL = path.join(MODELS_DIR, "face-detector-rfb320.onnx");
@@ -32,21 +36,12 @@ const CLIP_PROMPTS = path.join(MODELS_DIR, "clip-prompts.json");
 
 const FACE_W = 320;
 const FACE_H = 240;
-const FACE_SCORE = 0.8;
+// Faces kept from the detector: from "maybe" up (photoDecision.js decides).
+const FACE_SCORE = THRESHOLDS.faceTrace;
 const NMS_IOU = 0.3;
-// The largest face's height, as a share of the photo's height.
-const MIN_FACE_SHARE = 0.06;
-// Mean luminance (0-255) of the whole photo — only an almost black photo:
-// a dark-skinned face on a dark background is a normal photo, and the face
-// is already checked (detected, big enough, sharp).
-const MIN_BRIGHTNESS = 18;
-// Standard deviation of the Laplacian over the face (0-255 scale).
-const MIN_FACE_SHARPNESS = 5;
-
-// CLIP probability (summed over a group's descriptions) from which a photo
-// is refused. On real photos of people these groups stayed at or under
-// 0.37 (animal), 0.05 (drawing) and 0.58 (object).
-const VETO = { animal: 0.6, drawing: 0.25, object: 0.6 };
+// CLIP probabilities are summed over a group's descriptions. On real photos
+// of people the groups stayed at or under 0.37 (animal), 0.05 (drawing) and
+// 0.58 (object) — the thresholds are in photoDecision.js.
 const CLIP_SIZE = 224;
 const CLIP_MEAN = [0.48145466, 0.4578275, 0.40821073];
 const CLIP_STD = [0.26862954, 0.26130258, 0.27577711];
@@ -194,7 +189,8 @@ const round = (v, digits = 2) => Number(v.toFixed(digits));
 
 /**
  * @param {Buffer} image - the photo, already EXIF-rotated
- * @returns {Promise<{ ok: boolean, code?: string, faces: number, details: object }>}
+ * @returns {Promise<{ ok: boolean, verdict: 'accepted'|'review'|'rejected', code: string|null, faces: number, details: object }>}
+ *   ok: false only when refused; details: every measure, for the decision log
  */
 async function analyzeProfilePhoto(image) {
   const { width, height } = await sharp(image).metadata();
@@ -203,44 +199,29 @@ async function analyzeProfilePhoto(image) {
     brightness(image),
     classify(image),
   ]);
-  const details = { faces: faces.length, brightness: Math.round(light) };
+  const details = { faces: faces.length, brightness: Math.round(light), faceScore: 0 };
   if (kinds) details.kinds = Object.fromEntries(Object.entries(kinds).map(([k, v]) => [k, round(v)]));
-  const refuse = (code) => ({ ok: false, code, faces: faces.length, details });
 
-  if (light < MIN_BRIGHTNESS) return refuse("photo-too-dark");
-  if (kinds) {
-    if (kinds.animal >= VETO.animal) return refuse("photo-animal");
-    if (kinds.drawing >= VETO.drawing) return refuse("photo-drawing");
-    if (kinds.object >= VETO.object) return refuse("photo-object");
+  if (faces.length) {
+    // The surest face (a hand or a phone can make a bigger, vaguer box).
+    const main = faces.reduce((a, b) => (b.score > a.score ? b : a));
+    details.faceScore = round(main.score);
+    details.faceShare = round((main.y2 - main.y1) / height, 3);
+    details.sharpness = round(
+      await sharpness(image, {
+        left: Math.floor(main.x1),
+        top: Math.floor(main.y1),
+        width: Math.max(1, Math.floor(main.x2 - main.x1)),
+        height: Math.max(1, Math.floor(main.y2 - main.y1)),
+      }),
+    );
   }
-  if (!faces.length) return refuse("photo-no-face");
 
-  const main = faces.reduce((a, b) => ((b.y2 - b.y1) * (b.x2 - b.x1) > (a.y2 - a.y1) * (a.x2 - a.x1) ? b : a));
-  details.faceShare = round((main.y2 - main.y1) / height, 3);
-  if (details.faceShare < MIN_FACE_SHARE) return refuse("photo-face-too-small");
-
-  details.sharpness = round(
-    await sharpness(image, {
-      left: Math.floor(main.x1),
-      top: Math.floor(main.y1),
-      width: Math.max(1, Math.floor(main.x2 - main.x1)),
-      height: Math.max(1, Math.floor(main.y2 - main.y1)),
-    }),
-  );
-  if (details.sharpness < MIN_FACE_SHARPNESS) return refuse("photo-blurry");
-
-  return { ok: true, faces: faces.length, details };
+  const { verdict, code } = decidePhoto({ ...details, kinds: kinds || null });
+  return { ok: verdict !== "rejected", verdict, code, faces: faces.length, details };
 }
 
-const REJECTION_MESSAGES = {
-  "photo-no-face":
-    "Aucun visage détecté : vos photos de profil doivent vous montrer, vous, avec le visage bien visible (pas de dos, pas de lunettes de soleil qui cachent tout, pas de paysage ni d'objet).",
-  "photo-animal": "Cette photo montre un animal : vos photos de profil doivent vous montrer, vous.",
-  "photo-drawing": "Cette image est un dessin ou une illustration : il faut une vraie photo de vous.",
-  "photo-object": "Cette photo montre une statue, un masque ou une poupée : il faut une vraie photo de vous.",
-  "photo-face-too-small": "Votre visage est trop petit sur cette photo : rapprochez-vous ou recadrez-la.",
-  "photo-too-dark": "Cette photo est trop sombre : reprenez-la avec plus de lumière.",
-  "photo-blurry": "Cette photo est floue au niveau du visage : reprenez-la bien nette.",
-};
+// One precise reason (and a tip) per code — services/photoDecision.js.
+const REJECTION_MESSAGES = PHOTO_REASONS;
 
-module.exports = { analyzeProfilePhoto, REJECTION_MESSAGES };
+module.exports = { analyzeProfilePhoto, REJECTION_MESSAGES, THRESHOLDS };

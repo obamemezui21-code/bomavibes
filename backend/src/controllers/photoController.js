@@ -3,8 +3,10 @@ const path = require("path");
 const sharp = require("sharp");
 const admin = require("../config/firebaseAdmin");
 const { MIN_PHOTO_SIDE, MIN_PROFILE_PHOTOS, PHOTO_DEADLINE_MS, isHdOriginal } = require("../config/photoQuality");
-const { auditProfile } = require("../services/profilePhotoAudit");
-const { analyzeProfilePhoto, REJECTION_MESSAGES } = require("../services/photoAnalysis");
+const { auditProfile, recordCheck } = require("../services/profilePhotoAudit");
+const { analyzeProfilePhoto } = require("../services/photoAnalysis");
+const { reasonFor } = require("../services/photoDecision");
+const { appealRefusedUpload, keepRefusedUpload, logDecision, queuePhotoReview } = require("../services/photoReviews");
 
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "profile-photos");
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://bomavibes.tech";
@@ -20,6 +22,25 @@ const VARIANTS = [
   { key: "medium", suffix: "-medium", maxWidth: 640, quality: 80 },
   { key: "thumb", suffix: "-thumb", maxWidth: 240, quality: 75 },
 ];
+
+// Writes the three variants of a photo in a slot → { full, medium, thumb } urls.
+async function storePhotoVariants(uid, slot, normalized) {
+  const dir = path.join(UPLOAD_ROOT, uid);
+  fs.mkdirSync(dir, { recursive: true });
+  const cacheBust = Date.now();
+  const urls = {};
+  await Promise.all(
+    VARIANTS.map(async ({ key, suffix, maxWidth, quality }) => {
+      const filename = `photo-${slot}${suffix}.jpg`;
+      await sharp(normalized)
+        .resize({ width: maxWidth, withoutEnlargement: true }) // ratio preserved, never cropped
+        .jpeg({ quality, mozjpeg: true })
+        .toFile(path.join(dir, filename));
+      urls[key] = `${FRONTEND_URL}/uploads/profile-photos/${uid}/${filename}?v=${cacheBust}`;
+    }),
+  );
+  return urls;
+}
 
 async function uploadPhoto(req, res) {
   const uid = req.firebaseUser.uid;
@@ -47,51 +68,77 @@ async function uploadPhoto(req, res) {
     // the analysis and every variant instead of re-reading the source.
     const normalized = await sharp(req.file.path).rotate().toBuffer();
 
-    // A real photo of a person (see services/photoAnalysis.js). If the
-    // analysis itself breaks, the photo goes through: a bug must never
-    // block signups — it's logged instead.
+    // A real photo of a person (services/photoAnalysis.js, decided by
+    // photoDecision.js): accepted, accepted pending a moderator's look, or
+    // refused. If the analysis itself breaks, the photo goes through: a bug
+    // must never block signups — it's logged instead.
     let analysis = null;
     try {
       analysis = await analyzeProfilePhoto(normalized);
+      logDecision({ uid, source: "upload", analysis });
     } catch (err) {
       console.error("Analyse photo indisponible :", err);
     }
-    if (analysis && !analysis.ok) {
+    if (analysis?.verdict === "rejected") {
       fs.unlink(req.file.path, () => {});
-      console.log(`Photo refusée (${uid}, ${analysis.code}) ${JSON.stringify(analysis.details)}`);
-      return res.status(422).json({ code: analysis.code, message: REJECTION_MESSAGES[analysis.code] });
+      // Kept privately: the member can ask a moderator to look at it.
+      const refusalId = await keepRefusedUpload({ uid, image: normalized, slot, code: analysis.code, details: analysis.details }).catch((err) => {
+        console.error("Photo refusée non conservée :", err.message);
+        return null;
+      });
+      return res.status(422).json({ code: analysis.code, message: reasonFor(analysis.code), refusalId });
     }
 
-    const dir = path.join(UPLOAD_ROOT, uid);
-    fs.mkdirSync(dir, { recursive: true });
-    const cacheBust = Date.now();
-    const urls = {};
-
-    await Promise.all(
-      VARIANTS.map(async ({ key, suffix, maxWidth, quality }) => {
-        const filename = `photo-${slot}${suffix}.jpg`;
-        await sharp(normalized)
-          .resize({ width: maxWidth, withoutEnlargement: true }) // ratio preserved, never cropped
-          .jpeg({ quality, mozjpeg: true })
-          .toFile(path.join(dir, filename));
-        urls[key] = `${FRONTEND_URL}/uploads/profile-photos/${uid}/${filename}?v=${cacheBust}`;
-      }),
-    );
-
+    const urls = await storePhotoVariants(uid, slot, normalized);
     fs.unlink(req.file.path, () => {});
+
+    const review = analysis?.verdict === "review";
+    if (analysis) {
+      await recordCheck(uid, urls.full, { verdict: analysis.verdict, code: analysis.code || null, human: false });
+      if (review) await queuePhotoReview({ uid, url: urls.full, source: "upload", code: analysis.code, details: analysis.details });
+    }
 
     // `url` kept for backward compatibility with existing frontend calls
     // that only expect a single string; `urls` exposes all three sizes.
-    res.json({ url: urls.full, urls });
+    // review: accepted for now, a moderator will have a look.
+    res.json({ url: urls.full, urls, review });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Impossible d'enregistrer la photo" });
   }
 }
 
+// POST /api/photos/appeal { refusalId, slot } | { url }
+// "Ce n'est pas correct, demander une vérification": a refused upload
+// (refusalId) or a refused photo of the profile (url) goes to a moderator.
+async function appealPhoto(req, res) {
+  const uid = req.firebaseUser.uid;
+  const { refusalId, url, slot } = req.body || {};
+  try {
+    if (typeof refusalId === "string") {
+      const ok = await appealRefusedUpload(uid, refusalId, Number(slot));
+      if (!ok) return res.status(404).json({ message: "Cette photo n'est plus disponible : ajoute-la à nouveau." });
+      return res.json({ ok: true });
+    }
+    if (typeof url === "string") {
+      const profile = (await admin.firestore().collection("profiles").doc(uid).get()).data() || {};
+      if (!(profile.photos || []).includes(url)) return res.status(404).json({ message: "Cette photo n'est plus sur ton profil." });
+      const check = (await admin.firestore().collection("photoChecks").doc(uid).get()).data()?.results?.[url];
+      if (check?.human) return res.status(409).json({ message: "L'équipe a déjà vérifié cette photo." });
+      await queuePhotoReview({ uid, url, source: "audit", code: check?.code || null, appealed: true });
+      return res.json({ ok: true });
+    }
+    res.status(400).json({ message: "Photo manquante" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Impossible d'envoyer la demande, réessaie." });
+  }
+}
+
 // GET /api/photos/quality — what's wrong with the member's current profile
-// photos (services/profilePhotoAudit.js): not HD, not a real photo of them,
-// or too few; with the deadline after which the account is suspended.
+// photos (services/profilePhotoAudit.js): not HD, refused (by the analysis,
+// waiting for a moderator, or by a moderator), being checked, or too few;
+// with whether the account is suspended.
 async function photoQuality(req, res) {
   const uid = req.firebaseUser.uid;
   try {
@@ -103,7 +150,9 @@ async function photoQuality(req, res) {
       deadline: PHOTO_DEADLINE_MS,
       lowRes: audit.lowRes,
       rejected: audit.rejected,
+      review: audit.review,
       missing: audit.missing,
+      suspended: audit.suspended,
     });
   } catch (err) {
     console.error(err);
@@ -111,4 +160,4 @@ async function photoQuality(req, res) {
   }
 }
 
-module.exports = { uploadPhoto, photoQuality };
+module.exports = { uploadPhoto, photoQuality, appealPhoto, storePhotoVariants };
