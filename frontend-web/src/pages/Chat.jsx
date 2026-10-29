@@ -17,7 +17,6 @@ import {
   Shuffle,
   Heart,
   Info,
-  Lock,
   MapPin,
   MapPinned,
   Mic,
@@ -88,8 +87,6 @@ import WeMetPrompt from '../components/chat/WeMetPrompt.jsx'
 import DateSpotSheet from '../components/chat/DateSpotSheet.jsx'
 import { DATE_NUDGE_MIN_MESSAGES, closeDateNudge, isDateNudgeClosed } from '../lib/dateSpots.js'
 import { deleteSticker, listMyStickers } from '../firebase/stickers.js'
-import Watermark from '../components/privacy/Watermark.jsx'
-import ShieldCover from '../components/privacy/ShieldCover.jsx'
 import { PROTECT_PROPS } from '../components/privacy/protect.js'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
@@ -210,8 +207,6 @@ function ImageLightbox({ url, onClose }) {
       </button>
       <div {...PROTECT_PROPS} onClick={(e) => e.stopPropagation()} className="protected-media relative max-h-full max-w-full overflow-hidden rounded-lg">
         <img src={url} alt="" draggable={false} className="max-h-[calc(100svh-3rem)] max-w-full object-contain" />
-        <Watermark />
-        <ShieldCover />
       </div>
     </div>
   )
@@ -1465,9 +1460,6 @@ function Chat() {
               <div className="absolute inset-0 bg-surface-soft/55 dark:bg-surface-soft/65" />
             </div>
             <div ref={scrollRef} onScroll={handleThreadScroll} {...PROTECT_PROPS} className="protected-media relative h-full space-y-2 overflow-y-auto px-4 py-4">
-              <p className="flex items-center justify-center gap-1.5 pb-1 text-center text-[11px] text-ink-soft/60">
-                <Lock size={11} aria-hidden="true" /> Conversation privée : capture et partage interdits.
-              </p>
               {active.ephemeralTtl > 0 && (
                 <button
                   type="button"
@@ -1865,8 +1857,6 @@ function Chat() {
               )}
               <div ref={bottomRef} />
             </div>
-            <Watermark />
-            <ShieldCover />
 
             <AnimatePresence>
               {showNewMessagesPill && (

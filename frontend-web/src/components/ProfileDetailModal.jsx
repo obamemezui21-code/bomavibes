@@ -17,7 +17,6 @@ import {
   HeartHandshake,
   House,
   Languages,
-  Lock,
   MapPin,
   MessageCircle,
   MessageCircleHeart,
@@ -47,8 +46,6 @@ import VoicePromptPlayer from './VoicePromptPlayer.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
 import { complimentAbout } from '../lib/compliments.js'
-import Watermark from './privacy/Watermark.jsx'
-import ShieldCover from './privacy/ShieldCover.jsx'
 import { PROTECT_PROPS } from './privacy/protect.js'
 import { distancesTo } from '../lib/geolocation.js'
 import PhotoSlideshow from './PhotoSlideshow.jsx'
@@ -280,8 +277,6 @@ function ProfileDetailModal({
             {/* Stories-style slideshow; paused while a menu or a sheet is open. */}
             <PhotoSlideshow photos={photos} alt={profile.firstName} paused={menuOpen}>
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/35" />
-              {!isSelf && <Watermark />}
-              {!isSelf && <ShieldCover />}
             </PhotoSlideshow>
 
             <button
@@ -478,11 +473,6 @@ function ProfileDetailModal({
                   Bloquer
                 </button>
               </div>
-            )}
-            {!isSelf && (
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[11px] text-ink-soft/60">
-                <Lock size={11} aria-hidden="true" /> Photos privées : capture et partage interdits.
-              </p>
             )}
           </div>
         </div>

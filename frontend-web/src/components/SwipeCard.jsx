@@ -4,8 +4,6 @@ import { Check, Heart, Info, MapPin, Target } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
-import Watermark from './privacy/Watermark.jsx'
-import ShieldCover from './privacy/ShieldCover.jsx'
 import { PROTECT_PROPS } from './privacy/protect.js'
 
 const SWIPE_THRESHOLD = 100
@@ -118,8 +116,6 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
             draggable={false}
             className="h-full w-full select-none object-cover"
           />
-          <Watermark />
-          <ShieldCover />
           <div
             onClick={(e) => {
               if (Math.abs(x.get()) < 5) handlePhotoZoneClick(e)

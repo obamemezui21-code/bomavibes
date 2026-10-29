@@ -34,8 +34,8 @@ function usePageHidden() {
  * menu is open); no automatic advance with "reduce motion". One photo: no
  * bars, nothing moves.
  *
- * The main photo comes first (photos[0]). Overlays (watermark, gradient,
- * buttons) go in `children`, drawn over the photos.
+ * The main photo comes first (photos[0]). Overlays (gradient, buttons) go in
+ * `children`, drawn over the photos.
  */
 function PhotoSlideshow({ photos, alt, paused = false, children }) {
   const [index, setIndex] = useState(0)
