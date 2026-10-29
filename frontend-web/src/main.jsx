@@ -32,6 +32,8 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload()
 })
 
+installMediaRetry()
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>

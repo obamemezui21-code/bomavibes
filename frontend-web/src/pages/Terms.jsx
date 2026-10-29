@@ -42,21 +42,29 @@ const SECTIONS = [
     ],
   },
   {
-    title: '6. Suspension et suppression',
+    title: "6. Captures d'écran et confidentialité des échanges",
+    body: [
+      "Les photos des autres membres et le contenu de vos conversations sont privés. Il est interdit de les capturer (capture ou enregistrement d'écran, photo de l'écran), de les copier, de les enregistrer ou de les diffuser, sur BomaVibes ou ailleurs, sans l'accord de la personne concernée.",
+      "Pour dissuader ces captures, chaque photo et chaque conversation porte un filigrane discret avec le prénom et l'identifiant du membre qui les consulte : une capture diffusée permet de retrouver son auteur. Les photos ne sont accessibles qu'aux membres connectés.",
+      "Diffuser la photo ou les messages d'un membre sans son accord peut entraîner la fermeture définitive de votre compte, sans préjudice des poursuites prévues par la loi (atteinte à la vie privée, droit à l'image).",
+    ],
+  },
+  {
+    title: '7. Suspension et suppression',
     body: [
       'Vous pouvez supprimer votre compte à tout moment depuis Paramètres → Supprimer mon compte ; toutes vos données sont alors définitivement effacées.',
       'Nous pouvons suspendre ou fermer un compte qui enfreint ces CGU, notamment suite à des signalements d\'autres membres.',
     ],
   },
   {
-    title: '7. Avertissement',
+    title: '8. Avertissement',
     body: [
       'BomaVibes est un outil de mise en relation : nous ne vérifions pas l\'identité de chaque membre au-delà de nos contrôles de modération, et nous ne garantissons pas la véracité des profils ni le résultat d\'une rencontre.',
       'Restez prudent·e lors de vos échanges et de vos rencontres — consultez notre page Sécurité pour des conseils concrets.',
     ],
   },
   {
-    title: '8. Modifications',
+    title: '9. Modifications',
     body: [
       'Nous pouvons faire évoluer ces CGU. En cas de changement important, nous vous en informerons via l\'app avant qu\'il prenne effet.',
     ],
@@ -73,7 +81,7 @@ function Terms() {
         <h1 className="mt-2 font-display text-3xl font-bold text-[#261b28] sm:text-4xl">
           Conditions d'utilisation
         </h1>
-        <p className="mt-3 text-sm text-[#635a65]">Dernière mise à jour : août 2026</p>
+        <p className="mt-3 text-sm text-[#635a65]">Dernière mise à jour : octobre 2026</p>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#635a65]">
           En utilisant BomaVibes, vous acceptez les règles ci-dessous. Nous les avons gardées
           aussi simples et honnêtes que possible.

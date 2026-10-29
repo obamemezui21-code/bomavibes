@@ -15,6 +15,7 @@ import {
   Heart,
   House,
   Languages,
+  Lock,
   MapPin,
   MessageCircle,
   MessageCircleHeart,
@@ -44,6 +45,9 @@ import VoicePromptPlayer from './VoicePromptPlayer.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
 import { complimentAbout } from '../lib/compliments.js'
+import Watermark from './privacy/Watermark.jsx'
+import ShieldCover from './privacy/ShieldCover.jsx'
+import { PROTECT_PROPS } from './privacy/protect.js'
 
 // Small round button on a bio / prompt card: compliment that answer.
 function ComplimentButton({ onClick }) {
@@ -247,9 +251,11 @@ function ProfileDetailModal({
       >
         <div className="h-full overflow-y-auto overscroll-contain">
           {/* Photo — takes most of the screen, the details sheet slides over its bottom edge */}
-          <div className="relative h-[64svh] w-full shrink-0 md:h-[58%]">
-            <img src={photos[index]} alt={profile.firstName} className="h-full w-full object-cover" />
+          <div {...PROTECT_PROPS} className="protected-media relative h-[64svh] w-full shrink-0 md:h-[58%]">
+            <img src={photos[index]} alt={profile.firstName} draggable={false} className="h-full w-full object-cover" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/35" />
+            {!isSelf && <Watermark />}
+            {!isSelf && <ShieldCover />}
 
             {photos.length > 1 && (
               <>
@@ -444,6 +450,11 @@ function ProfileDetailModal({
                   ))}
                 </div>
               </div>
+            )}
+            {!isSelf && (
+              <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-ink-soft/60">
+                <Lock size={11} aria-hidden="true" /> Photos privées : capture et partage interdits.
+              </p>
             )}
           </div>
         </div>

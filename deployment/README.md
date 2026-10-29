@@ -80,3 +80,21 @@ recopier dans la console.
 ## Appels audio / vidéo
 
 Serveur relais TURN (coturn) : voir `coturn-setup.md`.
+
+## nginx : réglages appliqués par `deploy.sh`
+
+Deux scripts, lancés à chaque déploiement, qui ne font rien quand c'est déjà
+en place. Chacun sauvegarde la configuration dans `/root/`, la vérifie avec
+`nginx -t` et remet l'ancienne si nginx la refuse.
+
+- `enable-http2.sh` : active HTTP/2 sur le site.
+- `protect-uploads.sh` : les photos des membres (`/uploads/profile-photos/`)
+  et les pièces jointes du chat (`/uploads/chat-attachments/`) ne sont servies
+  qu'avec le cookie signé que l'API donne aux membres connectés
+  (`/api/media/session`, valable 12 h). Le secret partagé est `MEDIA_SECRET`
+  dans `backend/.env` (créé automatiquement s'il manque) ; les règles nginx
+  sont dans `/etc/nginx/snippets/bomavibes-uploads.conf`.
+
+Pour revenir en arrière sur la protection des photos : retirer la ligne
+`include /etc/nginx/snippets/bomavibes-uploads.conf;` du site, puis
+`nginx -t && systemctl reload nginx` (et retirer l'appel dans `deploy.sh`).

@@ -22,6 +22,9 @@ echo "🔐 Règles Firestore..."
 # block the rest of the deploy — the previous rules simply stay live.
 node scripts/deployFirestoreRules.js || echo "⚠️  Règles Firestore non publiées (voir le message ci-dessus) — le déploiement continue."
 
+echo "🔒 Secret des photos..."
+bash ../deployment/protect-uploads.sh secret || echo "⚠️  MEDIA_SECRET non créé — les photos restent publiques."
+
 pm2 restart kani-api
 
 echo "🎨 Frontend..."
@@ -42,6 +45,9 @@ find /var/www/html/assets -type f -mtime +7 -delete
 
 echo "⚡ HTTP/2..."
 bash ../deployment/enable-http2.sh || echo "⚠️  HTTP/2 non activé (voir le message ci-dessus) — le déploiement continue."
+
+echo "🔒 Photos réservées aux membres..."
+bash ../deployment/protect-uploads.sh nginx || echo "⚠️  Photos non protégées (voir le message ci-dessus) — le déploiement continue."
 
 echo "✅ Déploiement terminé !"
 

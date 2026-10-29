@@ -13,6 +13,7 @@ import {
 } from 'firebase/auth'
 import { collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase/config.js'
+import { clearMediaSession, ensureMediaSession } from '../lib/mediaSession.js'
 import { useToast } from './ToastContext.jsx'
 import { isInAppBrowser } from '../lib/inAppBrowser.js'
 
@@ -95,9 +96,11 @@ export function AuthProvider({ children }) {
         setUser(toAppUser(firebaseUser))
         setToken(await firebaseUser.getIdToken())
         ensureUserDocument(firebaseUser)
+        ensureMediaSession()
       } else {
         setUser(null)
         setToken(null)
+        clearMediaSession()
       }
       setIsLoading(false)
     })
@@ -109,6 +112,21 @@ export function AuthProvider({ children }) {
   const isProfileLoading = !!uid && account.uid !== uid
   const publicProfile = uid && publicDoc.uid === uid ? publicDoc.data : null
   const isPublicProfileLoading = !!uid && publicDoc.uid !== uid
+
+  // The members' photos cookie (lib/mediaSession.js) lasts 12 h: renewed
+  // while the app stays open, and when it comes back to the foreground.
+  useEffect(() => {
+    if (!uid) return undefined
+    const renew = () => {
+      if (!document.hidden) ensureMediaSession()
+    }
+    const timer = setInterval(renew, 30 * 60 * 1000)
+    document.addEventListener('visibilitychange', renew)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', renew)
+    }
+  }, [uid])
 
   useEffect(() => {
     if (!uid) return undefined

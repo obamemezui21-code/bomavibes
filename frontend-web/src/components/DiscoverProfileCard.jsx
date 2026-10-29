@@ -4,6 +4,9 @@ import { Check, Heart } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
+import Watermark from './privacy/Watermark.jsx'
+import ShieldCover from './privacy/ShieldCover.jsx'
+import { PROTECT_PROPS } from './privacy/protect.js'
 
 const NEW_PROFILE_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -30,7 +33,8 @@ function DiscoverProfileCard({ profile, matchPercent, index = 0, onOpen }) {
       transition={{ delay: Math.min(index, 6) * 0.04, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       whileTap={{ scale: 0.97 }}
       onClick={onOpen}
-      className="group relative aspect-[3/4] w-40 shrink-0 snap-start overflow-hidden rounded-3xl text-left shadow-[0_14px_30px_-12px_rgba(0,0,0,0.45)]"
+      {...PROTECT_PROPS}
+      className="protected-media group relative aspect-[3/4] w-40 shrink-0 snap-start overflow-hidden rounded-3xl text-left shadow-[0_14px_30px_-12px_rgba(0,0,0,0.45)]"
     >
       <img
         src={photoFor(profile)}
@@ -38,9 +42,12 @@ function DiscoverProfileCard({ profile, matchPercent, index = 0, onOpen }) {
         alt={profile.firstName}
         loading="lazy"
         decoding="async"
+        draggable={false}
         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+      <Watermark />
+      <ShieldCover />
 
       <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-1">
         {isNew ? (

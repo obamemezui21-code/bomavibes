@@ -4,6 +4,9 @@ import { Check, Heart, Info, MapPin, Target } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
+import Watermark from './privacy/Watermark.jsx'
+import ShieldCover from './privacy/ShieldCover.jsx'
+import { PROTECT_PROPS } from './privacy/protect.js'
 
 const SWIPE_THRESHOLD = 100
 const EXIT_X = 600
@@ -107,7 +110,7 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
           background, so this pairs a strong dark contact shadow with a
           soft violet glow that stays visible on both light and dark pages. */}
       <div className="relative h-full w-full cursor-grab rounded-[28px] shadow-[0_24px_50px_-12px_rgba(0,0,0,0.55),0_10px_24px_-8px_rgba(169,93,218,0.35)] active:cursor-grabbing">
-        <div className="relative h-full w-full overflow-hidden rounded-[28px]">
+        <div {...PROTECT_PROPS} className="protected-media relative h-full w-full overflow-hidden rounded-[28px]">
           <img
             src={avatarFor(profile, photoIndex)}
             onError={fallbackToFullPhoto(fullPhotoFor(profile, photoIndex))}
@@ -115,6 +118,8 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
             draggable={false}
             className="h-full w-full select-none object-cover"
           />
+          <Watermark />
+          <ShieldCover />
           <div
             onClick={(e) => {
               if (Math.abs(x.get()) < 5) handlePhotoZoneClick(e)
