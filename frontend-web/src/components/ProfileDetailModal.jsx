@@ -51,6 +51,7 @@ import Watermark from './privacy/Watermark.jsx'
 import ShieldCover from './privacy/ShieldCover.jsx'
 import { PROTECT_PROPS } from './privacy/protect.js'
 import { distancesTo } from '../lib/geolocation.js'
+import PhotoSlideshow from './PhotoSlideshow.jsx'
 
 // Small round button on a bio / prompt card: compliment that answer.
 function ComplimentButton({ onClick }) {
@@ -161,7 +162,6 @@ function ProfileDetailModal({
   const photos = profile.photos?.length
     ? profile.photos
     : [fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')]
-  const [index, setIndex] = useState(0)
   // "À 5 km de toi": rounded by the server from both members' positions
   // (lib/geolocation.js), never computed from coordinates here.
   const showDistance = !isSelf && !profile.hideDistance
@@ -183,6 +183,7 @@ function ProfileDetailModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   // undefined = closed, null = general compliment, string = the quoted answer
   const [complimenting, setComplimenting] = useState(undefined)
+  const menuOpen = showMenu || showReport || showBlock || complimenting !== undefined
 
   async function handleReport(reason, description, alsoBlock) {
     setIsSubmitting(true)
@@ -276,36 +277,12 @@ function ProfileDetailModal({
         <div className="h-full overflow-y-auto overscroll-contain">
           {/* Photo — takes most of the screen, the details sheet slides over its bottom edge */}
           <div {...PROTECT_PROPS} className="protected-media relative h-[64svh] w-full shrink-0 md:h-[58%]">
-            <img src={photos[index]} alt={profile.firstName} draggable={false} className="h-full w-full object-cover" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/35" />
-            {!isSelf && <Watermark />}
-            {!isSelf && <ShieldCover />}
-
-            {photos.length > 1 && (
-              <>
-                {/* Tap the left / right half to go through the photos */}
-                <button
-                  type="button"
-                  onClick={() => setIndex((i) => Math.max(i - 1, 0))}
-                  className="absolute inset-y-0 left-0 w-1/2"
-                  aria-label="Photo précédente"
-                />
-                <button
-                  type="button"
-                  onClick={() => setIndex((i) => Math.min(i + 1, photos.length - 1))}
-                  className="absolute inset-y-0 right-0 w-1/2"
-                  aria-label="Photo suivante"
-                />
-                <div className="pointer-events-none absolute inset-x-4 top-[max(0.75rem,env(safe-area-inset-top))] flex gap-1.5">
-                  {photos.map((_, i) => (
-                    <span
-                      key={i}
-                      className={`h-1 flex-1 rounded-full transition-colors ${i === index ? 'bg-white' : 'bg-white/35'}`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
+            {/* Stories-style slideshow; paused while a menu or a sheet is open. */}
+            <PhotoSlideshow photos={photos} alt={profile.firstName} paused={menuOpen}>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/35" />
+              {!isSelf && <Watermark />}
+              {!isSelf && <ShieldCover />}
+            </PhotoSlideshow>
 
             <button
               type="button"

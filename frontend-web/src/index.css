@@ -393,3 +393,13 @@ select optgroup {
 .protected-media img {
   -webkit-user-drag: none;
 }
+
+/* components/PhotoSlideshow.jsx: the current photo's progress bar. */
+@keyframes slideshow-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
