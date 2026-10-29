@@ -17,6 +17,21 @@ import { IdentityProvider } from './context/IdentityContext.jsx'
 import { PhotoQualityProvider } from './context/PhotoQualityContext.jsx'
 import { GroupCallProvider } from './context/GroupCallContext.jsx'
 
+// A tab opened before a deploy can ask for a code file of the old version
+// that's gone by now: reload to get the new version instead of leaving the
+// page stuck (at most once every 30 s, so a real outage can't loop).
+window.addEventListener('vite:preloadError', (event) => {
+  const KEY = 'bv.reloadedForUpdate'
+  try {
+    if (Date.now() - Number(sessionStorage.getItem(KEY) || 0) < 30000) return
+    sessionStorage.setItem(KEY, String(Date.now()))
+  } catch {
+    // no storage: still worth one reload
+  }
+  event.preventDefault()
+  window.location.reload()
+})
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>

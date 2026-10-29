@@ -30,8 +30,18 @@ npm install
 npm run build
 
 echo "📦 Copie du build..."
-rm -rf /var/www/html/*
-cp -r dist/* /var/www/html/
+# The previous build's files stay a week: a tab opened before this deploy
+# still asks for them when the member opens another page (deleting them first
+# left that page stuck, and the whole site empty while the copy ran).
+# index.html goes last, once everything it points to is in place.
+mkdir -p /var/www/html/assets
+cp -r dist/assets/. /var/www/html/assets/
+find dist -mindepth 1 -maxdepth 1 ! -name assets ! -name index.html -exec cp -r {} /var/www/html/ \;
+cp dist/index.html /var/www/html/index.html
+find /var/www/html/assets -type f -mtime +7 -delete
+
+echo "⚡ HTTP/2..."
+bash ../deployment/enable-http2.sh || echo "⚠️  HTTP/2 non activé (voir le message ci-dessus) — le déploiement continue."
 
 echo "✅ Déploiement terminé !"
 

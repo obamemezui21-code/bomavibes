@@ -14,16 +14,35 @@ const firebaseConfig = {
 }
 
 const app = initializeApp(firebaseConfig)
-
 const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY
-if (recaptchaSiteKey) {
-  if (import.meta.env.DEV) {
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true
-  }
+
+// App Check (reCAPTCHA v3) starts once the page has loaded and the browser is
+// idle, not right away: its ~350 KB script competed with the app's own files,
+// and Firestore held its first requests until it had a token — about 10 s on
+// a mobile connection (measured 2026-10-29). App Check is not enforced
+// (Firebase console, "UNENFORCED"), so the first requests just go out without
+// a token; Firestore and Auth pick App Check up as soon as it starts. Before
+// enforcing it, this delay has to go (the early requests would be refused).
+const APP_CHECK_DELAY_MS = 4000
+
+function startAppCheck() {
   initializeAppCheck(app, {
     provider: new ReCaptchaV3Provider(recaptchaSiteKey),
     isTokenAutoRefreshEnabled: true,
   })
+}
+
+if (recaptchaSiteKey) {
+  if (import.meta.env.DEV) {
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true
+  }
+  const whenIdle = () =>
+    setTimeout(() => {
+      if (window.requestIdleCallback) window.requestIdleCallback(startAppCheck, { timeout: 5000 })
+      else startAppCheck()
+    }, APP_CHECK_DELAY_MS)
+  if (document.readyState === 'complete') whenIdle()
+  else window.addEventListener('load', whenIdle, { once: true })
 } else if (import.meta.env.DEV) {
   console.warn('VITE_RECAPTCHA_SITE_KEY is not set — Firebase App Check is disabled.')
 }

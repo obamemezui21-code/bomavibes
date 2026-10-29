@@ -33,6 +33,10 @@ export default defineConfig({
             if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase'
             if (id.includes('framer-motion')) return 'vendor-framer-motion'
             if (id.includes('react-router') || id.includes('/react/') || id.includes('/react-dom/')) return 'vendor-react'
+            // Each lucide icon used to land in its own 1–2 KB chunk: ~35
+            // requests on the landing page alone, a long waterfall on a
+            // mobile connection. One file for all of them instead.
+            if (id.includes('lucide-react')) return 'vendor-icons'
           }
         },
       },
