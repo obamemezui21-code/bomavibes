@@ -45,7 +45,6 @@ const SECTIONS = [
     title: "6. Captures d'écran et confidentialité des échanges",
     body: [
       "Les photos des autres membres et le contenu de vos conversations sont privés. Il est interdit de les capturer (capture ou enregistrement d'écran, photo de l'écran), de les copier, de les enregistrer ou de les diffuser, sur BomaVibes ou ailleurs, sans l'accord de la personne concernée.",
-      "Les photos ne sont accessibles qu'aux membres connectés.",
       "Diffuser la photo ou les messages d'un membre sans son accord peut entraîner la fermeture définitive de votre compte, sans préjudice des poursuites prévues par la loi (atteinte à la vie privée, droit à l'image).",
     ],
   },

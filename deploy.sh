@@ -46,8 +46,11 @@ find /var/www/html/assets -type f -mtime +7 -delete
 echo "⚡ HTTP/2..."
 bash ../deployment/enable-http2.sh || echo "⚠️  HTTP/2 non activé (voir le message ci-dessus) — le déploiement continue."
 
-echo "🔒 Photos réservées aux membres..."
-bash ../deployment/protect-uploads.sh nginx || echo "⚠️  Photos non protégées (voir le message ci-dessus) — le déploiement continue."
+# Members' photos are served to anyone with the link again: with the signed
+# cookie, photos loaded before the cookie were refused (and that refusal kept
+# a day in the browser's cache), so they didn't show.
+echo "🖼️  Photos des membres..."
+bash ../deployment/protect-uploads.sh off || echo "⚠️  Protection des photos non retirée (voir le message ci-dessus) — le déploiement continue."
 
 echo "✅ Déploiement terminé !"
 

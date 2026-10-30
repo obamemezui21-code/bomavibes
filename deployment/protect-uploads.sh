@@ -101,11 +101,36 @@ $(location_for chat-attachments "$key")"
     fi
 }
 
+# Takes the protection off again: photos are served to anyone with the link,
+# as before. Same safeguards (backup, nginx -t, put back on failure).
+step_off() {
+    if [ ! -e "$SITE" ] || { ! grep -qF "$INCLUDE" "$SITE" && [ ! -f "$SNIPPET" ]; }; then
+        exit 0 # nothing to take off
+    fi
+    local stamp site_file
+    stamp=$(date +%Y%m%d%H%M%S)
+    site_file="$(readlink -f "$SITE")"
+    cp "$site_file" "/root/nginx-bomavibes.$stamp.bak"
+    grep -vF "$INCLUDE" "$site_file" > "$site_file.new" || true
+    mv "$site_file.new" "$site_file"
+    if nginx -t 2>/dev/null; then
+        rm -f "$SNIPPET"
+        systemctl reload nginx
+        echo "Protection des photos retirée (sauvegarde : /root/nginx-bomavibes.$stamp.bak)."
+    else
+        cp "/root/nginx-bomavibes.$stamp.bak" "$site_file"
+        nginx -t
+        echo "nginx a refusé la configuration sans protection : l'ancienne est remise."
+        exit 1
+    fi
+}
+
 case "${1:-}" in
     secret) step_secret ;;
     nginx) step_nginx ;;
+    off) step_off ;;
     *)
-        echo "Usage : $0 secret|nginx"
+        echo "Usage : $0 secret|nginx|off"
         exit 2
         ;;
 esac

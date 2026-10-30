@@ -88,13 +88,13 @@ en place. Chacun sauvegarde la configuration dans `/root/`, la vérifie avec
 `nginx -t` et remet l'ancienne si nginx la refuse.
 
 - `enable-http2.sh` : active HTTP/2 sur le site.
-- `protect-uploads.sh` : les photos des membres (`/uploads/profile-photos/`)
-  et les pièces jointes du chat (`/uploads/chat-attachments/`) ne sont servies
-  qu'avec le cookie signé que l'API donne aux membres connectés
-  (`/api/media/session`, valable 12 h). Le secret partagé est `MEDIA_SECRET`
-  dans `backend/.env` (créé automatiquement s'il manque) ; les règles nginx
-  sont dans `/etc/nginx/snippets/bomavibes-uploads.conf`.
+- `protect-uploads.sh off` : retire la protection des photos par cookie signé
+  (désactivée le 30/10/2026 : les photos chargées avant le cookie étaient
+  refusées et ce refus restait 24 h dans le cache du navigateur, les photos
+  ne s'affichaient plus). Les photos sont de nouveau servies à quiconque a le
+  lien, comme avant.
 
-Pour revenir en arrière sur la protection des photos : retirer la ligne
-`include /etc/nginx/snippets/bomavibes-uploads.conf;` du site, puis
-`nginx -t && systemctl reload nginx` (et retirer l'appel dans `deploy.sh`).
+Pour remettre la protection un jour : `protect-uploads.sh secret` puis
+`protect-uploads.sh nginx` (et les remettre dans `deploy.sh`) — mais d'abord
+ne mettre `Cache-Control` que sur les réponses 200 (pas `always`), et ne
+charger les photos qu'une fois le cookie en place.
