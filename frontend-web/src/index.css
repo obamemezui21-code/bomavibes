@@ -381,16 +381,3 @@ select optgroup {
   }
 }
 
-/* Members' photos and conversations (components/privacy/): no text selection,
-   no long-press "save image" menu on iOS, no dragging the image out. The
-   message box itself stays editable. */
-.protected-media,
-.protected-media *:not(input):not(textarea) {
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-}
-.protected-media img {
-  -webkit-user-drag: none;
-}
-

@@ -16,7 +16,7 @@ import { CallProvider } from './context/CallContext.jsx'
 import { IdentityProvider } from './context/IdentityContext.jsx'
 import { PhotoQualityProvider } from './context/PhotoQualityContext.jsx'
 import { GroupCallProvider } from './context/GroupCallContext.jsx'
-import { installMediaRetry } from './lib/mediaSession.js'
+import { installPhotoRetry } from './lib/photoRetry.js'
 
 // A tab opened before a deploy can ask for a code file of the old version
 // that's gone by now: reload to get the new version instead of leaving the
@@ -33,7 +33,7 @@ window.addEventListener('vite:preloadError', (event) => {
   window.location.reload()
 })
 
-installMediaRetry()
+installPhotoRetry()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

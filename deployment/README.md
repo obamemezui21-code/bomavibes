@@ -88,13 +88,10 @@ en place. Chacun sauvegarde la configuration dans `/root/`, la vérifie avec
 `nginx -t` et remet l'ancienne si nginx la refuse.
 
 - `enable-http2.sh` : active HTTP/2 sur le site.
-- `protect-uploads.sh off` : retire la protection des photos par cookie signé
-  (désactivée le 30/10/2026 : les photos chargées avant le cookie étaient
-  refusées et ce refus restait 24 h dans le cache du navigateur, les photos
-  ne s'affichaient plus). Les photos sont de nouveau servies à quiconque a le
-  lien, comme avant.
-
-Pour remettre la protection un jour : `protect-uploads.sh secret` puis
-`protect-uploads.sh nginx` (et les remettre dans `deploy.sh`) — mais d'abord
-ne mettre `Cache-Control` que sur les réponses 200 (pas `always`), et ne
-charger les photos qu'une fois le cookie en place.
+- `protect-uploads.sh off` : retire les règles nginx de l'ancienne protection
+  anti-capture des photos (cookie signé, supprimée le 30/10/2026 : les photos
+  chargées avant le cookie étaient refusées et ce refus restait 24 h dans le
+  cache du navigateur). Les photos sont servies à quiconque a le lien. Si un
+  jour on la remet (voir le commit 1cd755b), ne mettre `Cache-Control` que sur
+  les réponses 200 (pas `always`), charger les photos une fois le cookie en
+  place, et rediriger www.bomavibes.tech vers bomavibes.tech.

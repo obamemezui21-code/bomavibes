@@ -87,7 +87,6 @@ import WeMetPrompt from '../components/chat/WeMetPrompt.jsx'
 import DateSpotSheet from '../components/chat/DateSpotSheet.jsx'
 import { DATE_NUDGE_MIN_MESSAGES, closeDateNudge, isDateNudgeClosed } from '../lib/dateSpots.js'
 import { deleteSticker, listMyStickers } from '../firebase/stickers.js'
-import { PROTECT_PROPS } from '../components/privacy/protect.js'
 
 const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024
 
@@ -205,7 +204,7 @@ function ImageLightbox({ url, onClose }) {
       >
         <X size={20} strokeWidth={2.25} />
       </button>
-      <div {...PROTECT_PROPS} onClick={(e) => e.stopPropagation()} className="protected-media relative max-h-full max-w-full overflow-hidden rounded-lg">
+      <div onClick={(e) => e.stopPropagation()} className="relative max-h-full max-w-full overflow-hidden rounded-lg">
         <img src={url} alt="" draggable={false} className="max-h-[calc(100svh-3rem)] max-w-full object-contain" />
       </div>
     </div>
@@ -1230,7 +1229,7 @@ function Chat() {
                     >
                       <Reply size={18} strokeWidth={2.25} />
                     </button>
-                    {selectedMessage.fromMe && selectedMessage.type === 'text' && (
+                    {selectedMessage.type === 'text' && (
                       <button
                         type="button"
                         onClick={() => handleCopy(selectedMessage)}
@@ -1459,7 +1458,7 @@ function Chat() {
               />
               <div className="absolute inset-0 bg-surface-soft/55 dark:bg-surface-soft/65" />
             </div>
-            <div ref={scrollRef} onScroll={handleThreadScroll} {...PROTECT_PROPS} className="protected-media relative h-full space-y-2 overflow-y-auto px-4 py-4">
+            <div ref={scrollRef} onScroll={handleThreadScroll} className="relative h-full space-y-2 overflow-y-auto px-4 py-4">
               {active.ephemeralTtl > 0 && (
                 <button
                   type="button"
