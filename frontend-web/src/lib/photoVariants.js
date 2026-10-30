@@ -16,9 +16,14 @@ export function photoVariant(url, size) {
 // Attach to an <img>'s onError to gracefully fall back to the full-size
 // photo if a smaller variant doesn't exist yet (e.g. photos uploaded
 // before variants existed, until the backfill script runs).
+// Once per <img>: React calls onError again when the full photo fails too,
+// and setting the same src again reloads it — that looped, and the picture
+// flickered forever.
 export function fallbackToFullPhoto(originalUrl) {
   return (e) => {
-    e.currentTarget.onerror = null
-    e.currentTarget.src = originalUrl
+    const img = e.currentTarget
+    if (img.dataset.fullFallback) return
+    img.dataset.fullFallback = '1'
+    img.src = originalUrl
   }
 }

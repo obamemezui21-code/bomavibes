@@ -35,13 +35,16 @@ describe('photoVariant', () => {
 })
 
 describe('fallbackToFullPhoto', () => {
-  it('swaps the img src to the original URL and disarms further onError calls', () => {
+  it('swaps the img src to the original URL, once', () => {
     const handler = fallbackToFullPhoto('https://cdn.bomavibes.tech/photo-0.jpg')
-    const target = { onerror: () => {}, src: 'https://cdn.bomavibes.tech/photo-0-thumb.jpg' }
+    const target = { dataset: {}, src: 'https://cdn.bomavibes.tech/photo-0-thumb.jpg' }
 
     handler({ currentTarget: target })
-
     expect(target.src).toBe('https://cdn.bomavibes.tech/photo-0.jpg')
-    expect(target.onerror).toBeNull()
+
+    // The full photo fails too: React calls onError again — no reload loop.
+    target.src = 'unchanged'
+    handler({ currentTarget: target })
+    expect(target.src).toBe('unchanged')
   })
 })
