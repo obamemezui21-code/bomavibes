@@ -16,6 +16,11 @@ REMOTE=$(git rev-parse origin/main)
 [ "$LOCAL" = "$REMOTE" ] && exit 0
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Nouvelle version ${REMOTE:0:7} — déploiement…"
+# Bring the code in before starting deploy.sh: deploy.sh pulls too, but a
+# running script keeps reading the file it started from, so a change to
+# deploy.sh itself only took effect one deploy later.
+git checkout -- backend/package-lock.json frontend-web/package-lock.json 2>/dev/null || true
+git merge --ff-only --quiet origin/main
 if ./deploy.sh; then
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Déploiement ${REMOTE:0:7} terminé."
 else
