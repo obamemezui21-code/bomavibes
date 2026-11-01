@@ -16,6 +16,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { auth, db } from './config.js'
+import { compressImage } from '../lib/compressImage.js'
 import { sendPushNotification } from './notify.js'
 import { batchFetchAuthorProfiles } from './feed.js'
 
@@ -74,9 +75,10 @@ async function markStoryViewed(storyId, uid) {
 }
 
 async function uploadStoryPhoto(file) {
-  const idToken = await auth.currentUser?.getIdToken()
+  // Made lighter first (2048 px), as for feed photos.
+  const [idToken, upload] = await Promise.all([auth.currentUser?.getIdToken(), compressImage(file)])
   const formData = new FormData()
-  formData.append('photo', file)
+  formData.append('photo', upload)
 
   const res = await fetch('/api/feed-photos', {
     method: 'POST',

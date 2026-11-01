@@ -23,14 +23,17 @@ async function uploadFeedPhoto(req, res) {
         const dir = path.join(UPLOAD_ROOT, uid);
         fs.mkdirSync(dir, { recursive: true });
 
-        const normalized = await sharp(req.file.path).rotate().toBuffer();
+        // Each size straight from the upload (EXIF rotation applied once by
+        // each pipeline) — no full-size copy re-encoded in between first.
+        const source = sharp(req.file.path).rotate();
         const timestamp = Date.now();
         const urls = {};
 
         await Promise.all(
             VARIANTS.map(async ({ key, suffix, maxWidth, quality }) => {
                 const filename = `photo-${timestamp}${suffix}.jpg`;
-                await sharp(normalized)
+                await source
+                    .clone()
                     .resize({ width: maxWidth, withoutEnlargement: true })
                     .jpeg({ quality, mozjpeg: true })
                     .toFile(path.join(dir, filename));

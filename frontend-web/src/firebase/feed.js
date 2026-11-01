@@ -20,6 +20,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { auth, db } from './config.js'
+import { compressImage } from '../lib/compressImage.js'
 
 const PAGE_SIZE = 20
 const WINDOW_DAYS = 7
@@ -233,9 +234,11 @@ async function deleteComment(postId, commentId, authorId) {
 }
 
 async function uploadFeedPhoto(file) {
-  const idToken = await auth.currentUser?.getIdToken()
+  // A phone photo is often 4–10 MB: made lighter first (2048 px), it goes
+  // up in seconds instead of a minute on mobile data.
+  const [idToken, upload] = await Promise.all([auth.currentUser?.getIdToken(), compressImage(file)])
   const formData = new FormData()
-  formData.append('photo', file)
+  formData.append('photo', upload)
 
   const res = await fetch('/api/feed-photos', {
     method: 'POST',

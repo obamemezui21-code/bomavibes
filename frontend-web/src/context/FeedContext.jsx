@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { Timestamp } from 'firebase/firestore'
 import {
   createPost as createPostDoc,
   deletePost as deletePostDoc,
@@ -91,13 +92,30 @@ function FeedProvider({ children }) {
   async function createPost(input) {
     if (!user?.id) return
     const postId = await createPostDoc(user.id, input)
-    // The post is already written at this point — a failure past this line
-    // (e.g. the feed refresh) must never be reported as a failed publish.
-    try {
-      await loadTab(activeTab)
-    } catch {
-      // Best-effort refresh; the new post will show up next time the tab loads.
-    }
+    // Shown at the top right away: the publish used to wait for the whole
+    // tab to load again (up to 150 posts and their authors) before it was
+    // done. The tab still refreshes, in the background.
+    setPosts((prev) => [
+      {
+        id: postId,
+        authorId: user.id,
+        type: input.type,
+        text: input.text || null,
+        photoUrl: input.photoUrl || null,
+        photoThumbUrl: input.photoThumbUrl || null,
+        ...(input.background ? { background: input.background } : {}),
+        ...(input.font ? { font: input.font } : {}),
+        ...(input.type === 'video' ? { videoUrl: input.videoUrl, posterUrl: input.posterUrl || null, duration: input.duration || null } : {}),
+        likeCount: 0,
+        commentCount: 0,
+        createdAt: Timestamp.now(),
+        editedAt: null,
+      },
+      ...prev.filter((p) => p.id !== postId),
+    ])
+    if (publicProfile) setAuthorsById((prev) => (prev[user.id] ? prev : { ...prev, [user.id]: { id: user.id, ...publicProfile } }))
+    // The post is already written: a failed refresh is never a failed publish.
+    loadTab(activeTab).catch(() => {})
     return postId
   }
 
