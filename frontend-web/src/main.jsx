@@ -10,6 +10,7 @@ import './i18n/index.js'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
+import FontSync from './components/FontSync.jsx'
 import { ConversationsProvider } from './context/ConversationsContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { CallProvider } from './context/CallContext.jsx'
@@ -41,6 +42,7 @@ createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <ToastProvider>
           <AuthProvider>
+            <FontSync />
             <IdentityProvider>
               <PhotoQualityProvider>
                 <ConversationsProvider>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { ArrowLeft, Heart, Moon, Send, ShieldOff, Sun } from 'lucide-react'
+import { ArrowLeft, Heart, Moon, Send, ShieldOff, Sun, Type } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -10,6 +10,7 @@ import { db } from '../firebase/config.js'
 import { enablePushForUser } from '../firebase/push.js'
 import { fetchMyBlockedIds, unblockUser } from '../firebase/safety.js'
 import { setInvisibleMode } from '../firebase/subscriptions.js'
+import { fontById } from '../lib/fonts.js'
 import { activePlan } from '../lib/plans.js'
 import { hasAdminAccess } from '../lib/roles.js'
 import PasswordInput from '../components/PasswordInput.jsx'
@@ -18,6 +19,7 @@ import Modal from '../components/ui/Modal.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
 import SupportModal from '../components/SupportModal.jsx'
+import FontPickerModal from '../components/FontPickerModal.jsx'
 import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 import { openCookieSettings } from '../lib/cookieConsent.js'
@@ -335,7 +337,7 @@ function Settings() {
   const navigate = useNavigate()
   const { user, profile, publicProfile, logout, deleteAccount } = useAuth()
   const { showToast } = useToast()
-  const { theme, toggleTheme } = useTheme()
+  const { theme, toggleTheme, font } = useTheme()
 
   const [isTogglingPush, setIsTogglingPush] = useState(false)
   const newMatches = profile?.notifyMatches ?? true
@@ -355,6 +357,7 @@ function Settings() {
   const [showBlockedModal, setShowBlockedModal] = useState(false)
   const [showSupport, setShowSupport] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
+  const [showFonts, setShowFonts] = useState(false)
 
   async function handleNotifyToggle(field, value) {
     setIsTogglingPush(true)
@@ -399,6 +402,15 @@ function Settings() {
     }
   }
 
+  // The style is already applied: if this fails, it stays on this device only.
+  async function handleFontChoice(font) {
+    try {
+      await updateDoc(doc(db, 'users', user.id), { font })
+    } catch {
+      showToast('Écriture appliquée ici, mais pas enregistrée sur ton compte.', 'error')
+    }
+  }
+
   async function handleDeleteAccount() {
     setIsDeleting(true)
     try {
@@ -439,6 +451,16 @@ function Settings() {
                 )}
                 <Toggle checked={theme === 'dark'} onChange={toggleTheme} />
               </div>
+            </Row>
+            <Row title="Écriture" subtitle={`${fontById(font).name} · ${fontById(font).category}`}>
+              <button
+                type="button"
+                onClick={() => setShowFonts(true)}
+                className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
+              >
+                <Type size={13} strokeWidth={2.25} />
+                Changer
+              </button>
             </Row>
           </Section>
 
@@ -618,6 +640,7 @@ function Settings() {
       {showBlockedModal && <BlockedUsersModal onClose={() => setShowBlockedModal(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
       {showInvite && <InviteFriendsModal onClose={() => setShowInvite(false)} />}
+      {showFonts && <FontPickerModal onChoose={handleFontChoice} onClose={() => setShowFonts(false)} />}
 
       {confirmDelete && (
         <ConfirmModal

@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 import { BALL, COLORS, FP, H, LEVELS, SHOOTER, W, pathOf, pointAt, progressOf } from '../../../../shared/perles-punu/engine.mjs'
 
 // PERLES PUNU on a canvas: each stage's backdrop with its river bed (drawn
@@ -428,7 +429,7 @@ export function createPerlesRenderer(canvas) {
         g.beginPath()
         g.arc(x, y, R + 1.5, 0, Math.PI * 2)
         g.stroke()
-        g.font = '10px system-ui, sans-serif'
+        g.font = `10px ${appFont()}`
         g.textAlign = 'center'
         g.textBaseline = 'middle'
         g.fillText(SPECIAL_MARKS[b.sp], x, y + 0.5)
@@ -454,7 +455,7 @@ export function createPerlesRenderer(canvas) {
       g.arc(x, y + bob, 12, 0, Math.PI * 2)
       g.fill()
       g.fillStyle = '#7a4a00'
-      g.font = 'bold 13px system-ui, sans-serif'
+      g.font = `bold 13px ${appFont()}`
       g.textAlign = 'center'
       g.textBaseline = 'middle'
       g.fillText('N', x, y + bob + 1)
@@ -553,7 +554,7 @@ export function createPerlesRenderer(canvas) {
       }
       const k = 1 - p.life / p.max
       g.globalAlpha = Math.min(1, p.life * 2.5)
-      g.font = 'bold 15px system-ui, sans-serif'
+      g.font = `bold 15px ${appFont()}`
       g.lineWidth = 3
       g.strokeStyle = 'rgba(0,0,0,0.6)'
       g.fillStyle = p.gold ? '#ffd65a' : '#ffffff'
@@ -561,7 +562,7 @@ export function createPerlesRenderer(canvas) {
       g.strokeText(p.text, p.x, y)
       g.fillText(p.text, p.x, y)
       if (p.sub) {
-        g.font = 'bold 11px system-ui, sans-serif'
+        g.font = `bold 11px ${appFont()}`
         g.fillStyle = '#ffd65a'
         g.strokeText(p.sub, p.x, y + 15)
         g.fillText(p.sub, p.x, y + 15)

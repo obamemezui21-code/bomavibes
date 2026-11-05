@@ -91,6 +91,7 @@ service cloud.firestore {
         return data.email is string
           && data.onboarded is bool
           && isOptionalString('firstName', 50)
+          && isOptionalString('font', 20)
           && (!('prefGender' in data) || data.prefGender == null || (data.prefGender is string && data.prefGender.size() <= 20))
           && (!('prefMaxDistance' in data) || data.prefMaxDistance == null || (data.prefMaxDistance is number && data.prefMaxDistance >= 1 && data.prefMaxDistance <= 500))
           // role (and the legacy isAdmin flag) are granted only server-side

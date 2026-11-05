@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 import { BOW, FP, GROUND, H, PULL_MAX, W, airYOf, flightPath, isAiming, sizeOf } from '../../../../shared/fleche-ebene/engine.mjs'
 
 // FLÈCHE D'ÉBÈNE's drawing: the Ivindo forest, the hunter and his ebony bow,
@@ -406,7 +407,7 @@ export function createFlecheRenderer(canvas) {
       g.arc(x, GROUND - h - 11, 7, 0, 6.3)
       g.fill()
       g.fillStyle = '#fff'
-      g.font = `bold 9px sans-serif`
+      g.font = `bold 9px ${appFont()}`
       g.textAlign = 'center'
       g.textBaseline = 'middle'
       g.fillText('♥', x, GROUND - h - 10.5)
@@ -437,7 +438,7 @@ export function createFlecheRenderer(canvas) {
     if (isAiming(t)) {
       const { h } = sizeOf(t)
       g.fillStyle = Math.floor(time * 8) % 2 ? '#ff5340' : '#ffd23f'
-      g.font = `bold 22px sans-serif`
+      g.font = `bold 22px ${appFont()}`
       g.textAlign = 'center'
       g.textBaseline = 'alphabetic'
       g.fillText('!', t.x / FP, GROUND - h - 8)
@@ -642,7 +643,7 @@ export function createFlecheRenderer(canvas) {
       }
       p.y -= 26 * dt
       g.globalAlpha = Math.min(1, p.life * 2)
-      g.font = `bold ${p.size}px sans-serif`
+      g.font = `bold ${p.size}px ${appFont()}`
       g.lineWidth = 3
       g.strokeStyle = 'rgba(0,0,0,0.7)'
       g.strokeText(p.text, p.x, p.y)

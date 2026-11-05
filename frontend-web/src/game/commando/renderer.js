@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 // COMMANDO OKOUMÉ renderer. Two layers:
 //  1. the scenery: a painted backdrop per mission (public/commando/bg-<theme>.webp,
 //     drawn at full screen resolution with parallax, mirrored to loop) — or,
@@ -414,7 +415,7 @@ export function createCommandoRenderer(canvas) {
       r(x - 7, y - 2, 14, 0.5, '#2f3614')
       r(x - 5, y - 4.5, 10, 1, '#e6c229')
       g.fillStyle = '#e6c229'
-      g.font = 'bold 6px monospace'
+      g.font = `bold 6px ${appFont('monospace')}`
       g.textAlign = 'center'
       g.fillText(it.kind === 'T' ? 'TRI' : 'GRN', x, y + 3.5)
     } else if (it.kind === 'M') {

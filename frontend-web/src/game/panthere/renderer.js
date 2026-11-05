@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 import { H, KINDS, RIFLES, RISE_TICKS, ROWS, W, baseOf, isAiming, shownOf, sizeOf } from '../../../../shared/oeil-de-panthere/engine.mjs'
 import { FLAG_BORDER, FLAG_DESIGNS, paintFlag } from '../flags.js'
 
@@ -456,7 +457,7 @@ export function createPantherRenderer(canvas) {
     g.arc(0, 0, r * 0.82, 0, Math.PI * 2)
     g.fill()
     g.fillStyle = '#9a5b12'
-    g.font = `900 ${r * 1.1}px system-ui, sans-serif`
+    g.font = `900 ${r * 1.1}px ${appFont()}`
     g.textAlign = 'center'
     g.textBaseline = 'middle'
     g.fillText('N', 0, r * 0.06)
@@ -479,7 +480,7 @@ export function createPantherRenderer(canvas) {
     g.closePath()
     g.fill()
     g.fillStyle = '#fff'
-    g.font = `900 ${r * 1.2}px system-ui, sans-serif`
+    g.font = `900 ${r * 1.2}px ${appFont()}`
     g.textAlign = 'center'
     g.textBaseline = 'middle'
     g.fillText('!', x, y + r * 0.25)
@@ -637,7 +638,7 @@ export function createPantherRenderer(canvas) {
         continue
       }
       g.globalAlpha = Math.min(1, 2.2 - age * 2)
-      g.font = `900 ${p.size}px system-ui, sans-serif`
+      g.font = `900 ${p.size}px ${appFont()}`
       g.textAlign = 'center'
       g.textBaseline = 'middle'
       g.lineWidth = 3

@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 import { BIRD_LAND, BIRD_RISE, BIRD_TICKS, JUMP_TICKS, OBSTACLES, SLIDE_TICKS, forestAt, riverAt } from '../../../../shared/ngori-run/engine.mjs'
 import runnersUrl from '../../assets/game/runners.webp'
 import roadsideUrl from '../../assets/game/roadside.webp'
@@ -586,7 +587,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     if (hash(k + 5) < 0.55 && zr0 > -CAM_BACK + 150) {
       const p = project(x, 260, zr0 + 300)
       const size = Math.max(6, 70 * p.s)
-      ctx.font = `800 ${size}px system-ui, sans-serif`
+      ctx.font = `800 ${size}px ${appFont()}`
       ctx.textAlign = 'right'
       ctx.textBaseline = 'middle'
       ctx.shadowColor = '#ff4fa3'
@@ -695,7 +696,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.lineWidth = Math.max(1, ph * 0.05)
     ctx.strokeRect(panel.left + pw * 0.03, panel.top + ph * 0.08, pw * 0.94, ph * 0.84)
     ctx.fillStyle = '#fff'
-    ctx.font = `700 ${Math.max(5, ph * 0.38)}px system-ui, sans-serif`
+    ctx.font = `700 ${Math.max(5, ph * 0.38)}px ${appFont()}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(text, panel.left + pw / 2, panel.top + ph / 2, pw * 0.88)
@@ -717,12 +718,12 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.fillStyle = g
     ctx.fillRect(beam.left + bw * 0.01, beam.top + bh * 0.06, bw * 0.98, bh * 0.88)
     ctx.fillStyle = 'rgba(255,255,255,0.85)'
-    ctx.font = `700 ${Math.max(4, bh * 0.22)}px system-ui, sans-serif`
+    ctx.font = `700 ${Math.max(4, bh * 0.22)}px ${appFont()}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText('BIENVENUE À', beam.left + bw / 2, beam.top + bh * 0.3, bw * 0.9)
     ctx.fillStyle = '#fff'
-    ctx.font = `900 ${Math.max(5, bh * 0.42)}px system-ui, sans-serif`
+    ctx.font = `900 ${Math.max(5, bh * 0.42)}px ${appFont()}`
     ctx.fillText(name.toUpperCase(), beam.left + bw / 2, beam.top + bh * 0.68, bw * 0.92)
     ctx.globalAlpha = 1
   }
@@ -771,7 +772,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     } else {
       ctx.fillStyle = '#3b1d4f'
       ctx.fillRect(frame.left + pad * 2, frame.top + pad * 2, side, side)
-      ctx.font = `${side * 0.55}px system-ui, sans-serif`
+      ctx.font = `${side * 0.55}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(VENUE_EMOJI[b.category] || '✨', frame.left + pad * 2 + side / 2, frame.top + pad * 2 + side / 2)
@@ -781,13 +782,13 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
     ctx.fillStyle = '#f9a8d4'
-    ctx.font = `800 ${Math.max(4, fh * 0.12)}px system-ui, sans-serif`
+    ctx.font = `800 ${Math.max(4, fh * 0.12)}px ${appFont()}`
     ctx.fillText('COINS CHICS ✨', tx, frame.top + fh * 0.24, tw)
     ctx.fillStyle = '#fff'
-    ctx.font = `900 ${Math.max(5, fh * 0.22)}px system-ui, sans-serif`
+    ctx.font = `900 ${Math.max(5, fh * 0.22)}px ${appFont()}`
     ctx.fillText(b.name, tx, frame.top + fh * 0.5, tw)
     ctx.fillStyle = 'rgba(255,255,255,0.7)'
-    ctx.font = `600 ${Math.max(4, fh * 0.13)}px system-ui, sans-serif`
+    ctx.font = `600 ${Math.max(4, fh * 0.13)}px ${appFont()}`
     ctx.fillText(`${VENUE_EMOJI[b.category] || ''} ${b.category}`.trim(), tx, frame.top + fh * 0.76, tw)
     ctx.globalAlpha = 1
   }
@@ -804,7 +805,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.lineWidth = Math.max(1, ph * 0.05)
     ctx.strokeRect(panel.left + pw * 0.03, panel.top + ph * 0.1, pw * 0.94, ph * 0.8)
     ctx.fillStyle = '#fff'
-    ctx.font = `700 ${Math.max(5, ph * 0.36)}px system-ui, sans-serif`
+    ctx.font = `700 ${Math.max(5, ph * 0.36)}px ${appFont()}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(text, panel.left + pw / 2, panel.top + ph / 2, pw * 0.88)
@@ -924,7 +925,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.fillRect(lamp.x - 60 * lamp.s, lamp.y - 50 * lamp.s, 120 * lamp.s, 50 * lamp.s)
     }
     const label = project(x, h * 0.62, Math.max(zr0 + 600, -CAM_BACK + 120))
-    ctx.font = `900 ${Math.max(6, 90 * label.s)}px system-ui, sans-serif`
+    ctx.font = `900 ${Math.max(6, 90 * label.s)}px ${appFont()}`
     ctx.textAlign = 'right'
     ctx.textBaseline = 'middle'
     ctx.fillStyle = '#7c3aed'
@@ -961,7 +962,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     const bw = board.right - board.left
     const bh = board.bottom - board.top
     ctx.fillStyle = '#7c2d12'
-    ctx.font = `800 ${Math.max(4, bh * 0.5)}px system-ui, sans-serif`
+    ctx.font = `800 ${Math.max(4, bh * 0.5)}px ${appFont()}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(label, board.left + bw / 2, board.top + bh / 2, bw * 0.92)
@@ -1085,7 +1086,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     }
     // Hand-painted name on the front of the table.
     ctx.fillStyle = '#fef3c7'
-    ctx.font = `800 ${Math.max(4, th * 0.3)}px system-ui, sans-serif`
+    ctx.font = `800 ${Math.max(4, th * 0.3)}px ${appFont()}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(stall.label, table.left + tw / 2, table.top + th * 0.5, tw * 0.92)
@@ -1256,7 +1257,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       face(xc + 82, 10, 0, 220, zr, '#3f3f46')
       const banner = face(xc, 170, 120, 210, zr, '#e9467d')
       ctx.fillStyle = '#fff'
-      ctx.font = `800 ${Math.max(6, 36 * banner.s)}px system-ui, sans-serif`
+      ctx.font = `800 ${Math.max(6, 36 * banner.s)}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('BOMA ↓', (banner.left + banner.right) / 2, (banner.top + banner.bottom) / 2)
@@ -1291,7 +1292,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       if (taxi) {
         const sign = face(xc, 50, 150, 175, zr + 120, '#111')
         ctx.fillStyle = '#facc15'
-        ctx.font = `800 ${Math.max(5, 16 * sign.s)}px system-ui, sans-serif`
+        ctx.font = `800 ${Math.max(5, 16 * sign.s)}px ${appFont()}`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('TAXI', (sign.left + sign.right) / 2, (sign.top + sign.bottom) / 2)
@@ -1318,7 +1319,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       ctx.fillRect(body.left + bw * 0.04, body.top + bh * 0.68, bw * 0.12, bh * 0.08)
       ctx.fillRect(body.right - bw * 0.16, body.top + bh * 0.68, bw * 0.12, bh * 0.08)
       ctx.fillStyle = '#facc15'
-      ctx.font = `800 ${Math.max(5, 30 * body.s)}px system-ui, sans-serif`
+      ctx.font = `800 ${Math.max(5, 30 * body.s)}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('BUS', (body.left + body.right) / 2, body.top + bh * 0.06)
@@ -1366,7 +1367,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       for (let i = 0; i < 4; i++) ctx.fillRect(panel.left + (i * pw) / 4 + pw * 0.04, panel.top, pw * 0.1, panel.bottom - panel.top)
       const plate = face(xc, 120, 150, 200, zr + 10, '#facc15')
       ctx.fillStyle = '#111'
-      ctx.font = `800 ${Math.max(5, 22 * plate.s)}px system-ui, sans-serif`
+      ctx.font = `800 ${Math.max(5, 22 * plate.s)}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('TRAVAUX', (plate.left + plate.right) / 2, (plate.top + plate.bottom) / 2)
@@ -1396,7 +1397,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.stroke()
     if (rx > ry * 0.45) {
       ctx.fillStyle = '#7a4b00'
-      ctx.font = `900 ${ry * 1.1}px system-ui, sans-serif`
+      ctx.font = `900 ${ry * 1.1}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('N', p.x, p.y + ry * 0.05)
@@ -1422,7 +1423,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.lineWidth = Math.max(1.5, 6 * p.s)
     ctx.stroke()
     ctx.fillStyle = style.color
-    ctx.font = `900 ${r * 1.05}px system-ui, sans-serif`
+    ctx.font = `900 ${r * 1.05}px ${appFont()}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(style.icon, p.x, p.y + r * 0.05)
@@ -1751,7 +1752,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       jacket.addColorStop(1, '#ec4899')
       roundRect(-28 * u, -155 * u, 56 * u, 66 * u, 14 * u, jacket)
       ctx.fillStyle = 'rgba(255,255,255,0.85)'
-      ctx.font = `900 ${12 * u}px system-ui, sans-serif`
+      ctx.font = `900 ${12 * u}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText('BV', 0, -125 * u)
@@ -1759,7 +1760,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     }
     if (state.multiplier) {
       ctx.fillStyle = '#c084fc'
-      ctx.font = `900 ${26 * u}px system-ui, sans-serif`
+      ctx.font = `900 ${26 * u}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.fillText('×2', 0, (sliding ? -150 : -215) * u)
     }
@@ -1818,7 +1819,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
       }
       ctx.globalAlpha = 1 - age
       ctx.fillStyle = p.color
-      ctx.font = `900 ${p.size}px system-ui, sans-serif`
+      ctx.font = `900 ${p.size}px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.strokeStyle = 'rgba(0,0,0,0.35)'
@@ -1843,7 +1844,7 @@ export function createRenderer(canvas, { runner = 'man' } = {}) {
     ctx.rotate(Math.sin(time * 38) * 0.008)
     ctx.drawImage(image, -w / 2, -h, w, h)
     ctx.globalAlpha = Math.min(1, fogAlpha(zr) * 1.2)
-    ctx.font = `800 ${Math.max(9, 34 * p.s)}px system-ui, sans-serif`
+    ctx.font = `800 ${Math.max(9, 34 * p.s)}px ${appFont()}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'bottom'
     ctx.fillStyle = '#67e8f9'

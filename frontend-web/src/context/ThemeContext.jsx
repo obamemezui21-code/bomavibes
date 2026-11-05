@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { DEFAULT_FONT, FONT_STORAGE_KEY, fontById, loadFont } from '../lib/fonts.js'
 
 const ThemeContext = createContext(null)
 const STORAGE_KEY = 'bomavibes-theme'
@@ -9,8 +10,17 @@ function getInitialTheme() {
   return stored === 'light' ? 'light' : 'dark'
 }
 
+function getInitialFont() {
+  try {
+    return fontById(window.localStorage.getItem(FONT_STORAGE_KEY)).id
+  } catch {
+    return DEFAULT_FONT
+  }
+}
+
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(getInitialTheme)
+  const [font, setFont] = useState(getInitialFont)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -18,11 +28,21 @@ export function ThemeProvider({ children }) {
     window.localStorage.setItem(STORAGE_KEY, theme)
   }, [theme])
 
+  useEffect(() => {
+    document.documentElement.dataset.font = font
+    loadFont(font)
+    try {
+      window.localStorage.setItem(FONT_STORAGE_KEY, font)
+    } catch {
+      // private mode: the choice lasts until the page closes
+    }
+  }, [font])
+
   function toggleTheme() {
     setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
   }
 
-  return <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>{children}</ThemeContext.Provider>
+  return <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, font, setFont }}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme() {

@@ -11,6 +11,8 @@
       (function () {
         var stored = localStorage.getItem('bomavibes-theme');
         if (stored !== 'light') document.documentElement.classList.add('dark');
+        var font = localStorage.getItem('bomavibes-font');
+        if (font) document.documentElement.setAttribute('data-font', font);
       })();
     </script>
   </head>

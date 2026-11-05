@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 import { FP, H, JETS, KINDS, SCROLL, W, ZONES, waterAt } from '../../../../shared/escadrille-ogooue/engine.mjs'
 
 // ESCADRILLE OGOUÉ's drawing: Gabon seen from the cockpit, scrolling north —
@@ -453,7 +454,7 @@ function makeSprites() {
       g.strokeStyle = 'rgba(255,255,255,0.8)'
       g.stroke()
       g.fillStyle = '#fff'
-      g.font = 'bold 11px system-ui, sans-serif'
+      g.font = `bold 11px ${appFont()}`
       g.textAlign = 'center'
       g.textBaseline = 'middle'
       g.fillText(letter, 0, 0.8)
@@ -475,7 +476,7 @@ function makeSprites() {
       g.strokeStyle = '#7a5208'
       g.stroke()
       g.fillStyle = '#7a5208'
-      g.font = 'bold 11px system-ui, sans-serif'
+      g.font = `bold 11px ${appFont()}`
       g.textAlign = 'center'
       g.textBaseline = 'middle'
       g.fillText('N', 0, 0.8)
@@ -1290,7 +1291,7 @@ export function createEscadrilleRenderer(canvas) {
     g.textAlign = 'center'
     for (const p of popups) {
       g.globalAlpha = 1 - p.t / 50
-      g.font = `bold ${p.big ? 13 : 9}px system-ui, sans-serif`
+      g.font = `bold ${p.big ? 13 : 9}px ${appFont()}`
       g.lineWidth = 2.5
       g.strokeStyle = 'rgba(0,0,0,0.7)'
       g.strokeText(p.text, p.x, p.y - p.t * 0.6)

@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 import * as THREE from 'three'
 import { FLAG_BORDER, FLAG_DESIGNS, flagLogoReady, paintFlag } from '../flags.js'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
@@ -207,10 +208,10 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
 
   function fitText(ctx, text, weight, size, maxW) {
     let s = size
-    ctx.font = `${weight} ${s}px system-ui, sans-serif`
+    ctx.font = `${weight} ${s}px ${appFont()}`
     while (s > 8 && ctx.measureText(text).width > maxW) {
       s -= 2
-      ctx.font = `${weight} ${s}px system-ui, sans-serif`
+      ctx.font = `${weight} ${s}px ${appFont()}`
     }
   }
 
@@ -732,7 +733,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       ghostLabelName = ghost.name
       ghostLabel.material.map?.dispose()
       ghostLabel.material.map = paint(512, 96, (ctx, w, hh) => {
-        ctx.font = '800 56px system-ui, sans-serif'
+        ctx.font = `800 56px ${appFont()}`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.lineWidth = 8
@@ -751,7 +752,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       new THREE.SpriteMaterial({
         map: keep(
           paint(128, 64, (ctx, w, h) => {
-            ctx.font = '900 52px system-ui, sans-serif'
+            ctx.font = `900 52px ${appFont()}`
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
             ctx.fillStyle = '#c084fc'
@@ -1168,7 +1169,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillStyle = 'rgba(255,255,255,0.85)'
-      ctx.font = `700 ${h * 0.22}px system-ui, sans-serif`
+      ctx.font = `700 ${h * 0.22}px ${appFont()}`
       ctx.fillText('BIENVENUE À', w / 2, h * 0.3)
       fitText(ctx, name.toUpperCase(), 900, h * 0.42, w * 0.9)
       ctx.fillStyle = '#fff'
@@ -1205,7 +1206,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
       } else {
         ctx.fillStyle = '#3b1d4f'
         ctx.fillRect(pad * 2, pad * 2, side, side)
-        ctx.font = `${side * 0.55}px system-ui, sans-serif`
+        ctx.font = `${side * 0.55}px ${appFont()}`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText(VENUE_EMOJI[b.category] || '✨', pad * 2 + side / 2, pad * 2 + side / 2)
@@ -1518,7 +1519,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
         ctx.arc(w / 2, w / 2, w / 2 - 8, 0, Math.PI * 2)
         ctx.stroke()
         ctx.fillStyle = '#7a4b00'
-        ctx.font = '900 70px system-ui, sans-serif'
+        ctx.font = `900 70px ${appFont()}`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('N', w / 2, w / 2 + 4)
@@ -1546,7 +1547,7 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
     if (!m) {
       const style = POWERUP_STYLE[type]
       const map = painting(`pu|${type}`, 128, 128, (ctx, w) => {
-        ctx.font = '900 76px system-ui, sans-serif'
+        ctx.font = `900 76px ${appFont()}`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillStyle = style.color
@@ -1570,10 +1571,10 @@ export function createRenderer3d(container, { runner = 'man' } = {}) {
   const popups = []
   function popup(text, color, laneVis, size = 26) {
     const measure = document.createElement('canvas').getContext('2d')
-    measure.font = '900 64px system-ui, sans-serif'
+    measure.font = `900 64px ${appFont()}`
     const tw = Math.ceil(measure.measureText(text).width) + 24
     const tex = paint(tw, 88, (ctx, w, h) => {
-      ctx.font = '900 64px system-ui, sans-serif'
+      ctx.font = `900 64px ${appFont()}`
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.lineWidth = 8

@@ -1,3 +1,4 @@
+import { appFont } from '../../lib/fonts.js'
 // COMMANDO OKOUMÉ bosses, drawn in the same style as the sprites: thin dark
 // outlines, light on top, shadow underneath, mechanical detail and a little
 // animation. Each boss is painted on its own small canvas so a hit can
@@ -221,7 +222,7 @@ function drawDrague(g, b, time, aim) {
   rivets(4, 27, 66, 3, '#2b1100')
   for (let s = 14; s < 70; s += 11) fill(s, 29 + (s % 3), 2, 4, 'rgba(200,120,40,0.6)') // rust streaks
   g.fillStyle = '#f1c40f'
-  g.font = 'bold 4px monospace'
+  g.font = `bold 4px ${appFont('monospace')}`
   g.textAlign = 'left'
   g.fillText('SERPENT NOIR', 30, 35)
   // Cabin, lit windows, railing.

@@ -10,7 +10,7 @@ const ESSENTIAL = [
   ['Sécurité (Firebase App Check / Google reCAPTCHA)', 'Vérifie que les requêtes viennent bien de l’app et non d’un robot.', 'Quelques heures'],
   ['Anti-robots à l’inscription (Cloudflare Turnstile)', 'Bloque les créations de comptes automatiques.', 'Le temps de l’inscription'],
   ['Notifications', 'Mémorise l’autorisation des notifications de cet appareil.', 'Jusqu’à leur désactivation'],
-  ['Vos réglages', 'Thème clair/sombre, mode d’affichage de Découvrir, son et personnage de NGORI RUN.', 'Jusqu’à ce que vous les changiez'],
+  ['Vos réglages', 'Thème clair/sombre, écriture, mode d’affichage de Découvrir, son et personnage de NGORI RUN.', 'Jusqu’à ce que vous les changiez'],
   ['Votre choix de cookies', 'Retient ce que vous avez accepté ou refusé ici.', '13 mois'],
 ]
 
