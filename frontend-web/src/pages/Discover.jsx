@@ -67,8 +67,12 @@ function readInterestsHidden() {
 }
 
 const DECK_SIZE = 5
-const NEARBY_CHIP = 'À proximité'
-const GOAL_CHIPS = [NEARBY_CHIP, 'Relation sérieuse', 'Amitié', 'Sortie', 'Discussion']
+// The badges next to Filtres: shortcuts to the sheet's Genre filter.
+const GENDER_CHIPS = [
+  { value: 'TOUS', label: 'Tout' },
+  { value: 'HOMME', label: 'Homme' },
+  { value: 'FEMME', label: 'Femme' },
+]
 
 function avatarFor(profile) {
   return (
@@ -97,7 +101,6 @@ function Discover() {
   const [showInvite, setShowInvite] = useState(false)
   const [expandedProfile, setExpandedProfile] = useState(null)
   const [search, setSearch] = useState('')
-  const [activeChip, setActiveChip] = useState(null)
   const [paywall, setPaywall] = useState(null)
   const [interestFilter, setInterestFilter] = useState('')
   const [viewMode, setViewMode] = useState('cards') // always opens on Cartes; Swipe is chosen per visit
@@ -114,9 +117,13 @@ function Discover() {
   const [isReviewing, setIsReviewing] = useState(false)
   const seenIdsRef = useRef(new Set())
   const cacheKeyRef = useRef(null)
+  const loadIdRef = useRef(0)
 
   async function loadCandidates(currentFilters, { includeRefused = false, allowCache = false } = {}) {
     if (!user?.id) return
+    // Only the latest load counts: tapping Homme then Femme quickly must not
+    // let the slower answer overwrite the list asked for last.
+    const loadId = ++loadIdRef.current
     const key = loadKey(currentFilters) + (includeRefused ? ':revoir' : '')
     // Coming back to Discover within a few minutes: reuse the list instead
     // of re-reading every profile (see getCachedCandidates).
@@ -139,15 +146,25 @@ function Discover() {
         // Narrow filters: read further, so enough profiles match.
         maxPages: activeFilterCount(currentFilters) ? 8 : undefined,
       })
+      if (loadId !== loadIdRef.current) return
       cacheKeyRef.current = key
       setCachedCandidates(user.id, key, candidates, { refreshTime: true })
       setProfiles(candidates)
     } catch {
-      showToast('Impossible de charger les profils, réessayez.', 'error')
+      if (loadId === loadIdRef.current) showToast('Impossible de charger les profils, réessayez.', 'error')
     } finally {
-      setIsLoading(false)
-      setIsReviewing(false)
+      if (loadId === loadIdRef.current) {
+        setIsLoading(false)
+        setIsReviewing(false)
+      }
     }
+  }
+
+  function handleGenderChip(gender) {
+    if (gender === filters.gender) return
+    const next = { ...filters, gender }
+    setFilters(next)
+    loadCandidates(next, { allowCache: true })
   }
 
   useEffect(() => {
@@ -180,18 +197,13 @@ function Discover() {
 
   const searched = useMemo(() => {
     let list = profiles.filter((p) => passesDistance(distanceOf(p), filters))
-    if (activeChip === NEARBY_CHIP) {
-      if (publicProfile?.city) list = list.filter((p) => p.city === publicProfile.city)
-    } else if (activeChip) {
-      list = list.filter((p) => p.datingGoal === activeChip)
-    }
     if (interestFilter) list = list.filter((p) => p.interests?.includes(interestFilter))
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((p) => p.firstName?.toLowerCase().includes(q))
     }
     return sortProfiles(list, filters.sort, distanceOf)
-  }, [profiles, search, activeChip, interestFilter, publicProfile, filters, distanceOf])
+  }, [profiles, search, interestFilter, filters, distanceOf])
 
   // The user's own interests first (the ones they're most likely to filter
   // by), then the rest of the catalogue.
@@ -495,29 +507,19 @@ function Discover() {
                 </span>
               )}
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveChip(null)}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
-                !activeChip
-                  ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
-                  : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
-              }`}
-            >
-              Tout
-            </button>
-            {GOAL_CHIPS.map((goal) => (
+            {GENDER_CHIPS.map(({ value, label }) => (
               <button
-                key={goal}
+                key={value}
                 type="button"
-                onClick={() => setActiveChip((prev) => (prev === goal ? null : goal))}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                  activeChip === goal
+                onClick={() => handleGenderChip(value)}
+                aria-pressed={filters.gender === value}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                  filters.gender === value
                     ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
                     : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
                 }`}
               >
-                {goal}
+                {label}
               </button>
             ))}
           </div>
