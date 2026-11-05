@@ -1,14 +1,17 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Gamepad2, Play } from 'lucide-react'
+import { ArrowLeft, Gamepad2, Play, Send } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { GAMES } from '../lib/games.js'
 import NgoriCoin from '../components/NgoriCoin.jsx'
+import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 
 // "Jeux" — every game Kévin and Aïcha take part in, from lib/games.js.
 function Games() {
   const navigate = useNavigate()
   const { profile: account } = useAuth()
+  const [showInvite, setShowInvite] = useState(false)
   const balance = account?.ngori || 0
   const totalCap = GAMES.reduce((sum, g) => sum + g.dailyCap, 0)
 
@@ -93,8 +96,19 @@ function Games() {
           ))}
         </div>
 
-        <p className="mt-6 text-center text-xs text-ink-soft/60">D’autres jeux arrivent bientôt 🎮</p>
+        <button
+          type="button"
+          onClick={() => setShowInvite(true)}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-500/12 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-500/20 dark:text-violet-300"
+        >
+          <Send size={16} strokeWidth={2.25} />
+          Inviter des amis à jouer
+        </button>
+
+        <p className="mt-4 text-center text-xs text-ink-soft/60">D’autres jeux arrivent bientôt 🎮</p>
       </div>
+
+      {showInvite && <InviteFriendsModal invite="games" onClose={() => setShowInvite(false)} />}
     </div>
   )
 }

@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Lock, Play, RotateCcw, Sparkles, X } from 'lucide-react'
+import { Lock, Play, RotateCcw, Send, Sparkles, X } from 'lucide-react'
 import SiteHeader from '../components/SiteHeader.jsx'
+import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import { GAMES } from '../lib/games.js'
 import { practiceSeed } from '../game/practice.js'
 import CommandoScreen from '../game/commando/CommandoScreen.jsx'
@@ -112,6 +113,7 @@ function GuestGames() {
   const locked = GAMES.filter((g) => !GUEST_GAMES.includes(g.id))
   const [play, setPlay] = useState(null) // { gameId, seed, key }
   const [result, setResult] = useState(null)
+  const [showInvite, setShowInvite] = useState(false)
   const [commandoAudio] = useState(() => createCommandoAudio(loadCommandoMuted()))
   const [runAudio] = useState(() => createGameAudio(loadMuted()))
   const [pantherAudio] = useState(() => createPantherAudio(loadMuted()))
@@ -214,6 +216,15 @@ function GuestGames() {
           ))}
         </div>
 
+        <button
+          type="button"
+          onClick={() => setShowInvite(true)}
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-500/12 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-500/20 dark:text-violet-300"
+        >
+          <Send size={16} strokeWidth={2.25} />
+          Inviter des amis à jouer
+        </button>
+
         {locked.length > 0 && (
           <div className="mt-6 rounded-[24px] bg-white p-4 shadow-sm ring-1 ring-ink/8 dark:bg-surface-tint">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
@@ -273,6 +284,8 @@ function GuestGames() {
           <GameScreen key={play.key} seed={play.seed} runner="man" billboards={[]} audio={runAudio} muted={muted} onToggleMute={toggleMute} showButtons={TOUCH} onEnd={end} />
         </div>
       )}
+
+      {showInvite && <InviteFriendsModal invite="games" onClose={() => setShowInvite(false)} />}
 
       {/* End of a guest game: the score, and what an account adds */}
       <AnimatePresence>

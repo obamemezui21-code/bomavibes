@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc } from 'firebase/firestore'
-import { ArrowLeft, Heart, Moon, ShieldOff, Sun } from 'lucide-react'
+import { ArrowLeft, Heart, Moon, Send, ShieldOff, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
@@ -18,6 +18,7 @@ import Modal from '../components/ui/Modal.jsx'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 import Button from '../components/ui/Button.jsx'
 import SupportModal from '../components/SupportModal.jsx'
+import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 import { openCookieSettings } from '../lib/cookieConsent.js'
 import { LOCATION_ERRORS, forgetLocation, shareLocation } from '../lib/geolocation.js'
@@ -353,6 +354,7 @@ function Settings() {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [showBlockedModal, setShowBlockedModal] = useState(false)
   const [showSupport, setShowSupport] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
 
   async function handleNotifyToggle(field, value) {
     setIsTogglingPush(true)
@@ -564,6 +566,16 @@ function Settings() {
           )}
 
           <Section title="Le projet">
+            <Row title="Inviter des amis" subtitle="WhatsApp, Facebook, Telegram, SMS…">
+              <button
+                type="button"
+                onClick={() => setShowInvite(true)}
+                className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:underline"
+              >
+                <Send size={13} strokeWidth={2.25} />
+                Inviter
+              </button>
+            </Row>
             <Row title="Soutenir BomaVibes" subtitle="Construisons BomaVibes ensemble">
               <button
                 type="button"
@@ -605,6 +617,7 @@ function Settings() {
       {showPasswordModal && <ChangePasswordModal onClose={() => setShowPasswordModal(false)} />}
       {showBlockedModal && <BlockedUsersModal onClose={() => setShowBlockedModal(false)} />}
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
+      {showInvite && <InviteFriendsModal onClose={() => setShowInvite(false)} />}
 
       {confirmDelete && (
         <ConfirmModal

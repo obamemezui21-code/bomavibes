@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
@@ -93,6 +94,7 @@ function Discover() {
   const [profiles, setProfiles] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
   const [expandedProfile, setExpandedProfile] = useState(null)
   const [search, setSearch] = useState('')
   const [activeChip, setActiveChip] = useState(null)
@@ -312,28 +314,6 @@ function Discover() {
   function handleReviewProfiles() {
     setIsReviewing(true)
     loadCandidates(filters, { includeRefused: true })
-  }
-
-  async function handleInviteFriends() {
-    const shareData = {
-      title: 'BomaVibes',
-      text: 'Rejoins-moi sur BomaVibes, la rencontre africaine 💛',
-      url: 'https://bomavibes.tech',
-    }
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData)
-      } catch {
-        // user cancelled the native share sheet, nothing to do
-      }
-      return
-    }
-    try {
-      await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`)
-      showToast('Lien copié, à toi de le partager !', 'success')
-    } catch {
-      showToast('Impossible de copier le lien.', 'error')
-    }
   }
 
   async function handleSwipe(profile, direction, compliment = null) {
@@ -626,7 +606,7 @@ function Discover() {
               </motion.button>
               <button
                 type="button"
-                onClick={handleInviteFriends}
+                onClick={() => setShowInvite(true)}
                 className="flex items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
               >
                 <Send size={16} strokeWidth={2.25} />
@@ -947,6 +927,8 @@ function Discover() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showInvite && <InviteFriendsModal onClose={() => setShowInvite(false)} />}
     </div>
   )
 }

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Heart, Pencil, Settings, X } from 'lucide-react'
+import { Heart, Pencil, Send, Settings, X } from 'lucide-react'
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebase/config.js'
 import { appealPhoto, uploadProfilePhoto } from '../firebase/photos.js'
@@ -63,6 +64,7 @@ function Profile() {
   const { lowRes, rejected, review: reviewUrls, missing: photosMissing, blocked: photosBlocked } = usePhotoQuality()
   const navigate = useNavigate()
   const [form, setForm] = useState(emptyForm)
+  const [showInvite, setShowInvite] = useState(false)
   const [countryCode, setCountryCode] = useState('')
   const [photoSlots, setPhotoSlots] = useState([null, null, null])
   // Photos whose refusal the member contested (by refusalId or url).
@@ -869,6 +871,15 @@ function Profile() {
 
             <button
               type="button"
+              onClick={() => setShowInvite(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
+            >
+              <Send size={16} strokeWidth={2} />
+              Inviter des amis
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowSupport(true)}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-ink/12 py-2.5 text-sm font-medium text-ink/80 transition hover:bg-ink/5"
             >
@@ -891,6 +902,7 @@ function Profile() {
       </div>
 
       {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
+      {showInvite && <InviteFriendsModal onClose={() => setShowInvite(false)} />}
     </div>
   )
 }
