@@ -101,6 +101,16 @@ const PERLES = {
     minTimeRatio: 0.9,
 };
 
+// FLÈCHE D'ÉBÈNE, the bow hunter: Ngori = the stars of a game (1 to 3, from the
+// score), within its own daily cap; same safeguards.
+const FLECHE = {
+    dailyCap: 5,
+    maxStartsPerDay: 40,
+    minStartIntervalMs: 3000,
+    maxRunMs: 10 * 60 * 1000,
+    minTimeRatio: 0.9,
+};
+
 // LE MOT DU JOUR, the daily word game: one game per day, paid once won.
 const MOT_DU_JOUR = {
     winReward: 2,
@@ -162,4 +172,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, COMMANDO, PANTHERE, ESCADRILLE, PERLES, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, COMMANDO, PANTHERE, ESCADRILLE, PERLES, FLECHE, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };

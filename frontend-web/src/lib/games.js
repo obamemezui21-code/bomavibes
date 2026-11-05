@@ -14,6 +14,19 @@ import commandoCover from '../assets/game/commando-cover.webp'
 //   cover: optional artwork filling the card (the pictures are then left out)
 export const GAMES = [
   {
+    id: 'fleche-ebene',
+    name: 'Flèche d’Ébène',
+    tagline: 'Le chasseur à la flèche',
+    description: 'Bande ton arc d’ébène dans la forêt de l’Ivindo : vise, compte avec le vent, arrête monstres et braconniers… sans toucher les animaux protégés !',
+    path: '/fleche-ebene',
+    pictures: [],
+    cover: '/fleche/cover.svg',
+    gradient: 'from-[#16200e] via-[#2f4a17] to-[#b8631c]',
+    accent: 'text-amber-300',
+    dailyCap: 5,
+    isNew: true,
+  },
+  {
     id: 'perles-punu',
     name: 'Perles Punu',
     tagline: 'Tir de perles le long du fleuve',
