@@ -35,10 +35,10 @@ describe('invite links', () => {
 
   it('adds the member’s code to the link, for every network', () => {
     const invite = withReferral(INVITES.games, 'ABCD2345')
-    expect(invite.url).toBe('https://bomavibes.tech/jouer?ref=ABCD2345')
+    expect(invite.url).toBe('https://bomavibes.tech/jouer/?ref=ABCD2345')
     expect(new URL(link(invite, 'facebook')).searchParams.get('u')).toBe(invite.url)
     expect(new URL(link(invite, 'whatsapp')).searchParams.get('text')).toContain('?ref=ABCD2345')
-    expect(INVITES.games.url).toBe(`${INVITE_URL}/jouer`)
+    expect(INVITES.games.url).toBe(`${INVITE_URL}/jouer/`)
   })
 
   it('leaves the link alone without a code', () => {
@@ -46,7 +46,7 @@ describe('invite links', () => {
   })
 
   it('sends the games invitation to the page open without an account', () => {
-    expect(INVITES.games.url).toBe(`${INVITE_URL}/jouer`)
+    expect(INVITES.games.url).toBe(`${INVITE_URL}/jouer/`)
     expect(decodeURIComponent(link(INVITES.games, 'whatsapp'))).toContain('/jouer')
   })
 })

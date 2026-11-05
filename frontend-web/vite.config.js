@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { linkPreviewPages } from './linkPreviews.js'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), linkPreviewPages()],
   server: {
     // The NGORI RUN engine lives in ../shared (the backend replays runs with it).
     fs: { allow: ['.', '../shared'] },

@@ -15,11 +15,12 @@ export const INVITES = {
     url: INVITE_URL,
   },
   // The games open without an account, so the friend can play straight away.
+  // /jouer/ is the real file with the game's picture (linkPreviews.js).
   games: {
     title: 'Invite tes amis à jouer',
     subtitle: 'Ils peuvent jouer tout de suite, sans créer de compte.',
     text: 'Viens jouer avec moi sur BomaVibes : des jeux 100 % gabonais, sans créer de compte 🎮',
-    url: `${INVITE_URL}/jouer`,
+    url: `${INVITE_URL}/jouer/`,
   },
 }
 
