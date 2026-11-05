@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Gift, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { getMyReferral } from '../firebase/referrals.js'
 import { REFERRAL_MONTHLY_CAP, REFERRAL_REWARD } from '../lib/ngori.js'
+import poster from '../assets/poster-invite.webp'
 import InviteFriendsModal from './InviteFriendsModal.jsx'
 import NgoriCoin from './NgoriCoin.jsx'
 
-const PERKS = ['❤️ Likes illimités', '🚀 Boost du profil', '👀 Voir qui vous aime', '📞 Appels vidéo']
+const PERKS = ['Likes illimités', 'Boost du profil', 'Voir qui vous aime', 'Appels vidéo']
 
-// Découvrir: invite friends and earn Ngori, which buy the app's privileges.
-// A friend counts once their identity is verified (backend referralService.js).
+// Découvrir: the "invite your friends" poster. Friends count once their
+// identity is verified (backend referralService.js), and the Ngori they earn
+// buy the app's privileges. The picture fades into the panel under it, so the
+// gift stays in full view.
 function InviteRewardCard() {
   const [showInvite, setShowInvite] = useState(false)
   const [mine, setMine] = useState(null)
@@ -28,35 +31,41 @@ function InviteRewardCard() {
   const cap = mine?.monthlyCap ?? REFERRAL_MONTHLY_CAP
 
   return (
-    <section aria-labelledby="invite-reward-title" className="relative overflow-hidden rounded-[24px] bg-gradient-to-br from-violet-700 via-fuchsia-700 to-pink-600 p-5 text-white shadow-lg shadow-violet-900/20">
-      <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-amber-300/25 blur-2xl" />
-      <div className="relative">
-        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.15em] text-amber-200">
-          <Gift size={14} strokeWidth={2.5} />
-          Parrainage
+    <section aria-labelledby="invite-reward-title" className="relative overflow-hidden rounded-[28px] bg-[#170a2b] text-white shadow-2xl shadow-violet-900/40">
+      <div className="relative aspect-[4/5] w-full">
+        <img src={poster} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-[#170a2b]/90 via-[#170a2b]/40 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t from-[#170a2b] to-transparent" />
+        <div className="absolute inset-x-0 top-0 px-5 pt-5 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-200">Parrainage</p>
+          <h2 id="invite-reward-title" className="mt-1 font-display text-[clamp(1.75rem,8vw,2.5rem)] font-black leading-[1.05] tracking-tight [text-shadow:0_4px_18px_rgba(0,0,0,0.65)]">
+            Invite tes amis,
+            <br />
+            <span className="text-gold">gagne des privilèges</span>
+          </h2>
+        </div>
+      </div>
+
+      <div className="relative px-5 pb-5 text-center">
+        <p className="flex items-center justify-center gap-1.5 font-display text-2xl font-black text-gold">
+          +{reward} <NgoriCoin size={24} />
+          <span className="text-base font-bold text-white">par ami vérifié</span>
         </p>
-        <h2 id="invite-reward-title" className="mt-1 font-display text-xl font-bold leading-tight">
-          Invite tes amis, gagne des privilèges
-        </h2>
-        <p className="mt-1.5 text-sm text-white/90">
-          <span className="inline-flex items-center gap-1 align-middle font-bold text-amber-200">
-            +{reward} <NgoriCoin size={15} />
-          </span>{' '}
-          pour chaque ami qui rejoint BomaVibes et fait vérifier son profil.
-        </p>
-        <ul className="mt-3 flex flex-wrap gap-1.5">
+        <p className="mt-1 text-sm text-white/80">Ton ami rejoint BomaVibes et fait vérifier son profil : tu es récompensé.</p>
+
+        <ul className="mt-3 flex flex-wrap justify-center gap-1.5">
           {PERKS.map((perk) => (
-            <li key={perk} className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium">
+            <li key={perk} className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold ring-1 ring-white/15">
               {perk}
             </li>
           ))}
         </ul>
 
         {(mine?.verified > 0 || mine?.pending > 0) && (
-          <p className="mt-3 text-xs font-medium text-white/85">
+          <p className="mt-3 text-xs font-semibold text-amber-200">
             {mine.verified > 0 && `${mine.verified} ami${mine.verified > 1 ? 's' : ''} vérifié${mine.verified > 1 ? 's' : ''} · ${mine.earned} Ngori gagnés`}
             {mine.verified > 0 && mine.pending > 0 && ' · '}
-            {mine.pending > 0 && `${mine.pending} en attente de vérification`}
+            {mine.pending > 0 && `${mine.pending} en attente`}
           </p>
         )}
 
@@ -64,14 +73,12 @@ function InviteRewardCard() {
           type="button"
           whileTap={{ scale: 0.97 }}
           onClick={() => setShowInvite(true)}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white py-3 font-display text-sm font-bold text-violet-800 shadow-md"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-3.5 font-display text-base font-black tracking-wide text-white shadow-lg shadow-black/40"
         >
-          <Send size={16} strokeWidth={2.25} />
-          Inviter mes amis
+          <Send size={17} strokeWidth={2.5} />
+          INVITER MES AMIS
         </motion.button>
-        <p className="mt-2 text-center text-[11px] text-white/70">
-          Les Ngori se dépensent dans ton espace Ngori · jusqu’à {cap} amis récompensés par mois
-        </p>
+        <p className="mt-2 text-[11px] text-white/60">À dépenser dans ton espace Ngori · jusqu’à {cap} amis récompensés par mois</p>
       </div>
 
       {showInvite && <InviteFriendsModal onClose={() => setShowInvite(false)} />}
