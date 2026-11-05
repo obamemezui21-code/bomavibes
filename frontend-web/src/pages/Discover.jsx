@@ -420,9 +420,11 @@ function Discover() {
       <div className="pointer-events-none absolute -right-20 top-40 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 
       <div className="px-4 pt-6 sm:px-6">
-        <div className="relative z-10 mx-auto w-full max-w-xl pb-3 desktop:max-w-6xl">
+        <div className="relative z-10 mx-auto w-full max-w-xl desktop:max-w-6xl">
           <NewsHeroSlider />
+        </div>
 
+        <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
@@ -532,7 +534,7 @@ function Discover() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 sm:px-6 desktop:max-w-6xl">
+      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 sm:px-6">
         <div>
           <AnimatePresence>
             {hasUnseenAnnouncement && latestAnnouncement && (
@@ -639,7 +641,7 @@ function Discover() {
                       {searched.length} profil{searched.length > 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 desktop:mx-0 desktop:grid desktop:grid-cols-4 desktop:gap-4 desktop:overflow-visible desktop:px-0 xl:grid-cols-5">
+                  <div className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6">
                     <AnimatePresence mode="popLayout">
                       {searched.map((p, i) => (
                         <DiscoverProfileCard

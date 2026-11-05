@@ -31,15 +31,11 @@ function InviteRewardCard() {
   const cap = mine?.monthlyCap ?? REFERRAL_MONTHLY_CAP
 
   return (
-    <section
-      aria-labelledby="invite-reward-title"
-      className="relative overflow-hidden rounded-[28px] bg-[#170a2b] text-white shadow-2xl shadow-violet-900/40 desktop:grid desktop:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] desktop:items-center"
-    >
+    <section aria-labelledby="invite-reward-title" className="relative overflow-hidden rounded-[28px] bg-[#170a2b] text-white shadow-2xl shadow-violet-900/40">
       <div className="relative aspect-[4/5] w-full">
         <img src={poster} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-x-0 top-0 h-2/5 bg-gradient-to-b from-[#170a2b]/90 via-[#170a2b]/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t from-[#170a2b] to-transparent desktop:hidden" />
-        <div className="absolute inset-y-0 right-0 hidden w-1/5 bg-gradient-to-l from-[#170a2b] to-transparent desktop:block" />
+        <div className="absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t from-[#170a2b] to-transparent" />
         <div className="absolute inset-x-0 top-0 px-5 pt-5 text-center">
           <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-amber-200">Parrainage</p>
           <h2 id="invite-reward-title" className="mt-1 font-display text-[clamp(1.75rem,8vw,2.5rem)] font-black leading-[1.05] tracking-tight [text-shadow:0_4px_18px_rgba(0,0,0,0.65)]">
@@ -50,8 +46,8 @@ function InviteRewardCard() {
         </div>
       </div>
 
-      <div className="relative px-5 pb-5 text-center desktop:px-10 desktop:py-8">
-        <p className="flex items-center justify-center gap-1.5 font-display text-2xl font-black text-gold desktop:text-3xl">
+      <div className="relative px-5 pb-5 text-center">
+        <p className="flex items-center justify-center gap-1.5 font-display text-2xl font-black text-gold">
           +{reward} <NgoriCoin size={24} />
           <span className="text-base font-bold text-white">par ami vérifié</span>
         </p>

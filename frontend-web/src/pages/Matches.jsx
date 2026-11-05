@@ -54,7 +54,7 @@ function Matches() {
 
   return (
     <div className="min-h-svh bg-surface-soft px-4 pb-28 pt-6 sm:px-6 desktop:min-h-full desktop:pb-6">
-      <div className="mx-auto max-w-3xl desktop:max-w-6xl">
+      <div className="mx-auto max-w-3xl">
         <h1 className="text-center font-display text-2xl font-bold text-ink">Matchs</h1>
 
         {/* Two story-style circles, as at the top of the Friendzy Matches screen */}
@@ -125,7 +125,7 @@ function Matches() {
             <p className="text-sm text-ink-soft/60">Aucune conversation pour l'instant.</p>
           </div>
         ) : (
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 desktop:grid-cols-4 desktop:gap-4 xl:grid-cols-5">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {visible.map((conversation, i) => {
               const percent = matchPercent(publicProfile?.interests, conversation.profile.interests)
               return (
