@@ -85,6 +85,8 @@ export const BIRD_EVERY_M = 400
 export const BIRD_MAX_CHARGES = 2
 const BIRD_GRACE_TICKS = 45
 const SKY_COINS = 12
+// Close enough for the whole trail to fit in a flight at the slowest speed.
+const SKY_COIN_GAP = 360
 
 // Up in the sky: higher than the obstacles and the road's coins.
 export function birdHigh(state) {
@@ -233,8 +235,11 @@ function generateRow(state) {
   } else if (randomInt(state, 100) < 9) {
     // Rare power-up, alone in a free lane (or on top of a jumpable row).
     const lane = freeLanes.length ? freeLanes[randomInt(state, freeLanes.length)] : randomInt(state, 3)
-    const type = randomInt(state, 100) < MOTO_CHANCE ? 'moto' : CLASSIC_POWERUPS[randomInt(state, CLASSIC_POWERUPS.length)]
-    state.powerups.push({ id: state.nextId++, z: z + Math.floor(gap / 2), lane, type, taken: false })
+    const powerZ = z + Math.floor(gap / 2)
+    let type = randomInt(state, 100) < MOTO_CHANCE ? 'moto' : CLASSIC_POWERUPS[randomInt(state, CLASSIC_POWERUPS.length)]
+    // No motorbike in the water: the river gets a shield instead.
+    if (type === 'moto' && riverAt(Math.floor(powerZ / 100))) type = 'shield'
+    state.powerups.push({ id: state.nextId++, z: powerZ, lane, type, taken: false })
   }
 
   state.nextRowZ = z + gap
@@ -258,7 +263,7 @@ function applyAction(state, action) {
     // A trail of Ngori up in the sky, weaving across the lanes.
     let lane = state.lane
     for (let i = 0; i < SKY_COINS; i++) {
-      state.coinsOnRoad.push({ id: state.nextId++, z: state.dist + 1200 + i * 380, lane, gold: i === SKY_COINS - 1, sky: true, taken: false })
+      state.coinsOnRoad.push({ id: state.nextId++, z: state.dist + 1200 + i * SKY_COIN_GAP, lane, gold: i === SKY_COINS - 1, sky: true, taken: false })
       const turn = randomInt(state, 3) - 1
       lane = Math.max(0, Math.min(LANES - 1, lane + turn))
     }
@@ -357,7 +362,8 @@ export function step(state, actions = []) {
   for (const c of state.coinsOnRoad) {
     if (c.taken || c.missed || c.z >= state.prevDist) continue
     c.missed = true
-    if (c.sky) continue // a sky coin left behind doesn't break the combo
+    // Neither a sky coin left behind nor a road coin flown over breaks the combo.
+    if (c.sky || state.bird) continue
     if (state.combo) state.events.push({ type: 'combo-lost' })
     state.combo = 0
   }

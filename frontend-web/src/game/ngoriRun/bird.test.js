@@ -30,4 +30,32 @@ describe('NGORI RUN bird', () => {
     const b = simulateRun(3, inputs, 200)
     expect(a).toEqual(b)
   })
+
+  it('can reach the whole sky trail at the slowest speed', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const state = createRun(seed)
+      step(state, ['B'])
+      let gold = 0
+      while (state.bird > 0) {
+        const next = state.coinsOnRoad.filter((c) => c.sky && !c.taken && c.z >= state.dist).sort((a, b) => a.z - b.z)[0]
+        step(state, next && next.lane < state.lane ? ['L'] : next && next.lane > state.lane ? ['R'] : [])
+        gold += state.events.filter((e) => e.type === 'coin' && e.gold).length
+      }
+      expect(gold).toBeGreaterThanOrEqual(1)
+    }
+  })
+
+  it('keeps the combo over road coins flown over, not those missed on foot', () => {
+    const state = createRun(11)
+    state.combo = 7
+    step(state, ['B'])
+    state.coinsOnRoad = [{ id: 'road', z: state.dist + 100, lane: (state.lane + 1) % 3, gold: false, taken: false }]
+    while (state.bird > 0) step(state)
+    expect(state.combo).toBe(7)
+
+    state.grace = 999
+    state.coinsOnRoad.push({ id: 'road2', z: state.dist + 100, lane: (state.lane + 1) % 3, gold: false, taken: false })
+    for (let i = 0; i < 30; i++) step(state)
+    expect(state.combo).toBe(0)
+  })
 })

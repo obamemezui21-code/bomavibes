@@ -16,4 +16,16 @@ describe('NGORI RUN river', () => {
       expect(!!OBSTACLES[o.type].water).toBe(inRiver)
     }
   })
+
+  it('never lays a motorbike in the river', () => {
+    for (let seed = 1; seed <= 8; seed++) {
+      const state = createRun(seed)
+      while (!state.over) {
+        state.grace = 999 // a ghost runner, for a whole run's road
+        step(state)
+        if (state.tick % 300) continue
+        expect(state.powerups.some((p) => p.type === 'moto' && riverAt(Math.floor(p.z / 100)))).toBe(false)
+      }
+    }
+  }, 20000)
 })

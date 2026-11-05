@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, BarChart3, Check, Dumbbell, Gift, HelpCircle, Play, Target, Trophy, Volume2, VolumeX } from 'lucide-react'
@@ -9,6 +9,7 @@ import { REWARDS } from '../lib/ngori.js'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
+import { forgetPendingRun, isFinalRefusal, keepPendingRun, pendingRunsOf } from '../game/ngoriRun/pendingRuns.js'
 import { loadRenderer3d, webglSupported } from '../game/ngoriRun/graphics.js'
 import { districtAt, placeVenues } from '../game/ngoriRun/libreville.js'
 import { fetchPublishedVenues } from '../firebase/venues.js'
@@ -453,7 +454,8 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
 // server after replaying the run (see firebase/ngoriRun.js).
 function NgoriRun() {
   const navigate = useNavigate()
-  const { profile: account } = useAuth()
+  const { user, profile: account } = useAuth()
+  const uid = user?.id
   const { showToast } = useToast()
   const [audio] = useState(() => createGameAudio(loadMuted()))
   const [muted, setMuted] = useState(loadMuted)
@@ -480,8 +482,39 @@ function NgoriRun() {
   const [missions, setMissions] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const balance = account?.ngori || 0
+  const recovering = useRef(false)
 
   useEffect(() => () => audio.close(), [audio])
+
+  // Runs that never reached the server (see pendingRuns.js): sent again from
+  // the lobby, and as soon as the connection comes back.
+  const recoverRuns = useCallback(async () => {
+    if (!uid || recovering.current) return
+    recovering.current = true
+    let gained = 0
+    let saved = false
+    for (const { runId, data } of pendingRunsOf(uid)) {
+      try {
+        const res = await finishNgoriRun(runId, data)
+        forgetPendingRun(runId)
+        gained += res.credited + res.missionReward
+        saved = true
+      } catch (err) {
+        if (!isFinalRefusal(err)) break // still offline: another time
+        forgetPendingRun(runId)
+      }
+    }
+    recovering.current = false
+    if (gained > 0) showToast(`Course récupérée : +${gained} Ngori`, 'success')
+    if (saved) setRefreshKey((k) => k + 1)
+  }, [uid, showToast])
+
+  useEffect(() => {
+    if (phase !== 'lobby') return undefined
+    recoverRuns()
+    window.addEventListener('online', recoverRuns)
+    return () => window.removeEventListener('online', recoverRuns)
+  }, [phase, recoverRuns])
 
   // Fetch the 3D engine while the player is still in the lobby.
   useEffect(() => {
@@ -544,17 +577,26 @@ function NgoriRun() {
       setSaveError(null)
       try {
         const res = await finishNgoriRun(run.runId, data)
+        forgetPendingRun(run.runId)
         setOutcome(res)
         setToday({ earnedToday: res.earnedToday, dailyCap: res.dailyCap })
         if (res.missions) setMissions(res.missions)
         if (res.credited > 0 || res.missionReward > 0) audio.play('reward')
         setRefreshKey((k) => k + 1)
       } catch (err) {
+        if (isFinalRefusal(err)) forgetPendingRun(run.runId)
+        const kept = pendingRunsOf(uid).some((p) => p.runId === run.runId)
         // 409: already saved (e.g. a retry after a timeout that did go through).
-        setSaveError(err.status === 409 ? err.message : "Impossible d'enregistrer la course. Vérifie ta connexion.")
+        setSaveError(
+          err.status === 409
+            ? err.message
+            : kept
+              ? 'Pas de connexion ? Ta course est gardée : elle sera renvoyée à ton retour sur Ngori Run.'
+              : "Impossible d'enregistrer la course. Vérifie ta connexion.",
+        )
       }
     },
-    [run, audio],
+    [run, audio, uid],
   )
 
   function handleEnd(data) {
@@ -565,8 +607,12 @@ function NgoriRun() {
     }
     setPayload(data)
     setPhase('result')
-    if (run.practice) setOutcome({ practice: true, result: simulateRun(run.seed, data.inputs, data.endTick) })
-    else save(data)
+    if (run.practice) {
+      setOutcome({ practice: true, result: simulateRun(run.seed, data.inputs, data.endTick) })
+      return
+    }
+    keepPendingRun(uid, run.runId, data)
+    save(data)
   }
 
   // Shown while the server replays the run; its own figures replace these.

@@ -21,6 +21,8 @@ const KEYS = {
 const POWERUP_LABEL = { magnet: '🧲 Aimant', multiplier: '🔥 ×2', boost: '⚡ Boost', moto: '🏍️ Moto', bird: '🦅 Oiseau' }
 const BONUS_LABEL = { combo: 'Combo', distance: 'Distance' }
 const HONK_AHEAD = 2600 // cm: a taxi in your lane honks when this close
+const COUNTDOWN_MS = 3000 // "3, 2, 1", at the start and after a pause
+const MAX_3D_WAIT_MS = 6000 // a slow connection falls back to 2D rather than wait
 
 // One run of NGORI RUN, full screen. Runs the shared simulation at a fixed
 // 60 ticks/s, records every gesture with the tick it was applied on, and
@@ -35,6 +37,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
   const wrapRef = useRef(null)
   const pendingRef = useRef([])
   const pausedRef = useRef(false)
+  const resumeRef = useRef(false)
   const [hud, setHud] = useState({ distance: 0, district: districtAt(0), score: 0, coins: 0, combo: 0, shield: false, timers: {}, birds: 1, flying: false })
   const [countdown, setCountdown] = useState(3)
   const [paused, setPaused] = useState(false)
@@ -67,8 +70,10 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
     // The 3D renderer loads during the countdown; until then nothing is drawn.
     let renderer = null
     let cancelled = false
+    // The countdown waits for the renderer: a run never starts on a blank screen.
+    let startAt = Infinity
     function adopt(r) {
-      if (cancelled) {
+      if (cancelled || renderer) {
         r.dispose?.()
         return
       }
@@ -76,14 +81,19 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
       rendererRef.current = r
       r.setBillboards(billboardsRef.current)
       resize()
+      startAt = performance.now() + COUNTDOWN_MS
     }
     const start2d = () => adopt(createRenderer(canvas, { runner }))
+    let slow3dTimer = null
     if (graphics === '3d') {
+      slow3dTimer = setTimeout(() => !renderer && start2d(), MAX_3D_WAIT_MS)
       loadRenderer3d()
-        .then(({ createRenderer3d }) => adopt(createRenderer3d(wrap, { runner })))
+        .then(({ createRenderer3d }) => {
+          if (!cancelled && !renderer) adopt(createRenderer3d(wrap, { runner }))
+        })
         .catch((err) => {
           console.warn('NGORI RUN 3D unavailable, back to 2D', err)
-          if (!cancelled) start2d()
+          if (!cancelled && !renderer) start2d()
         })
     } else {
       start2d()
@@ -93,7 +103,6 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
     let laneVis = state.lane
     let acc = 0
     let last = performance.now()
-    let startAt = last + 3000 // after "3, 2, 1"
     let raf = 0
     let lastHud = 0
     let crashAt = 0
@@ -183,6 +192,11 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
       raf = requestAnimationFrame(frame)
       const dt = Math.min(now - last, 250)
       last = now
+
+      if (resumeRef.current) {
+        resumeRef.current = false
+        if (!state.over) startAt = Math.max(startAt, now + COUNTDOWN_MS)
+      }
 
       if (pausedRef.current) {
         startAt += dt
@@ -290,7 +304,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
           flying: state.bird > 0,
         })
         const left = Math.ceil((startAt - now) / 1000)
-        setCountdown(left > 0 ? left : 0)
+        setCountdown(left === Infinity ? 3 : Math.max(left, 0))
       }
       if (crashAt && now - crashAt > 1100) finish()
       else if (state.over && !state.crashed) finish()
@@ -312,6 +326,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
       cancelAnimationFrame(raf)
       observer.disconnect()
       clearTimeout(toastTimer)
+      clearTimeout(slow3dTimer)
       document.removeEventListener('visibilitychange', onVisibility)
       thunderTimers.forEach(clearTimeout)
       audio.stopMusic()
@@ -329,8 +344,12 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
     const next = !pausedRef.current
     pausedRef.current = next
     setPaused(next)
-    if (next) audio.stopMusic()
-    else audio.startMusic()
+    if (next) {
+      audio.stopMusic()
+    } else {
+      resumeRef.current = true
+      audio.startMusic()
+    }
   }
 
   // Swipes: one gesture = one action, triggered as soon as the finger has
@@ -356,13 +375,14 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape' || e.key === 'p') {
-        togglePause()
+        if (!e.repeat) togglePause()
         return
       }
       const action = KEYS[e.key] || KEYS[e.key.toLowerCase?.()]
       if (!action) return
       e.preventDefault()
-      act(action)
+      // A held key repeats, and too many gestures get the run refused.
+      if (!e.repeat) act(action)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

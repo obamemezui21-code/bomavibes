@@ -36,7 +36,9 @@ const NGORI_RUN = {
     dailyCap: 5, // Ngori a player can earn from the game per day (UTC)
     maxStartsPerDay: 40,
     minStartIntervalMs: 3000,
-    maxRunMs: 30 * 60 * 1000, // a run left open longer than this pays nothing
+    // A run finished later than this pays nothing. Long enough for one saved
+    // on a phone with no connection to be sent the next day (pendingRuns.js).
+    maxRunMs: 24 * 60 * 60 * 1000,
     // Real time must be at least this share of the simulated time (pauses
     // only make it longer; a replay "played" faster than real time is forged).
     minTimeRatio: 0.9,
