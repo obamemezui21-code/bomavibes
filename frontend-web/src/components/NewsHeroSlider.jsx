@@ -76,7 +76,7 @@ function NewsHeroSlider() {
             rel="noopener noreferrer"
             aria-label={`${slide.title}, sur ${slide.source}`}
             tabIndex={i === index ? 0 : -1}
-            className="relative block aspect-[16/10] w-full shrink-0 snap-center snap-always bg-gradient-to-br from-violet-900 to-ink sm:aspect-[16/9]"
+            className="relative block aspect-[16/10] w-full shrink-0 snap-center snap-always bg-gradient-to-br from-violet-900 to-ink sm:aspect-[16/9] desktop:aspect-[3/1]"
           >
             <img
               src={slide.image}

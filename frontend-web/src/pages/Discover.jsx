@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import NewsHeroSlider from '../components/NewsHeroSlider.jsx'
 import InviteRewardCard from '../components/InviteRewardCard.jsx'
-import GamesPromoCard from '../components/GamesPromoCard.jsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
@@ -421,7 +420,7 @@ function Discover() {
       <div className="pointer-events-none absolute -right-20 top-40 h-64 w-64 rounded-full bg-violet-500/10 blur-[100px]" />
 
       <div className="px-4 pt-6 sm:px-6">
-        <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
+        <div className="relative z-10 mx-auto w-full max-w-xl pb-3 desktop:max-w-6xl">
           <NewsHeroSlider />
 
           <div className="flex items-center justify-between">
@@ -533,7 +532,7 @@ function Discover() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 sm:px-6">
+      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 sm:px-6 desktop:max-w-6xl">
         <div>
           <AnimatePresence>
             {hasUnseenAnnouncement && latestAnnouncement && (
@@ -640,7 +639,7 @@ function Discover() {
                       {searched.length} profil{searched.length > 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6">
+                  <div className="-mx-4 mt-3 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:-mx-6 sm:px-6 desktop:mx-0 desktop:grid desktop:grid-cols-4 desktop:gap-4 desktop:overflow-visible desktop:px-0 xl:grid-cols-5">
                     <AnimatePresence mode="popLayout">
                       {searched.map((p, i) => (
                         <DiscoverProfileCard
@@ -781,7 +780,6 @@ function Discover() {
         )}
 
         <InviteRewardCard />
-        <GamesPromoCard />
       </div>
 
       <AnimatePresence>

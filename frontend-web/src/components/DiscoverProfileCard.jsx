@@ -30,7 +30,7 @@ function DiscoverProfileCard({ profile, matchPercent, index = 0, onOpen }) {
       transition={{ delay: Math.min(index, 6) * 0.04, duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       whileTap={{ scale: 0.97 }}
       onClick={onOpen}
-      className="group relative aspect-[3/4] w-40 shrink-0 snap-start overflow-hidden rounded-3xl text-left shadow-[0_14px_30px_-12px_rgba(0,0,0,0.45)]"
+      className="group relative aspect-[3/4] w-40 shrink-0 snap-start overflow-hidden desktop:w-auto rounded-3xl text-left shadow-[0_14px_30px_-12px_rgba(0,0,0,0.45)]"
     >
       <img
         src={photoFor(profile)}

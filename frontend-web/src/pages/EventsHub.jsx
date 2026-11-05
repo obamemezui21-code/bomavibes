@@ -171,7 +171,7 @@ function EventsHub() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
+    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:max-w-6xl desktop:pb-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-semibold text-ink">Salons</h1>
@@ -281,7 +281,7 @@ function EventsHub() {
           <p className="text-sm font-medium text-ink-soft/60">Aucun événement pour le moment.</p>
         </div>
       ) : (
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-4 desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-4 desktop:space-y-0">
           {filtered.map((ev) => {
             const { day, month } = formatEventDayMonth(ev.date)
             const isReserved = myEventIds.has(ev.id)

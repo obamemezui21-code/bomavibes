@@ -228,7 +228,7 @@ function Feed() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
+    <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:max-w-6xl desktop:pb-6">
       <div className="min-w-0">
         <h1 className="font-display text-2xl font-semibold text-ink">Actualités</h1>
         <p className="mt-0.5 text-sm text-ink-soft/70">Partagez vos moments BomaVibes ✨</p>
@@ -381,7 +381,7 @@ function Feed() {
       ) : posts.length === 0 ? (
         <FeedEmptyState onCreate={() => openComposer('text')} />
       ) : (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3 desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-4 desktop:space-y-0">
           {posts.map((post) => (
             <PostCard
               key={post.id}
