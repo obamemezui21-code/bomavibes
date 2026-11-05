@@ -6,6 +6,10 @@ import { activePlan, VERIFIED_LIKES_PER_DAY } from './plans.js'
 export const STREAK_LENGTH = 7
 export const STREAK_BONUS = 3
 
+// Inviting friends, as in REFERRAL (backend).
+export const REFERRAL_REWARD = 25
+export const REFERRAL_MONTHLY_CAP = 10
+
 export const REWARDS = [
   {
     id: 'unlimited_likes',

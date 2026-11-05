@@ -1,6 +1,7 @@
 // Inviting friends: what the message says and the link each network opens with
-// it. The link carries nothing about the person who shares it, and the app
-// never reads their contacts: they pick who to write to in the network itself.
+// it. For a member, the link ends with their random invitation code (backend
+// referralService.js), which shows nothing about them. The app never reads
+// their contacts: they pick who to write to in the network itself.
 // Instagram, TikTok and Snapchat have no link that opens a pre-filled message:
 // those go through the phone's own share sheet, or the copied message.
 
@@ -20,6 +21,14 @@ export const INVITES = {
     text: 'Viens jouer avec moi sur BomaVibes : des jeux 100 % gabonais, sans créer de compte 🎮',
     url: `${INVITE_URL}/jouer`,
   },
+}
+
+// The same invitation, with the member's code in its link.
+export function withReferral(invite, code) {
+  if (!code) return invite
+  const url = new URL(invite.url)
+  url.searchParams.set('ref', code)
+  return { ...invite, url: url.href }
 }
 
 export function inviteMessage({ text, url }) {

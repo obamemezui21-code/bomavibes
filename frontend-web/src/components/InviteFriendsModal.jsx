@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, Copy, Mail, MessageSquare, Share2, X as Close } from 'lucide-react'
+import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { INVITES, inviteLinks, inviteMessage } from '../lib/invite.js'
+import { getMyReferral } from '../firebase/referrals.js'
+import { INVITES, inviteLinks, inviteMessage, withReferral } from '../lib/invite.js'
 import Modal from './ui/Modal.jsx'
 
 // Only on a phone: that's where the share sheet lists Instagram, Snapchat and
@@ -40,12 +42,26 @@ function NetworkIcon({ id }) {
 
 // Share BomaVibes with friends. `invite`: a key of INVITES (lib/invite.js).
 function InviteFriendsModal({ invite = 'app', onClose }) {
+  const { user } = useAuth()
   const { showToast } = useToast()
   const [copied, setCopied] = useState(false)
+  const [referral, setReferral] = useState(null)
   const copiedTimer = useRef(null)
-  const content = INVITES[invite]
+  // A member shares their personal link; if it can't be had, the plain one.
+  const content = withReferral(INVITES[invite], referral?.code)
 
   useEffect(() => () => clearTimeout(copiedTimer.current), [])
+
+  useEffect(() => {
+    if (!user?.id) return undefined
+    let live = true
+    getMyReferral()
+      .then((data) => live && setReferral(data))
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [user?.id])
 
   async function copy() {
     try {

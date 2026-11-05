@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { INVITES, INVITE_URL, inviteLinks, inviteMessage } from './invite.js'
+import { INVITES, INVITE_URL, inviteLinks, inviteMessage, withReferral } from './invite.js'
 
 const link = (invite, id) => inviteLinks(invite).find((l) => l.id === id).href
 
@@ -31,6 +31,18 @@ describe('invite links', () => {
     expect(link(INVITES.app, 'email').startsWith('mailto:')).toBe(true)
     expect(decodeURIComponent(link(INVITES.app, 'email'))).toContain(INVITE_URL)
     expect(inviteLinks(INVITES.app).filter((l) => l.app).map((l) => l.id)).toEqual(['sms', 'email'])
+  })
+
+  it('adds the member’s code to the link, for every network', () => {
+    const invite = withReferral(INVITES.games, 'ABCD2345')
+    expect(invite.url).toBe('https://bomavibes.tech/jouer?ref=ABCD2345')
+    expect(new URL(link(invite, 'facebook')).searchParams.get('u')).toBe(invite.url)
+    expect(new URL(link(invite, 'whatsapp')).searchParams.get('text')).toContain('?ref=ABCD2345')
+    expect(INVITES.games.url).toBe(`${INVITE_URL}/jouer`)
+  })
+
+  it('leaves the link alone without a code', () => {
+    expect(withReferral(INVITES.app, null)).toBe(INVITES.app)
   })
 
   it('sends the games invitation to the page open without an account', () => {

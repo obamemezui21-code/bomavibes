@@ -2,6 +2,8 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useNavigate } from 'react-router-dom'
 import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import NewsHeroSlider from '../components/NewsHeroSlider.jsx'
+import InviteRewardCard from '../components/InviteRewardCard.jsx'
+import GamesPromoCard from '../components/GamesPromoCard.jsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
@@ -777,6 +779,9 @@ function Discover() {
             </div>
           </div>
         )}
+
+        <InviteRewardCard />
+        <GamesPromoCard />
       </div>
 
       <AnimatePresence>

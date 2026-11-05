@@ -57,6 +57,13 @@ async function eraseAccount(uid) {
     await db.collection("escadrilleProgress").doc(uid).delete().catch(() => {});
     await db.collection("perlesProgress").doc(uid).delete().catch(() => {});
     await db.collection("flecheProgress").doc(uid).delete().catch(() => {});
+    // Their invitations, both ways, and their code.
+    const referralCode = (await db.collection("referralProgress").doc(uid).get()).data()?.code;
+    if (referralCode) await db.collection("referralCodes").doc(referralCode).delete().catch(() => {});
+    await db.collection("referralProgress").doc(uid).delete().catch(() => {});
+    await db.collection("referrals").doc(uid).delete().catch(() => {});
+    const invited = await db.collection("referrals").where("referrerUid", "==", uid).get();
+    await batchDeleteAll(invited.docs.map((doc) => doc.ref));
     await db.collection("locations").doc(uid).delete().catch(() => {});
 
     // Lives they hosted: closed and removed (comments included).

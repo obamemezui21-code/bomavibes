@@ -4,7 +4,8 @@ const crypto = require("crypto");
 const sharp = require("sharp");
 const admin = require("../config/firebaseAdmin");
 const { logAdminAction } = require("../services/adminLogService");
-const { VERIFICATION_BONUS } = require("../config/ngori");
+const { REFERRAL, VERIFICATION_BONUS } = require("../config/ngori");
+const { rewardReferrer } = require("./referralController");
 
 const db = admin.firestore();
 
@@ -265,6 +266,14 @@ async function reviewVerification(req, res) {
         }
         await batch.commit();
         removeVerificationFiles(uid);
+
+        // A first approval pays whoever invited this member, once.
+        if (bonusGiven) {
+            const inviter = await rewardReferrer(uid);
+            if (inviter) {
+                await notifyUser(inviter, "Invitation réussie 🎉", `Un ami que tu as invité vient de faire vérifier son profil : +${REFERRAL.reward} Ngori.`);
+            }
+        }
 
         await logAdminAction(req, {
             action: decision === "approve" ? "APPROVE_VERIFICATION" : "REJECT_VERIFICATION",

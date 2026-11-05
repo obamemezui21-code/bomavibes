@@ -11,6 +11,8 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
 import FontSync from './components/FontSync.jsx'
+import ReferralClaim from './components/ReferralClaim.jsx'
+import { captureReferral } from './lib/referral.js'
 import { ConversationsProvider } from './context/ConversationsContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { CallProvider } from './context/CallContext.jsx'
@@ -35,6 +37,7 @@ window.addEventListener('vite:preloadError', (event) => {
 })
 
 installPhotoRetry()
+captureReferral()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -43,6 +46,7 @@ createRoot(document.getElementById('root')).render(
         <ToastProvider>
           <AuthProvider>
             <FontSync />
+            <ReferralClaim />
             <IdentityProvider>
               <PhotoQualityProvider>
                 <ConversationsProvider>

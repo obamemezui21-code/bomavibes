@@ -11,6 +11,7 @@ const ESSENTIAL = [
   ['Anti-robots à l’inscription (Cloudflare Turnstile)', 'Bloque les créations de comptes automatiques.', 'Le temps de l’inscription'],
   ['Notifications', 'Mémorise l’autorisation des notifications de cet appareil.', 'Jusqu’à leur désactivation'],
   ['Vos réglages', 'Thème clair/sombre, écriture, mode d’affichage de Découvrir, son et personnage de NGORI RUN.', 'Jusqu’à ce que vous les changiez'],
+  ['Votre invitation', 'Si vous arrivez par le lien d’un membre, retient son code d’invitation jusqu’à votre inscription.', '30 jours'],
   ['Votre choix de cookies', 'Retient ce que vous avez accepté ou refusé ici.', '13 mois'],
 ]
 

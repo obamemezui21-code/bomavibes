@@ -111,6 +111,16 @@ const FLECHE = {
     minTimeRatio: 0.9,
 };
 
+// Inviting friends (referralService.js): Ngori for the inviter once a friend's
+// identity is approved, for at most monthlyCap friends a month, and how long
+// after signing up a new member can say who invited them.
+// frontend-web/src/lib/ngori.js shows the same figures.
+const REFERRAL = {
+    reward: 25,
+    monthlyCap: 10,
+    claimWindowMs: 7 * 24 * 60 * 60 * 1000,
+};
+
 // LE MOT DU JOUR, the daily word game: one game per day, paid once won.
 const MOT_DU_JOUR = {
     winReward: 2,
@@ -172,4 +182,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, COMMANDO, PANTHERE, ESCADRILLE, PERLES, FLECHE, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, COMMANDO, PANTHERE, ESCADRILLE, PERLES, FLECHE, REFERRAL, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
