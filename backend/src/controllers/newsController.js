@@ -1,4 +1,5 @@
 const admin = require("../config/firebaseAdmin");
+const { currentHeadlines } = require("../services/headlinesService");
 
 // Announcements change rarely (admin-authored), but this route is public
 // and unauthenticated — every landing-page visit (including bots/uptime
@@ -44,4 +45,11 @@ async function getPlatformUpdates(req, res) {
     }
 }
 
-module.exports = { getPlatformUpdates };
+// Public like the route above, and served from memory: the slider's visits never
+// reach Firestore or the news site (see headlinesService.js).
+function getHeadlines(req, res) {
+    res.set("Cache-Control", "public, max-age=300");
+    res.json({ headlines: currentHeadlines() });
+}
+
+module.exports = { getPlatformUpdates, getHeadlines };

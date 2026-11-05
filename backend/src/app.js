@@ -48,6 +48,7 @@ const { startPaymentSweepScheduler } = require("./controllers/paymentController"
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
 const { startStoryCleanupScheduler } = require("./services/storyCleanupService");
 const { startNewsScheduler } = require("./services/newsService");
+const { startHeadlinesScheduler } = require("./services/headlinesService");
 const { startEphemeralSweepScheduler } = require("./services/ephemeralSweepService");
 const { markLegacyMembers } = require("./services/identityMigration");
 
@@ -130,6 +131,7 @@ startLiveSweep();
 startPhotoAuditScheduler();
 startPaymentSweepScheduler();
 startNewsScheduler();
+startHeadlinesScheduler();
 
 // Error handler
 app.use((err, req, res, next) => {

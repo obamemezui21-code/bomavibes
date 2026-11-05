@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
+import NewsHeroSlider from '../components/NewsHeroSlider.jsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
@@ -419,6 +420,8 @@ function Discover() {
 
       <div className="px-4 pt-6 sm:px-6">
         <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
+          <NewsHeroSlider />
+
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
