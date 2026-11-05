@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, LayoutGrid, Menu, Moon, ShieldCheck, Sun } from 'lucide-react'
+import { Bell, LayoutGrid, Menu, Moon, Settings, ShieldCheck, Sun } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -27,6 +28,7 @@ const menuItemClass =
   'flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-ink transition hover:bg-ink/5'
 
 function AppTopBar() {
+  const { t } = useTranslation()
   const { profile, publicProfile } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { notificationsCount } = useConversations()
@@ -119,6 +121,12 @@ function AppTopBar() {
                     {s.label}
                   </NavLink>
                 ))}
+                <NavLink to="/settings" onClick={() => setShowMenu(false)} className={menuItemClass}>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink/8 text-ink">
+                    <Settings size={18} strokeWidth={2.25} />
+                  </span>
+                  {t('nav.settings')}
+                </NavLink>
                 <button
                   type="button"
                   onClick={() => {

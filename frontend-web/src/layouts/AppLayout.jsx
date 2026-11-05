@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Clock, Compass, Heart, ImageUp, MessageCircle, Newspaper, Ticket } from 'lucide-react'
+import { Clock, Compass, Heart, ImageUp, MessageCircle, Newspaper, Settings, Ticket } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
 import { useIdentity } from '../context/IdentityContext.jsx'
@@ -120,10 +120,20 @@ function AppLayout() {
             })}
           </nav>
 
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `mt-auto flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition hover:bg-ink/5 ${isActive ? 'bg-violet-500/12 text-violet-700 dark:text-violet-300' : 'text-ink/80'}`
+            }
+          >
+            <Settings size={18} strokeWidth={2} />
+            {t('nav.settings')}
+          </NavLink>
+
           <button
             type="button"
             onClick={handleLogout}
-            className="mt-auto rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
+            className="rounded-xl px-3 py-2.5 text-left text-sm font-medium text-ink-soft/60 transition hover:bg-ink/5 hover:text-ink"
           >
             {t('common.logout')}
           </button>
