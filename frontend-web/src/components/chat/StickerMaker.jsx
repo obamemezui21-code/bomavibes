@@ -165,7 +165,7 @@ function StickerMaker({ onClose, onCreated }) {
           type="button"
           onClick={handleSave}
           disabled={!img || isSaving}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 disabled:opacity-40"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 disabled:opacity-40"
           aria-label="Enregistrer le sticker"
         >
           {isSaving ? (
@@ -198,7 +198,7 @@ function StickerMaker({ onClose, onCreated }) {
               onClick={() => fileInputRef.current?.click()}
               className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm font-semibold text-white/80"
             >
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3">
                 <ImagePlus size={28} />
               </span>
               Choisir une photo

@@ -26,7 +26,7 @@ function SendButton({ onClick, disabled, busy }) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-lg shadow-pink-500/30 transition active:scale-95 disabled:opacity-50"
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 text-white shadow-lg shadow-pink-500/30 transition active:scale-95 disabled:opacity-50"
       aria-label="Publier la story"
     >
       {busy ? (
@@ -191,7 +191,7 @@ function StoryComposer({ userId, onClose, onCreated }) {
           </div>
           <div className="flex gap-10">
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReading} className="flex flex-col items-center gap-3">
-              <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 shadow-xl shadow-pink-500/30 transition active:scale-95">
+              <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 shadow-xl shadow-pink-500/30 transition active:scale-95">
                 {isReading ? (
                   <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                 ) : (

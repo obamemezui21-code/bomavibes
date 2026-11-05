@@ -161,7 +161,7 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
                 </span>
               )}
               {matchPercent > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-lg">
+                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-lg">
                   <Heart size={11} strokeWidth={2.75} fill="currentColor" />
                   {matchPercent}% Match
                 </span>

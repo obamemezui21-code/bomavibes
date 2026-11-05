@@ -126,7 +126,7 @@ function StoryInteractions({ story, isOwn, currentUserId, onPause }) {
         <button
           type="submit"
           disabled={sending}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white disabled:opacity-60"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-white disabled:opacity-60"
           aria-label="Envoyer"
         >
           <Send size={17} />

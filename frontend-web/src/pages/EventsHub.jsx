@@ -264,7 +264,7 @@ function EventsHub() {
             onClick={() => setActiveFilter(f)}
             className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
               activeFilter === f
-                ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
+                ? 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-ink-on-brand shadow-md shadow-violet-500/25'
                 : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
             }`}
           >
@@ -326,7 +326,7 @@ function EventsHub() {
                     className={`mt-3 w-full rounded-full py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                       isReserved
                         ? 'bg-ink/6 text-ink-soft/70 hover:bg-coral-500/10 hover:text-coral-600'
-                        : 'bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25'
+                        : 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-white shadow-md shadow-violet-500/25'
                     }`}
                   >
                     {pendingId === ev.id

@@ -25,7 +25,7 @@ function Row({ venue, reason, highlight, sendingId, onInvite }) {
         type="button"
         disabled={!!sendingId}
         onClick={() => onInvite(venue)}
-        className="shrink-0 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-3.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+        className="shrink-0 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-3.5 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
       >
         {sendingId === venue.id ? '…' : 'Inviter'}
       </button>

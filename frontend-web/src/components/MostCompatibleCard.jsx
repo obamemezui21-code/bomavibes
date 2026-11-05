@@ -16,7 +16,7 @@ function MostCompatibleCard({ pick, onOpen }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       whileTap={{ scale: 0.98 }}
-      className="flex w-full items-center gap-3.5 rounded-[24px] bg-gradient-to-r from-violet-600 to-pink-500 p-3.5 text-left text-white shadow-lg shadow-violet-500/25"
+      className="flex w-full items-center gap-3.5 rounded-[24px] bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 p-3.5 text-left text-white shadow-lg shadow-violet-500/25"
     >
       <span className="relative shrink-0">
         <img

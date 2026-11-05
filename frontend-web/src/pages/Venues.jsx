@@ -125,7 +125,7 @@ function Venues() {
             onClick={() => setActiveFilter(f)}
             className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
               activeFilter === f
-                ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
+                ? 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-ink-on-brand shadow-md shadow-violet-500/25'
                 : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
             }`}
           >
@@ -177,7 +177,7 @@ function Venues() {
                 <button
                   type="button"
                   onClick={() => setInviteTarget(v)}
-                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-sm font-semibold text-white shadow-md shadow-violet-500/25 transition"
+                  className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2 text-sm font-semibold text-white shadow-md shadow-violet-500/25 transition"
                 >
                   <Send size={14} strokeWidth={2.25} />
                   Inviter dans ce lieu
@@ -207,7 +207,7 @@ function Venues() {
                 <button
                   type="button"
                   onClick={() => setInviteTarget(selectedVenue)}
-                  className="mt-2 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-violet-500/25"
+                  className="mt-2 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-violet-500/25"
                 >
                   <Send size={12} strokeWidth={2.25} />
                   Inviter dans ce lieu

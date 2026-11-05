@@ -78,7 +78,7 @@ function Matches() {
           >
             <span
               className={`relative block rounded-full p-[3px] transition ${
-                connectFilter ? 'bg-gradient-to-br from-violet-500 to-pink-500 shadow-lg shadow-violet-500/25' : 'bg-ink/12'
+                connectFilter ? 'bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 shadow-lg shadow-violet-500/25' : 'bg-ink/12'
               }`}
             >
               {latestTalked ? (
@@ -139,7 +139,7 @@ function Matches() {
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigate(`/chat/${conversation.id}`)}
                   className={`group relative rounded-[26px] p-[2px] text-left shadow-[0_14px_30px_-12px_rgba(0,0,0,0.4)] ${
-                    conversation.isNewMatch ? 'bg-gradient-to-br from-pink-500 to-violet-500' : 'bg-transparent'
+                    conversation.isNewMatch ? 'bg-gradient-to-br from-brand-3 via-brand-2 to-brand-1' : 'bg-transparent'
                   }`}
                 >
                   <div className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl">
@@ -154,7 +154,7 @@ function Matches() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/5 to-black/20" />
 
                     {percent > 0 && (
-                      <span className="absolute left-1/2 top-2.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-md">
+                      <span className="absolute left-1/2 top-2.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-2.5 py-1 text-[11px] font-bold text-ink-on-brand shadow-md">
                         {percent}% Match
                       </span>
                     )}

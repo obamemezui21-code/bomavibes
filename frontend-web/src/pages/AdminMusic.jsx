@@ -96,7 +96,7 @@ function AdminMusic() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 desktop:py-8">
       <div className="mb-6 flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 text-white shadow-md shadow-violet-500/25">
           <Music size={20} strokeWidth={2} />
         </span>
         <div>
@@ -123,7 +123,7 @@ function AdminMusic() {
         <button
           type="submit"
           disabled={!file || !title.trim() || isUploading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-md shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-ink-on-brand shadow-md shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isUploading ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

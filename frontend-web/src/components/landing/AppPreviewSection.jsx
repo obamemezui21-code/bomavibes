@@ -67,7 +67,7 @@ function ChatMock() {
           </div>
         </div>
         <div className="flex justify-end">
-          <div className="max-w-[75%] rounded-2xl rounded-br-sm bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-2 text-[11px] text-[#261b28]">
+          <div className="max-w-[75%] rounded-2xl rounded-br-sm bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-3 py-2 text-[11px] text-[#261b28]">
             Merci ! Le tien aussi, on discute ?
           </div>
         </div>
@@ -90,7 +90,7 @@ function ChatMock() {
       </div>
       <div className="mt-2 flex items-center gap-2 rounded-full border border-black/10 bg-white px-3 py-2">
         <span className="flex-1 text-[10px] text-[#635a65]/60">Écrivez un message…</span>
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-[#261b28]">
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-[#261b28]">
           <Send size={11} strokeWidth={2.5} />
         </span>
       </div>

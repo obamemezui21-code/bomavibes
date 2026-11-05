@@ -63,7 +63,7 @@ function VibePlacesSection() {
                 <MapPin size={12} /> Bord de mer, Libreville · Samedi 20 h
               </p>
               <div className="mt-3 flex gap-2">
-                <span className="flex-1 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 py-1.5 text-center text-xs font-bold text-white">
+                <span className="flex-1 rounded-full bg-gradient-to-r from-brand-3 via-brand-2 to-brand-1 py-1.5 text-center text-xs font-bold text-white">
                   J'accepte 💕
                 </span>
                 <span className="rounded-full bg-[#f7f1e6] px-3 py-1.5 text-xs font-semibold text-[#635a65]">Plus tard</span>

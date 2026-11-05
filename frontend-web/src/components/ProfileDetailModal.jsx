@@ -485,7 +485,7 @@ function ProfileDetailModal({
                   onClose()
                   navigate(`/chat/${matchId}`)
                 }}
-                className="pointer-events-auto flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-8 py-3.5 text-sm font-semibold text-ink-on-brand shadow-xl shadow-violet-500/30"
+                className="pointer-events-auto flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-8 py-3.5 text-sm font-semibold text-ink-on-brand shadow-xl shadow-violet-500/30"
               >
                 <MessageCircle size={18} strokeWidth={2.25} />
                 Envoyer un message

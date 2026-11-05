@@ -142,7 +142,7 @@ function VoicePromptEditor({ voicePrompt: initial }) {
             disabled={isBusy}
             onClick={isRecording ? stop : start}
             className={`mt-3 flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold text-white transition disabled:opacity-60 ${
-              isRecording ? 'bg-coral-500' : 'bg-gradient-to-r from-violet-500 to-pink-500'
+              isRecording ? 'bg-coral-500' : 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3'
             }`}
           >
             {isRecording ? (

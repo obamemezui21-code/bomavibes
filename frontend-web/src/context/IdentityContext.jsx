@@ -98,7 +98,7 @@ export function IdentityProvider({ children }) {
                     setGateOpen(false)
                     navigate('/verification')
                   }}
-                  className="mt-5 w-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-white"
+                  className="mt-5 w-full rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-3 text-sm font-semibold text-white"
                 >
                   Vérifier mon identité
                 </button>

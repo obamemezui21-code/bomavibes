@@ -87,7 +87,7 @@ function MyTickets() {
       <div className="space-y-4">
         {tickets.map((ticket) => (
           <div key={ticket.id} className="relative overflow-hidden rounded-2xl border border-ink/8 bg-white shadow-sm dark:bg-surface-tint">
-            <div className="relative h-32 w-full bg-gradient-to-br from-violet-600 to-pink-600">
+            <div className="relative h-32 w-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3">
               {ticket.event?.image && (
                 <img src={ticket.event.image} alt="" className="h-full w-full object-cover" loading="lazy" />
               )}
@@ -142,7 +142,7 @@ function MyTickets() {
                 type="button"
                 onClick={() => handleDownload(ticket)}
                 disabled={downloadingId === ticket.id}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-xs font-semibold text-white shadow-md shadow-violet-500/25 transition disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2 text-xs font-semibold text-white shadow-md shadow-violet-500/25 transition disabled:opacity-50"
               >
                 <Download size={13} strokeWidth={2.25} />
                 {downloadingId === ticket.id ? 'Génération…' : 'Télécharger (PDF)'}

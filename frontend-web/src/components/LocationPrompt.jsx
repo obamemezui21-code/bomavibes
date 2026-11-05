@@ -96,7 +96,7 @@ function LocationPrompt() {
                 type="button"
                 onClick={activate}
                 disabled={state === 'asking'}
-                className="mt-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-violet-500/25 disabled:opacity-60"
+                className="mt-2.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-violet-500/25 disabled:opacity-60"
               >
                 {state === 'asking' ? 'Recherche de ta position…' : 'Activer ma position'}
               </button>

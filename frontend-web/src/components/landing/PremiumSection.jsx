@@ -23,7 +23,7 @@ const HIGHLIGHTS = [
     icon: Crown,
     title: 'VIP & plus',
     text: 'Likes illimités, voir qui vous aime, appels audio & vidéo, et le mode invisible avec Jadéite Impériale.',
-    glow: 'from-pink-500 to-violet-500',
+    glow: 'from-brand-3 via-brand-2 to-brand-1',
   },
 ]
 

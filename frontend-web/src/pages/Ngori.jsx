@@ -175,7 +175,7 @@ function Ngori() {
                       type="button"
                       onClick={() => handleRedeem(reward)}
                       disabled={missing > 0 || busyId !== null}
-                      className="w-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/20 transition disabled:cursor-not-allowed disabled:from-ink/15 disabled:to-ink/15 disabled:text-ink-soft/60 disabled:shadow-none"
+                      className="w-full rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/20 transition disabled:cursor-not-allowed disabled:from-ink/15 disabled:to-ink/15 disabled:text-ink-soft/60 disabled:shadow-none"
                     >
                       {busyId === reward.id
                         ? 'Activation…'

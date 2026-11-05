@@ -15,7 +15,7 @@ function Avatar({ photo, name, size = 'h-20 w-20', text = 'text-2xl' }) {
   return photo ? (
     <img src={photo} alt="" className={`${size} rounded-full object-cover`} />
   ) : (
-    <span className={`${size} ${text} flex items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 font-bold text-white`}>
+    <span className={`${size} ${text} flex items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 font-bold text-white`}>
       {name?.[0] || '?'}
     </span>
   )

@@ -50,7 +50,7 @@ function CommentComposer({ replyTarget, replyAuthorName, onCancelReply, onSubmit
         <button
           type="submit"
           disabled={!text.trim() || isSubmitting}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="Envoyer"
         >
           <Send size={17} strokeWidth={2.25} />

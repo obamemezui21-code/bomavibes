@@ -6,7 +6,7 @@ import { ROLES } from '../lib/roles.js'
 import ConfirmModal from '../components/ui/ConfirmModal.jsx'
 
 const ROLE_BADGES = {
-  [ROLES.SUPER_ADMIN]: 'bg-gradient-to-r from-violet-500 to-pink-500 text-white',
+  [ROLES.SUPER_ADMIN]: 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-white',
   [ROLES.ADMIN]: 'bg-sky-500/15 text-sky-600',
   [ROLES.MODERATOR]: 'bg-amber-500/15 text-amber-600',
   [ROLES.EDITOR]: 'bg-mint-500/15 text-mint-600',

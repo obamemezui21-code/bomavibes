@@ -11,7 +11,7 @@ import { compressImage } from '../lib/compressImage.js'
 import { IDENTITY_REQUIRED, VERIFIED_PERKS } from '../lib/identityStatus.js'
 
 const primaryButton =
-  'flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:opacity-50'
+  'flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-3 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 disabled:opacity-50'
 const secondaryButton =
   'flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-ink/12 py-2.5 text-sm font-semibold text-ink hover:bg-ink/5 disabled:opacity-50'
 
@@ -27,7 +27,7 @@ function Steps({ current }) {
     <div className="mb-5 flex gap-1.5">
       {labels.map((label, i) => (
         <div key={label} className="flex-1">
-          <div className={`h-1.5 rounded-full ${i <= current ? 'bg-gradient-to-r from-violet-500 to-pink-500' : 'bg-ink/10'}`} />
+          <div className={`h-1.5 rounded-full ${i <= current ? 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3' : 'bg-ink/10'}`} />
           <p className={`mt-1 text-[11px] font-medium ${i === current ? 'text-ink' : 'text-ink-soft/50'}`}>{label}</p>
         </div>
       ))}

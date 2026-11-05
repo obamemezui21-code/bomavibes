@@ -316,7 +316,7 @@ function Discover() {
           <button
             type="button"
             onClick={() => setInterestFilter('')}
-            className="flex items-center gap-1.5 rounded-full border border-transparent bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-1.5 text-xs font-medium text-ink-on-brand shadow-md shadow-violet-500/25"
+            className="flex items-center gap-1.5 rounded-full border border-transparent bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-3 py-1.5 text-xs font-medium text-ink-on-brand shadow-md shadow-violet-500/25"
           >
             {interestFilter}
             <X size={12} strokeWidth={2.5} />
@@ -520,7 +520,7 @@ function Discover() {
                 aria-pressed={filters.gender === value}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                   filters.gender === value
-                    ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-md shadow-violet-500/25'
+                    ? 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-ink-on-brand shadow-md shadow-violet-500/25'
                     : 'border border-ink/12 text-ink-soft/70 hover:bg-ink/5'
                 }`}
               >
@@ -606,7 +606,7 @@ function Discover() {
                 whileTap={{ scale: 0.97 }}
                 disabled={isReviewing}
                 onClick={handleReviewProfiles}
-                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RotateCcw size={16} strokeWidth={2.25} />
                 {isReviewing ? 'Chargement…' : 'Revoir les profils'}
@@ -870,7 +870,7 @@ function Discover() {
                 transition={{ delay: 0.15, type: 'spring', stiffness: 220, damping: 16 }}
                 className="relative"
               >
-                <span className="block rounded-full bg-gradient-to-br from-pink-400 to-violet-500 p-1 shadow-2xl shadow-pink-500/40">
+                <span className="block rounded-full bg-gradient-to-br from-brand-3 via-brand-2 to-brand-1 p-1 shadow-2xl shadow-pink-500/40">
                   <img
                     src={fullPhotoFor(matchedProfile)}
                     alt={matchedProfile.firstName}

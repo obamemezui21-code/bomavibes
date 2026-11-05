@@ -226,7 +226,7 @@ function SupportForm() {
                   whileTap={{ scale: 0.97 }}
                   onClick={handleNotifyMe}
                   disabled={isNotifying}
-                  className="mt-3 w-full rounded-lg bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-[#261b28] shadow-md shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-3 w-full rounded-lg bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-[#261b28] shadow-md shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isNotifying ? 'Enregistrement…' : 'Me prévenir'}
                 </motion.button>

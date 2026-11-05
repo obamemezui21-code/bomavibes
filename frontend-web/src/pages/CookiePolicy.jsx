@@ -75,7 +75,7 @@ function CookiePolicy() {
           <button
             type="button"
             onClick={openCookieSettings}
-            className="rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white"
+            className="rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-2 text-sm font-semibold text-white"
           >
             Gérer les cookies
           </button>

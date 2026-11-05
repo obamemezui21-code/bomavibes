@@ -6,7 +6,7 @@ import { answerWeMet, getWeMet } from '../../firebase/weMet.js'
 
 const CHOICE =
   'flex-1 rounded-full py-2 text-xs font-semibold transition disabled:opacity-60'
-const PRIMARY = `${CHOICE} bg-gradient-to-r from-violet-500 to-pink-500 text-white`
+const PRIMARY = `${CHOICE} bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-white`
 const SECONDARY = `${CHOICE} bg-ink/[0.06] text-ink hover:bg-ink/10`
 
 // "We Met" card at the top of a conversation (as on Hinge): asked privately

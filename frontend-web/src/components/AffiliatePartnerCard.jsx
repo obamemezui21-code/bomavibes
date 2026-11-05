@@ -60,7 +60,7 @@ function AffiliatePartnerCard({ partner, ctaLabel = 'Voir l’offre', freeLabel 
           target="_blank"
           rel="noopener sponsored"
           onClick={() => recordAiPartnerClick(partner.id)}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-sm font-semibold text-white shadow-md shadow-violet-500/25 transition"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2 text-sm font-semibold text-white shadow-md shadow-violet-500/25 transition"
         >
           {ctaLabel}
           <ExternalLink size={13} strokeWidth={2.25} />

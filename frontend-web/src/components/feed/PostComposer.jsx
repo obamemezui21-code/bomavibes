@@ -370,7 +370,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
                     <div className="mt-2">
                       <div className="h-1.5 overflow-hidden rounded-full bg-ink/10">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 transition-[width]"
+                          className="h-full rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 transition-[width]"
                           style={{ width: `${Math.round(trimProgress * 100)}%` }}
                         />
                       </div>
@@ -410,7 +410,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
-            className="w-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            className="w-full rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-3.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
           >
             {isSubmitting
               ? type === 'video'

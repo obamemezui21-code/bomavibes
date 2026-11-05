@@ -17,7 +17,7 @@ function MapConsentPlaceholder({ height = '300px' }) {
         <button
           type="button"
           onClick={() => saveConsent({ maps: true })}
-          className="rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white"
+          className="rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-2 text-sm font-semibold text-white"
         >
           Afficher les cartes
         </button>

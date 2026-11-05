@@ -23,7 +23,7 @@ function PushPermissionPrompt() {
         onClick={(e) => e.stopPropagation()}
         className="glass-panel relative w-full max-w-[280px] overflow-hidden rounded-2xl p-4 text-center"
       >
-        <span className="relative mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/30">
+        <span className="relative mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 text-white shadow-md shadow-violet-500/30">
           <Bell size={20} strokeWidth={2} />
         </span>
 
@@ -37,7 +37,7 @@ function PushPermissionPrompt() {
             type="button"
             whileTap={{ scale: 0.97 }}
             onClick={acceptPushPrompt}
-            className="rounded-lg bg-gradient-to-r from-violet-500 to-pink-500 py-2 text-xs font-semibold text-ink-on-brand shadow-md shadow-violet-500/25"
+            className="rounded-lg bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2 text-xs font-semibold text-ink-on-brand shadow-md shadow-violet-500/25"
           >
             Activer
           </motion.button>

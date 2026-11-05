@@ -229,7 +229,7 @@ function AdminReports() {
                       type="button"
                       onClick={() => handleUpdate(report, 'actioned')}
                       disabled={updatingId === report.id}
-                      className="flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-violet-500/25 transition disabled:opacity-50"
+                      className="flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-violet-500/25 transition disabled:opacity-50"
                     >
                       <ShieldCheck size={13} strokeWidth={2.25} />
                       Traiter

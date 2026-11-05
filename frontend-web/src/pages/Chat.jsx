@@ -1172,7 +1172,7 @@ function Chat() {
                       <span className="text-[11px] text-ink-soft/50">{formatListTime(c.lastActivityAt)}</span>
                     )}
                     {!!c.unreadCount && typingId !== c.id && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-1 text-[10px] font-bold text-ink-on-brand">
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-1 text-[10px] font-bold text-ink-on-brand">
                         {c.unreadCount}
                       </span>
                     )}
@@ -1195,7 +1195,7 @@ function Chat() {
               exit={{ opacity: 0, scale: 0.8, y: 8 }}
               whileTap={{ scale: 0.9 }}
               onClick={() => listScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25"
+              className="absolute bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-ink-on-brand shadow-lg shadow-violet-500/25"
               aria-label="Remonter en haut"
             >
               <ChevronUp size={18} strokeWidth={2.5} />
@@ -1544,7 +1544,7 @@ function Chat() {
                     ? 'cursor-pointer select-none'
                     : `min-w-0 max-w-full cursor-pointer select-none rounded-[20px] px-4 py-2.5 text-sm shadow-sm transition ${
                         m.fromMe
-                          ? 'rounded-br-md bg-gradient-to-br from-pink-500 to-pink-600 text-white'
+                          ? 'rounded-br-md bg-gradient-to-br from-brand-2 to-brand-3 text-white'
                           : 'rounded-bl-md bg-white text-ink dark:bg-surface-tint'
                       }`
                   return (
@@ -1752,7 +1752,7 @@ function Chat() {
                                     }}
                                     className={`rounded-full px-3 py-1.5 text-xs font-semibold shadow-sm transition ${
                                       k === 0
-                                        ? 'bg-gradient-to-r from-violet-500 to-pink-500 text-white'
+                                        ? 'bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-white'
                                         : 'bg-white text-ink ring-1 ring-ink/10 hover:bg-ink/5 dark:bg-surface-tint'
                                     }`}
                                   >
@@ -1868,7 +1868,7 @@ function Chat() {
                     scrollToBottom('smooth')
                     setShowNewMessagesPill(false)
                   }}
-                  className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-xs font-semibold text-ink-on-brand shadow-lg shadow-violet-500/30"
+                  className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-2 text-xs font-semibold text-ink-on-brand shadow-lg shadow-violet-500/30"
                 >
                   Nouveaux messages
                   <ChevronDown size={14} strokeWidth={2.5} />
@@ -1955,7 +1955,7 @@ function Chat() {
                   type="button"
                   onClick={() => stopRecording(true)}
                   whileTap={{ scale: 0.9 }}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-ink-on-brand shadow-lg shadow-violet-500/25"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-ink-on-brand shadow-lg shadow-violet-500/25"
                   aria-label="Envoyer la note vocale"
                 >
                   <Send size={18} strokeWidth={2.25} />
@@ -2224,7 +2224,7 @@ function Chat() {
                   <motion.button
                     type="submit"
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/35"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-2 to-brand-3 text-white shadow-lg shadow-pink-500/35"
                     aria-label={editingMessageId ? 'Enregistrer' : 'Envoyer'}
                   >
                     <Send size={18} strokeWidth={2.25} />
@@ -2235,7 +2235,7 @@ function Chat() {
                     onClick={startRecording}
                     disabled={isSendingVoice || !!editingMessageId}
                     whileTap={{ scale: 0.9 }}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-pink-600 text-white shadow-lg shadow-pink-500/35 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-2 to-brand-3 text-white shadow-lg shadow-pink-500/35 disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Enregistrer une note vocale"
                   >
                     {isSendingVoice ? (

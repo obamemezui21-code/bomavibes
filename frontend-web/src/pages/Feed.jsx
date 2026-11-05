@@ -244,7 +244,7 @@ function Feed() {
               onClick={() => (myStories.length > 0 ? setViewerIndex(0) : openStoryComposer())}
               className={`block rounded-full p-[2px] ${
                 myStories.length > 0
-                  ? 'bg-gradient-to-br from-pink-500 to-violet-500'
+                  ? 'bg-gradient-to-br from-brand-3 via-brand-2 to-brand-1'
                   : 'border-2 border-dashed border-violet-400/50'
               }`}
             >
@@ -294,7 +294,7 @@ function Feed() {
             >
               <span
                 className={`block rounded-full p-[2px] ${
-                  g.allViewed ? 'bg-ink/15' : 'bg-gradient-to-br from-pink-500 to-violet-500'
+                  g.allViewed ? 'bg-ink/15' : 'bg-gradient-to-br from-brand-3 via-brand-2 to-brand-1'
                 }`}
               >
                 <img
@@ -342,7 +342,7 @@ function Feed() {
         <button
           type="button"
           onClick={() => openComposer('text')}
-          className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-1.5 text-sm font-semibold text-ink-on-brand shadow-md shadow-violet-500/25"
+          className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-1.5 text-sm font-semibold text-ink-on-brand shadow-md shadow-violet-500/25"
         >
           Publier
           <Send size={13} strokeWidth={2.5} />
@@ -365,7 +365,7 @@ function Feed() {
             <button
               type="button"
               onClick={handleShowNewPosts}
-              className="mx-auto mt-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-2 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
+              className="mx-auto mt-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-2 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25"
             >
               <ArrowUp size={14} strokeWidth={2.5} />
               {newPostsCount === 1 ? '1 nouveau post' : `${newPostsCount}${newPostsCount >= 50 ? '+' : ''} nouveaux posts`}

@@ -370,7 +370,7 @@ function Profile() {
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-ink/10">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-pink-500"
+                className="h-full rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3"
                 initial={{ width: 0 }}
                 animate={{ width: `${completion}%` }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -855,7 +855,7 @@ function Profile() {
               type="submit"
               disabled={isSaving}
               whileTap={{ scale: 0.97 }}
-              className="w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? 'Enregistrement…' : 'Enregistrer'}
             </motion.button>

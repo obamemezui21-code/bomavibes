@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 
 const buttonClass =
-  'block w-full rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-center text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60'
+  'block w-full rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-center text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60'
 
 function AuthAction() {
   const [searchParams] = useSearchParams()

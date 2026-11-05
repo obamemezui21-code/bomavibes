@@ -240,7 +240,7 @@ function GuestGames() {
           </div>
         )}
 
-        <div className="mt-6 rounded-[24px] bg-gradient-to-r from-violet-600 to-pink-500 p-5 text-center text-white">
+        <div className="mt-6 rounded-[24px] bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 p-5 text-center text-white">
           <p className="font-display text-lg font-bold">Envie d’aller plus loin ?</p>
           <p className="mt-1 text-sm text-white/85">
             Avec ton compte BomaVibes, tes parties rapportent des Ngori, tu entres au classement… et tu fais des rencontres.
@@ -318,7 +318,7 @@ function GuestGames() {
                 </p>
                 <p className="mt-1 text-ink-soft">Tu pourrais {WITH_ACCOUNT[result.gameId]}.</p>
               </div>
-              <Link to="/signup" className="mt-4 block rounded-full bg-gradient-to-r from-violet-600 to-pink-500 py-3 text-sm font-bold text-white">
+              <Link to="/signup" className="mt-4 block rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-3 text-sm font-bold text-white">
                 Créer mon compte gratuit
               </Link>
               <button

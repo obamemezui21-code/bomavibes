@@ -40,45 +40,47 @@
      the brand fill. The brand is deep plum, so this is white. */
   --color-ink-on-brand: #ffffff;
 
-  --color-violet-300: #ead5ea;
-  --color-violet-400: #c79ac7;
-  --color-violet-500: #7e3a7f;
-  --color-violet-600: #62265f;
+  --color-violet-300: #ecd8f5;
+  --color-violet-400: #c48ae0;
+  --color-violet-500: #8e24aa;
+  --color-violet-600: #6f1b8f;
   --color-violet-950: #4b164c;
 
-  /* The `pink-*` utilities used across the app resolve to the same plum
-     family, so every former pink accent follows the theme without renaming
-     classes in 40 files. */
-  --color-pink-300: #ead5ea;
-  --color-pink-400: #8a4d8b;
-  --color-pink-500: #5c1f5d;
-  --color-pink-600: #4b164c;
+  /* The app's vivid accent. violet-* and pink-* serve as text and as fills,
+     so each value stays readable both ways: palette.test.js checks it. */
+  --color-pink-300: #fbd3e8;
+  --color-pink-400: #e8479f;
+  --color-pink-500: #d3187f;
+  --color-pink-600: #b0126a;
 
-  /* The only real pink left: hearts and likes — the kit's #DD88CF. */
-  --color-heart-300: #f3d3ed;
-  --color-heart-400: #e6a3db;
-  --color-heart-500: #dd88cf;
-  --color-heart-600: #c96bb9;
+  /* Hearts and likes. */
+  --color-heart-300: #ffc9df;
+  --color-heart-400: #ff85b3;
+  --color-heart-500: #ec2a78;
+  --color-heart-600: #c81561;
 
-  --color-mint-400: #4dbf85;
-  --color-mint-500: #349d62;
-  --color-mint-600: #237a4b;
+  --color-mint-400: #2fd083;
+  --color-mint-500: #0f9d58;
+  --color-mint-600: #0b7a44;
 
-  --color-sky-400: #67c7f5;
-  --color-sky-500: #38a9e0;
+  --color-sky-400: #4cc3ff;
+  --color-sky-500: #0b84d6;
 
-  --color-coral-400: #f2726c;
-  --color-coral-500: #d73431;
-  --color-coral-600: #b82a27;
+  --color-coral-400: #ff6b5e;
+  --color-coral-500: #e0312b;
+  --color-coral-600: #c0241f;
 
-  --color-gold: #f2bf4e;
-  --color-forest: #349d62;
-  --color-sun: #f4c947;
+  --color-gold: #ffc83d;
+  --color-forest: #0f9d58;
+  --color-sun: #ffcf33;
 
-  /* 3-stop diagonal reads richer than a flat 2-color gradient while staying
-     inside the existing violet/pink identity; shared by text and background
-     treatments so both stay in sync instead of drifting independently. */
-  --gradient-brand: linear-gradient(135deg, var(--color-violet-600) 0%, var(--color-pink-500) 55%, var(--color-pink-600) 100%);
+  /* The brand gradient, plum to magenta to coral: from-brand-1 via-brand-2
+     to-brand-3. Fixed in both themes because white text sits on it. */
+  --color-brand-1: #7b1fa2;
+  --color-brand-2: #d3187f;
+  --color-brand-3: #d43f1e;
+  --gradient-brand: linear-gradient(135deg, var(--color-brand-1) 0%, var(--color-brand-2) 55%, var(--color-brand-3) 100%);
+  --gradient-brand-text: var(--gradient-brand);
 
   --font-display: "Outfit Variable", "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -104,26 +106,29 @@ html {
 }
 
 html.dark {
-  --color-surface: #131019;
-  --color-surface-soft: #211d29;
-  --color-surface-tint: #302b39;
+  --color-surface: #0f0817;
+  --color-surface-soft: #170d24;
+  --color-surface-tint: #2a1a3d;
 
-  --color-ink: #f5f4f8;
-  --color-ink-soft: #aca8b6;
+  --color-ink: #f7f3fb;
+  --color-ink-soft: #b9b0c6;
 
-  /* Lighter plums so accents stay visible on the dark background. */
-  --color-violet-500: #b06fb1;
-  --color-violet-600: #93508f;
+  /* Brighter accents, so they stand out on the deep background. */
+  --color-violet-500: #b45cf0;
+  --color-violet-600: #ad52ec;
 
-  --color-pink-400: #d0a2d1;
-  --color-pink-500: #a85ea9;
-  --color-pink-600: #8a468b;
+  --color-pink-400: #ff8ac7;
+  --color-pink-500: #f0389b;
+  --color-pink-600: #f0389b;
 
-  --color-coral-500: #ea3d38;
-  --color-coral-600: #c92a26;
+  --color-coral-500: #ef3f3a;
+  --color-coral-600: #d42f2a;
 
   --shadow-glass: 0 24px 48px -16px rgba(0, 0, 0, 0.5);
   --shadow-glass-solid: 0 24px 48px -16px rgba(0, 0, 0, 0.45);
+
+  /* Gradient text sits on the dark background: it needs lighter stops. */
+  --gradient-brand-text: linear-gradient(135deg, #d08bff 0%, #ff5fa2 55%, #ff8a5c 100%);
 
   color-scheme: dark;
 }
@@ -265,19 +270,19 @@ select optgroup {
 }
 
 .dark .glass-panel {
-  background: rgba(33, 29, 41, 0.72);
+  background: rgba(23, 13, 36, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: var(--shadow-glass);
 }
 
 .dark .glass-panel-solid {
-  background: #211d29;
+  background: #170d24;
   border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: var(--shadow-glass-solid);
 }
 
 .text-gradient-brand {
-  background: var(--gradient-brand);
+  background: var(--gradient-brand-text);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

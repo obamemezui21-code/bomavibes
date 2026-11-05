@@ -111,7 +111,7 @@ function CookieBanner() {
               <button
                 type="button"
                 onClick={() => decide(mapsChoice)}
-                className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white"
+                className="flex-1 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-white"
               >
                 Enregistrer mes choix
               </button>
@@ -134,7 +134,7 @@ function CookieBanner() {
                 <button
                   type="button"
                   onClick={() => decide(true)}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-white"
+                  className="flex-1 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-white"
                 >
                   Tout accepter
                 </button>

@@ -144,7 +144,7 @@ function HeroSection() {
           >
             <Link
               to="/signup"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/30 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-pink-500/40 active:translate-y-0 active:scale-[0.98]"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-brand-3 via-brand-2 to-brand-1 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/30 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-pink-500/40 active:translate-y-0 active:scale-[0.98]"
             >
               Créer mon profil
               <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />

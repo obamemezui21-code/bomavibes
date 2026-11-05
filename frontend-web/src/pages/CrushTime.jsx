@@ -72,7 +72,7 @@ function CrushTime() {
       </div>
 
       <div className="mx-auto max-w-md px-4 pt-5">
-        <div className="flex items-start gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-pink-500 p-4 text-white">
+        <div className="flex items-start gap-3 rounded-2xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 p-4 text-white">
           <Target size={22} strokeWidth={2} className="mt-0.5 shrink-0" />
           <p className="text-sm">
             Parmi ces 4 profils, <strong>une personne t'a aimé·e</strong>. Trouve-la et c'est un match ! Une seule chance
@@ -160,7 +160,7 @@ function CrushTime() {
                         <button
                           type="button"
                           onClick={() => navigate(`/chat/${result.matchId}`)}
-                          className="rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white"
+                          className="rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-6 py-2.5 text-sm font-semibold text-white"
                         >
                           Envoyer un message
                         </button>

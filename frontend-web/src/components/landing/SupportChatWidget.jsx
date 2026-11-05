@@ -298,7 +298,7 @@ function SupportChatWidget() {
         {!isOpen && (
           <span
             aria-hidden="true"
-            className="animate-bv-glow pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 blur-xl"
+            className="animate-bv-glow pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 blur-xl"
           />
         )}
         <span className={`block ${isOpen ? '' : 'animate-bv-bob'}`}>
@@ -307,7 +307,7 @@ function SupportChatWidget() {
             onClick={() => setIsOpen((v) => !v)}
             whileTap={{ scale: 0.92 }}
             aria-label={isOpen ? "Fermer l'assistant" : "Ouvrir l'assistant BomaVibes"}
-            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white shadow-xl shadow-violet-500/30 transition hover:brightness-105"
+            className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-white shadow-xl shadow-violet-500/30 transition hover:brightness-105"
           >
             {isOpen ? <X size={22} strokeWidth={2.25} /> : <Bot size={24} strokeWidth={2.25} />}
           </motion.button>
@@ -323,7 +323,7 @@ function SupportChatWidget() {
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="fixed inset-x-4 bottom-24 z-50 flex max-h-[70vh] w-auto max-w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 sm:inset-x-auto sm:right-6 sm:w-96"
           >
-            <div className="flex shrink-0 items-center gap-2 bg-gradient-to-r from-violet-500 to-pink-500 px-4 py-3.5 text-white">
+            <div className="flex shrink-0 items-center gap-2 bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-3.5 text-white">
               <Sparkles size={18} strokeWidth={2.25} />
               <p className="min-w-0 truncate text-sm font-semibold">Assistant BomaVibes</p>
             </div>
@@ -411,7 +411,7 @@ function SupportChatWidget() {
                 type="submit"
                 disabled={!input.trim()}
                 aria-label="Envoyer"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-pink-500 text-white disabled:opacity-40"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 text-white disabled:opacity-40"
               >
                 <Send size={16} strokeWidth={2.25} />
               </button>

@@ -89,7 +89,7 @@ function NewsHeroSlider() {
               className="absolute inset-0 h-full w-full object-cover"
             />
             <span className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-black/20" />
-            <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-violet-500 to-pink-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
+            <span className="absolute left-3 top-3 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">
               À la une
             </span>
             <span className="absolute inset-x-0 bottom-0 block px-4 pb-7 sm:pb-8">

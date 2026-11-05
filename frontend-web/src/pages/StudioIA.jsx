@@ -20,7 +20,7 @@ function StudioIA() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 pb-24 desktop:pb-6">
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-md shadow-violet-500/25">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 text-white shadow-md shadow-violet-500/25">
           <Sparkles size={20} strokeWidth={2} />
         </span>
         <div className="min-w-0">

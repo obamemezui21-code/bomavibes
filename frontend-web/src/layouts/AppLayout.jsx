@@ -85,7 +85,7 @@ function AppLayout() {
                   {isActive && (
                     <motion.div
                       layoutId="nav-active-pill"
-                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 shadow-lg shadow-violet-500/25"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 shadow-lg shadow-violet-500/25"
                       transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                     />
                   )}
@@ -201,7 +201,7 @@ function AppLayout() {
                 {isActive && (
                   <motion.span
                     layoutId="nav-active-pill"
-                    className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 to-pink-500 shadow-md shadow-pink-500/40"
+                    className="absolute inset-0 rounded-full bg-gradient-to-br from-brand-2 to-brand-3 shadow-md shadow-pink-500/40"
                     transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                   />
                 )}

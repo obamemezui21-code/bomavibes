@@ -101,7 +101,7 @@ function ForgotPasswordModal({ onClose }) {
               type="submit"
               disabled={isSubmitting}
               whileTap={{ scale: 0.97 }}
-              className="flex-1 rounded-xl bg-gradient-to-r from-violet-500 to-pink-500 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex-1 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-ink-on-brand shadow-lg shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Envoi…' : 'Envoyer le lien'}
             </motion.button>

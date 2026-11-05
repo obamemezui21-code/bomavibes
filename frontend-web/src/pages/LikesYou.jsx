@@ -103,7 +103,7 @@ function LikesYou() {
             <button
               type="button"
               onClick={() => navigate('/crush-time')}
-              className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-pink-500 p-4 text-left text-white shadow-lg shadow-violet-500/20"
+              className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 p-4 text-left text-white shadow-lg shadow-violet-500/20"
             >
               <Target size={24} strokeWidth={2} className="shrink-0" />
               <span className="min-w-0 flex-1">

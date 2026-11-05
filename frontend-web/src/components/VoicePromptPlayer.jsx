@@ -27,7 +27,7 @@ function VoicePromptPlayer({ voicePrompt, children }) {
         <button
           type="button"
           onClick={toggle}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-pink-500 text-white shadow-md"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 text-white shadow-md"
           aria-label={isPlaying ? 'Pause' : 'Écouter'}
         >
           {isPlaying ? <Pause size={18} strokeWidth={2.5} /> : <Play size={18} strokeWidth={2.5} className="ml-0.5" />}

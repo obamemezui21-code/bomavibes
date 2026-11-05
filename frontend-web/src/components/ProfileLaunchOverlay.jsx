@@ -117,7 +117,7 @@ function ProfileLaunchOverlay({
             transition={{ duration: done ? 0.6 : 2.2, repeat: Infinity, ease: 'linear' }}
           />
           <motion.div
-            className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-4 border-[#2a0f3a] bg-gradient-to-br from-violet-500 to-pink-500"
+            className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-4 border-[#2a0f3a] bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3"
             animate={done ? { scale: [1, 1.18, 1] } : reduceMotion ? undefined : { scale: [1, 1.05, 1] }}
             transition={done ? { duration: 0.5 } : { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
           >

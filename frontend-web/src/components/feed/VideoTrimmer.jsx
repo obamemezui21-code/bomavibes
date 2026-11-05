@@ -69,7 +69,7 @@ function VideoTrimmer({ src, duration, maxLength, start, end, onChange }) {
         <div className="relative h-6">
           <div className="absolute inset-x-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-ink/15" />
           <div
-            className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-gradient-to-r from-violet-500 to-pink-500"
+            className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3"
             style={{ left: pct(start), width: pct(length) }}
           />
           <input
