@@ -71,13 +71,13 @@ function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          {/* Gold, the one thing in this bar that isn't white on violet. */}
+          {/* White like the menu button beside it, in the brand's plum. */}
           {!token && (
             <Link
               to="/login"
-              className="animate-bv-pulse inline-flex items-center gap-2 rounded-full bg-[#fcd116] px-5 py-3 text-base font-extrabold text-[#2a0f45] shadow-[0_0_22px_rgba(252,209,22,0.75)] ring-2 ring-white transition hover:bg-[#ffe04d] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[#4b164c] shadow-md transition hover:bg-white/90 active:scale-95"
             >
-              <LogIn size={19} strokeWidth={2.75} />
+              <LogIn size={17} strokeWidth={2.5} />
               Se connecter
             </Link>
           )}

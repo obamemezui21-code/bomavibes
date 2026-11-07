@@ -156,9 +156,9 @@ function HeroSection() {
             </Link>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#fcd116] px-8 py-3.5 text-base font-extrabold text-[#2a0f45] shadow-[0_0_26px_rgba(252,209,22,0.65)] ring-2 ring-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe04d] active:translate-y-0 active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[#4b164c] shadow-lg transition duration-300 hover:-translate-y-0.5 hover:bg-white/90 active:translate-y-0 active:scale-[0.98]"
             >
-              <LogIn size={19} strokeWidth={2.75} />
+              <LogIn size={17} strokeWidth={2.5} />
               Se connecter
             </Link>
           </motion.div>
