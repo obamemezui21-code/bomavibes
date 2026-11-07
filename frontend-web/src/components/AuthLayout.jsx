@@ -7,7 +7,7 @@ function AuthLayout({ title, subtitle, children, footer }) {
   return (
     <div className="relative flex min-h-svh flex-col overflow-hidden bg-surface md:flex-row">
       {/* Brand panel */}
-      <div className="relative flex items-center justify-center overflow-hidden px-6 py-12 md:w-1/2 md:py-0">
+      <div className="relative flex items-center justify-center overflow-hidden px-6 pb-12 pt-32 md:w-1/2 md:py-0">
         <img
           src={brandPhoto}
           alt="Membres de la communauté BomaVibes"
@@ -17,8 +17,8 @@ function AuthLayout({ title, subtitle, children, footer }) {
 
         <img
           src={logo}
-          alt="BomaVibes"
-          className="absolute left-6 top-6 h-12 w-12 rounded-full border-2 border-pink-500 object-cover object-top shadow-md md:left-8 md:top-8"
+          alt="BomaVibes, Beyond Connections"
+          className="absolute left-6 top-6 h-20 w-auto rounded-2xl bg-white p-1 shadow-md md:left-8 md:top-8 md:h-28"
         />
 
         <motion.div

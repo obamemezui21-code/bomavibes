@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import logo from '../assets/bomavibes-icon.webp'
+import logo from '../assets/bomavibes-logo.webp'
 
 const HOLD_MS = 1600
 
@@ -44,30 +44,20 @@ function SplashScreen({ onFinish }) {
             <motion.div
               animate={{ scale: [1, 1.035, 1] }}
               transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: 0.9 }}
-              className="relative flex h-32 w-32 items-center justify-center rounded-full bg-violet-950 shadow-[0_0_60px_rgba(244,114,182,0.35)] ring-2 ring-pink-400/70 sm:h-40 sm:w-40"
+              className="relative w-64 overflow-hidden rounded-3xl bg-white p-2 shadow-[0_0_60px_rgba(244,114,182,0.35)] sm:w-80"
             >
-              <img src={logo} alt="BomaVibes" className="h-[78%] w-[78%] rounded-full object-cover" />
+              <img src={logo} alt="" className="block h-auto w-full" />
             </motion.div>
           </motion.div>
 
-          {/* Wordmark */}
+          {/* Wordmark: the logo carries the slogan, not the name. */}
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.65, ease: 'easeOut' }}
-            className="mt-7 font-display text-2xl font-extrabold uppercase tracking-wide text-white sm:text-3xl"
+            className="mt-6 font-display text-2xl font-extrabold uppercase tracking-wide text-white sm:text-3xl"
           >
             Boma<span className="text-pink-400">Vibes</span>
-          </motion.p>
-
-          {/* Tagline */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.95, ease: 'easeOut' }}
-            className="mt-2 text-xs font-medium uppercase tracking-[0.25em] text-white/50"
-          >
-            L'amour a sa vibe
           </motion.p>
         </motion.div>
       )}

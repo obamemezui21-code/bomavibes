@@ -53,7 +53,7 @@ export function paintFlag(g, design, x, y, w, h) {
     g.fillRect(x, y, w, h)
     word(g, '2NK3', '#0a0a0a', x, y, w, h, 0.55)
   } else {
-    g.fillStyle = '#faf6ee'
+    g.fillStyle = '#ffffff'
     g.fillRect(x, y, w, h)
     if (flagLogoReady()) {
       const r = Math.min((w * 0.92) / logo.width, (h * 0.96) / logo.height)

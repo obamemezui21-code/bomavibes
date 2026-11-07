@@ -114,6 +114,11 @@ function HeroSection() {
         <div className="relative z-10 text-center lg:text-left">
           <Wordmark />
 
+          <p className="mt-3 flex flex-wrap justify-center gap-x-3 font-display text-xs font-semibold uppercase tracking-[0.2em] sm:text-sm lg:justify-start">
+            <span className="text-[#f5a800]">Beyond Connections</span>
+            <span className="text-white/75">A Gabonese Love Story</span>
+          </p>
+
           <motion.p
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}

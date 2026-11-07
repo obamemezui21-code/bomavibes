@@ -1,4 +1,4 @@
-const LOGO_URL = "https://bomavibes.tech/bomavibes-logo.jpeg";
+const LOGO_URL = "https://bomavibes.tech/beyond-connections-logo.jpg";
 
 function escapeHtml(text) {
     return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -9,7 +9,7 @@ function wrapper(title, bodyHtml) {
     <div style="background:#FAF6EF;padding:32px 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <div style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 20px 40px -20px rgba(31,61,43,0.25);">
         <div style="background:linear-gradient(135deg,#0e2a1e,#163d29,#1f3d2b);padding:28px 32px;text-align:center;">
-          <img src="${LOGO_URL}" alt="BomaVibes" width="56" height="56" style="border-radius:999px;border:2px solid #C9962B;object-fit:cover;" />
+          <img src="${LOGO_URL}" alt="BomaVibes, Beyond Connections" width="200" style="display:block;width:200px;max-width:100%;height:auto;margin:0 auto;border-radius:16px;background:#ffffff;" />
           <p style="color:#F5EFE3;font-size:20px;font-weight:700;margin:12px 0 0;">
             Boma<span style="color:#E8C468;">Vibes</span>
           </p>
@@ -20,7 +20,7 @@ function wrapper(title, bodyHtml) {
         </div>
       </div>
       <p style="text-align:center;color:#6b5d4f;font-size:12px;margin-top:16px;">
-        BomaVibes — la rencontre gabonaise
+        BomaVibes — Beyond Connections, A Gabonese Love Story
       </p>
     </div>`;
 }
