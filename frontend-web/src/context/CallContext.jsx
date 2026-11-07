@@ -49,6 +49,9 @@ const RESTART_RETRY_MS = 8 * 1000
 const MAX_ICE_RESTARTS = 2
 // Give up if the call hasn't recovered this long after the drop.
 const RECOVERY_TIMEOUT_MS = 25 * 1000
+// Answered but never connected: without this, a path that neither fails nor
+// succeeds leaves both sides on "Connexion…" forever.
+const CONNECT_TIMEOUT_MS = 45 * 1000
 
 const ROUTE_LABELS = {
   host: 'direct (même réseau)',
@@ -108,6 +111,13 @@ function mediaConstraints(type, facingMode = 'user') {
   }
 }
 
+// Why the microphone could not be opened; `action` is "appeler" or "répondre".
+function micErrorMessage(error, action) {
+  if (error?.name === 'NotFoundError') return 'Aucun micro détecté sur cet appareil.'
+  if (error?.name === 'NotReadableError') return 'Le micro est déjà utilisé par une autre application.'
+  return `Autorisez l’accès au micro pour ${action}.`
+}
+
 export function CallProvider({ children }) {
   const { user, publicProfile } = useAuth()
   const { showToast } = useToast()
@@ -129,6 +139,7 @@ export function CallProvider({ children }) {
   const unsubsRef = useRef([])
   const timersRef = useRef([])
   const pendingRemoteCandidatesRef = useRef([])
+  const answerAppliedRef = useRef(false)
   // ICE restart bookkeeping
   const restartVersionRef = useRef(0) // caller: latest restart sent
   const handledRestartRef = useRef(0) // callee: latest restart answered
@@ -154,6 +165,7 @@ export function CallProvider({ children }) {
     handledRestartRef.current = 0
     restartAttemptsRef.current = 0
     pendingRemoteCandidatesRef.current = []
+    answerAppliedRef.current = false
     localStreamRef.current?.getTracks().forEach((t) => t.stop())
     localStreamRef.current = null
     if (pcRef.current) {
@@ -188,11 +200,29 @@ export function CallProvider({ children }) {
     [teardown, updateCall],
   )
 
+  // A video call goes on as audio when only the camera is the problem (none,
+  // or held by another app): the microphone alone is enough to talk.
   async function getMedia(type, facing = 'user') {
-    const stream = await navigator.mediaDevices.getUserMedia(mediaConstraints(type, facing))
+    let stream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(mediaConstraints(type, facing))
+    } catch (error) {
+      if (type !== 'video') throw error
+      stream = await navigator.mediaDevices.getUserMedia(mediaConstraints('audio'))
+      setIsCameraOff(true)
+      showToast('Caméra indisponible : l’appel continue en audio.', 'info')
+    }
     localStreamRef.current = stream
     setLocalStream(stream)
     return stream
+  }
+
+  function armConnectTimeout(callId) {
+    timersRef.current.push(
+      setTimeout(() => {
+        if (callRef.current?.id === callId && callRef.current.phase === 'connecting') hangUpWith('failed')
+      }, CONNECT_TIMEOUT_MS),
+    )
   }
 
   function createPeerConnection(iceServers, stream) {
@@ -316,11 +346,15 @@ export function CallProvider({ children }) {
     const unsub = subscribeToCall(callId, async (data) => {
       const pc = pcRef.current
       const role = callRef.current?.role
-      if (data.answer && pc && !pc.currentRemoteDescription && role === 'caller') {
+      // Flagged before the await: a second snapshot landing meanwhile would
+      // apply the answer twice, which throws and hangs up a good call.
+      if (data.answer && pc && !answerAppliedRef.current && role === 'caller') {
+        answerAppliedRef.current = true
         try {
           await pc.setRemoteDescription(data.answer)
           flushRemoteCandidates()
           updateCall({ phase: 'connecting' })
+          armConnectTimeout(callId)
         } catch {
           hangUpWith('failed')
         }
@@ -397,21 +431,24 @@ export function CallProvider({ children }) {
       let stream
       try {
         stream = await getMedia(type)
-      } catch {
+      } catch (error) {
         callRef.current = null
         setCall(null)
-        showToast(
-          type === 'video'
-            ? 'Autorisez l’accès au micro et à la caméra pour appeler.'
-            : 'Autorisez l’accès au micro pour appeler.',
-          'error',
-        )
+        showToast(micErrorMessage(error, 'appeler'), 'error')
+        return
+      }
+
+      // Hung up during the permission prompt: release the mic, ring nobody.
+      if (callRef.current?.phase !== 'outgoing') {
+        stream.getTracks().forEach((t) => t.stop())
+        localStreamRef.current = null
+        setLocalStream(null)
         return
       }
 
       try {
         const iceServers = await fetchIceServers()
-        if (!callRef.current) return // cancelled while fetching
+        if (callRef.current?.phase !== 'outgoing') return // cancelled while fetching
         const pc = createPeerConnection(iceServers, stream)
 
         // Candidates found before the call doc exists wait here.
@@ -468,13 +505,8 @@ export function CallProvider({ children }) {
     let stream
     try {
       stream = await getMedia(current.type)
-    } catch {
-      showToast(
-        current.type === 'video'
-          ? 'Autorisez l’accès au micro et à la caméra pour répondre.'
-          : 'Autorisez l’accès au micro pour répondre.',
-        'error',
-      )
+    } catch (error) {
+      showToast(micErrorMessage(error, 'répondre'), 'error')
       setCallStatus(current.id, 'declined').catch(() => {})
       finish('declined')
       return
@@ -494,6 +526,7 @@ export function CallProvider({ children }) {
       const answer = await pc.createAnswer()
       await pc.setLocalDescription(answer)
       await answerCall(current.id, { type: answer.type, sdp: answer.sdp })
+      armConnectTimeout(current.id)
     } catch {
       showToast("Impossible de rejoindre l'appel.", 'error')
       hangUpWith('failed')
@@ -526,28 +559,34 @@ export function CallProvider({ children }) {
     setIsCameraOff(next)
   }
 
-  // Front ⇄ back camera on phones: grab the other camera and swap the track
-  // being sent, without renegotiating the call.
+  // Front ⇄ back camera on phones: swap the track being sent, without
+  // renegotiating the call. The current camera is released first — most phones
+  // can't open two at once. If the other one won't open, go back to this one.
   async function flipCamera() {
-    const pc = pcRef.current
     const stream = localStreamRef.current
-    if (!pc || !stream || callRef.current?.type !== 'video') return
+    const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === 'video')
+    if (!sender || !stream || callRef.current?.type !== 'video') return
     const next = facingMode === 'user' ? 'environment' : 'user'
-    try {
-      const fresh = await navigator.mediaDevices.getUserMedia({ video: { facingMode: next } })
-      const newTrack = fresh.getVideoTracks()[0]
-      newTrack.enabled = !isCameraOff
-      const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
-      await sender?.replaceTrack(newTrack)
-      stream.getVideoTracks().forEach((t) => {
-        t.stop()
-        stream.removeTrack(t)
-      })
-      stream.addTrack(newTrack)
+
+    async function openCamera(facing) {
+      const fresh = await navigator.mediaDevices.getUserMedia({ video: mediaConstraints('video', facing).video })
+      const track = fresh.getVideoTracks()[0]
+      track.enabled = !isCameraOff
+      await sender.replaceTrack(track)
+      stream.addTrack(track)
       setLocalStream(new MediaStream(stream.getTracks()))
+    }
+
+    stream.getVideoTracks().forEach((t) => {
+      t.stop()
+      stream.removeTrack(t)
+    })
+    try {
+      await openCamera(next)
       setFacingMode(next)
     } catch {
       showToast("Impossible de changer de caméra.", 'error')
+      await openCamera(facingMode).catch(() => {})
     }
   }
 
@@ -609,6 +648,35 @@ export function CallProvider({ children }) {
       navigator.vibrate?.(0)
     }
   }, [phase])
+
+  // Keep the screen on during a call: a phone that locks itself cuts a page's
+  // microphone, and the other side hears nothing. The browser drops the lock
+  // when the page is hidden, so it's taken again on return.
+  const keepAwake = phase === 'connecting' || phase === 'active'
+  useEffect(() => {
+    if (!keepAwake || !navigator.wakeLock) return undefined
+    let lock = null
+    let stopped = false
+    async function acquire() {
+      try {
+        const next = await navigator.wakeLock.request('screen')
+        if (stopped) next.release().catch(() => {})
+        else lock = next
+      } catch {
+        // Refused (low battery…): the call simply goes on without it.
+      }
+    }
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') acquire()
+    }
+    acquire()
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => {
+      stopped = true
+      document.removeEventListener('visibilitychange', handleVisibility)
+      lock?.release().catch(() => {})
+    }
+  }, [keepAwake])
 
   // Hang up cleanly if the tab is closed mid-call.
   useEffect(() => {

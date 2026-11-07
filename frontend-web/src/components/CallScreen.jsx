@@ -11,11 +11,21 @@ function formatDuration(ms) {
   return `${m}:${s}`
 }
 
-function StreamVideo({ stream, muted, mirrored, className }) {
+// autoPlay alone isn't always enough once srcObject changes (Safari): ask for
+// playback each time. A refused or interrupted play() is not an error here.
+function useStreamSource(stream) {
   const ref = useRef(null)
   useEffect(() => {
-    if (ref.current && ref.current.srcObject !== stream) ref.current.srcObject = stream
+    const el = ref.current
+    if (!el || el.srcObject === stream) return
+    el.srcObject = stream
+    el.play?.()?.catch(() => {})
   }, [stream])
+  return ref
+}
+
+function StreamVideo({ stream, muted, mirrored, className }) {
+  const ref = useStreamSource(stream)
   return (
     <video
       ref={ref}
@@ -27,13 +37,10 @@ function StreamVideo({ stream, muted, mirrored, className }) {
   )
 }
 
-// Audio-only calls still need an element to play the other side's sound.
+// Whenever the other side isn't on screen, its sound still needs an element.
 function StreamAudio({ stream }) {
-  const ref = useRef(null)
-  useEffect(() => {
-    if (ref.current && ref.current.srcObject !== stream) ref.current.srcObject = stream
-  }, [stream])
-  return <audio ref={ref} autoPlay />
+  const ref = useStreamSource(stream)
+  return <audio ref={ref} autoPlay playsInline />
 }
 
 function CallTimer({ startedAt }) {
@@ -115,7 +122,8 @@ function CallScreen() {
       animate={{ opacity: 1 }}
       className="fixed inset-0 z-[70] flex flex-col overflow-hidden bg-violet-950 text-white"
     >
-      {remoteStream && !isVideo && <StreamAudio stream={remoteStream} />}
+      {/* Not only audio calls: also a video call whose other side has no camera. */}
+      {remoteStream && !showRemoteVideo && <StreamAudio stream={remoteStream} />}
 
       {showRemoteVideo ? (
         <StreamVideo stream={remoteStream} className="absolute inset-0 h-full w-full object-cover" />
