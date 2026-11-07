@@ -66,7 +66,9 @@ function AppLayout() {
     <div className="min-h-svh bg-surface-soft">
       <AppTopBar />
       <div className="desktop:flex">
-        <aside className="hidden desktop:sticky desktop:top-14 desktop:flex desktop:h-[calc(100svh-3.5rem)] desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-surface/60 desktop:p-4 desktop:backdrop-blur-2xl">
+        {/* No backdrop blur: nothing scrolls under the sidebar, so it blurred nothing,
+            and Safari can lose the links of a blurred panel when they repaint. */}
+        <aside className="hidden desktop:sticky desktop:top-14 desktop:flex desktop:h-[calc(100svh-3.5rem)] desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-surface/60 desktop:p-4 desktop:isolate">
           <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
             <span className="text-ink">Boma</span>
             <span className="text-gradient-brand italic">Vibes</span>
