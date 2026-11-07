@@ -174,13 +174,17 @@ function HeroSection() {
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-mint-400" /> Paiements sécurisés
             </span>
-            <span>
-              Déjà membre ?{' '}
-              <Link to="/welcome" className="font-semibold text-white underline-offset-4 hover:underline">
-                Se connecter
-              </Link>
-            </span>
           </motion.div>
+
+          <p className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm text-white/80 lg:justify-start">
+            Déjà membre ?
+            <Link
+              to="C:/Program Files/Git/login"
+              className="rounded-full bg-[#fcd116] px-6 py-2.5 text-sm font-bold text-[#2a0f45] shadow-lg transition hover:scale-105 active:scale-95"
+            >
+              Se connecter
+            </Link>
+          </p>
         </div>
 
         {/* Visual */}

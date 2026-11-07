@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext.jsx'
 import logo from '../assets/bomavibes-icon.webp'
@@ -69,16 +69,28 @@ function SiteHeader() {
           )}
         </div>
 
-        {/* Mobile burger */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg sm:hidden"
-          aria-label="Menu"
-          aria-expanded={menuOpen}
-        >
-          <MenuIcon open={menuOpen} />
-        </button>
+        <div className="flex items-center gap-2.5">
+          {/* Gold, the one thing in this bar that isn't white on violet. */}
+          {!token && (
+            <Link
+              to="C:/Program Files/Git/login"
+              className="rounded-full bg-[#fcd116] px-5 py-2.5 text-sm font-bold text-[#2a0f45] shadow-lg transition hover:scale-105 active:scale-95"
+            >
+              Se connecter
+            </Link>
+          )}
+
+          {/* Mobile burger */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg sm:hidden"
+            aria-label="Menu"
+            aria-expanded={menuOpen}
+          >
+            <MenuIcon open={menuOpen} />
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
