@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight, BadgeCheck, Heart, ShieldCheck } from 'lucide-react'
+import { ArrowRight, BadgeCheck, Heart, LogIn, ShieldCheck } from 'lucide-react'
 import heroCouple from '../../assets/people/couple-complices.webp'
 import logoIcon from '../../assets/bomavibes-icon.webp'
 import { DEMO_PROFILES } from '../../lib/demoProfiles.js'
@@ -154,12 +154,13 @@ function HeroSection() {
               Créer mon profil
               <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
-            <a
-              href="#decouverte"
-              className="inline-flex items-center justify-center rounded-full border border-white/25 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.98]"
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#fcd116] px-8 py-3.5 text-base font-extrabold text-[#2a0f45] shadow-[0_0_26px_rgba(252,209,22,0.65)] ring-2 ring-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#ffe04d] active:translate-y-0 active:scale-[0.98]"
             >
-              Découvrir BomaVibes
-            </a>
+              <LogIn size={19} strokeWidth={2.75} />
+              Se connecter
+            </Link>
           </motion.div>
 
           <motion.div
@@ -176,14 +177,10 @@ function HeroSection() {
             </span>
           </motion.div>
 
-          <p className="mt-5 flex flex-wrap items-center justify-center gap-3 text-sm text-white/80 lg:justify-start">
-            Déjà membre ?
-            <Link
-              to="C:/Program Files/Git/login"
-              className="rounded-full bg-[#fcd116] px-6 py-2.5 text-sm font-bold text-[#2a0f45] shadow-lg transition hover:scale-105 active:scale-95"
-            >
-              Se connecter
-            </Link>
+          <p className="mt-5 text-center text-sm lg:text-left">
+            <a href="#decouverte" className="font-semibold text-white/85 underline underline-offset-4 transition hover:text-white">
+              Découvrir BomaVibes
+            </a>
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
+import { LogIn } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import logo from '../assets/bomavibes-icon.webp'
 
@@ -52,7 +53,7 @@ function SiteHeader() {
         </a>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-6 sm:flex">
+        <div className="hidden items-center gap-6 lg:flex">
           {NAV_LINKS.map((l) => (
             <a key={l.label} href={l.href} className="text-sm font-semibold text-white/90 transition hover:text-white">
               {l.label}
@@ -73,9 +74,10 @@ function SiteHeader() {
           {/* Gold, the one thing in this bar that isn't white on violet. */}
           {!token && (
             <Link
-              to="C:/Program Files/Git/login"
-              className="rounded-full bg-[#fcd116] px-5 py-2.5 text-sm font-bold text-[#2a0f45] shadow-lg transition hover:scale-105 active:scale-95"
+              to="/login"
+              className="animate-bv-pulse inline-flex items-center gap-2 rounded-full bg-[#fcd116] px-5 py-3 text-base font-extrabold text-[#2a0f45] shadow-[0_0_22px_rgba(252,209,22,0.75)] ring-2 ring-white transition hover:bg-[#ffe04d] active:scale-95"
             >
+              <LogIn size={19} strokeWidth={2.75} />
               Se connecter
             </Link>
           )}
@@ -84,7 +86,7 @@ function SiteHeader() {
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg sm:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-violet-600 shadow-lg lg:hidden"
             aria-label="Menu"
             aria-expanded={menuOpen}
           >
@@ -101,7 +103,7 @@ function SiteHeader() {
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             style={{ transformOrigin: 'top' }}
-            className="absolute right-4 top-[4.25rem] w-48 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 sm:hidden"
+            className="absolute right-4 top-[4.25rem] w-48 overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 lg:hidden"
           >
             {NAV_LINKS.map((l, i) => (
               <a
