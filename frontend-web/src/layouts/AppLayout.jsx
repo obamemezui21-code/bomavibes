@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +12,30 @@ import { formatDeadline } from '../lib/photoQuality.js'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
 import AppTopBar from '../components/AppTopBar.jsx'
 import NgoriDailyReward from '../components/NgoriDailyReward.jsx'
+
+const SIDEBAR_KEY = 'bomavibes-sidebar'
+
+// Computer format only: the sidebar stays hidden until asked for, and each
+// visitor's choice is remembered.
+function useSidebar() {
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === 'open'
+    } catch {
+      return false
+    }
+  })
+  function toggle() {
+    const next = !open
+    setOpen(next)
+    try {
+      localStorage.setItem(SIDEBAR_KEY, next ? 'open' : 'closed')
+    } catch {
+      // Private window: it just won't be remembered.
+    }
+  }
+  return [open, toggle]
+}
 
 function useNavItems() {
   const { unreadMessagesCount, newMatchesCount } = useConversations()
@@ -56,6 +81,7 @@ function AppLayout() {
   const { status: identity } = useIdentity()
   const { status: photoQuality, toFix: photosToFix } = usePhotoQuality()
   const { t } = useTranslation()
+  const [sidebarOpen, toggleSidebar] = useSidebar()
 
   function handleLogout() {
     logout()
@@ -64,11 +90,23 @@ function AppLayout() {
 
   return (
     <div className="min-h-svh bg-surface-soft">
-      <AppTopBar />
+      <AppTopBar sidebarOpen={sidebarOpen} onToggleSidebar={toggleSidebar} />
       <div className="desktop:flex">
         {/* No backdrop blur: nothing scrolls under the sidebar, so it blurred nothing,
             and Safari can lose the links of a blurred panel when they repaint. */}
-        <aside className="hidden desktop:sticky desktop:top-14 desktop:flex desktop:h-[calc(100svh-3.5rem)] desktop:w-60 desktop:flex-col desktop:border-r desktop:border-ink/8 desktop:bg-surface/60 desktop:p-4 desktop:isolate">
+        {/* Maps and games only measure themselves on a window resize, and the
+            page has just changed width. */}
+        <aside
+          id="app-sidebar"
+          inert={!sidebarOpen}
+          onTransitionEnd={(e) => {
+            if (e.target === e.currentTarget) window.dispatchEvent(new Event('resize'))
+          }}
+          className={`hidden overflow-hidden transition-[width] duration-200 desktop:sticky desktop:top-14 desktop:flex desktop:h-[calc(100svh-3.5rem)] desktop:shrink-0 desktop:isolate ${
+            sidebarOpen ? 'desktop:w-60' : 'desktop:w-0'
+          }`}
+        >
+          <div className="flex w-60 shrink-0 flex-col border-r border-ink/8 bg-surface/60 p-4">
           <div className="mb-8 px-2 pt-2 font-display text-xl font-semibold tracking-tight">
             <span className="text-ink">Boma</span>
             <span className="text-gradient-brand italic">Vibes</span>
@@ -139,6 +177,7 @@ function AppLayout() {
           >
             {t('common.logout')}
           </button>
+          </div>
         </aside>
 
         {/* overflow-x-clip (not hidden): nothing a page does can widen the
@@ -202,7 +241,7 @@ function AppLayout() {
               <span className="relative flex h-11 w-11 items-center justify-center">
                 {isActive && (
                   <motion.span
-                    layoutId="nav-active-pill"
+                    layoutId="nav-active-pill-mobile"
                     className="absolute inset-0 rounded-full bg-gradient-to-br from-brand-2 to-brand-3 shadow-md shadow-pink-500/40"
                     transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                   />

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bell, LayoutGrid, Menu, Moon, Settings, ShieldCheck, Sun } from 'lucide-react'
+import { Bell, LayoutGrid, Menu, Moon, Settings, ShieldCheck, Sun, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { useConversations } from '../context/ConversationsContext.jsx'
@@ -27,7 +27,7 @@ const BELL_TINT = 'bg-sun/20 text-sun hover:bg-sun/30'
 const menuItemClass =
   'flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-medium text-ink transition hover:bg-ink/5'
 
-function AppTopBar() {
+function AppTopBar({ sidebarOpen, onToggleSidebar }) {
   const { t } = useTranslation()
   const { profile, publicProfile } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -37,6 +37,7 @@ function AppTopBar() {
   const photoUrl = publicProfile?.photos?.[0]
   const avatarUrl = photoVariant(photoUrl, 'medium')
   const isAdmin = hasAdminAccess(profile?.role)
+  const sidebarLabel = sidebarOpen ? 'Masquer le menu' : 'Afficher le menu'
 
   // Close the phone menu on any tap outside it.
   useEffect(() => {
@@ -62,6 +63,17 @@ function AppTopBar() {
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between gap-2 bg-surface-soft/85 px-4 backdrop-blur-xl desktop:border-b desktop:border-ink/8 desktop:bg-surface/80">
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className={`hidden desktop:flex ${iconButtonClass.replace(/^flex /, '')}`}
+          aria-label={sidebarLabel}
+          title={sidebarLabel}
+          aria-expanded={sidebarOpen}
+          aria-controls="app-sidebar"
+        >
+          {sidebarOpen ? <X size={20} strokeWidth={2.25} /> : <Menu size={20} strokeWidth={2.25} />}
+        </button>
         <img src={logo} alt="BomaVibes" className="h-8 w-8 rounded-2xl object-cover" />
         <span className="font-display text-lg font-bold tracking-tight max-[379px]:hidden">
           <span className="text-ink">Boma</span>
