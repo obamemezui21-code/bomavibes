@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import logo from '../assets/bomavibes-logo.webp'
 
-const HOLD_MS = 1600
+const HOLD_MS = 700
 
 function SplashScreen({ onFinish }) {
   const [visible, setVisible] = useState(true)
@@ -17,7 +17,7 @@ function SplashScreen({ onFinish }) {
       {visible && (
         <motion.div
           exit={{ opacity: 0, scale: 1.04 }}
-          transition={{ duration: 0.55, ease: 'easeInOut' }}
+          transition={{ duration: 0.25, ease: 'easeInOut' }}
           className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-violet-950"
         >
           {/* Ambient glow */}

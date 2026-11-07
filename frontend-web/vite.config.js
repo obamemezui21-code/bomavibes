@@ -31,6 +31,8 @@ export default defineConfig({
         // them across releases.
         manualChunks(id) {
           if (id.includes('node_modules')) {
+            // Before vendor-firebase, or it would pull push back into every visit.
+            if (/firebase\/(messaging|installations)\//.test(id)) return 'vendor-firebase-push'
             if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase'
             if (id.includes('framer-motion')) return 'vendor-framer-motion'
             if (id.includes('react-router') || id.includes('/react/') || id.includes('/react-dom/')) return 'vendor-react'

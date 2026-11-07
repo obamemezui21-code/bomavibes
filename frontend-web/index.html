@@ -35,7 +35,9 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Painted before any script, on the splash's colours: on a slow connection
+         the app takes seconds to start, and a blank page reads as a broken one. -->
+    <div id="root"><div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#4b164c;color:#fff;font:800 28px/1 system-ui,sans-serif;letter-spacing:.04em">BOMA<span style="color:#ff8ac7">VIBES</span></div></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

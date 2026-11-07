@@ -21,7 +21,7 @@ describe('link previews', () => {
     const built = pageWithPreview(html, page)
     expect(built.match(/property="og:image"/g)).toHaveLength(1)
     expect(built).not.toContain('og/bomavibes.jpg')
-    expect(built).toContain('<div id="root"></div>')
+    expect(built).toContain('<div id="root">')
     expect(built).toContain('src="/src/main.jsx"')
     expect(built).toContain('bomavibes-theme')
   })

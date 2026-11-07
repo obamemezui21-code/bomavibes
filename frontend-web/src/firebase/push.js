@@ -1,4 +1,3 @@
-import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging'
 import { arrayRemove, arrayUnion, doc, updateDoc } from 'firebase/firestore'
 import app, { VAPID_KEY, db } from './config.js'
 
@@ -10,8 +9,13 @@ const LAST_SYNCED_TOKEN_KEY = 'bomavibes-fcm-token'
 
 let messagingInstance = null
 
+// Loaded on demand: most page loads never touch push, and this file is part of
+// what every visitor downloads.
+const loadMessaging = () => import('firebase/messaging')
+
 async function getMessagingInstance() {
   if (messagingInstance !== null) return messagingInstance
+  const { getMessaging, isSupported } = await loadMessaging()
   const supported = await isSupported().catch(() => false)
   messagingInstance = supported ? getMessaging(app) : false
   return messagingInstance
@@ -43,6 +47,7 @@ async function requestDeviceToken() {
   if (!messaging) throw new Error('Les notifications push ne sont pas supportées sur ce navigateur.')
 
   const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+  const { getToken } = await loadMessaging()
   const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration })
   if (!token) throw new Error("Impossible d'obtenir un token de notification.")
   return token
@@ -96,5 +101,6 @@ export async function disablePushForUser(uid, token) {
 export async function listenForegroundMessages(callback) {
   const messaging = await getMessagingInstance()
   if (!messaging) return () => {}
+  const { onMessage } = await loadMessaging()
   return onMessage(messaging, callback)
 }

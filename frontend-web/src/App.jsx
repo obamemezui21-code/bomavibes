@@ -81,8 +81,27 @@ const AdminMedia = lazy(() => import('./pages/AdminMedia.jsx'))
 const AdminSettings = lazy(() => import('./pages/AdminSettings.jsx'))
 const Maintenance = lazy(() => import('./pages/Maintenance.jsx'))
 
+const SPLASH_KEY = 'bomavibes-splash-seen'
+
+// Once per visit: a reload shouldn't sit through it again.
+function splashAlreadySeen() {
+  try {
+    return sessionStorage.getItem(SPLASH_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function rememberSplash() {
+  try {
+    sessionStorage.setItem(SPLASH_KEY, '1')
+  } catch {
+    // Private window: it simply shows again next time.
+  }
+}
+
 function App() {
-  const [showSplash, setShowSplash] = useState(true)
+  const [showSplash, setShowSplash] = useState(() => !splashAlreadySeen())
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
@@ -123,7 +142,14 @@ function App() {
 
   return (
     <>
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      {showSplash && (
+        <SplashScreen
+          onFinish={() => {
+            rememberSplash()
+            setShowSplash(false)
+          }}
+        />
+      )}
       {!showSplash && <CookieBanner />}
       <Suspense fallback={<FullPageSpinner />}>
         {showMaintenance ? (
