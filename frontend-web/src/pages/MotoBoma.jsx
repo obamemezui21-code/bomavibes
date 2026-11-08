@@ -64,7 +64,7 @@ function Leaderboard({ course, refreshKey }) {
   }, [course, refreshKey])
 
   if (failed) return <p className="py-8 text-center text-sm text-ink-soft/60">Classement indisponible pour le moment.</p>
-  if (!data) return <div className="mx-auto my-8 h-7 w-7 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+  if (!data) return <div className="mx-auto my-8 h-7 w-7 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
   if (!data.top.length) {
     return <p className="py-8 text-center text-sm text-ink-soft/60">Personne n’a encore fini ce parcours cette semaine. À toi la pole ! 🏁</p>
   }
@@ -507,7 +507,7 @@ function MotoBoma() {
                   onClick={() => chooseHero(h.id)}
                   aria-pressed={active}
                   className={`relative flex h-40 flex-col items-center justify-end overflow-hidden rounded-2xl pb-2 transition ${
-                    active ? 'bg-white/20 ring-2 ring-cyan-300' : 'bg-white/8 hover:bg-white/15'
+                    active ? 'bg-white/20 ring-1 ring-cyan-300' : 'bg-white/8 hover:bg-white/15'
                   }`}
                 >
                   <img src={h.picture} alt="" className="absolute inset-x-0 top-2 mx-auto h-28 object-contain" />

@@ -30,7 +30,7 @@ function SendButton({ onClick, disabled, busy }) {
       aria-label="Publier la story"
     >
       {busy ? (
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+        <span className="h-5 w-5 animate-spin rounded-full border border-white/40 border-t-white" />
       ) : (
         <SendHorizontal size={20} strokeWidth={2.25} />
       )}
@@ -193,7 +193,7 @@ function StoryComposer({ userId, onClose, onCreated }) {
             <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isReading} className="flex flex-col items-center gap-3">
               <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3 shadow-xl shadow-pink-500/30 transition active:scale-95">
                 {isReading ? (
-                  <span className="h-7 w-7 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  <span className="h-7 w-7 animate-spin rounded-full border border-white/40 border-t-white" />
                 ) : (
                   <Camera size={32} strokeWidth={1.75} />
                 )}

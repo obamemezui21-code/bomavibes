@@ -135,7 +135,7 @@ function FlecheEbene() {
 
       <div className="mx-auto max-w-lg space-y-5 px-4 pt-5">
         <div className="relative overflow-hidden rounded-[28px] bg-[#16200e] p-5 text-white shadow-xl">
-          <img src="/fleche/cover.svg" alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+          <img src="/fleche/cover.webp" alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/15" />
           <div className="relative">
             <p className="font-mono text-[11px] tracking-[0.25em] text-amber-300">CHASSE À L’ARC · IVINDO</p>

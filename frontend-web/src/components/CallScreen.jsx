@@ -136,7 +136,7 @@ function CallScreen() {
       {isReconnecting && (
         <div className="absolute inset-x-0 top-[max(4.5rem,calc(env(safe-area-inset-top)+3.5rem))] z-20 flex justify-center">
           <span className="inline-flex items-center gap-2 rounded-full bg-black/50 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md">
-            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <span className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />
             Connexion instable, reconnexion…
           </span>
         </div>
@@ -146,7 +146,7 @@ function CallScreen() {
       {isVideo && localStream && call.phase !== 'ended' && !isCameraOff && (
         <motion.div
           layout
-          className={`absolute z-10 overflow-hidden rounded-2xl border-2 border-white/20 shadow-2xl ${
+          className={`absolute z-10 overflow-hidden rounded-2xl border border-white/20 shadow-2xl ${
             showRemoteVideo
               ? 'right-4 top-[max(1rem,env(safe-area-inset-top))] h-40 w-28'
               : 'inset-0 rounded-none border-0 opacity-35'
@@ -171,11 +171,11 @@ function CallScreen() {
                   initial={{ scale: 0.7, opacity: 0 }}
                   animate={{ scale: [0.7, 1.9], opacity: [0.5, 0] }}
                   transition={{ duration: 2.6, delay: ring * 0.85, repeat: Infinity, ease: 'easeOut' }}
-                  className="pointer-events-none absolute h-36 w-36 rounded-full border-2 border-white/40"
+                  className="pointer-events-none absolute h-36 w-36 rounded-full border border-white/40"
                 />
               ))}
             <span className="block rounded-full bg-white/15 p-1.5">
-              <img src={avatar} alt="" className="h-36 w-36 rounded-full border-4 border-violet-950 object-cover" />
+              <img src={avatar} alt="" className="h-36 w-36 rounded-full border-2 border-violet-950 object-cover" />
             </span>
           </div>
         )}

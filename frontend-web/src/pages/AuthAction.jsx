@@ -133,7 +133,7 @@ function AuthAction() {
     return (
       <AuthLayout title="Vérification en cours…">
         <div className="flex justify-center py-6">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+          <div className="h-8 w-8 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
         </div>
       </AuthLayout>
     )

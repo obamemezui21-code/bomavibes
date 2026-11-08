@@ -83,7 +83,7 @@ function GroupCallPicker({ title, initialIds = [], excludeIds = [], slotsLeft = 
                     {c.online && <span className="text-xs text-mint-500">En ligne</span>}
                   </span>
                   <span
-                    className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+                    className={`flex h-6 w-6 items-center justify-center rounded-full border ${
                       isOn ? 'border-violet-500 bg-violet-500 text-white' : 'border-ink/20'
                     }`}
                   >

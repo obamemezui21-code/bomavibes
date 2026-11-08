@@ -193,9 +193,9 @@ function Profile() {
   }
   const issues = photoSlots.map(issueOf)
   const ISSUE_STYLES = {
-    refused: { badge: 'bg-coral-500', border: 'border-2 border-coral-500', text: 'text-coral-600 dark:text-coral-400' },
-    lowres: { badge: 'bg-amber-500', border: 'border-2 border-amber-500', text: 'text-amber-700 dark:text-amber-300' },
-    review: { badge: 'bg-violet-500', border: 'border-2 border-violet-400', text: 'text-violet-700 dark:text-violet-300' },
+    refused: { badge: 'bg-coral-500', border: 'border border-coral-500', text: 'text-coral-600 dark:text-coral-400' },
+    lowres: { badge: 'bg-amber-500', border: 'border border-amber-500', text: 'text-amber-700 dark:text-amber-300' },
+    review: { badge: 'bg-violet-500', border: 'border border-violet-400', text: 'text-violet-700 dark:text-violet-300' },
   }
 
   async function requestReview(index, issue) {
@@ -329,7 +329,7 @@ function Profile() {
     return (
       <div className="flex min-h-svh items-center justify-center bg-surface-soft p-6 desktop:min-h-full">
         <motion.div
-          className="h-8 w-8 rounded-full border-2 border-violet-300 border-t-violet-600"
+          className="h-8 w-8 rounded-full border border-violet-300 border-t-violet-600"
           animate={{ rotate: 360 }}
           transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
         />
@@ -352,7 +352,7 @@ function Profile() {
                 fallbackAvatar(form.firstName || 'Vous', '8b5cf6')
               }
               alt="Avatar"
-              className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-xl"
+              className="h-24 w-24 rounded-full border-2 border-white object-cover shadow-xl"
             />
             <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-white shadow">
               <Pencil size={14} strokeWidth={2.25} />

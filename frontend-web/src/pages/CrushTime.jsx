@@ -82,7 +82,7 @@ function CrushTime() {
 
         {!data ? (
           <div className="flex justify-center py-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+            <div className="h-8 w-8 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
           </div>
         ) : !round && !result ? (
           <div className="mt-8 flex flex-col items-center gap-2 text-center">
@@ -111,7 +111,7 @@ function CrushTime() {
                       onClick={() => guess(o)}
                       className={`relative aspect-[3/4] overflow-hidden rounded-2xl bg-ink/10 text-left transition ${
                         result && !picked ? 'opacity-50' : ''
-                      } ${picked ? (result.correct ? 'ring-4 ring-heart-500' : 'ring-4 ring-ink/40') : ''}`}
+                      } ${picked ? (result.correct ? 'ring-2 ring-heart-500' : 'ring-2 ring-ink/40') : ''}`}
                     >
                       <img
                         src={photoVariant(o.photo, 'medium') || o.photo || fallbackAvatar(o.firstName || o.id)}

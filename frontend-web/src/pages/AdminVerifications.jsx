@@ -116,7 +116,7 @@ function VerificationItem({ request, onDecided }) {
             <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-sky-600">
               Pièce d’identité{request.idTypeLabel ? ` · ${request.idTypeLabel}` : ''}
             </p>
-            <div className="aspect-[16/10] overflow-hidden rounded-xl ring-2 ring-sky-500">
+            <div className="aspect-[16/10] overflow-hidden rounded-xl ring-1 ring-sky-500">
               {request.hasIdDocument ? (
                 <PrivateImage uid={request.uid} fetchUrl={fetchVerificationIdUrl} alt="Pièce d’identité" contain />
               ) : (
@@ -127,7 +127,7 @@ function VerificationItem({ request, onDecided }) {
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="col-span-2 sm:col-span-1">
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-violet-600">Selfie</p>
-              <div className="aspect-[3/4] overflow-hidden rounded-xl ring-2 ring-violet-500">
+              <div className="aspect-[3/4] overflow-hidden rounded-xl ring-1 ring-violet-500">
                 {request.hasSelfie ? <PrivateImage uid={request.uid} fetchUrl={fetchVerificationSelfieUrl} alt="Selfie" /> : null}
               </div>
             </div>

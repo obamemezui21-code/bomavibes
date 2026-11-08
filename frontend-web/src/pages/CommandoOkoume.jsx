@@ -194,7 +194,7 @@ function CommandoOkoume() {
                   disabled={locked}
                   onClick={() => chooseCharacter(id)}
                   className={`relative flex flex-col items-start gap-2 rounded-2xl p-3 text-left transition ${
-                    active ? 'bg-white ring-2 ring-amber-400 dark:bg-surface-tint' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'
+                    active ? 'bg-white ring-1 ring-amber-400 dark:bg-surface-tint' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'
                   } disabled:opacity-60`}
                 >
                   <img src={PORTRAITS[id]} alt={c.name} className="h-16 w-16 rounded-xl object-cover" />
@@ -232,7 +232,7 @@ function CommandoOkoume() {
                   disabled={!unlocked}
                   onClick={() => setMission(id)}
                   className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${
-                    active ? 'bg-white ring-2 ring-amber-400 dark:bg-surface-tint' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'
+                    active ? 'bg-white ring-1 ring-amber-400 dark:bg-surface-tint' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'
                   } disabled:opacity-55`}
                 >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2f4a17] font-mono text-sm font-bold text-amber-300">

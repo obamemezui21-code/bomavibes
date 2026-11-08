@@ -364,7 +364,7 @@ function Onboarding() {
                         <div
                           key={i}
                           className={`relative aspect-[3/4] overflow-hidden rounded-2xl border bg-ink/[0.03] ${
-                            photo?.status === 'refused' ? 'border-2 border-red-500' : 'border-dashed border-ink/15'
+                            photo?.status === 'refused' ? 'border border-red-500' : 'border-dashed border-ink/15'
                           }`}
                         >
                           {src ? (

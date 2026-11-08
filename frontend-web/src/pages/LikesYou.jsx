@@ -85,7 +85,7 @@ function LikesYou() {
       <div className="mx-auto max-w-3xl px-4 pt-5">
         {isLoading ? (
           <div className="flex justify-center py-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+            <div className="h-8 w-8 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
           </div>
         ) : count === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">

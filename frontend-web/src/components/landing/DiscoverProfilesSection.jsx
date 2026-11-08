@@ -26,7 +26,7 @@ function ProfileCard({ profile, index, open, onToggle }) {
             onToggle()
           }
         }}
-        className={`relative aspect-[3/4] cursor-pointer overflow-hidden rounded-[1.75rem] bg-[#261b28] shadow-lg shadow-violet-900/10 outline-none transition duration-500 ease-out focus-visible:ring-4 focus-visible:ring-pink-400/60 ${
+        className={`relative aspect-[3/4] cursor-pointer overflow-hidden rounded-[1.75rem] bg-[#261b28] shadow-lg shadow-violet-900/10 outline-none transition duration-500 ease-out focus-visible:ring-2 focus-visible:ring-pink-400/60 ${
           open ? '-translate-y-1.5 shadow-2xl shadow-violet-900/25' : 'group-hover:-translate-y-1.5 group-hover:shadow-2xl group-hover:shadow-violet-900/25'
         }`}
       >

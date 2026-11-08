@@ -36,7 +36,7 @@ function Tile({ p }) {
   return (
     <div
       className={`relative flex min-h-0 items-center justify-center overflow-hidden rounded-2xl bg-zinc-800 transition-shadow ${
-        p.isSpeaking ? 'ring-4 ring-mint-400' : 'ring-1 ring-white/10'
+        p.isSpeaking ? 'ring-2 ring-mint-400' : 'ring-1 ring-white/10'
       }`}
     >
       {p.videoTrack ? (

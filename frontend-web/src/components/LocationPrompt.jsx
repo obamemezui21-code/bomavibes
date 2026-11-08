@@ -64,7 +64,7 @@ function LocationPrompt() {
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
-          className="relative mx-4 mb-3 rounded-2xl border border-violet-200 bg-violet-50 p-3.5 pr-10 dark:border-violet-500/30 dark:bg-violet-500/10"
+          className="relative rounded-2xl border border-violet-200 bg-violet-50 p-3.5 pr-10 dark:border-violet-500/30 dark:bg-violet-500/10"
           role="region"
           aria-label="Activer la position"
         >

@@ -40,7 +40,7 @@ function Wordmark() {
             animate={LOGO_SETTLE}
             transition={LOGO_SETTLE_TRANSITION}
             onAnimationComplete={() => setLogoSettled(true)}
-            className="block h-full w-full rounded-full object-cover shadow-md ring-2 ring-pink-400/80"
+            className="block h-full w-full rounded-full object-cover shadow-md ring-1 ring-pink-400/80"
           />
         </span>
         <motion.span variants={LETTER}>M</motion.span>

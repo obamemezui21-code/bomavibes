@@ -64,7 +64,7 @@ function SendToModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Rechercher un match"
-              className="w-full rounded-xl border border-ink/12 bg-ink/[0.03] py-2.5 pl-9 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15"
+              className="w-full rounded-xl border border-ink/12 bg-ink/[0.03] py-2.5 pl-9 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-400/15"
             />
           </div>
         )}

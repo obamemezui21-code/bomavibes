@@ -163,7 +163,7 @@ function Leaderboard({ refreshKey }) {
   }, [refreshKey])
 
   if (failed) return <p className="py-8 text-center text-sm text-ink-soft/60">Classement indisponible pour le moment.</p>
-  if (!data) return <div className="mx-auto my-8 h-7 w-7 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+  if (!data) return <div className="mx-auto my-8 h-7 w-7 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
   if (!data.top.length) {
     return <p className="py-8 text-center text-sm text-ink-soft/60">Personne n'a encore couru cette semaine. Sois le premier ! 🏃</p>
   }
@@ -228,7 +228,7 @@ function Stats({ refreshKey }) {
     }
   }, [refreshKey])
 
-  if (!data) return <div className="mx-auto my-8 h-7 w-7 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+  if (!data) return <div className="mx-auto my-8 h-7 w-7 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
   if (data.failed) return <p className="py-8 text-center text-sm text-ink-soft/60">Statistiques indisponibles pour le moment.</p>
   const s = data.stats
   const tiles = [
@@ -327,7 +327,7 @@ function ResultScreen({ outcome, local, error, onRetrySave, onReplay, onClose, b
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
         className="w-full max-w-sm rounded-[28px] bg-violet-950 p-6 text-white shadow-2xl"
       >
-        <img src={hero.portrait} alt="" className={`mx-auto mb-3 h-16 w-16 rounded-full object-cover ring-2 ${hero.ring}`} />
+        <img src={hero.portrait} alt="" className={`mx-auto mb-3 h-16 w-16 rounded-full object-cover ring-1 ${hero.ring}`} />
         <p className="text-center text-xs font-bold uppercase tracking-[0.2em] text-pink-300">
           {practice ? 'Entraînement terminé' : 'Course terminée'}
         </p>
@@ -690,7 +690,7 @@ function NgoriRun() {
                     <img
                       src={choice.portrait}
                       alt=""
-                      className={`h-12 w-12 shrink-0 rounded-full object-cover ring-2 ${active ? choice.ring : 'ring-white/30'}`}
+                      className={`h-12 w-12 shrink-0 rounded-full object-cover ring-1 ${active ? choice.ring : 'ring-white/30'}`}
                     />
                     <span className="min-w-0">
                       <span className="block font-display text-base font-bold leading-tight">{choice.name}</span>

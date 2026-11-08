@@ -93,7 +93,7 @@ function Matches() {
                   <MessageCircle size={26} strokeWidth={2.25} />
                 </span>
               )}
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white ring-2 ring-surface-soft">
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-violet-600 text-white ring-1 ring-surface-soft">
                 <MessageCircle size={12} strokeWidth={2.5} />
               </span>
             </span>

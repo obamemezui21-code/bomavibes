@@ -1059,7 +1059,7 @@ function Chat() {
               value={listSearch}
               onChange={(e) => setListSearch(e.target.value)}
               placeholder="Rechercher..."
-              className="w-full rounded-full border border-white/10 bg-white/10 py-2.5 pl-9 pr-3.5 text-sm text-white placeholder-white/50 outline-none transition focus:border-pink-400/60 focus:bg-white/15 focus:ring-4 focus:ring-pink-400/15"
+              className="w-full rounded-full border border-white/10 bg-white/10 py-2.5 pl-9 pr-3.5 text-sm text-white placeholder-white/50 outline-none transition focus:border-pink-400/60 focus:bg-white/15 focus:ring-2 focus:ring-pink-400/15"
             />
           </div>
         </div>
@@ -1113,7 +1113,7 @@ function Chat() {
                           className="h-[72px] w-14 rounded-[14px] object-cover"
                         />
                         {c.online && (
-                          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-violet-950 bg-mint-500" />
+                          <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border border-violet-950 bg-mint-500" />
                         )}
                       </span>
                       <span className="max-w-[4rem] truncate text-xs font-medium text-white/80">{c.profile.firstName}</span>
@@ -1144,7 +1144,7 @@ function Chat() {
                       className="h-12 w-12 rounded-full object-cover"
                     />
                     {c.online && (
-                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-surface-soft bg-mint-500" />
+                      <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border border-surface-soft bg-mint-500" />
                     )}
                   </div>
                   <div className="relative min-w-0 flex-1">
@@ -1319,7 +1319,7 @@ function Chat() {
                     src={active.profile.photo}
                     onError={fallbackToFullPhoto(active.profile.photoFull)}
                     alt={active.profile.firstName}
-                    className="h-10 w-10 shrink-0 rounded-full border-2 border-white/20 object-cover"
+                    className="h-10 w-10 shrink-0 rounded-full border border-white/20 object-cover"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1 font-display text-base font-semibold text-white">
@@ -1581,7 +1581,7 @@ function Chat() {
                           onContextMenu={handleMessageContextMenu(m)}
                           style={{ touchAction: 'pan-y', WebkitTouchCallout: 'none' }}
                           className={`${bubbleClass} min-w-0 max-w-full ${
-                            selectedMessage?.id === m.id ? 'rounded-2xl ring-2 ring-violet-400' : ''
+                            selectedMessage?.id === m.id ? 'rounded-2xl ring-1 ring-violet-400' : ''
                           }`}
                         >
                           {m.replyTo && (
@@ -1986,7 +1986,7 @@ function Chat() {
                     onKeyDown={handleTextareaKeyDown}
                     placeholder="Écrivez un message…"
                     disabled={isSendingVoice}
-                    className="max-h-[140px] min-h-[48px] w-full resize-none overflow-y-auto rounded-[24px] border border-ink/8 bg-white py-3.5 shadow-sm dark:bg-surface-tint pl-11 pr-20 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15 disabled:opacity-60"
+                    className="max-h-[140px] min-h-[48px] w-full resize-none overflow-y-auto rounded-[24px] border border-ink/8 bg-white py-3.5 shadow-sm dark:bg-surface-tint pl-11 pr-20 text-sm leading-normal text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15 disabled:opacity-60"
                   />
 
                   <div className="absolute bottom-1.5 left-1.5">
@@ -2046,7 +2046,7 @@ function Chat() {
                         aria-label="Joindre"
                       >
                         {isSendingAttachment ? (
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink-soft/30 border-t-ink-soft" />
+                          <span className="h-4 w-4 animate-spin rounded-full border border-ink-soft/30 border-t-ink-soft" />
                         ) : (
                           <Paperclip size={18} strokeWidth={2} />
                         )}
@@ -2174,14 +2174,14 @@ function Chat() {
                                         setShowStickerPicker(false)
                                         setShowStickerMaker(true)
                                       }}
-                                      className="flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed border-ink/15 text-[10px] font-semibold text-ink-soft/60 transition hover:border-violet-400 hover:text-violet-600"
+                                      className="flex h-16 flex-col items-center justify-center gap-0.5 rounded-xl border border-dashed border-ink/15 text-[10px] font-semibold text-ink-soft/60 transition hover:border-violet-400 hover:text-violet-600"
                                     >
                                       <Plus size={18} strokeWidth={2.5} />
                                       Créer
                                     </button>
                                     {myStickers === null ? (
                                       <span className="col-span-3 flex items-center justify-center">
-                                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+                                        <span className="h-5 w-5 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
                                       </span>
                                     ) : myStickers.length === 0 ? (
                                       <p className="col-span-3 self-center text-[11px] text-ink-soft/60">
@@ -2239,7 +2239,7 @@ function Chat() {
                     aria-label="Enregistrer une note vocale"
                   >
                     {isSendingVoice ? (
-                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-on-brand/30 border-t-ink-on-brand" />
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border border-ink-on-brand/30 border-t-ink-on-brand" />
                     ) : (
                       <Mic size={18} strokeWidth={2.25} />
                     )}

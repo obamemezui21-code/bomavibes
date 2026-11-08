@@ -40,7 +40,7 @@ function PrefStep({ gender, onPick }) {
             key={o.value}
             type="button"
             onClick={() => onPick(o.value)}
-            className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left font-bold text-ink transition active:scale-[0.98] ${
+            className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left font-bold text-ink transition active:scale-[0.98] ${
               o.value === suggested ? 'border-violet-500 bg-violet-500/8' : 'border-ink/10 bg-surface'
             }`}
           >
@@ -197,7 +197,7 @@ function MatchModal({ match, onClose }) {
         className="w-full max-w-sm rounded-3xl bg-gradient-to-br from-violet-600 to-heart-600 p-6 text-center text-white"
       >
         <p className="font-display text-3xl font-black italic">C’est un match ! 💜</p>
-        {match.photo && <img src={match.photo} alt="" className="mx-auto mt-5 h-36 w-36 rounded-full object-cover ring-4 ring-white/60" />}
+        {match.photo && <img src={match.photo} alt="" className="mx-auto mt-5 h-36 w-36 rounded-full object-cover ring-2 ring-white/60" />}
         <p className="mt-4 text-sm text-white/90">
           Toi et {match.firstName} avez {match.percent != null ? `${match.percent} % de vibe` : 'la même vibe'}. Lance la conversation sur ce que vous
           avez en commun !

@@ -425,7 +425,7 @@ function EscadrilleScreen({ seed, options, audio, muted, onToggleMute, onEnd }) 
             }}
             onContextMenu={(e) => e.preventDefault()}
             disabled={hud.bombs === 0}
-            className="pointer-events-auto flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-orange-300/70 bg-orange-500/35 font-display text-[10px] font-bold text-white backdrop-blur-sm active:bg-orange-400/60 disabled:opacity-40"
+            className="pointer-events-auto flex h-16 w-16 flex-col items-center justify-center rounded-full border border-orange-300/70 bg-orange-500/35 font-display text-[10px] font-bold text-white backdrop-blur-sm active:bg-orange-400/60 disabled:opacity-40"
             style={{ touchAction: 'none' }}
           >
             <span className="text-lg leading-none">💣</span>

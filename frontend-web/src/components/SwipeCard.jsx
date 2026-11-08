@@ -140,13 +140,13 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
             <>
               <motion.div
                 style={{ opacity: likeOpacity }}
-                className="absolute left-6 top-8 rotate-[-12deg] rounded-lg border-4 border-mint-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-mint-500"
+                className="absolute left-6 top-8 rotate-[-12deg] rounded-lg border-2 border-mint-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-mint-500"
               >
                 Like
               </motion.div>
               <motion.div
                 style={{ opacity: nopeOpacity }}
-                className="absolute right-6 top-8 rotate-[12deg] rounded-lg border-4 border-coral-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-coral-500"
+                className="absolute right-6 top-8 rotate-[12deg] rounded-lg border-2 border-coral-500 px-3 py-1 text-xl font-black uppercase tracking-wide text-coral-500"
               >
                 Nope
               </motion.div>

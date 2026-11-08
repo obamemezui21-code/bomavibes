@@ -83,7 +83,7 @@ function DateSpotSheet({ me, them, onClose, onInvite }) {
       <div className="mt-3 max-h-[60svh] space-y-1 overflow-y-auto">
         {!spots ? (
           <div className="flex justify-center py-10">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+            <div className="h-7 w-7 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
           </div>
         ) : spots.length === 0 ? (
           <p className="py-8 text-center text-sm text-ink-soft/60">Aucun Coin Chic pour le moment.</p>

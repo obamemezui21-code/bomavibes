@@ -74,7 +74,7 @@ function ControlsHelp({ variant = 'full', character }) {
               {TOUCH.map(([button, action]) => (
                 <li key={button} className="flex items-center gap-2 text-sm">
                   <span className="flex w-28 shrink-0">
-                    <span className="rounded-full border-2 border-current/30 px-2.5 py-0.5 font-mono text-[11px] font-bold">{button}</span>
+                    <span className="rounded-full border border-current/30 px-2.5 py-0.5 font-mono text-[11px] font-bold">{button}</span>
                   </span>
                   <span>{action}</span>
                 </li>

@@ -245,7 +245,7 @@ function Feed() {
               className={`block rounded-full p-[2px] ${
                 myStories.length > 0
                   ? 'bg-gradient-to-br from-brand-3 via-brand-2 to-brand-1'
-                  : 'border-2 border-dashed border-violet-400/50'
+                  : 'border border-dashed border-violet-400/50'
               }`}
             >
               {myStories.length > 0 ? (
@@ -253,7 +253,7 @@ function Feed() {
                   src={myAvatarUrl}
                   onError={myPhoto ? fallbackToFullPhoto(myPhoto) : undefined}
                   alt=""
-                  className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                  className="h-14 w-14 rounded-full border border-surface-soft object-cover"
                 />
               ) : (
                 <span className="flex h-14 w-14 items-center justify-center rounded-full text-violet-500">
@@ -268,7 +268,7 @@ function Feed() {
                   e.stopPropagation()
                   openStoryComposer()
                 }}
-                className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white ring-2 ring-surface-soft"
+                className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white ring-1 ring-surface-soft"
                 aria-label="Ajouter une story"
               >
                 <Plus size={11} strokeWidth={3} />
@@ -301,7 +301,7 @@ function Feed() {
                   src={avatarUrl}
                   onError={authorPhoto ? fallbackToFullPhoto(authorPhoto) : undefined}
                   alt=""
-                  className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                  className="h-14 w-14 rounded-full border border-surface-soft object-cover"
                 />
               </span>
               <span className="max-w-[4rem] truncate text-xs font-medium text-ink-soft/70">
@@ -376,7 +376,7 @@ function Feed() {
 
       {isLoading ? (
         <div className="flex justify-center py-16">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+          <div className="h-8 w-8 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
         </div>
       ) : posts.length === 0 ? (
         <FeedEmptyState onCreate={() => openComposer('text')} />
@@ -409,7 +409,7 @@ function Feed() {
           <div ref={sentinelRef} />
           {isLoadingMore && (
             <div className="flex justify-center py-4">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+              <div className="h-6 w-6 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
             </div>
           )}
         </div>

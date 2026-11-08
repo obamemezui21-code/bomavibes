@@ -161,7 +161,7 @@ function GuestGames() {
   return (
     <div className="min-h-svh bg-surface-soft">
       <SiteHeader />
-      <main className="mx-auto max-w-2xl px-4 pb-16 pt-28 sm:pt-32">
+      <main className="mx-auto max-w-2xl px-4 pb-16 pt-28 sm:pt-32 desktop:max-w-6xl">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-violet-600">BomaVibes</p>
           <h1 className="mt-1 font-display text-3xl font-black text-ink">Le salon de jeux</h1>
@@ -170,7 +170,7 @@ function GuestGames() {
           </p>
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-4 desktop:grid desktop:grid-cols-2 desktop:gap-4 desktop:space-y-0">
           {games.map((game) => (
             <motion.button
               key={game.id}
@@ -201,7 +201,7 @@ function GuestGames() {
                         key={src}
                         src={src}
                         alt=""
-                        className={`drop-shadow-[0_8px_16px_rgba(0,0,0,0.35)] ${game.round ? 'h-16 w-16 rounded-full object-cover ring-2 ring-white/50' : 'h-28 w-auto object-contain'} ${
+                        className={`drop-shadow-[0_8px_16px_rgba(0,0,0,0.35)] ${game.round ? 'h-16 w-16 rounded-full object-cover ring-1 ring-white/50' : 'h-28 w-auto object-contain'} ${
                           k ? (game.round ? '-ml-4' : '-ml-5') : ''
                         }`}
                       />

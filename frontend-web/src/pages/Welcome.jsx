@@ -65,14 +65,14 @@ function Welcome() {
             key={photo}
             src={photo}
             alt=""
-            className={`absolute h-12 w-12 rounded-full border-2 border-white object-cover shadow-md ${SATELLITE_POSITIONS[i]}`}
+            className={`absolute h-12 w-12 rounded-full border border-white object-cover shadow-md ${SATELLITE_POSITIONS[i]}`}
           />
         ))}
 
         <img
           src={centerPhoto}
           alt=""
-          className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white object-cover shadow-xl"
+          className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white object-cover shadow-xl"
         />
 
         <span className="absolute -right-1 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-violet-500 text-white shadow-lg">

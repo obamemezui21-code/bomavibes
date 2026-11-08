@@ -23,10 +23,10 @@ function MostCompatibleCard({ pick, onOpen }) {
           src={photoVariant(photo, 'medium') || photo || fallbackAvatar(profile.firstName || profile.id)}
           onError={photo ? fallbackToFullPhoto(photo) : undefined}
           alt={profile.firstName}
-          className="h-16 w-16 rounded-full object-cover ring-2 ring-white/80"
+          className="h-16 w-16 rounded-full object-cover ring-1 ring-white/80"
         />
         {profile.verified && (
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 ring-2 ring-white">
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 ring-1 ring-white">
             <Check size={11} strokeWidth={3} />
           </span>
         )}

@@ -111,7 +111,7 @@ function VideoCallMock() {
         decoding="async"
         src={kofi.photo}
         alt=""
-        className="absolute right-3 top-14 h-20 w-14 rounded-xl border-2 border-white/80 object-cover shadow-lg"
+        className="absolute right-3 top-14 h-20 w-14 rounded-xl border border-white/80 object-cover shadow-lg"
       />
       <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 bg-gradient-to-t from-black/70 to-transparent px-3 pb-5 pt-10">
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25 text-white">
@@ -152,7 +152,7 @@ function ColorPostsMock() {
       ))}
       <div className="mt-auto flex items-center justify-center gap-1.5">
         {['#4b164c', '#dd88cf', '#f2726c', '#1f6b44', '#1e5aa8'].map((c) => (
-          <span key={c} className="h-5 w-5 rounded-full ring-2 ring-white" style={{ background: c }} />
+          <span key={c} className="h-5 w-5 rounded-full ring-1 ring-white" style={{ background: c }} />
         ))}
       </div>
     </div>
@@ -164,7 +164,7 @@ function VerifiedMock() {
     <div className="flex h-[410px] flex-col items-center bg-[#f7f1e6] p-3">
       <p className="mb-4 text-center text-[11px] font-bold text-[#261b28]">Vérification du profil</p>
       <div className="relative">
-        <img loading="lazy" decoding="async" src={kofi.photo} alt="Kofi" className="h-24 w-24 rounded-full object-cover shadow-lg ring-4 ring-white" />
+        <img loading="lazy" decoding="async" src={kofi.photo} alt="Kofi" className="h-24 w-24 rounded-full object-cover shadow-lg ring-2 ring-white" />
         <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow">
           <BadgeCheck size={22} strokeWidth={2.25} className="text-sky-500" />
         </span>

@@ -213,7 +213,7 @@ function PostDetail() {
   if (post === undefined) {
     return (
       <div className="flex min-h-svh items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+        <div className="h-8 w-8 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
       </div>
     )
   }

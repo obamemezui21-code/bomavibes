@@ -53,7 +53,7 @@ function EditPostModal({ post, onClose, onSave }) {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={post.type === 'photo' ? 'Légende (facultatif)…' : 'Votre texte…'}
-            className="w-full resize-none rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06]"
+            className="w-full resize-none rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06]"
           />
           <button
             type="submit"

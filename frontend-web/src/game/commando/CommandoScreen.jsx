@@ -44,7 +44,7 @@ function HoldButton({ on, off, label, className, children, onAction }) {
       onPointerUp={() => off && onAction(off)}
       onPointerCancel={() => off && onAction(off)}
       onContextMenu={(e) => e.preventDefault()}
-      className={`flex select-none items-center justify-center rounded-full border-2 border-white/30 bg-black/35 font-display text-xs font-bold text-white backdrop-blur-sm active:bg-white/25 ${className}`}
+      className={`flex select-none items-center justify-center rounded-full border border-white/30 bg-black/35 font-display text-xs font-bold text-white backdrop-blur-sm active:bg-white/25 ${className}`}
       style={{ touchAction: 'none', WebkitUserSelect: 'none' }}
     >
       {children}

@@ -424,7 +424,7 @@ function Discover() {
           <NewsHeroSlider />
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-xl pb-3">
+        <div className="relative z-10 mx-auto w-full max-w-xl pb-3 desktop:max-w-6xl">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-1 text-xs font-medium text-ink-soft/60">
@@ -462,7 +462,7 @@ function Discover() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Rechercher des gens…"
-                    className="w-full rounded-full border border-ink/12 bg-white dark:bg-surface-tint py-2.5 pl-10 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+                    className="w-full rounded-full border border-ink/12 bg-white dark:bg-surface-tint py-2.5 pl-10 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15"
                   />
                 </div>
               </motion.div>
@@ -534,7 +534,10 @@ function Discover() {
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 sm:px-6">
+      {/* Same structure as the header block above (padding outside, max width
+          inside) so everything below lines up exactly with the hero. */}
+      <div className="relative z-10 px-4 pb-10 sm:px-6">
+      <div className="mx-auto flex w-full max-w-xl flex-col gap-6 desktop:max-w-6xl">
         <div>
           <AnimatePresence>
             {hasUnseenAnnouncement && latestAnnouncement && (
@@ -584,7 +587,7 @@ function Discover() {
 
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+            <div className="h-8 w-8 animate-spin rounded-full border border-violet-300 border-t-violet-600" />
           </div>
         ) : viewMode === 'selection' && selection ? (
           <DailySelection
@@ -783,6 +786,7 @@ function Discover() {
 
         <InviteRewardCard />
       </div>
+      </div>
 
       <AnimatePresence>
         {expandedProfile && (
@@ -860,7 +864,7 @@ function Discover() {
                   initial={{ scale: 0.6, opacity: 0 }}
                   animate={{ scale: [0.6, 1.9], opacity: [0.5, 0] }}
                   transition={{ duration: 2.8, delay: 0.4 + ring * 0.9, repeat: Infinity, ease: 'easeOut' }}
-                  className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-pink-400/60"
+                  className="pointer-events-none absolute left-1/2 top-1/2 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-pink-400/60"
                 />
               ))}
 
@@ -874,7 +878,7 @@ function Discover() {
                   <img
                     src={fullPhotoFor(matchedProfile)}
                     alt={matchedProfile.firstName}
-                    className="h-40 w-40 rounded-full border-4 border-violet-950 object-cover"
+                    className="h-40 w-40 rounded-full border-2 border-violet-950 object-cover"
                   />
                 </span>
                 <motion.img
@@ -884,7 +888,7 @@ function Discover() {
                   src={avatarFor(publicProfile || { id: user?.id, firstName: user?.firstName })}
                   onError={fallbackToFullPhoto(fullPhotoFor(publicProfile || { id: user?.id, firstName: user?.firstName }))}
                   alt="Vous"
-                  className="absolute -bottom-1 -right-3 h-16 w-16 rounded-full border-4 border-violet-950 object-cover shadow-xl"
+                  className="absolute -bottom-1 -right-3 h-16 w-16 rounded-full border-2 border-violet-950 object-cover shadow-xl"
                 />
                 <motion.span
                   initial={{ scale: 0 }}

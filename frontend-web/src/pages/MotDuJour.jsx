@@ -39,7 +39,7 @@ function Tile({ letter, mark, index, reveal }) {
       initial={reveal ? { rotateX: 0 } : false}
       animate={reveal ? { rotateX: [0, 90, 0] } : undefined}
       transition={{ delay: index * 0.18, duration: 0.45 }}
-      className={`flex aspect-square w-full items-center justify-center rounded-xl border-2 font-display text-2xl font-black uppercase ${
+      className={`flex aspect-square w-full items-center justify-center rounded-xl border font-display text-2xl font-black uppercase ${
         mark ? TILE[mark] : letter ? 'border-ink/40 bg-surface text-ink' : 'border-ink/12 bg-surface text-ink'
       }`}
     >
@@ -94,7 +94,7 @@ function Rules({ rewards }) {
             {[...word].map((l, i) => (
               <span
                 key={i}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg border-2 font-display text-sm font-black ${
+                className={`flex h-8 w-8 items-center justify-center rounded-lg border font-display text-sm font-black ${
                   TILE[marks[i]] || 'border-ink/15 text-ink'
                 }`}
               >

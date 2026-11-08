@@ -48,7 +48,7 @@ function SiteHeader() {
           <img
             src={logo}
             alt="BomaVibes"
-            className="h-10 w-10 rounded-full border-2 border-pink-500 object-cover shadow-md"
+            className="h-10 w-10 rounded-full border border-pink-500 object-cover shadow-md"
           />
         </a>
 

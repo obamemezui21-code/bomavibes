@@ -26,7 +26,7 @@ const HEIGHTS = Array.from({ length: (HEIGHT_RANGE[1] - HEIGHT_RANGE[0]) / 5 + 1
 const INTERESTS_SHOWN = 12
 
 const fieldClass =
-  'w-full rounded-xl border border-ink/12 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/20 dark:bg-surface-tint'
+  'w-full rounded-xl border border-ink/12 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-violet-400 focus:ring-1 focus:ring-violet-400/20 dark:bg-surface-tint'
 
 function Section({ title, hint, children }) {
   return (

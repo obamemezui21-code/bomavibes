@@ -45,7 +45,7 @@ function CommentComposer({ replyTarget, replyAuthorName, onCancelReply, onSubmit
             }
           }}
           placeholder={replyTarget ? 'Écrire une réponse…' : 'Écrire un commentaire…'}
-          className="max-h-32 min-h-[44px] w-full resize-none rounded-2xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+          className="max-h-32 min-h-[44px] w-full resize-none rounded-2xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/40 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15"
         />
         <button
           type="submit"

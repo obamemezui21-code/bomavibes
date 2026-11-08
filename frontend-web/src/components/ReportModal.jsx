@@ -38,7 +38,7 @@ function ReportModal({ firstName, onClose, onSubmit, isSubmitting, title, reason
           placeholder="Détails (facultatif)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="mt-3 w-full resize-none rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15"
+          className="mt-3 w-full resize-none rounded-xl border border-ink/12 bg-ink/[0.03] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-400/15"
         />
 
         <label className="mt-3 flex items-center gap-2 text-sm text-ink/80">

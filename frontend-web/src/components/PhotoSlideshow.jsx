@@ -72,7 +72,7 @@ function PhotoSlideshow({ photos, alt, children }) {
 
   return (
     <div
-      className="absolute inset-0 select-none outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/70"
+      className="absolute inset-0 select-none outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-white/70"
       style={{ touchAction: 'pan-y' }}
       role="group"
       aria-roledescription="diaporama"

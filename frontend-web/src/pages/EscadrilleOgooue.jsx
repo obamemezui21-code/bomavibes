@@ -71,7 +71,7 @@ function JetChoice({ value, onChange }) {
             type="button"
             onClick={() => onChange(id)}
             className={`rounded-2xl p-2.5 text-left transition ${
-              active ? 'bg-white ring-2 ring-sky-400 dark:bg-surface-tint' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'
+              active ? 'bg-white ring-1 ring-sky-400 dark:bg-surface-tint' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'
             }`}
           >
             <div className="flex justify-center rounded-xl bg-gradient-to-b from-[#2b5223] to-[#16607f] py-1">

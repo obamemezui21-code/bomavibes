@@ -169,7 +169,7 @@ function StickerMaker({ onClose, onCreated }) {
           aria-label="Enregistrer le sticker"
         >
           {isSaving ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            <span className="h-4 w-4 animate-spin rounded-full border border-white/40 border-t-white" />
           ) : (
             <Check size={20} strokeWidth={2.5} />
           )}
@@ -249,7 +249,7 @@ function StickerMaker({ onClose, onCreated }) {
                   type="button"
                   onClick={() => set({ emoji: em })}
                   className={`flex h-10 w-10 items-center justify-center rounded-full text-xl transition ${
-                    opts.emoji === em ? 'bg-white/25 ring-2 ring-pink-400' : 'bg-white/8 hover:bg-white/15'
+                    opts.emoji === em ? 'bg-white/25 ring-1 ring-pink-400' : 'bg-white/8 hover:bg-white/15'
                   }`}
                   aria-label={em ? `Ajouter ${em}` : 'Sans emoji'}
                 >

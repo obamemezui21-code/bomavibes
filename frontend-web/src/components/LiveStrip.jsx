@@ -85,7 +85,7 @@ function LiveStrip() {
                   src={photoVariant(l.hostPhoto, 'thumb') || l.hostPhoto || fallbackAvatar(l.hostName || l.id)}
                   onError={l.hostPhoto ? fallbackToFullPhoto(l.hostPhoto) : undefined}
                   alt=""
-                  className="h-14 w-14 rounded-full border-2 border-surface-soft object-cover"
+                  className="h-14 w-14 rounded-full border border-surface-soft object-cover"
                 />
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-coral-500 px-1.5 text-[9px] font-bold uppercase text-white">
                   Live

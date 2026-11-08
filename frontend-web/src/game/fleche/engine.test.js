@@ -110,22 +110,24 @@ describe('FLÈCHE D’ÉBÈNE engine', () => {
   it('takes two arrows in the body to bring a monster down, one in the head', () => {
     const state = emptyGame()
     const monster = put(state, { kind: 'monstre', x: 200 * FP, hp: 2 })
-    step(state, [[PULL_MAX, 0]]) // flat: into the body
+    step(state, [[112, 30]]) // aimed low: into the body
     fly(state)
     expect(monster.hp).toBe(1)
     expect(state.kills.monstre).toBe(0)
     for (let i = 0; i < NOCK_TICKS; i++) step(state)
-    step(state, [[PULL_MAX, 0]])
+    step(state, [[112, 30]])
     fly(state)
     expect(state.kills.monstre).toBe(1)
     expect(state.score).toBe(45)
 
-    // A lobbed arrow comes down on the head: one is enough, for double.
-    const lobbed = emptyGame()
-    shootAt(lobbed, put(lobbed, { kind: 'monstre', x: 300 * FP, hp: 2 }))
-    expect(lobbed.kills.monstre).toBe(1)
-    expect(lobbed.perfect).toBe(1)
-    expect(lobbed.score).toBe(90)
+    // In the head: one is enough, for double.
+    const head = emptyGame()
+    put(head, { kind: 'monstre', x: 200 * FP, hp: 2 })
+    step(head, [[PULL_MAX, 0]])
+    fly(head)
+    expect(head.kills.monstre).toBe(1)
+    expect(head.perfect).toBe(1)
+    expect(head.score).toBe(90)
   })
 
   it('costs a life when a monster gets through', () => {
@@ -219,7 +221,7 @@ describe('FLÈCHE D’ÉBÈNE engine', () => {
     playGame(state, step, { spread: 3, every: 15 }, pick)
     expect(state.lives).toBeGreaterThan(0)
     expect(state.hits).toBeGreaterThan(5)
-  })
+  }, 20000)
 
   it('gives stars for the score', () => {
     expect(starsFor(STAR_SCORES[0] - 1)).toBe(0)

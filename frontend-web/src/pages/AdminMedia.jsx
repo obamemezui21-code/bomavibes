@@ -98,7 +98,7 @@ function AdminMedia() {
           className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-violet-500/25 transition disabled:opacity-50"
         >
           {isUploading ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            <span className="h-4 w-4 animate-spin rounded-full border border-white/40 border-t-white" />
           ) : (
             <Upload size={16} strokeWidth={2.25} />
           )}
@@ -114,7 +114,7 @@ function AdminMedia() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher un fichier"
-          className="w-full rounded-xl border border-ink/12 bg-ink/[0.04] py-2.5 pl-9 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+          className="w-full rounded-xl border border-ink/12 bg-ink/[0.04] py-2.5 pl-9 pr-3.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15"
         />
       </div>
 

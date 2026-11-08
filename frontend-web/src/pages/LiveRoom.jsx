@@ -227,7 +227,7 @@ function LiveRoom() {
         <img
           src={live?.hostPhoto || fallbackAvatar(live?.hostName || liveId)}
           alt=""
-          className="h-10 w-10 rounded-full object-cover ring-2 ring-coral-500"
+          className="h-10 w-10 rounded-full object-cover ring-1 ring-coral-500"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{live?.hostName}</p>
@@ -266,7 +266,7 @@ function LiveRoom() {
 
       {phase === 'connecting' && !ended && (
         <div className="relative flex flex-1 items-center justify-center">
-          <div className="h-9 w-9 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          <div className="h-9 w-9 animate-spin rounded-full border border-white/30 border-t-white" />
         </div>
       )}
 

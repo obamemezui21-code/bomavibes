@@ -111,7 +111,7 @@ function AdminMusic() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Titre de la piste"
-          className="w-full rounded-xl border border-ink/12 bg-ink/[0.04] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-4 focus:ring-violet-400/15"
+          className="w-full rounded-xl border border-ink/12 bg-ink/[0.04] px-3.5 py-2.5 text-sm text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-400/15"
         />
         <input
           ref={fileInputRef}
@@ -126,7 +126,7 @@ function AdminMusic() {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 py-2.5 text-sm font-semibold text-ink-on-brand shadow-md shadow-violet-500/25 transition disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isUploading ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            <span className="h-4 w-4 animate-spin rounded-full border border-white/40 border-t-white" />
           ) : (
             <Upload size={16} strokeWidth={2.25} />
           )}
@@ -156,7 +156,7 @@ function AdminMusic() {
             <div
               key={track.id}
               className={`flex items-center gap-3 rounded-2xl border bg-white p-3 dark:bg-surface-tint ${
-                isActive ? 'border-violet-400/60 ring-2 ring-violet-400/20' : 'border-ink/8'
+                isActive ? 'border-violet-400/60 ring-1 ring-violet-400/20' : 'border-ink/8'
               }`}
             >
               <button
@@ -179,7 +179,7 @@ function AdminMusic() {
                 aria-label="Supprimer"
               >
                 {deletingId === track.id ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-coral-500/30 border-t-coral-500" />
+                  <span className="h-4 w-4 animate-spin rounded-full border border-coral-500/30 border-t-coral-500" />
                 ) : (
                   <Trash2 size={16} strokeWidth={2.25} />
                 )}

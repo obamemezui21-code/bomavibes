@@ -81,7 +81,7 @@ function NearbyMap({ profiles, onOpenProfile }) {
               onError={p.photos?.[0] ? fallbackToFullPhoto(p.photos[0]) : undefined}
               alt={p.firstName}
               loading="lazy"
-              className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md dark:border-surface-tint"
+              className="h-14 w-14 rounded-full border border-white object-cover shadow-md dark:border-surface-tint"
             />
             <span className="max-w-[4rem] truncate text-xs font-medium text-ink">
               {p.firstName}

@@ -27,7 +27,7 @@ function TouchButton({ label, onDown, onUp, className, children }) {
       onPointerUp={() => onUp?.()}
       onPointerCancel={() => onUp?.()}
       onContextMenu={(e) => e.preventDefault()}
-      className={`flex select-none items-center justify-center rounded-full border-2 border-white/30 bg-black/40 font-display text-xs font-bold text-white backdrop-blur-sm active:bg-white/25 ${className}`}
+      className={`flex select-none items-center justify-center rounded-full border border-white/30 bg-black/40 font-display text-xs font-bold text-white backdrop-blur-sm active:bg-white/25 ${className}`}
       style={{ touchAction: 'none', WebkitUserSelect: 'none' }}
     >
       {children}

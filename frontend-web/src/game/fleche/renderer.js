@@ -3,11 +3,14 @@ import { BOW, FP, GROUND, H, PULL_MAX, W, airYOf, flightPath, isAiming, sizeOf }
 
 // FLÈCHE D'ÉBÈNE's drawing: the Ivindo forest, the hunter and his ebony bow,
 // the targets and the arrows. The poachers, monsters and animals are the
-// sheets of Œil de Panthère; the hunter, the game and the targets are drawn
-// by hand. Purely visual: nothing here feeds back into the simulation.
+// sheets of Œil de Panthère; the hunter, the hog and the guineafowl have their
+// own, and what can't load in time is drawn by hand. The hunter's arms and the
+// string are drawn here, because they follow the aim. Purely visual: nothing
+// here feeds back into the simulation.
 
 const BACKDROP_URL = '/commando/bg-ivindo.webp'
-const SHEETS = ['braconniers', 'gorille', 'sitatunga', 'elephant', 'pangolin', 'monstre', 'marais']
+const BOW_URL = '/fleche/arc.webp'
+const SHEETS = ['braconniers', 'gorille', 'sitatunga', 'elephant', 'pangolin', 'monstre', 'marais', 'chasseur', 'potamochere', 'pintade']
 // By engine variant: the sheet, and how tall the figure is drawn for its hit box.
 const ANIMALS = [
   { name: 'gorille', height: 1.15, steps: 5 },
@@ -22,12 +25,32 @@ const MONSTERS = [
 const PREVIEW_TICKS = 27 // the dotted line only shows the start of the flight
 const LEAVES = 16
 const HUNTER_X = 52
+const HUNTER_HEIGHT = 112
+const ARM_LENGTH = 34 // shoulder to the hand on the bow
+const BOW_HEIGHT = 84
+const BOW_THICKNESS = 2 // the picture is very slim: widened to read on the forest
+const BOW_GRIP = 107 / 143 // across the picture: the grip, and the two tips
+const BOW_TIP = 73 / 143
+// The skin of the hunter's picture: lit side, middle, shadow.
+const SKIN_NEAR = ['#b57a55', '#8d5637', '#5a3320']
+const SKIN_FAR = ['#7d4b30', '#5f3923', '#3f2415']
+const HURT_SECONDS = 0.7
 
 let backdrop = null
+let bowArt = null
 const sheets = {}
 let loading = null
 export function preloadArt() {
   loading ||= Promise.all([
+    new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => {
+        bowArt = img
+        resolve()
+      }
+      img.onerror = () => resolve()
+      img.src = BOW_URL
+    }),
     new Promise((resolve) => {
       const img = new Image()
       img.onload = () => {
@@ -96,6 +119,7 @@ export function createFlecheRenderer(canvas) {
   let offX = 0
   let offY = 0
   let snap = 0 // the string still shaking after a shot
+  let hurt = 0 // seconds left of the hunter's hurt pose
   const popups = []
   const stuck = [] // arrows planted in the ground
   const sparks = []
@@ -197,6 +221,7 @@ export function createFlecheRenderer(canvas) {
   function drawPotamochere(t, time) {
     const { w, h } = sizeOf(t)
     const x = t.x / FP
+    if (drawFrame(g, 'potamochere', 'run', Math.floor(time * 12 + t.id), x, GROUND, h * 1.25, t.facing)) return
     const legs = Math.sin(time * 22 + t.id) * 6
     const u = w / 64 // drawn for a 64-unit-long hog
     const v = h / 42
@@ -285,6 +310,9 @@ export function createFlecheRenderer(canvas) {
   function drawPintade(t, time) {
     const x = t.x / FP
     const y = airYOf(t)
+    // Wings up, level, down, level.
+    const beat = [0, 1, 2, 1][Math.floor(time * 11 + t.id) % 4]
+    if (drawFrame(g, 'pintade', 'run', beat, x, y + 15, 60, t.facing)) return
     const wing = Math.sin(time * 16 + t.id) // 1 up, -1 down
     g.save()
     g.translate(x, y)
@@ -446,7 +474,124 @@ export function createFlecheRenderer(canvas) {
   }
 
   // ── The hunter and his bow ─────────────────────────────────────────────
+  // A limb from a to b, tapering from width wa to wb: rounded at both ends and
+  // shaded across, lit from the top like the hunter's picture.
+  function drawLimb(a, b, wa, wb, [light, middle, dark]) {
+    const angle = Math.atan2(b.y - a.y, b.x - a.x)
+    const length = Math.hypot(b.x - a.x, b.y - a.y)
+    g.save()
+    g.translate(a.x, a.y)
+    g.rotate(angle)
+    // Which side faces up decides where the light falls, whatever the angle.
+    const top = Math.cos(angle) >= 0 ? -1 : 1
+    const shade = g.createLinearGradient(0, (-top * wa) / 2, 0, (top * wa) / 2)
+    shade.addColorStop(0, dark)
+    shade.addColorStop(0.45, middle)
+    shade.addColorStop(0.85, light)
+    shade.addColorStop(1, middle)
+    g.fillStyle = shade
+    g.beginPath()
+    g.arc(0, 0, wa / 2, Math.PI / 2, -Math.PI / 2)
+    g.lineTo(length, -wb / 2)
+    g.arc(length, 0, wb / 2, -Math.PI / 2, Math.PI / 2)
+    g.closePath()
+    g.fill()
+    g.restore()
+  }
+
+  // A band around a limb, at this share of its length.
+  function drawBand(a, b, share, width, color) {
+    const x = a.x + (b.x - a.x) * share
+    const y = a.y + (b.y - a.y) * share
+    const angle = Math.atan2(b.y - a.y, b.x - a.x)
+    g.save()
+    g.translate(x, y)
+    g.rotate(angle)
+    g.fillStyle = color
+    g.fillRect(-1.2, -width / 2, 2.4, width)
+    g.fillStyle = '#d9b36a'
+    g.fillRect(-1.9, -width / 2, 0.7, width)
+    g.fillRect(1.2, -width / 2, 0.7, width)
+    g.restore()
+  }
+
+  // His picture has no near arm: the arm holding the bow goes behind him, the
+  // one on the string in front, and the bow turns around his shoulder.
+  function drawHunterArt(state, aim, time) {
+    const pose = state.over ? (state.lives > 0 ? 'up' : 'hurt') : hurt > 0 ? 'hurt' : 'stand'
+    if (pose !== 'stand') {
+      drawFrame(g, 'chasseur', pose, 0, HUNTER_X, GROUND, HUNTER_HEIGHT, 1, true)
+      return
+    }
+    const pull = aim ? Math.min(1, Math.hypot(aim.ax, aim.ay) / PULL_MAX) : 0
+    const angle = aim ? Math.atan2(aim.ay, aim.ax) : -0.18
+    const [dx, dy] = [Math.cos(angle), Math.sin(angle)]
+    const hand = { x: BOW.x + dx * ARM_LENGTH, y: BOW.y + dy * ARM_LENGTH }
+    const nock = { x: hand.x - dx * (10 + pull * 34), y: hand.y - dy * (10 + pull * 34) }
+    const shake = snap > 0 ? Math.sin(time * 70) * snap * 3 : 0
+
+    // The arm holding the bow, then the bow, with a rim of light so the dark
+    // ebony reads on the forest.
+    const farShoulder = { x: BOW.x - 3, y: BOW.y + 2 }
+    drawLimb(farShoulder, hand, 8, 5.5, SKIN_FAR)
+
+    g.save()
+    g.translate(hand.x, hand.y)
+    g.rotate(angle)
+    const bowW = bowArt ? ((BOW_HEIGHT * bowArt.width) / bowArt.height) * BOW_THICKNESS : 0
+    const tipX = (BOW_TIP - BOW_GRIP) * bowW
+    if (bowArt) {
+      g.shadowColor = 'rgba(255,214,130,0.95)'
+      g.shadowBlur = 5 * dpr * s
+      g.drawImage(bowArt, -BOW_GRIP * bowW, -BOW_HEIGHT / 2, bowW, BOW_HEIGHT)
+      g.shadowBlur = 0
+    }
+    g.restore()
+    drawBand(farShoulder, hand, 0.82, 6, '#a8432f')
+
+    // The body, then the string, the arrow and the arm pulling them.
+    drawFrame(g, 'chasseur', 'stand', 0, HUNTER_X, GROUND, HUNTER_HEIGHT, 1, true)
+
+    const along = (back, across) => ({ x: hand.x + dx * back - dy * across, y: hand.y + dy * back + dx * across })
+    const [top, bottom] = [along(tipX, -BOW_HEIGHT / 2), along(tipX, BOW_HEIGHT / 2)]
+    const stringAt = aim ? nock : along(tipX + shake, 0)
+    g.strokeStyle = 'rgba(245,235,210,0.7)'
+    g.lineWidth = 0.7
+    g.beginPath()
+    g.moveTo(top.x, top.y)
+    g.lineTo(stringAt.x, stringAt.y)
+    g.lineTo(bottom.x, bottom.y)
+    g.stroke()
+
+    if (state.nock === 0) {
+      g.save()
+      g.translate(nock.x + dx * 19, nock.y + dy * 19)
+      g.rotate(angle)
+      drawArrowShape()
+      g.restore()
+    }
+
+    const shoulder = { x: BOW.x - 13, y: BOW.y + 2 }
+    const elbow = {
+      x: (shoulder.x + nock.x) / 2 - dx * (6 + pull * 12),
+      y: (shoulder.y + nock.y) / 2 - dy * (6 + pull * 12) + 7,
+    }
+    drawLimb(shoulder, elbow, 9.5, 7, SKIN_NEAR)
+    drawLimb(elbow, nock, 7, 5, SKIN_NEAR)
+    drawBand(shoulder, elbow, 0.5, 8, '#a8432f')
+    drawBand(elbow, nock, 0.84, 6, '#a8432f')
+    // The fingers on the string.
+    g.fillStyle = SKIN_NEAR[1]
+    g.beginPath()
+    g.arc(nock.x, nock.y, 3.6, 0, 6.3)
+    g.fill()
+  }
+
   function drawHunter(state, aim, time) {
+    if (sheets.chasseur) {
+      drawHunterArt(state, aim, time)
+      return
+    }
     const pull = aim ? Math.min(1, Math.hypot(aim.ax, aim.ay) / PULL_MAX) : 0
     const angle = aim ? Math.atan2(aim.ay, aim.ax) : -0.18
     const breathe = Math.sin(time * 2) * 0.8
@@ -672,6 +817,8 @@ export function createFlecheRenderer(canvas) {
         else if (e.zone !== 'body') popup(e.x, e.y - 26, e.zone === 'head' ? 'EN PLEINE TÊTE ×2' : 'EN PLEIN CENTRE ×2', '#fbbf24', 11)
       } else if (e.type === 'wound') {
         burst(e.x, e.y, '#e74c3c', 6)
+      } else if (e.type === 'attack') {
+        hurt = HURT_SECONDS
       } else if (e.type === 'protected') {
         popup(e.x, e.y - 8, `${e.points}`, '#ff6b5a', 17)
       } else if (e.type === 'miss' && e.grounded) {
@@ -685,6 +832,7 @@ export function createFlecheRenderer(canvas) {
     drawBackdrop()
     g.setTransform(dpr * s, 0, 0, dpr * s, dpr * offX, dpr * offY)
     snap = Math.max(0, snap - dt * 4)
+    hurt = Math.max(0, hurt - dt)
     drawLeaves(state, dt)
     drawGround()
     drawStuck(dt)

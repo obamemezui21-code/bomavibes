@@ -27,6 +27,21 @@
  * keep working unchanged — only the palette they resolve to has moved.
  */
 @theme {
+  /* Text one notch smaller than Tailwind's scale (asked for on 2026-11-08).
+     Line heights stay proportional: Tailwind keeps them as ratios. */
+  --text-xs: 0.71875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.1875rem;
+  --text-2xl: 1.375rem;
+  --text-3xl: 1.6875rem;
+  --text-4xl: 2rem;
+  --text-5xl: 2.625rem;
+  --text-6xl: 3.25rem;
+  --text-7xl: 4rem;
+  --text-8xl: 5.25rem;
+
   /* Theme = the Friendzy kit's plum violet #4B164C + white (values sampled
      from the kit's screens). Light mode surfaces are white with a faint
      plum cast. */
@@ -133,8 +148,20 @@ html.dark {
   color-scheme: dark;
 }
 
+/* Big computer screens: the whole site grows gently with the screen, 16px at
+   1536 wide, about 17px at 1920 and 19px at 2560. Sizes are in rem, so proportions don't change,
+   where stretching the columns made the pages look wrong (commit bb585d9).
+   Media queries ignore this, so the "desktop" breakpoint stays where it is. */
+@media (min-width: 96rem) and (pointer: fine) {
+  html {
+    font-size: clamp(1rem, 0.293vw + 0.72rem, 1.25rem);
+  }
+}
+
 body {
   margin: 0;
+  /* Text without a size class follows the smaller scale too. */
+  font-size: var(--text-base);
   /* Not overflow-x: hidden here — with html's overflow-x already hidden,
      also setting it on body stops the html->viewport overflow propagation
      and turns body into its own independent scroll container, which breaks

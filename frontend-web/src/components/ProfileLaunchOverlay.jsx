@@ -72,7 +72,7 @@ function ProfileLaunchOverlay({
           [0, 1, 2].map((i) => (
             <motion.span
               key={i}
-              className="absolute h-36 w-36 rounded-full border-2 border-pink-400/60"
+              className="absolute h-36 w-36 rounded-full border border-pink-400/60"
               initial={{ scale: 0.8, opacity: 0.8 }}
               animate={{ scale: 2.1, opacity: 0 }}
               transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.8, ease: 'easeOut' }}
@@ -117,7 +117,7 @@ function ProfileLaunchOverlay({
             transition={{ duration: done ? 0.6 : 2.2, repeat: Infinity, ease: 'linear' }}
           />
           <motion.div
-            className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-4 border-[#2a0f3a] bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3"
+            className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 border-[#2a0f3a] bg-gradient-to-br from-brand-1 via-brand-2 to-brand-3"
             animate={done ? { scale: [1, 1.18, 1] } : reduceMotion ? undefined : { scale: [1, 1.05, 1] }}
             transition={done ? { duration: 0.5 } : { duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
           >

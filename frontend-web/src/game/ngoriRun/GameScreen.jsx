@@ -499,7 +499,7 @@ function GameScreen({ seed, runner, graphics = '2d', billboards, audio, muted, o
           audio.unlock()
           act('B')
         }}
-        className={`absolute right-4 flex h-16 w-16 flex-col items-center justify-center rounded-full border-2 border-sky-300/70 bg-sky-500/40 font-display text-[10px] font-bold backdrop-blur-md transition active:scale-95 disabled:opacity-40 ${
+        className={`absolute right-4 flex h-16 w-16 flex-col items-center justify-center rounded-full border border-sky-300/70 bg-sky-500/40 font-display text-[10px] font-bold backdrop-blur-md transition active:scale-95 disabled:opacity-40 ${
           showButtons ? 'bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5rem))]' : 'bottom-[max(1.5rem,env(safe-area-inset-bottom))]'
         }`}
         aria-label="Se transformer en oiseau"

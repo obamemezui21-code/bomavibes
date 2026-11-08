@@ -239,10 +239,10 @@ function PostComposer({ onClose, initialType = 'text' }) {
             }
             className={
               activeBackground
-                ? `min-h-[200px] w-full resize-none rounded-2xl border-0 px-6 py-8 text-center outline-none placeholder:text-current placeholder:opacity-60 focus:ring-4 focus:ring-violet-400/25 ${
+                ? `min-h-[200px] w-full resize-none rounded-2xl border-0 px-6 py-8 text-center outline-none placeholder:text-current placeholder:opacity-60 focus:ring-2 focus:ring-violet-400/25 ${
                     text.length <= 60 ? 'text-[26px] leading-tight' : text.length <= 120 ? 'text-[22px] leading-snug' : 'text-lg leading-snug'
                   }`
-                : `w-full resize-none rounded-2xl border border-ink/12 bg-ink/[0.03] px-4 py-3 text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06] ${
+                : `w-full resize-none rounded-2xl border border-ink/12 bg-ink/[0.03] px-4 py-3 text-ink placeholder-ink-soft/50 outline-none transition focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-400/15 dark:focus:bg-ink/[0.06] ${
                     activeFont && activeFont.id !== 'normal' ? 'text-[17px]' : 'text-sm'
                   }`
             }
@@ -259,7 +259,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
                     aria-label="Sans fond"
                     aria-pressed={!background}
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-white text-ink-soft/60 transition dark:bg-surface-tint ${
-                      !background ? 'border-violet-600 ring-2 ring-violet-400/50' : 'border-ink/15'
+                      !background ? 'border-violet-600 ring-1 ring-violet-400/50' : 'border-ink/15'
                     }`}
                   >
                     <Ban size={16} strokeWidth={2} />
@@ -275,7 +275,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
                       title={b.label}
                       style={{ background: b.css }}
                       className={`h-9 w-9 shrink-0 rounded-full border border-black/10 transition disabled:cursor-not-allowed disabled:opacity-35 ${
-                        background === b.id && !tooLongForBackground ? 'ring-2 ring-violet-600 ring-offset-2 ring-offset-surface' : ''
+                        background === b.id && !tooLongForBackground ? 'ring-1 ring-violet-600 ring-offset-2 ring-offset-surface' : ''
                       }`}
                     />
                   ))}
@@ -332,7 +332,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-violet-400/40 bg-violet-500/[0.04] py-8 text-sm font-semibold text-violet-600 transition hover:border-violet-400 hover:bg-violet-500/[0.08] dark:text-violet-300"
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-violet-400/40 bg-violet-500/[0.04] py-8 text-sm font-semibold text-violet-600 transition hover:border-violet-400 hover:bg-violet-500/[0.08] dark:text-violet-300"
                 >
                   <ImageIcon size={24} strokeWidth={1.75} />
                   Choisir une photo
@@ -397,7 +397,7 @@ function PostComposer({ onClose, initialType = 'text' }) {
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
                   disabled={isReadingVideo}
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-violet-400/40 bg-violet-500/[0.04] py-8 text-sm font-semibold text-violet-600 transition hover:border-violet-400 hover:bg-violet-500/[0.08] disabled:opacity-60 dark:text-violet-300"
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-violet-400/40 bg-violet-500/[0.04] py-8 text-sm font-semibold text-violet-600 transition hover:border-violet-400 hover:bg-violet-500/[0.08] disabled:opacity-60 dark:text-violet-300"
                 >
                   <Clapperboard size={24} strokeWidth={1.75} />
                   {isReadingVideo ? 'Lecture de la vidéo…' : 'Choisir une vidéo'}

@@ -53,7 +53,7 @@ function RifleChoice({ value, onChange, dark = false }) {
             onClick={() => onChange(id)}
             className={`rounded-2xl p-2.5 text-left transition ${
               active
-                ? `ring-2 ring-amber-400 ${dark ? 'bg-white/15' : 'bg-white dark:bg-surface-tint'}`
+                ? `ring-1 ring-amber-400 ${dark ? 'bg-white/15' : 'bg-white dark:bg-surface-tint'}`
                 : `${dark ? 'bg-white/5 ring-1 ring-white/10' : 'bg-white/70 ring-1 ring-ink/8 dark:bg-surface-tint/60'}`
             }`}
           >

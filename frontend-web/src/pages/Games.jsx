@@ -83,7 +83,7 @@ function Games() {
                       src={src}
                       alt=""
                       className={`drop-shadow-[0_8px_16px_rgba(0,0,0,0.35)] ${
-                        game.round ? 'h-16 w-16 rounded-full object-cover ring-2 ring-white/50' : 'h-28 w-auto object-contain'
+                        game.round ? 'h-16 w-16 rounded-full object-cover ring-1 ring-white/50' : 'h-28 w-auto object-contain'
                       } ${k ? (game.round ? '-ml-4' : '-ml-5') : ''}`}
                     />
                   ))}
