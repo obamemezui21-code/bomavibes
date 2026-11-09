@@ -12,6 +12,8 @@ const AUTO_SPIN = 0.12 // rad/s
 const PIN_LIFT = 1.13
 const PITCH_MIN = -0.5
 const PITCH_MAX = 0.9
+// Where the globe opens when nobody, you included, has a known city.
+const LIBREVILLE = [0.4087, 9.4419]
 
 function toVector(lat, lng, radius = 1) {
   const phi = (90 - lat) * DEG
@@ -193,7 +195,7 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   })
 
   // Arcs from your city to each other active city (or, without yours, from the busiest one).
-  const origin = home || [groups[0].lat, groups[0].lng]
+  const origin = home || (groups[0] ? [groups[0].lat, groups[0].lng] : LIBREVILLE)
   const arcs = cities
     .filter((g) => Math.abs(g.lat - origin[0]) + Math.abs(g.lng - origin[1]) > 0.5)
     .slice(0, 10)

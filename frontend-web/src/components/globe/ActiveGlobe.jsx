@@ -8,7 +8,6 @@ import { fallbackAvatar } from '../../lib/fallbackAvatar.js'
 import { ageSuffix } from '../../lib/profileDisplay.js'
 
 const SHOWN = 12
-const RECENT_MS = 30 * 24 * 60 * 60 * 1000
 const ONLINE_MS = 150 * 1000 // same threshold as the chat's "En ligne"
 const CLUSTER_DEG = 6
 
@@ -17,6 +16,7 @@ function avatarFor(profile) {
 }
 
 function activityLabel(lastActiveAt, now) {
+  if (!lastActiveAt) return null
   const diff = now - lastActiveAt
   if (diff < ONLINE_MS) return 'En ligne'
   const min = Math.round(diff / 60000)
@@ -28,11 +28,12 @@ function activityLabel(lastActiveAt, now) {
 
 // The most recently active members, grouped per city (a city's centre only,
 // as on the "Autour de moi" map: never anyone's real position). Members who
-// hide their distance aren't placed on the globe.
-function activeGroups(profiles, now) {
+// hide their distance aren't placed on the globe. Most recently active first,
+// with no cut-off: the globe shows whoever has a known city.
+function activeGroups(profiles) {
   const active = profiles
-    .filter((p) => p.lastActiveAt && now - p.lastActiveAt < RECENT_MS && !p.hideDistance && coordsForProfile(p))
-    .sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+    .filter((p) => !p.hideDistance && coordsForProfile(p))
+    .sort((a, b) => (b.lastActiveAt || 0) - (a.lastActiveAt || 0))
     .slice(0, SHOWN)
   const cities = new Map()
   for (const p of active) {
@@ -65,11 +66,12 @@ function activeGroups(profiles, now) {
 // members pinned on their city, light running along arcs from your city to
 // theirs. Drag it to turn it; tap a city to bring it in front. Under it (on a
 // computer, beside it) the same members in a list, each opening their profile.
-// No WebGL: the list alone. No active member with a known city: nothing.
+// No WebGL: the list alone. No member with a known city yet: the globe turns
+// on its own, with a word saying members will show up on it.
 function ActiveGlobe({ profiles, me, onOpenProfile }) {
   const reducedMotion = useReducedMotion()
   const [now] = useState(() => Date.now())
-  const { active, cities, groups } = useMemo(() => activeGroups(profiles, now), [profiles, now])
+  const { active, cities, groups } = useMemo(() => activeGroups(profiles), [profiles])
   const home = useMemo(() => coordsForProfile(me), [me])
   const [selectedKey, setSelectedKey] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -80,7 +82,7 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
   const groupsKey = cities.map((c) => `${c.key}:${c.profiles.length}`).join('|')
 
   useEffect(() => {
-    if (!stage.current || !groups.length) return undefined
+    if (!stage.current) return undefined
     let handle
     try {
       handle = createGlobeScene(stage.current, {
@@ -103,8 +105,6 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupsKey, home?.[0], home?.[1], reducedMotion])
 
-  if (!groups.length) return null
-
   const online = active.filter((p) => now - p.lastActiveAt < ONLINE_MS).length
   const selected = groups.find((g) => g.key === selectedKey)
   const listed = selected ? selected.profiles : active
@@ -123,7 +123,9 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
         </h2>
         <p className="text-xs text-ink-soft/60">
           {online > 0 && <span className="font-semibold text-mint-600">{online} en ligne · </span>}
-          {active.length} membre{active.length > 1 ? 's' : ''} dans {cities.length} ville{cities.length > 1 ? 's' : ''}
+          {active.length
+            ? `${active.length} membre${active.length > 1 ? 's' : ''} dans ${cities.length} ville${cities.length > 1 ? 's' : ''}`
+            : 'Les membres apparaissent sur leur ville'}
         </p>
       </div>
 
@@ -185,6 +187,9 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
               </button>
             )}
           </div>
+          {!listed.length && (
+            <p className="mt-2 px-1 text-xs text-white/60">Personne à placer sur le globe pour le moment : les membres actifs y apparaîtront sur leur ville.</p>
+          )}
           <ul className="mt-2 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] desktop:min-h-0 desktop:flex-1 desktop:flex-col desktop:overflow-y-auto desktop:overflow-x-hidden [&::-webkit-scrollbar]:hidden">
             {listed.map((p) => {
               const isOnline = now - p.lastActiveAt < ONLINE_MS
@@ -211,9 +216,9 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
                         {ageSuffix(p)}
                       </span>
                       <span className={`block truncate text-[11px] ${isOnline ? 'font-semibold text-mint-400' : 'text-white/55'}`}>
-                        {activityLabel(p.lastActiveAt, now)}
+                        {activityLabel(p.lastActiveAt, now) || p.city}
                       </span>
-                      <span className="hidden truncate text-[11px] text-white/40 desktop:block">{p.city}</span>
+                      {p.lastActiveAt && <span className="hidden truncate text-[11px] text-white/40 desktop:block">{p.city}</span>}
                     </span>
                   </button>
                 </li>
