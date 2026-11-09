@@ -52,6 +52,7 @@ import { distanceKmBetween } from '../lib/nearby.js'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
+const ActiveGlobe = lazy(() => import('../components/globe/ActiveGlobe.jsx'))
 
 const VIEW_MODES = [
   { id: 'cards', label: 'Cartes', icon: LayoutGrid },
@@ -639,6 +640,12 @@ function Discover() {
           <div className="flex flex-col items-center">
             {viewMode === 'cards' ? (
               <>
+                <div className="w-full">
+                  <Suspense fallback={null}>
+                    <ActiveGlobe profiles={searched} me={publicProfile} onOpenProfile={openProfile} />
+                  </Suspense>
+                </div>
+
                 <div className="w-full">
                   <div className="flex items-baseline justify-between px-1">
                     <h2 className="font-display text-base font-semibold text-ink">Pour vous</h2>
