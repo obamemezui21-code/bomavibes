@@ -735,7 +735,7 @@ function Discover() {
             </Suspense>
 
             <div className="mt-8 w-full">
-              <div className="flex items-center justify-between px-1">
+              <div className="flex items-center justify-between px-1 desktop:flex-col desktop:justify-start desktop:gap-0.5 desktop:text-center">
                 <h2 className="flex items-center gap-1.5 font-display text-base font-semibold text-ink">
                   👑 Forfaits &amp; Abonnements
                 </h2>
@@ -747,7 +747,11 @@ function Discover() {
                   Tout voir →
                 </button>
               </div>
-              <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+              {/* Computer: the cards are centred (the row is as wide as its cards,
+                  centred by its auto margins). Phone: a row scrolled from the
+                  first card, as before. */}
+              <div className="mt-3 overflow-x-auto pb-2 desktop:pt-2">
+                <div className="flex gap-3 desktop:mx-auto desktop:w-max">
                 {TIERS.map((tier) => (
                   <button
                     key={tier.name}
@@ -779,6 +783,7 @@ function Discover() {
                     </ul>
                   </button>
                 ))}
+                </div>
               </div>
             </div>
           </div>
