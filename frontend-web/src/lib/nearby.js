@@ -1,4 +1,5 @@
 import { CITY_COORDS } from './cityCoords.js'
+import { COUNTRY_COORDS } from './countryCoords.js'
 import { COUNTRIES } from './geography.js'
 
 // Profiles are only ever placed at their city's centre — never at a precise
@@ -14,6 +15,20 @@ export function coordsForProfile(profile, table = CITY_COORDS) {
   const code = countryCodeOf(profile)
   if (!code || !profile?.city) return null
   return table[`${code}|${profile.city}`] || null
+}
+
+// Where the globe of Découvrir puts a member: their city's centre when it's
+// known, else a point inside their country (most countries have no city list),
+// so members everywhere show up, never more precisely than their city.
+// → { lat, lng, place } or null.
+export function globePlaceForProfile(profile) {
+  const city = coordsForProfile(profile)
+  if (city) return { lat: city[0], lng: city[1], place: profile.city }
+  const code = countryCodeOf(profile)
+  const country = code && COUNTRY_COORDS[code]
+  if (!country) return null
+  const name = COUNTRIES.find((c) => c.code === code)?.name || profile.country
+  return { lat: country[0], lng: country[1], place: name }
 }
 
 // One group per city that has coordinates: { key, city, lat, lng, profiles }.

@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { Globe2 } from 'lucide-react'
 import { createGlobeScene } from './globeScene.js'
-import { coordsForProfile } from '../../lib/nearby.js'
+import { globePlaceForProfile } from '../../lib/nearby.js'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { fallbackAvatar } from '../../lib/fallbackAvatar.js'
 import { ageSuffix } from '../../lib/profileDisplay.js'
 
-const SHOWN = 12
+const SHOWN = 60
 const ONLINE_MS = 150 * 1000 // same threshold as the chat's "En ligne"
 const CLUSTER_DEG = 6
 
@@ -26,20 +26,20 @@ function activityLabel(lastActiveAt, now) {
   return `Actif·ve il y a ${Math.round(hours / 24)} j`
 }
 
-// The most recently active members, grouped per city (a city's centre only,
-// as on the "Autour de moi" map: never anyone's real position). Members who
-// hide their distance aren't placed on the globe. Most recently active first,
-// with no cut-off: the globe shows whoever has a known city.
+// The most recently active members, grouped per place: their city's centre, or
+// their country when the city isn't known (never anyone's real position).
+// Members who hide their distance aren't placed on the globe. Most recently
+// active first, with no cut-off.
 function activeGroups(profiles) {
   const active = profiles
-    .filter((p) => !p.hideDistance && coordsForProfile(p))
+    .filter((p) => !p.hideDistance && globePlaceForProfile(p))
     .sort((a, b) => (b.lastActiveAt || 0) - (a.lastActiveAt || 0))
     .slice(0, SHOWN)
   const cities = new Map()
   for (const p of active) {
-    const [lat, lng] = coordsForProfile(p)
+    const { lat, lng, place } = globePlaceForProfile(p)
     const key = `${lat},${lng}`
-    if (!cities.has(key)) cities.set(key, { key, city: p.city, lat, lng, profiles: [] })
+    if (!cities.has(key)) cities.set(key, { key, city: place, lat, lng, profiles: [] })
     cities.get(key).profiles.push(p)
   }
   // On the globe a pin covers about 10° of latitude: cities closer than
@@ -56,8 +56,7 @@ function activeGroups(profiles) {
     }
   }
   for (const g of groups) {
-    if (g.cities.length > 1) g.label = `${g.city} et ${g.cities.length - 1} autre${g.cities.length > 2 ? 's' : ''} ville${g.cities.length > 2 ? 's' : ''}`
-    else g.label = g.city
+    g.label = g.cities.length > 1 ? `${g.city} et alentours` : g.city
   }
   return { active, cities: [...cities.values()], groups }
 }
@@ -72,7 +71,10 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
   const reducedMotion = useReducedMotion()
   const [now] = useState(() => Date.now())
   const { active, cities, groups } = useMemo(() => activeGroups(profiles), [profiles])
-  const home = useMemo(() => coordsForProfile(me), [me])
+  const home = useMemo(() => {
+    const place = me && globePlaceForProfile(me)
+    return place ? [place.lat, place.lng] : null
+  }, [me])
   const [selectedKey, setSelectedKey] = useState(null)
   const [failed, setFailed] = useState(false)
   const stage = useRef(null)
@@ -124,13 +126,13 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
         <p className="text-xs text-ink-soft/60">
           {online > 0 && <span className="font-semibold text-mint-600">{online} en ligne · </span>}
           {active.length
-            ? `${active.length} membre${active.length > 1 ? 's' : ''} dans ${cities.length} ville${cities.length > 1 ? 's' : ''}`
+            ? `${active.length} membre${active.length > 1 ? 's' : ''} dans ${cities.length} endroit${cities.length > 1 ? 's' : ''} du monde`
             : 'Les membres apparaissent sur leur ville'}
         </p>
       </div>
 
       <div className="relative mt-3 overflow-hidden rounded-[24px] bg-[#0d0420] text-white shadow-xl shadow-violet-900/25 desktop:grid desktop:h-[460px] desktop:grid-cols-[minmax(0,1fr)_300px]">
-        <p className="pointer-events-none absolute bottom-2 left-4 z-20 hidden text-[10px] text-white/40 desktop:block">Position par ville uniquement</p>
+        <p className="pointer-events-none absolute bottom-2 left-4 z-20 hidden text-[10px] text-white/40 desktop:block">Position par ville ou pays uniquement</p>
         {/* Night sky behind the globe */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,rgba(124,58,237,0.35),transparent_60%),radial-gradient(ellipse_at_80%_90%,rgba(233,70,125,0.25),transparent_55%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(1px_1px_at_12%_18%,#fff,transparent),radial-gradient(1px_1px_at_72%_12%,#fff,transparent),radial-gradient(1.5px_1.5px_at_88%_42%,#fde68a,transparent),radial-gradient(1px_1px_at_22%_78%,#fff,transparent),radial-gradient(1px_1px_at_55%_88%,#fff,transparent),radial-gradient(1.5px_1.5px_at_8%_55%,#f9a8d4,transparent),radial-gradient(1px_1px_at_40%_8%,#fff,transparent),radial-gradient(1px_1px_at_95%_75%,#fff,transparent)]" />
@@ -216,9 +218,9 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
                         {ageSuffix(p)}
                       </span>
                       <span className={`block truncate text-[11px] ${isOnline ? 'font-semibold text-mint-400' : 'text-white/55'}`}>
-                        {activityLabel(p.lastActiveAt, now) || p.city}
+                        {activityLabel(p.lastActiveAt, now) || p.city || p.country}
                       </span>
-                      {p.lastActiveAt && <span className="hidden truncate text-[11px] text-white/40 desktop:block">{p.city}</span>}
+                      {p.lastActiveAt && <span className="hidden truncate text-[11px] text-white/40 desktop:block">{p.city || p.country}</span>}
                     </span>
                   </button>
                 </li>
