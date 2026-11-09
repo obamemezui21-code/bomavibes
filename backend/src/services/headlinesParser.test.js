@@ -2,16 +2,16 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { HEADLINES_COUNT, parseHeadlines } = require("./headlinesParser");
 
-const IMAGE = "http://gouvernement.ga/wp-content/uploads/2026/11/photo.jpeg";
+const IMAGE = "http://gabontelevisions.ga/wp-content/uploads/2026/11/photo.png";
 const post = (changes = {}) => ({
     id: 101,
     date_gmt: "2026-11-02T14:50:06",
-    link: "http://gouvernement.ga/2026/11/02/article/",
+    link: "http://gabontelevisions.ga/article/",
     title: { rendered: "BUDGET 2027&nbsp;: L&rsquo;&Eacute;TAT &#8211; <em>RENFORCE</em>" },
     _embedded: {
         "wp:featuredmedia": [{ source_url: IMAGE }],
         "wp:term": [
-            [{ taxonomy: "category", name: "Actualit&eacute;s" }, { taxonomy: "category", name: "Minist&egrave;re de l&rsquo;Agriculture" }],
+            [{ taxonomy: "category", name: "Blog" }, { taxonomy: "category", name: "Soci&eacute;t&eacute;" }],
             [{ taxonomy: "post_tag", name: "Gabon" }],
         ],
     },
@@ -21,16 +21,22 @@ const post = (changes = {}) => ({
 test("an article gives a clean slide, in https, its date in UTC", () => {
     const [slide] = parseHeadlines([post()]);
     assert.equal(slide.title, "BUDGET 2027 : L’ÉTAT – RENFORCE");
-    assert.equal(slide.url, "https://gouvernement.ga/2026/11/02/article/");
-    assert.equal(slide.imageUrl, "https://gouvernement.ga/wp-content/uploads/2026/11/photo.jpeg");
-    assert.equal(slide.source, "Gouvernement.ga");
+    assert.equal(slide.url, "https://gabontelevisions.ga/article/");
+    assert.equal(slide.imageUrl, "https://gabontelevisions.ga/wp-content/uploads/2026/11/photo.png");
+    assert.equal(slide.source, "Gabon Télévisions");
     assert.equal(slide.publishedAt, "2026-11-02T14:50:06.000Z");
 });
 
-test("names the ministry rather than the general category", () => {
-    assert.equal(parseHeadlines([post()])[0].category, "Ministère de l’Agriculture");
-    const general = post({ _embedded: { "wp:featuredmedia": [{ source_url: IMAGE }], "wp:term": [[{ taxonomy: "category", name: "Actualit&eacute;s" }]] } });
-    assert.equal(parseHeadlines([general])[0].category, "Actualités");
+test("drops the red dot some titles start with", () => {
+    const [slide] = parseHeadlines([post({ title: { rendered: "🔴Communiqué de la Présidence" } })]);
+    assert.equal(slide.title, "Communiqué de la Présidence");
+    assert.deepEqual(parseHeadlines([post({ title: { rendered: "🔴 " } })]), []);
+});
+
+test("names a real category rather than the catch-all", () => {
+    assert.equal(parseHeadlines([post()])[0].category, "Société");
+    const blogOnly = post({ _embedded: { "wp:featuredmedia": [{ source_url: IMAGE }], "wp:term": [[{ taxonomy: "category", name: "Blog" }]] } });
+    assert.equal(parseHeadlines([blogOnly])[0].category, "Actualité");
 });
 
 test("keeps the latest articles only, in the feed's order", () => {
@@ -50,15 +56,15 @@ test("skips an article without a photo or a title, and fills up with the next", 
     assert.deepEqual(slides.map((s) => s.id), [3]);
 });
 
-test("refuses links and photos that aren't really on gouvernement.ga", () => {
+test("refuses links and photos that aren't really on gabontelevisions.ga", () => {
     const hostile = [
         "javascript:alert(1)",
         "data:text/html,<script>alert(1)</script>",
-        "ftp://gouvernement.ga/file",
-        "https://gouvernement.ga.evil.example/fake/",
-        "http://evil.example/gouvernement.ga/",
-        "https://gouvernement.ga@evil.example/",
-        "https://fakegouvernement.ga/",
+        "ftp://gabontelevisions.ga/file",
+        "https://gabontelevisions.ga.evil.example/fake/",
+        "http://evil.example/gabontelevisions.ga/",
+        "https://gabontelevisions.ga@evil.example/",
+        "https://fakegabontelevisions.ga/",
         "not a url",
         null,
     ];
@@ -66,7 +72,7 @@ test("refuses links and photos that aren't really on gouvernement.ga", () => {
     for (const source_url of hostile) {
         assert.deepEqual(parseHeadlines([post({ _embedded: { "wp:featuredmedia": [{ source_url }] } })]), [], `image: ${source_url}`);
     }
-    assert.equal(parseHeadlines([post({ link: "https://www.gouvernement.ga/a/" })]).length, 1);
+    assert.equal(parseHeadlines([post({ link: "https://www.gabontelevisions.ga/a/" })]).length, 1);
 });
 
 test("survives an answer that isn't what was expected", () => {
@@ -76,6 +82,6 @@ test("survives an answer that isn't what was expected", () => {
 
 test("still gives a slide with no category or date", () => {
     const [slide] = parseHeadlines([post({ date_gmt: null, _embedded: { "wp:featuredmedia": [{ source_url: IMAGE }] } })]);
-    assert.equal(slide.category, "Actualités");
+    assert.equal(slide.category, "Actualité");
     assert.equal(slide.publishedAt, null);
 });

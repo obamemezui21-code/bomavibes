@@ -1,15 +1,18 @@
-// Turns the WordPress answer of gouvernement.ga into the slider's articles.
+// Turns the WordPress answer of gabontelevisions.ga into the slider's articles.
 // Nothing from the outside is trusted: links and photos must really be on that
 // site, so a tampered feed can't put a dangerous link in front of the members.
-// The site announces its own addresses in http; it serves them all in https.
+// Any address announced in http is served in https.
 const { cleanText, truncate } = require("./newsText");
 
 const HEADLINES_COUNT = 9;
 const TITLE_MAX = 160;
-const SOURCE_HOST = "gouvernement.ga";
-const SOURCE_NAME = "Gouvernement.ga";
-// Every article is in this category: the second one names the ministry.
-const GENERAL_CATEGORY = "Actualités";
+const SOURCE_HOST = "gabontelevisions.ga";
+const SOURCE_NAME = "Gabon Télévisions";
+// "Blog" is the WordPress catch-all: a real category is named instead.
+const IGNORED_CATEGORIES = new Set(["Blog", "Uncategorized", "Non classé"]);
+const DEFAULT_CATEGORY = "Actualité";
+// Some titles start with a "🔴": the slide's title doesn't need it.
+const LEADING_SYMBOLS = /^[\p{Extended_Pictographic}️\s]+/u;
 
 function safeUrl(value) {
     try {
@@ -29,7 +32,7 @@ function parseHeadlines(posts) {
     for (const post of posts) {
         const url = safeUrl(post?.link);
         const imageUrl = safeUrl(post?._embedded?.["wp:featuredmedia"]?.[0]?.source_url);
-        const title = truncate(cleanText(String(post?.title?.rendered || "")), TITLE_MAX);
+        const title = truncate(cleanText(String(post?.title?.rendered || "")).replace(LEADING_SYMBOLS, ""), TITLE_MAX);
         // A slide needs a photo and a title: the others are skipped.
         if (!Number.isInteger(post?.id) || !url || !imageUrl || !title) continue;
 
@@ -43,7 +46,7 @@ function parseHeadlines(posts) {
             url,
             imageUrl,
             source: SOURCE_NAME,
-            category: categories.find((name) => name !== GENERAL_CATEGORY) || GENERAL_CATEGORY,
+            category: categories.find((name) => !IGNORED_CATEGORIES.has(name)) || DEFAULT_CATEGORY,
             publishedAt: date && !Number.isNaN(date.getTime()) ? date.toISOString() : null,
         });
         if (articles.length === HEADLINES_COUNT) break;

@@ -10,7 +10,7 @@ function formatDate(iso) {
   return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : null
 }
 
-// "À la une" at the top of Découvrir: the latest articles of gouvernement.ga
+// "À la une" at the top of Découvrir: the latest articles of gabontelevisions.ga
 // (backend headlinesService.js), each opening on that site. Slides are a
 // native snap scroller, so a finger swipes them at once; it moves on by itself
 // except while it's being touched, hovered or focused, or for members who ask
