@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import NewsHeroSlider from '../components/NewsHeroSlider.jsx'
 import InviteRewardCard from '../components/InviteRewardCard.jsx'
+import DiscoverDailyRow from '../components/DiscoverDailyRow.jsx'
+import DiscoverEventsRow from '../components/DiscoverEventsRow.jsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   Check,
@@ -790,6 +792,8 @@ function Discover() {
         )}
 
         <InviteRewardCard />
+        <DiscoverDailyRow />
+        <DiscoverEventsRow />
       </div>
       </div>
 
