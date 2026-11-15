@@ -3,6 +3,7 @@ import { Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-do
 import { doc, onSnapshot } from 'firebase/firestore'
 import SplashScreen from './components/SplashScreen.jsx'
 import CookieBanner from './components/CookieBanner.jsx'
+import UpdatePrompt from './components/UpdatePrompt.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
@@ -151,6 +152,7 @@ function App() {
         />
       )}
       {!showSplash && <CookieBanner />}
+      {!showSplash && <UpdatePrompt />}
       <Suspense fallback={<FullPageSpinner />}>
         {showMaintenance ? (
           <Maintenance />

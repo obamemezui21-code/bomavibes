@@ -10,6 +10,8 @@ import { usePhotoQuality } from '../context/PhotoQualityContext.jsx'
 import { IDENTITY_REQUIRED } from '../lib/identityStatus.js'
 import { formatDeadline } from '../lib/photoQuality.js'
 import PushPermissionPrompt from '../components/PushPermissionPrompt.jsx'
+import InstallPWA from '../components/InstallPWA.jsx'
+import { useCookieConsent } from '../lib/cookieConsent.js'
 import AppTopBar from '../components/AppTopBar.jsx'
 import NgoriDailyReward from '../components/NgoriDailyReward.jsx'
 
@@ -82,6 +84,8 @@ function AppLayout() {
   const { status: photoQuality, toFix: photosToFix } = usePhotoQuality()
   const { t } = useTranslation()
   const [sidebarOpen, toggleSidebar] = useSidebar()
+  const { showPushPrompt } = useConversations()
+  const { decided: cookiesDecided } = useCookieConsent()
 
   function handleLogout() {
     logout()
@@ -268,6 +272,8 @@ function AppLayout() {
       </nav>
 
       <PushPermissionPrompt />
+      {/* One request at a time: not over the cookie banner or the notifications question. */}
+      <InstallPWA hidden={showPushPrompt || !cookiesDecided} />
       <NgoriDailyReward />
     </div>
   )

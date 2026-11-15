@@ -20,6 +20,7 @@ import { IdentityProvider } from './context/IdentityContext.jsx'
 import { PhotoQualityProvider } from './context/PhotoQualityContext.jsx'
 import { GroupCallProvider } from './context/GroupCallContext.jsx'
 import { installPhotoRetry } from './lib/photoRetry.js'
+import { startPwa } from './lib/pwa.js'
 
 // A tab opened before a deploy can ask for a code file of the old version
 // that's gone by now: reload to get the new version instead of leaving the
@@ -38,6 +39,7 @@ window.addEventListener('vite:preloadError', (event) => {
 
 installPhotoRetry()
 captureReferral()
+startPwa()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

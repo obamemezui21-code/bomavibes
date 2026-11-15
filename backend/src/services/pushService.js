@@ -1,7 +1,7 @@
 const admin = require("../config/firebaseAdmin");
+const { webpush } = require("./webPush");
 
 const db = admin.firestore();
-const FRONTEND_URL = process.env.FRONTEND_URL || "https://bomavibes.tech";
 
 // Server-originated push to one user (match found, plan activated,
 // verification decided…). Respects the user's notification preference when
@@ -18,7 +18,7 @@ async function sendPushToUser(uid, { title, body, path = "/", prefField = null }
         const response = await admin.messaging().sendEachForMulticast({
             tokens,
             notification: { title, body },
-            webpush: { fcmOptions: { link: `${FRONTEND_URL}${path}` } },
+            webpush: webpush({ path }),
         });
         const dead = response.responses.map((r, i) => (!r.success ? tokens[i] : null)).filter(Boolean);
         if (dead.length) {

@@ -1,11 +1,55 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import { linkPreviewPages } from './linkPreviews.js'
+
+// The installable app: manifest + the one service worker, which also receives
+// the push notifications (see src/firebase-messaging-sw.js for what it caches).
+const pwa = VitePWA({
+  strategies: 'injectManifest',
+  srcDir: 'src',
+  filename: 'firebase-messaging-sw.js',
+  // A new version waits for the member's go-ahead (UpdatePrompt.jsx).
+  registerType: 'prompt',
+  // Registered from src/lib/pwa.js.
+  injectRegister: false,
+  injectManifest: {
+    // Only the page and the notifications' icon: the code files are kept as
+    // they're used, the large icons are fetched by the system when installing.
+    globPatterns: ['index.html', 'icons/icon-192.png'],
+    rollupFormat: 'iife',
+  },
+  includeManifestIcons: false,
+  manifest: {
+    id: '/',
+    name: 'BomaVibes',
+    short_name: 'BomaVibes',
+    description: 'Connectez-vous, échangez et découvrez de nouvelles personnes au Gabon.',
+    start_url: '/',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'portrait-primary',
+    // The splash's purple (index.html, SplashScreen): no white flash between
+    // the system's launch screen and the app.
+    theme_color: '#4b164c',
+    background_color: '#4b164c',
+    lang: 'fr',
+    dir: 'ltr',
+    categories: ['social', 'lifestyle'],
+    icons: [
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  },
+  // No service worker while developing (the dev server's files change all the time).
+  devOptions: { enabled: false },
+})
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), linkPreviewPages()],
+  plugins: [react(), tailwindcss(), linkPreviewPages(), pwa],
   server: {
     // The NGORI RUN engine lives in ../shared (the backend replays runs with it).
     fs: { allow: ['.', '../shared'] },

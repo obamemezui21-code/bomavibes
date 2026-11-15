@@ -34,10 +34,13 @@ echo "📦 Copie du build..."
 # still asks for them when the member opens another page (deleting them first
 # left that page stuck, and the whole site empty while the copy ran).
 # index.html goes last, once everything it points to is in place.
+# The service worker after index.html: it keeps a copy of the page, and must
+# never find the previous one still in place.
 mkdir -p /var/www/html/assets
 cp -r dist/assets/. /var/www/html/assets/
-find dist -mindepth 1 -maxdepth 1 ! -name assets ! -name index.html -exec cp -r {} /var/www/html/ \;
+find dist -mindepth 1 -maxdepth 1 ! -name assets ! -name index.html ! -name firebase-messaging-sw.js -exec cp -r {} /var/www/html/ \;
 cp dist/index.html /var/www/html/index.html
+cp dist/firebase-messaging-sw.js /var/www/html/firebase-messaging-sw.js
 find /var/www/html/assets -type f -mtime +7 -delete
 
 echo "⚡ HTTP/2..."

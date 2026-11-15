@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const sharp = require("sharp");
 const admin = require("../config/firebaseAdmin");
 const { logAdminAction } = require("../services/adminLogService");
+const { webpush } = require("../services/webPush");
 const { REFERRAL, VERIFICATION_BONUS } = require("../config/ngori");
 const { rewardReferrer } = require("./referralController");
 
@@ -220,7 +221,7 @@ async function notifyUser(uid, title, body) {
         await admin.messaging().sendEachForMulticast({
             tokens,
             notification: { title, body },
-            webpush: { fcmOptions: { link: `${process.env.FRONTEND_URL || "https://bomavibes.tech"}/profile` } },
+            webpush: webpush({ path: "/profile" }),
         });
     } catch (err) {
         console.error("[verification] notification", err);

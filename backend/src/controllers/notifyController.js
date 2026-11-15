@@ -1,4 +1,5 @@
 const admin = require("../config/firebaseAdmin");
+const { webpush } = require("../services/webPush");
 
 const db = admin.firestore();
 
@@ -183,6 +184,7 @@ async function notify(req, res) {
     const message = {
       tokens,
       notification: { title, body },
+      webpush: webpush(),
     };
 
     // Lets the app open the exact conversation from the notification: data
@@ -196,9 +198,7 @@ async function notify(req, res) {
         senderId: String(senderId),
         messageId: String(payload.messageId || ""),
       };
-      message.webpush = {
-        fcmOptions: { link: `${process.env.FRONTEND_URL || "https://bomavibes.tech"}/chat/${payload.matchId}` },
-      };
+      message.webpush = webpush({ path: `/chat/${payload.matchId}`, tag: `chat-${payload.matchId}` });
     }
 
     // Incoming call: opening the notification lands on the conversation,
@@ -210,10 +210,7 @@ async function notify(req, res) {
         callId: String(payload.callId || ""),
         senderId: String(senderId),
       };
-      message.webpush = {
-        headers: { Urgency: "high", TTL: "45" },
-        fcmOptions: { link: `${process.env.FRONTEND_URL || "https://bomavibes.tech"}/chat/${payload.matchId}` },
-      };
+      message.webpush = webpush({ path: `/chat/${payload.matchId}`, tag: `call-${payload.matchId}`, urgent: true });
     }
 
     const response = await admin.messaging().sendEachForMulticast(message);

@@ -3,6 +3,7 @@
 // (new match/message/like) to one user — this fans a campaign out to
 // however many devices match an audience.
 const admin = require("../config/firebaseAdmin");
+const { webpush } = require("./webPush");
 
 const db = admin.firestore();
 
@@ -75,7 +76,7 @@ async function sendBroadcastPush(tokens, { title, body, link }) {
         const message = {
             tokens: batch,
             notification: { title, body },
-            ...(link ? { webpush: { fcmOptions: { link } } } : {}),
+            webpush: webpush({ link }),
         };
         const response = await admin.messaging().sendEachForMulticast(message);
         successCount += response.successCount;

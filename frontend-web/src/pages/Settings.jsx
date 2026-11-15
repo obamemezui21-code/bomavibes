@@ -23,6 +23,7 @@ import FontPickerModal from '../components/FontPickerModal.jsx'
 import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 import { openCookieSettings } from '../lib/cookieConsent.js'
+import InstallPWA from '../components/InstallPWA.jsx'
 import { LOCATION_ERRORS, forgetLocation, shareLocation } from '../lib/geolocation.js'
 
 function Toggle({ checked, onChange, disabled }) {
@@ -468,6 +469,10 @@ function Settings() {
             <div className="px-1 py-3">
               <LanguageSwitcher />
             </div>
+          </Section>
+
+          <Section title="Application">
+            <InstallPWA variant="card" />
           </Section>
 
           <Section title="Notifications">

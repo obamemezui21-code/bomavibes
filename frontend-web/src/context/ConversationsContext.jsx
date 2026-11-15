@@ -114,7 +114,10 @@ export function ConversationsProvider({ children }) {
   useEffect(() => {
     if (!uid || !profile || hasTriedPushRef.current) return
     if (profile.fcmTokens?.length) return
-    if (typeof Notification !== 'undefined' && Notification.permission === 'denied') return
+    // No Notification at all: e.g. Safari on iPhone before BomaVibes is added to
+    // the home screen, where "Activer" could only fail. The install banner
+    // (InstallPWA) comes first there; the question returns in the installed app.
+    if (typeof Notification === 'undefined' || Notification.permission === 'denied') return
     hasTriedPushRef.current = true
     setShowPushPrompt(true)
   }, [uid, profile])
