@@ -160,3 +160,54 @@ describe('writeCvLocally', () => {
     expect(empty.conseils.length).toBeGreaterThan(0)
   })
 })
+
+describe('step-by-step form helpers', async () => {
+  const { cvCompleteness, isCertificate, parseMonthYear, skillSuggestions, splitSkills, tidySkill } = await import('./cvAssistant.js')
+
+  it('reads month and year back from a date', () => {
+    expect(parseMonthYear('Mars 2021')).toEqual({ month: 2, year: '2021' })
+    expect(parseMonthYear('03/2021')).toEqual({ month: 2, year: '2021' })
+    expect(parseMonthYear('2019')).toEqual({ month: -1, year: '2019' })
+    expect(parseMonthYear('')).toEqual({ month: -1, year: '' })
+  })
+
+  it('tells certificates from diplomas', () => {
+    expect(isCertificate('Formation HSE niveau 1')).toBe(true)
+    expect(isCertificate('Attestation de secourisme')).toBe(true)
+    expect(isCertificate('BTS comptabilité')).toBe(false)
+    expect(isCertificate('Formation BTS')).toBe(false)
+    expect(isCertificate('')).toBe(false)
+  })
+
+  it('splits skills, keeping brackets whole', () => {
+    expect(splitSkills('excel, Pack Office (Word, Excel); gestion de stock\nvente')).toEqual(['excel', 'Pack Office (Word, Excel)', 'gestion de stock', 'vente'])
+  })
+
+  it('tidies a skill as it will print', () => {
+    expect(tidySkill('excel')).toBe('Excel')
+    expect(tidySkill('gestion de stock')).toBe('Gestion de stock')
+    expect(tidySkill('CACES')).toBe('CACES')
+  })
+
+  it('suggests skills for the job, then general ones, without repeats', () => {
+    const ideas = skillSuggestions('Caissière')
+    expect(ideas[0]).toBe('Tenue de caisse')
+    expect(ideas).toContain('Pack Office (Word, Excel)')
+    expect(new Set(ideas).size).toBe(ideas.length)
+    expect(skillSuggestions('')[0]).toBe('Pack Office (Word, Excel)')
+  })
+
+  it('scores how complete the CV is', () => {
+    const empty = { identite: {}, posteRecherche: '', experiences: [], formations: [], competences: '', langues: [] }
+    expect(cvCompleteness(empty)).toBe(0)
+    const full = {
+      identite: { nom: 'A B', telephones: '077123456', email: 'a@b.ga', ville: 'Libreville' },
+      posteRecherche: 'Caissière',
+      experiences: [{ poste: 'Caissière', entreprise: 'Mbolo', debut: 'Mars 2021', fin: '', enCours: true, description: 'Accueillir les clients\nTenir la caisse' }],
+      formations: [{ intitule: 'Bac D' }],
+      competences: 'Excel, Word, vente',
+      langues: [{ langue: 'Français', niveau: 'maternel' }],
+    }
+    expect(cvCompleteness(full)).toBe(100)
+  })
+})

@@ -757,3 +757,81 @@ export function writeCvLocally(form) {
   cv.conseils = advice(form, cv)
   return cv
 }
+
+// ---- For the step-by-step form (CvBuilder.jsx) ---------------------------------
+
+export const MONTH_NAMES = MONTHS
+
+// « Mars 2021 » → { month: 2, year: '2021' }; month -1 when unknown.
+export function parseMonthYear(text) {
+  const t = normalizeDate(text)
+  const year = (t.match(/(?:19|20)\d{2}/) || [''])[0]
+  return { month: MONTHS.findIndex((m) => t.startsWith(m)), year }
+}
+
+export function isCertificate(intitule) {
+  const key = fold(intitule)
+  return !!key && !DIPLOMA.test(key) && CERTIFICATE.test(key)
+}
+
+// The skills a member typed, one by one (« Pack Office (Word, Excel) » stays whole).
+export function splitSkills(text) {
+  return String(text || '')
+    .split(/\n|;|•|·/)
+    .flatMap((line) => splitOutsideBrackets(line, ','))
+    .map((s) => squash(s))
+    .filter(Boolean)
+}
+
+export const sortSkills = skills
+
+// Ideas the member can tap, after the job sought. Only offered, never added
+// on their own: the member picks what is true for them.
+const SKILL_IDEAS = [
+  [/caiss|vend|commerc|boutique|supermarche/, ['Tenue de caisse', 'Encaissement', 'Accueil et conseil client', 'Mise en rayon', 'Prospection', 'Négociation commerciale', 'Fidélisation client']],
+  [/compta|financ|banque|gestionnaire/, ['Saisie comptable', 'Sage', 'Excel', 'Rapprochement bancaire', 'Facturation', 'Déclarations fiscales et sociales']],
+  [/secret|assistant|administr|accueil|reception|hotesse|standard/, ['Pack Office (Word, Excel)', 'Accueil physique et téléphonique', 'Rédaction de courriers', 'Classement et archivage', 'Gestion d’agenda', 'Saisie de données']],
+  [/chauffeu|conduct|livr|transport|coursier/, ['Conduite de véhicules légers', 'Conduite de poids lourds', 'Entretien courant du véhicule', 'Livraison de marchandises', 'Respect du code de la route']],
+  [/securit|gardien|vigile|surete/, ['Surveillance des locaux', 'Contrôle d’accès', 'Rondes de sécurité', 'Rédaction de mains courantes', 'Premiers secours']],
+  [/electri/, ['Câblage électrique', 'Lecture de schémas électriques', 'Installation et dépannage', 'Habilitation électrique', 'Normes de sécurité électrique']],
+  [/mecan|maintenance|technicien/, ['Maintenance préventive', 'Diagnostic de pannes', 'Lecture de plans', 'Soudure', 'GMAO']],
+  [/informat|developp|reseau|web|digital|it\b/, ['Maintenance informatique', 'Réseaux informatiques', 'Windows', 'Pack Office', 'Développement web (HTML, CSS)', 'Assistance aux utilisateurs']],
+  [/production|operat|petrol|mine|minier|usine/, ['Conduite d’installations', 'Respect des consignes HSE', 'Contrôle qualité', 'Relevé des paramètres de production', 'Rédaction de rapports de quart']],
+  [/cuisin|restau|serveu|hotel|boulang|patiss|barman/, ['Préparation des repas', 'Hygiène alimentaire (HACCP)', 'Service en salle', 'Gestion des stocks alimentaires', 'Accueil des clients']],
+  [/enseign|professeur|formateu|educat|instit/, ['Préparation des cours', 'Animation de classe', 'Évaluation des élèves', 'Suivi des élèves']],
+  [/infirm|sante|soign|medic|pharmac|sage-femme/, ['Soins infirmiers', 'Prise des constantes', 'Accueil des patients', 'Hygiène hospitalière', 'Gestion des dossiers patients']],
+  [/logisti|stock|manutention|entrepot|magasinier/, ['Gestion de stock', 'Inventaire', 'Réception des marchandises', 'Conduite de chariot élévateur', 'Préparation de commandes']],
+  [/btp|macon|batiment|chantier|menuis|plomb|peint|carrel/, ['Lecture de plans', 'Maçonnerie', 'Coffrage et ferraillage', 'Pose de carrelage', 'Règles de sécurité sur chantier']],
+  [/menag|entretien|nettoy|chambre/, ['Nettoyage des locaux', 'Utilisation des produits d’entretien', 'Repassage', 'Tri des déchets']],
+  [/marketing|communic|community|reseaux sociaux/, ['Gestion des réseaux sociaux', 'Canva', 'Rédaction de contenus', 'Organisation d’événements', 'Prospection']],
+]
+const GENERAL_IDEAS = ['Pack Office (Word, Excel)', 'Internet et messagerie', 'Accueil et relation client', 'Rédaction de rapports', 'Classement et archivage', 'Gestion de stock']
+
+export function skillSuggestions(poste) {
+  const key = fold(poste)
+  const found = SKILL_IDEAS.filter(([pattern]) => key && pattern.test(key)).flatMap(([, ideas]) => ideas)
+  return dedupe([...found, ...GENERAL_IDEAS])
+}
+
+// How complete the CV is, 0 to 100: the PNPE's sections, weighted.
+export function cvCompleteness(form) {
+  const id = form?.identite || {}
+  const exps = (form?.experiences || []).filter((e) => squash(e.poste) || squash(e.entreprise))
+  const checks = [
+    [!!squash(id.nom), 8],
+    [!!squash(id.telephones), 8],
+    [!!squash(id.email), 5],
+    [!!squash(id.ville), 4],
+    [!!squash(form?.posteRecherche), 10],
+    [exps.length > 0, 10],
+    [exps.length > 0 && exps.every((e) => squash(e.debut) && (e.enCours || squash(e.fin))), 10],
+    [exps.length > 0 && exps.every((e) => splitTasks(e.description).length >= 2), 10],
+    [(form?.formations || []).some((f) => squash(f.intitule)), 15],
+    [splitSkills(form?.competences).length >= 3, 10],
+    [(form?.langues || []).some((l) => squash(l.langue)), 10],
+  ]
+  return checks.reduce((sum, [ok, weight]) => sum + (ok ? weight : 0), 0)
+}
+
+// A skill as it will print: « excel » → « Excel », « gestion de stock » → « Gestion de stock ».
+export const tidySkill = (text) => sentence(text, { names: true })
