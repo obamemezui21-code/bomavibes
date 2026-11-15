@@ -20,6 +20,7 @@ import { sendPushNotification } from '../firebase/notify.js'
 import { enablePushForUser, syncPushToken } from '../firebase/push.js'
 import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
+import { setUnreadConversations } from '../lib/appBadge.js'
 import { photoVariant } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { EPHEMERAL_PREVIEW, expiryFor, isExpired, remainingLabel } from '../lib/ephemeral.js'
@@ -64,7 +65,7 @@ function formatLastSeen(timestamp, now) {
 }
 
 export function ConversationsProvider({ children }) {
-  const { user, profile } = useAuth()
+  const { user, profile, isLoading: authLoading } = useAuth()
   const uid = user?.id
   const [matches, setMatches] = useState([])
   const [profilesById, setProfilesById] = useState({})
@@ -337,10 +338,28 @@ export function ConversationsProvider({ children }) {
   // Bell badge in the top bar: every conversation that has something the
   // user hasn't seen yet, whether that's the match itself or an unread
   // message in it (a conversation with both only counts once).
-  const notificationsCount = useMemo(
-    () => conversations.filter((c) => c.isNewMatch || (c.unreadCount || 0) > 0).length,
+  // Joined into a string so the effect below only runs when the list changes,
+  // not on every typing ping or presence tick.
+  const unreadIdsKey = useMemo(
+    () =>
+      conversations
+        .filter((c) => c.isNewMatch || (c.unreadCount || 0) > 0)
+        .map((c) => c.id)
+        .sort()
+        .join(','),
     [conversations],
   )
+  const notificationsCount = unreadIdsKey ? unreadIdsKey.split(',').length : 0
+
+  // The same count, in red on the installed app's icon (lib/appBadge.js).
+  // Set again when the member comes back to the app, which also drops what
+  // the service worker added for notifications outside the conversations
+  // (a like, a comment), as the bell doesn't count them either.
+  // Cleared on signing out; left alone while signing in is still loading.
+  useEffect(() => {
+    if (authLoading) return
+    setUnreadConversations(uid && unreadIdsKey ? unreadIdsKey.split(',') : [])
+  }, [authLoading, uid, unreadIdsKey, isPageVisible])
 
   async function openConversation(id) {
     setOpenMatchId(id)
