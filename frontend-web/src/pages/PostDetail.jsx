@@ -394,6 +394,7 @@ function PostDetail() {
 
       {isSharing && (
         <SendToModal
+          includeSelf
           onSend={(matchId) =>
             sendPostMessage(matchId, {
               postId,

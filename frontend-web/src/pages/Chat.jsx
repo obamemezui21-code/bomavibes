@@ -23,6 +23,7 @@ import {
   MoreVertical,
   MessageCircle,
   MessageCircleHeart,
+  NotebookPen,
   Paperclip,
   Pause,
   Pencil,
@@ -300,7 +301,7 @@ function groupReactions(reactions) {
   return counts
 }
 
-function MessageInfoModal({ message, otherName, onClose }) {
+function MessageInfoModal({ message, otherName, isSelf, onClose }) {
   const fullDate = message.date.toLocaleString('fr-FR', {
     day: 'numeric',
     month: 'long',
@@ -354,7 +355,7 @@ function MessageInfoModal({ message, otherName, onClose }) {
                 )}
                 {message.status === 'sent' && (
                   <>
-                    <Check size={14} strokeWidth={2.5} /> Envoyé, non lu
+                    <Check size={14} strokeWidth={2.5} /> {isSelf ? 'Envoyé' : 'Envoyé, non lu'}
                   </>
                 )}
                 {message.status === 'read' && (
@@ -381,6 +382,7 @@ function Chat() {
   const navigate = useNavigate()
   const {
     conversations,
+    selfConversation,
     typingId,
     sendMessage,
     sendVoiceMessage,
@@ -462,10 +464,13 @@ function Chat() {
   const pointerStartRef = useRef({ x: 0, y: 0 })
 
   const activeId = conversationId || conversations[0]?.id
-  const active = conversations.find((c) => c.id === activeId)
+  // The conversation with yourself ("Vous", /chat/moi) isn't a match: no
+  // calls, profile, safety menu, typing, icebreakers or date ideas there.
+  const active = selfConversation && activeId === selfConversation.id ? selfConversation : conversations.find((c) => c.id === activeId)
   // Once a conversation is going and no place was proposed yet.
   const showDateNudge =
     !!active &&
+    !active.isSelf &&
     !editingMessageId &&
     active.messages.length >= DATE_NUDGE_MIN_MESSAGES &&
     !active.messages.some((m) => m.type === 'venue-invite') &&
@@ -1023,7 +1028,7 @@ function Chat() {
     navigate('/chat')
   }
 
-  if (conversations.length === 0) {
+  if (conversations.length === 0 && !selfConversation) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-3 bg-surface-soft p-6 text-center desktop:min-h-full">
         <MessageCircle size={40} strokeWidth={1.5} className="text-ink-soft/40" />
@@ -1035,10 +1040,17 @@ function Chat() {
     )
   }
 
+  // "Vous" takes its place by date once used; until then it waits at the top
+  // of the list, where it can be found.
+  const listConversations = !selfConversation
+    ? conversations
+    : selfConversation.lastActivityAt
+      ? [...conversations, selfConversation].sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
+      : [selfConversation, ...conversations]
   const query = listSearch.trim().toLowerCase()
   const visibleConversations = query
-    ? conversations.filter((c) => c.profile.firstName.toLowerCase().includes(query))
-    : conversations
+    ? listConversations.filter((c) => c.profile.firstName.toLowerCase().includes(query))
+    : listConversations
 
   return (
     <div className="flex h-[calc(100dvh_-_5rem_-_3.5rem_-_env(safe-area-inset-bottom))] overflow-hidden bg-surface-soft desktop:h-[calc(100svh_-_3.5rem)]">
@@ -1163,7 +1175,8 @@ function Chat() {
                       {typingId === c.id ? (
                         <span className="text-violet-600">écrit…</span>
                       ) : (
-                        (last ? messagePreviewText(last) : c.lastMessage) || 'Dites bonjour 👋'
+                        (last ? messagePreviewText(last) : c.lastMessage) ||
+                        (c.isSelf ? 'Message à vous-même : notes, photos, liens…' : 'Dites bonjour 👋')
                       )}
                     </p>
                   </div>
@@ -1182,6 +1195,11 @@ function Chat() {
             })}
             {visibleConversations.length === 0 && (
               <p className="px-2 py-8 text-center text-sm text-ink-soft/60">Aucune conversation trouvée.</p>
+            )}
+            {conversations.length === 0 && !query && (
+              <p className="px-2 py-8 text-center text-sm text-ink-soft/60">
+                Vos conversations avec vos matchs apparaîtront ici.
+              </p>
             )}
           </div>
         </div>
@@ -1313,6 +1331,7 @@ function Chat() {
                 <button
                   type="button"
                   onClick={() => setExpandedProfile(buildChatProfile(active))}
+                  disabled={!!active.isSelf}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
                   <img
@@ -1341,7 +1360,9 @@ function Chat() {
                           {ephemeralLabel(active.ephemeralTtl)} ·
                         </span>
                       )}
-                      {active.online ? (
+                      {active.isSelf ? (
+                        <span className="text-white/55">Message à vous-même</span>
+                      ) : active.online ? (
                         <span className="text-mint-400">En ligne</span>
                       ) : (
                         <span className="text-white/55">{active.lastSeenLabel || active.profile.city}</span>
@@ -1350,6 +1371,7 @@ function Chat() {
                   </div>
                 </button>
 
+                {!active.isSelf && (
                 <div className="flex shrink-0 items-center gap-1.5">
                   {/* Signaler stays in view on every screen; Bloquer and the
                       conversation settings are in the ⋮ menu. */}
@@ -1444,11 +1466,12 @@ function Chat() {
                     </AnimatePresence>
                   </div>
                 </div>
+                )}
               </div>
             )}
 
             <div className="relative min-w-0 flex-1 overflow-hidden">
-            <WeMetPrompt key={active.id} matchId={active.id} firstName={active.profile.firstName} />
+            {!active.isSelf && <WeMetPrompt key={active.id} matchId={active.id} firstName={active.profile.firstName} />}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <img
                 src={active.profile.photoFull || active.profile.photo}
@@ -1480,7 +1503,15 @@ function Chat() {
                   </button>
                 </div>
               )}
-              {active.messages.length === 0 && (
+              {active.messages.length === 0 && active.isSelf && (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                  <NotebookPen size={32} strokeWidth={1.5} className="text-ink-soft/40" />
+                  <p className="max-w-xs text-sm text-ink-soft/70">
+                    Écrivez-vous un message : notes, listes, photos, liens, messages vocaux… Personne d'autre ne les voit.
+                  </p>
+                </div>
+              )}
+              {active.messages.length === 0 && !active.isSelf && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
                   <Hand size={32} strokeWidth={1.5} className="text-ink-soft/40" />
                   <p className="text-sm text-ink-soft/60">
@@ -1633,7 +1664,7 @@ function Chat() {
                                 alt=""
                                 className="max-h-64 max-w-full rounded-lg object-cover"
                               />
-                              {m.fromMe && isSensitivePhoto(m.fileUrl) && (
+                              {m.fromMe && !active.isSelf && isSensitivePhoto(m.fileUrl) && (
                                 <span className="mt-1 flex items-center gap-1 text-[10px] opacity-70">
                                   <EyeOff size={11} /> Floutée pour {active.profile.firstName}
                                 </span>
@@ -2088,6 +2119,7 @@ function Chat() {
                                 </span>
                                 Ma position
                               </button>
+                              {!active.isSelf && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -2101,6 +2133,7 @@ function Chat() {
                                 </span>
                                 Idée de rendez-vous
                               </button>
+                              )}
                             </motion.div>
                           </>
                         )}
@@ -2324,7 +2357,11 @@ function Chat() {
       {confirmLocation && active && (
         <ConfirmDialog
           title="Partager votre position ?"
-          description={`${active.profile.firstName || 'Votre match'} verra l'endroit où vous vous trouvez en ce moment, sur une carte. Votre position n'est envoyée qu'une fois : elle n'est pas suivie ensuite.`}
+          description={
+            active.isSelf
+              ? "L'endroit où vous vous trouvez en ce moment sera gardé ici, sur une carte, visible par vous uniquement. Votre position n'est envoyée qu'une fois : elle n'est pas suivie ensuite."
+              : `${active.profile.firstName || 'Votre match'} verra l'endroit où vous vous trouvez en ce moment, sur une carte. Votre position n'est envoyée qu'une fois : elle n'est pas suivie ensuite.`
+          }
           confirmLabel={isLocating ? 'Localisation…' : 'Envoyer ma position'}
           isConfirming={isLocating}
           onCancel={() => setConfirmLocation(false)}
@@ -2353,6 +2390,7 @@ function Chat() {
           <MessageInfoModal
             message={infoMessage}
             otherName={active.profile.firstName}
+            isSelf={!!active.isSelf}
             onClose={() => setInfoMessage(null)}
           />
         )}

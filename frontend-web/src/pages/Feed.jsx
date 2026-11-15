@@ -501,7 +501,7 @@ function Feed() {
       )}
 
       {shareTarget && (
-        <SendToModal onSend={(matchId) => sendPostMessage(matchId, shareTarget)} onClose={() => setShareTarget(null)} />
+        <SendToModal includeSelf onSend={(matchId) => sendPostMessage(matchId, shareTarget)} onClose={() => setShareTarget(null)} />
       )}
 
       <AnimatePresence>

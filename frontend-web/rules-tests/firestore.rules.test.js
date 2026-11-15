@@ -133,6 +133,50 @@ describe('messages', () => {
   })
 })
 
+describe('conversation with yourself', () => {
+  const note = { senderId: 'alice', text: 'Acheter du pain', createdAt: serverTimestamp() }
+
+  it('lets a member write to themselves and read it back', async () => {
+    const db = as('alice')
+    const ref = await assertSucceeds(addDoc(collection(db, 'selfChats/alice/messages'), note))
+    await assertSucceeds(setDoc(doc(db, 'selfChats/alice'), { lastMessage: 'Acheter du pain', lastMessageAt: serverTimestamp() }, { merge: true }))
+    await assertSucceeds(getDoc(ref))
+    await assertSucceeds(getDoc(doc(db, 'selfChats/alice')))
+  })
+
+  it('keeps it private: nobody else reads or writes it', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'selfChats/alice'), { lastMessage: 'Secret' })
+      await setDoc(doc(ctx.firestore(), 'selfChats/alice/messages/n1'), { senderId: 'alice', text: 'Secret' })
+    })
+    const bob = as('bob')
+    await assertFails(getDoc(doc(bob, 'selfChats/alice')))
+    await assertFails(getDoc(doc(bob, 'selfChats/alice/messages/n1')))
+    await assertFails(addDoc(collection(bob, 'selfChats/alice/messages'), { ...note, senderId: 'bob' }))
+    await assertFails(setDoc(doc(bob, 'selfChats/alice'), { lastMessage: 'Coucou' }))
+    await assertFails(deleteDoc(doc(bob, 'selfChats/alice/messages/n1')))
+  })
+
+  it('refuses a message signed as someone else, an unknown type or extra fields on the conversation', async () => {
+    const db = as('alice')
+    await assertFails(addDoc(collection(db, 'selfChats/alice/messages'), { ...note, senderId: 'bob' }))
+    await assertFails(addDoc(collection(db, 'selfChats/alice/messages'), { ...note, type: 'call' }))
+    await assertFails(setDoc(doc(db, 'selfChats/alice'), { lastMessage: 'x', users: ['alice', 'bob'] }))
+  })
+
+  it('lets them edit a text, react and delete', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'selfChats/alice/messages/n1'), { senderId: 'alice', text: 'Brouillon' })
+    })
+    const ref = doc(as('alice'), 'selfChats/alice/messages/n1')
+    await assertSucceeds(updateDoc(ref, { text: 'Version finale', editedAt: serverTimestamp() }))
+    await assertSucceeds(updateDoc(ref, { 'reactions.alice': '👍' }))
+    await assertFails(updateDoc(ref, { 'reactions.bob': '👍' }))
+    await assertFails(updateDoc(ref, { senderId: 'bob' }))
+    await assertSucceeds(deleteDoc(ref))
+  })
+})
+
 describe('calls', () => {
   const call = (callerId, calleeId, matchId) => ({
     callerId, calleeId, matchId, type: 'video', status: 'ringing', createdAt: serverTimestamp(),

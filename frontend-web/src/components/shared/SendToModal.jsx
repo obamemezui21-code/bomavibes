@@ -8,14 +8,18 @@ import { fallbackToFullPhoto } from '../../lib/photoVariants.js'
 // message" only, generalized so other features (e.g. venue invites) can
 // reuse the same match search/pick/sent-state UI via the `onSend` callback
 // instead of duplicating it.
+// `includeSelf`: also offers "Vous", the conversation with yourself, to keep
+// something for later (a post), where sending it to yourself makes sense.
 function SendToModal({
   title = 'Envoyer à',
   sendLabel = 'Envoyer',
   emptyText = 'Faites un match pour pouvoir partager ici.',
+  includeSelf = false,
   onSend,
   onClose,
 }) {
-  const { conversations } = useConversations()
+  const { conversations: matches, selfConversation } = useConversations()
+  const conversations = includeSelf && selfConversation ? [selfConversation, ...matches] : matches
   const [query, setQuery] = useState('')
   const [sentIds, setSentIds] = useState(new Set())
   const [sendingId, setSendingId] = useState(null)

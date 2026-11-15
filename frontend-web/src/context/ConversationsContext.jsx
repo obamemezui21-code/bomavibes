@@ -11,6 +11,7 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
   where,
@@ -37,6 +38,16 @@ const HEARTBEAT_INTERVAL_MS = 90 * 1000
 // being wrongly suppressed.
 const ACTIVE_IN_HEARTBEAT_MS = 20 * 1000
 const MESSAGES_PAGE_SIZE = 50
+
+// The member's conversation with themselves, as on WhatsApp: notes, photos,
+// links, voice notes kept for later (/chat/moi). Its messages live in
+// selfChats/{uid}, apart from the matches, which always hold two people. A
+// match id is two uids joined by "_", so it can never be this.
+const SELF_CHAT_ID = 'moi'
+
+function messagesOf(uid, chatId) {
+  return chatId === SELF_CHAT_ID ? collection(db, 'selfChats', uid, 'messages') : collection(db, 'matches', chatId, 'messages')
+}
 
 function formatTime(date) {
   if (!date) return ''
@@ -65,9 +76,12 @@ function formatLastSeen(timestamp, now) {
 }
 
 export function ConversationsProvider({ children }) {
-  const { user, profile, isLoading: authLoading } = useAuth()
+  const { user, profile, publicProfile, isLoading: authLoading } = useAuth()
   const uid = user?.id
   const [matches, setMatches] = useState([])
+  // Kept with the uid it was read for, so a previous account's never shows.
+  const [selfChatDoc, setSelfChatDoc] = useState({ uid: null, data: null })
+  const selfChat = selfChatDoc.uid === uid ? selfChatDoc.data : null
   const [profilesById, setProfilesById] = useState({})
   const [blockedIds, setBlockedIds] = useState(new Set())
   const [activeMessages, setActiveMessages] = useState({})
@@ -153,7 +167,7 @@ export function ConversationsProvider({ children }) {
   // Paused while the app is hidden: nobody is watching the conversation
   // then, so message notifications should get through anyway.
   useEffect(() => {
-    if (!uid || !openMatchId || !isPageVisible) return undefined
+    if (!uid || !openMatchId || openMatchId === SELF_CHAT_ID || !isPageVisible) return undefined
     const ref = doc(db, 'matches', openMatchId)
     const stamp = () => updateDoc(ref, { [`activeIn.${uid}`]: serverTimestamp() }).catch(() => {})
     stamp()
@@ -191,6 +205,16 @@ export function ConversationsProvider({ children }) {
     return unsubscribe
   }, [uid])
 
+  // The conversation with yourself: its last message, for the list.
+  useEffect(() => {
+    if (!uid) return undefined
+    return onSnapshot(
+      doc(db, 'selfChats', uid),
+      (snap) => setSelfChatDoc({ uid, data: snap.exists() ? snap.data() : {} }),
+      () => setSelfChatDoc({ uid, data: {} }),
+    )
+  }, [uid])
+
   // Keyed on the *set* of matched partner ids, not on `matches` itself —
   // `matches` gets a new array reference on every match-doc write (new
   // message, typing ping, read receipt, seen flag), which would otherwise
@@ -219,8 +243,9 @@ export function ConversationsProvider({ children }) {
 
   useEffect(() => {
     if (!openMatchId) return
+    if (!uid) return
     const q = query(
-      collection(db, 'matches', openMatchId, 'messages'),
+      messagesOf(uid, openMatchId),
       orderBy('createdAt', 'asc'),
       limitToLast(openMessageLimit),
     )
@@ -361,8 +386,45 @@ export function ConversationsProvider({ children }) {
     setUnreadConversations(uid && unreadIdsKey ? unreadIdsKey.split(',') : [])
   }, [authLoading, uid, unreadIdsKey, isPageVisible])
 
+  // Shaped like the others, for the Chat page, under the member's own name
+  // and photo. Never unread, never online, never typing. Kept out of
+  // `conversations`, which every other page reads as "my matches".
+  const selfConversation = useMemo(() => {
+    if (!uid) return null
+    const name = publicProfile?.firstName || user?.firstName || ''
+    const photo = publicProfile?.photos?.[0]
+    const avatar = fallbackAvatar(name || 'Bomavibes', 'e8c468')
+    const lastActivity = selfChat?.lastMessageAt?.toDate?.()
+    return {
+      id: SELF_CHAT_ID,
+      isSelf: true,
+      otherUid: null,
+      profile: {
+        firstName: name ? `${name} (vous)` : 'Vous',
+        interests: [],
+        prompts: [],
+        photo: photoVariant(photo, 'thumb') || avatar,
+        photoMedium: photoVariant(photo, 'medium') || avatar,
+        photoFull: photo || avatar,
+      },
+      matchedAt: null,
+      lastActivityAt: lastActivity ? lastActivity.toISOString() : null,
+      isNewMatch: false,
+      unreadCount: 0,
+      lastMessage: selfChat?.lastMessage || null,
+      messages: (activeMessages[SELF_CHAT_ID] || []).map((m) => ({ ...m, status: m.pending ? 'sending' : 'sent' })),
+      online: false,
+      lastSeenLabel: null,
+      isTyping: false,
+      hasOlderMessages: !!hasOlderMessages[SELF_CHAT_ID],
+      ephemeralTtl: 0,
+    }
+  }, [uid, publicProfile, user?.firstName, selfChat, activeMessages, hasOlderMessages])
+
   async function openConversation(id) {
     setOpenMatchId(id)
+    // Nothing to mark as read in a conversation with yourself.
+    if (id === SELF_CHAT_ID) return
     const match = matches.find((m) => m.id === id)
     const updates = { [`lastReadAt.${uid}`]: serverTimestamp() }
     if (match?.seen?.[uid] === false) updates[`seen.${uid}`] = true
@@ -401,52 +463,31 @@ export function ConversationsProvider({ children }) {
     return ephemeralTtlOf(matchId) ? EPHEMERAL_PREVIEW : preview
   }
 
-  async function sendMessage(matchId, text, replyTo) {
-    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
+  // Every kind of message goes through here: stored, shown as the
+  // conversation's last message and, to a match, marked unread for them and
+  // pushed to their phone. `preview` is that last message and notification.
+  async function postMessage(matchId, fields, preview) {
+    if (matchId === SELF_CHAT_ID) {
+      await addDoc(messagesOf(uid, SELF_CHAT_ID), { senderId: uid, ...fields, createdAt: serverTimestamp() })
+      await setDoc(
+        doc(db, 'selfChats', uid),
+        { lastMessage: preview.slice(0, 500), lastMessageAt: serverTimestamp() },
+        { merge: true },
+      )
+      return
+    }
+    const messageRef = await addDoc(messagesOf(uid, matchId), {
       senderId: uid,
       ...ephemeralFields(matchId),
-      text,
+      ...fields,
       createdAt: serverTimestamp(),
-      ...(replyTo
-        ? {
-            replyTo: {
-              messageId: replyTo.id,
-              text: replyTo.expiresAt ? EPHEMERAL_PREVIEW : messagePreviewText(replyTo),
-              senderId: replyTo.senderId,
-            },
-          }
-        : {}),
     })
     const match = matches.find((m) => m.id === matchId)
     const otherUid = match?.users.find((u) => u !== uid)
     await updateDoc(doc(db, 'matches', matchId), {
       // Only a preview lives on the match (rules cap it at 2000 chars); the
       // full text stays in the message itself.
-      lastMessage: previewFor(matchId, text.slice(0, 500)),
-      lastMessageAt: serverTimestamp(),
-      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
-    })
-
-    if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, text), matchId, messageId: messageRef.id })
-    }
-  }
-
-  async function sendVoiceMessage(matchId, audioUrl, duration) {
-    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
-      senderId: uid,
-      ...ephemeralFields(matchId),
-      text: '',
-      type: 'voice',
-      audioUrl,
-      duration,
-      createdAt: serverTimestamp(),
-    })
-    const match = matches.find((m) => m.id === matchId)
-    const otherUid = match?.users.find((u) => u !== uid)
-    const preview = '🎤 Message vocal'
-    await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: previewFor(matchId, preview),
+      lastMessage: previewFor(matchId, preview.slice(0, 500)),
       lastMessageAt: serverTimestamp(),
       ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
     })
@@ -456,147 +497,103 @@ export function ConversationsProvider({ children }) {
     }
   }
 
-  async function sendAttachmentMessage(matchId, attachment) {
-    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
-      senderId: uid,
-      ...ephemeralFields(matchId),
-      text: '',
-      type: attachment.type,
-      fileUrl: attachment.url,
-      fileName: attachment.fileName,
-      fileSize: attachment.fileSize || 0,
-      createdAt: serverTimestamp(),
-    })
-    const match = matches.find((m) => m.id === matchId)
-    const otherUid = match?.users.find((u) => u !== uid)
-    const preview = messagePreviewText({ type: attachment.type, fileName: attachment.fileName })
-    await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: previewFor(matchId, preview),
-      lastMessageAt: serverTimestamp(),
-      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
-    })
+  function sendMessage(matchId, text, replyTo) {
+    return postMessage(
+      matchId,
+      {
+        text,
+        ...(replyTo
+          ? {
+              replyTo: {
+                messageId: replyTo.id,
+                text: replyTo.expiresAt ? EPHEMERAL_PREVIEW : messagePreviewText(replyTo),
+                senderId: replyTo.senderId,
+              },
+            }
+          : {}),
+      },
+      text,
+    )
+  }
 
-    if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
-    }
+  function sendVoiceMessage(matchId, audioUrl, duration) {
+    return postMessage(matchId, { text: '', type: 'voice', audioUrl, duration }, '🎤 Message vocal')
+  }
+
+  function sendAttachmentMessage(matchId, attachment) {
+    return postMessage(
+      matchId,
+      {
+        text: '',
+        type: attachment.type,
+        fileUrl: attachment.url,
+        fileName: attachment.fileName,
+        fileSize: attachment.fileSize || 0,
+      },
+      messagePreviewText({ type: attachment.type, fileName: attachment.fileName }),
+    )
   }
 
   // `sticker`: a bundled sticker's id (lib/stickers.js), or { url } for one
   // the user made themselves (POST /api/stickers).
-  async function sendStickerMessage(matchId, sticker) {
-    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
-      senderId: uid,
-      ...ephemeralFields(matchId),
-      text: '',
-      type: 'sticker',
-      ...(typeof sticker === 'string' ? { stickerId: sticker } : { stickerUrl: sticker.url }),
-      createdAt: serverTimestamp(),
-    })
-    const match = matches.find((m) => m.id === matchId)
-    const otherUid = match?.users.find((u) => u !== uid)
-    const preview = messagePreviewText({ type: 'sticker' })
-    await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: previewFor(matchId, preview),
-      lastMessageAt: serverTimestamp(),
-      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
-    })
-
-    if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
-    }
+  function sendStickerMessage(matchId, sticker) {
+    return postMessage(
+      matchId,
+      { text: '', type: 'sticker', ...(typeof sticker === 'string' ? { stickerId: sticker } : { stickerUrl: sticker.url }) },
+      messagePreviewText({ type: 'sticker' }),
+    )
   }
 
-  async function sendPostMessage(matchId, post) {
-    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
-      senderId: uid,
-      ...ephemeralFields(matchId),
-      text: '',
-      type: 'post',
-      post,
-      createdAt: serverTimestamp(),
-    })
-    const match = matches.find((m) => m.id === matchId)
-    const otherUid = match?.users.find((u) => u !== uid)
-    const preview = messagePreviewText({ type: 'post' })
-    await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: previewFor(matchId, preview),
-      lastMessageAt: serverTimestamp(),
-      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
-    })
-
-    if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
-    }
+  function sendPostMessage(matchId, post) {
+    return postMessage(matchId, { text: '', type: 'post', post }, messagePreviewText({ type: 'post' }))
   }
 
   // A one-off "my current position" (lat/lng rounded to ~1 m, plus the GPS
   // accuracy) — never tracked or updated afterwards.
-  async function sendLocationMessage(matchId, { lat, lng, accuracy }) {
-    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
-      senderId: uid,
-      ...ephemeralFields(matchId),
-      text: '',
-      type: 'location',
-      location: {
-        lat: Math.round(lat * 1e5) / 1e5,
-        lng: Math.round(lng * 1e5) / 1e5,
-        accuracy: Number.isFinite(accuracy) ? Math.round(accuracy) : null,
+  function sendLocationMessage(matchId, { lat, lng, accuracy }) {
+    return postMessage(
+      matchId,
+      {
+        text: '',
+        type: 'location',
+        location: {
+          lat: Math.round(lat * 1e5) / 1e5,
+          lng: Math.round(lng * 1e5) / 1e5,
+          accuracy: Number.isFinite(accuracy) ? Math.round(accuracy) : null,
+        },
       },
-      createdAt: serverTimestamp(),
-    })
-    const match = matches.find((m) => m.id === matchId)
-    const otherUid = match?.users.find((u) => u !== uid)
-    const preview = messagePreviewText({ type: 'location' })
-    await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: previewFor(matchId, preview),
-      lastMessageAt: serverTimestamp(),
-      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
-    })
-
-    if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
-    }
+      messagePreviewText({ type: 'location' }),
+    )
   }
 
-  async function sendVenueInviteMessage(matchId, venue) {
-    const messageRef = await addDoc(collection(db, 'matches', matchId, 'messages'), {
-      senderId: uid,
-      ...ephemeralFields(matchId),
-      text: '',
-      type: 'venue-invite',
-      venue: {
-        id: venue.id,
-        name: venue.name,
-        image: venue.image || null,
-        address: venue.address || null,
-        city: venue.city || null,
-        category: venue.category || null,
+  function sendVenueInviteMessage(matchId, venue) {
+    return postMessage(
+      matchId,
+      {
+        text: '',
+        type: 'venue-invite',
+        venue: {
+          id: venue.id,
+          name: venue.name,
+          image: venue.image || null,
+          address: venue.address || null,
+          city: venue.city || null,
+          category: venue.category || null,
+        },
       },
-      createdAt: serverTimestamp(),
-    })
-    const match = matches.find((m) => m.id === matchId)
-    const otherUid = match?.users.find((u) => u !== uid)
-    const preview = messagePreviewText({ type: 'venue-invite' })
-    await updateDoc(doc(db, 'matches', matchId), {
-      lastMessage: previewFor(matchId, preview),
-      lastMessageAt: serverTimestamp(),
-      ...(otherUid ? { [`seen.${otherUid}`]: false } : {}),
-    })
-
-    if (otherUid) {
-      sendPushNotification(otherUid, 'message', { firstName: user?.firstName, text: previewFor(matchId, preview), matchId, messageId: messageRef.id })
-    }
+      messagePreviewText({ type: 'venue-invite' }),
+    )
   }
 
   async function editMessage(matchId, messageId, text) {
-    await updateDoc(doc(db, 'matches', matchId, 'messages', messageId), {
+    await updateDoc(doc(messagesOf(uid, matchId), messageId), {
       text,
       editedAt: serverTimestamp(),
     })
   }
 
   async function deleteMessage(matchId, messageId) {
-    await deleteDoc(doc(db, 'matches', matchId, 'messages', messageId))
+    await deleteDoc(doc(messagesOf(uid, matchId), messageId))
   }
 
   // One reaction per user per message — tapping the same emoji again clears
@@ -608,7 +605,7 @@ export function ConversationsProvider({ children }) {
   // tap (or a retry) could read the pre-update value and toggle it straight
   // back off.
   async function toggleMessageReaction(matchId, messageId, emoji) {
-    const messageRef = doc(db, 'matches', matchId, 'messages', messageId)
+    const messageRef = doc(messagesOf(uid, matchId), messageId)
     await runTransaction(db, async (tx) => {
       const snap = await tx.get(messageRef)
       if (!snap.exists()) return
@@ -618,6 +615,7 @@ export function ConversationsProvider({ children }) {
   }
 
   async function setTyping(matchId, isTyping) {
+    if (matchId === SELF_CHAT_ID) return
     await updateDoc(doc(db, 'matches', matchId), {
       [`typing.${uid}`]: isTyping ? serverTimestamp() : null,
     }).catch(() => {})
@@ -627,6 +625,7 @@ export function ConversationsProvider({ children }) {
     <ConversationsContext.Provider
       value={{
         conversations,
+        selfConversation,
         typingId,
         setTyping,
         loadOlderMessages,

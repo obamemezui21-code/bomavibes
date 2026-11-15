@@ -402,6 +402,46 @@ service cloud.firestore {
       }
     }
 
+    // A member's conversation with themselves, as on WhatsApp ("message
+    // yourself"): notes, photos, links, voice notes kept for later
+    // (SELF_CHAT_ID in ConversationsContext.jsx). Kept apart from the matches,
+    // which always hold two people. Nobody else ever reads or writes it.
+    match /selfChats/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['lastMessage', 'lastMessageAt'])
+        && isOptionalString('lastMessage', 2000);
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        function validLocation() {
+          let loc = request.resource.data.get('location', null);
+          return request.resource.data.get('type', 'text') != 'location'
+            || (loc is map
+              && loc.keys().hasOnly(['lat', 'lng', 'accuracy'])
+              && loc.lat is number && loc.lat >= -90 && loc.lat <= 90
+              && loc.lng is number && loc.lng >= -180 && loc.lng <= 180);
+        }
+
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && request.resource.data.senderId == uid
+          && request.resource.data.get('type', 'text')
+            in ['text', 'voice', 'image', 'file', 'sticker', 'post', 'venue-invite', 'location']
+          && validLocation()
+          && isOptionalString('stickerUrl', 500);
+        // Their text (text messages only), or their reaction.
+        allow update: if isOwner(uid)
+          && ((resource.data.get('type', 'text') == 'text'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'editedAt'])
+              && request.resource.data.text is string
+              && request.resource.data.text.size() <= 2000)
+            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+              && request.resource.data.get('reactions', {}).keys().hasOnly([uid])));
+        allow delete: if isOwner(uid);
+      }
+    }
+
     // Audio/video calls — WebRTC signaling (see src/firebase/calls.js).
     // Only the two people of an existing match can call each other, never
     // someone who blocked the caller; afterwards only the two participants

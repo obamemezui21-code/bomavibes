@@ -39,6 +39,11 @@ async function eraseAccount(uid) {
     await batchDeleteAll(messageRefs);
     await batchDeleteAll(matchesSnap.docs.map((doc) => doc.ref));
 
+    // Their conversation with themselves (notes, photos… kept for later).
+    const selfChatRef = db.collection("selfChats").doc(uid);
+    const selfMessages = await selfChatRef.collection("messages").get();
+    await batchDeleteAll([...selfMessages.docs.map((doc) => doc.ref), selfChatRef]);
+
     const [asSwiper, asTarget] = await Promise.all([
         db.collection("swipes").where("swiperId", "==", uid).get(),
         db.collection("swipes").where("targetId", "==", uid).get(),
