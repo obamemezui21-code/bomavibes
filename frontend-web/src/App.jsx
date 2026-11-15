@@ -54,6 +54,7 @@ const EventsHub = lazy(() => import('./pages/EventsHub.jsx'))
 const MyTickets = lazy(() => import('./pages/MyTickets.jsx'))
 const Venues = lazy(() => import('./pages/Venues.jsx'))
 const StudioIA = lazy(() => import('./pages/StudioIA.jsx'))
+const CvBuilder = lazy(() => import('./pages/CvBuilder.jsx'))
 const Cine = lazy(() => import('./pages/Cine.jsx'))
 const Ngori = lazy(() => import('./pages/Ngori.jsx'))
 const NgoriRun = lazy(() => import('./pages/NgoriRun.jsx'))
@@ -220,6 +221,7 @@ function App() {
             <Route path="/events/mine" element={<MyTickets />} />
             <Route path="/coins-chics" element={<Venues />} />
             <Route path="/studio-ia" element={<StudioIA />} />
+            <Route path="/cv" element={<CvBuilder />} />
             <Route path="/cine" element={<Cine />} />
             <Route path="/likes" element={<LikesYou />} />
             <Route path="/crush-time" element={<CrushTime />} />

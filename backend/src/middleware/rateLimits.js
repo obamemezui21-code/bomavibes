@@ -76,9 +76,19 @@ const ngoriRunLimiter = limiter({
     keyGenerator: (req) => `uid:${req.firebaseUser.uid}`,
 });
 
+// CV PNPE — per account. The page asks every 3 s while a CV is being
+// written; the AI itself is capped per day in cvController.js.
+const cvLimiter = limiter({
+    windowMs: 10 * MINUTE,
+    limit: 300,
+    message: "Trop de requêtes, réessayez dans quelques minutes.",
+    keyGenerator: (req) => `uid:${req.firebaseUser.uid}`,
+});
+
 module.exports = {
     apiLimiter,
     ngoriRunLimiter,
+    cvLimiter,
     registerLimiter,
     passwordResetIpLimiter,
     passwordResetEmailLimiter,

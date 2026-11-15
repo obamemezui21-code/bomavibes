@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, ChevronRight, Clapperboard, Gamepad2, Globe, Heart, MapPin, Search, Sparkles, Ticket } from 'lucide-react'
+import { Briefcase, ChevronRight, Clapperboard, FileText, Gamepad2, Globe, Heart, MapPin, Search, Sparkles, Ticket } from 'lucide-react'
 import { GAMES } from '../lib/games.js'
 import { cancelEventTicket, fetchMyTickets, fetchPublishedEvents, reserveEventTicket } from '../firebase/events.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -35,9 +35,16 @@ const CATEGORY_CARDS = [
   {
     icon: Briefcase,
     title: 'Salon de métier',
-    subtitle: 'Networking, mentors & Studio IA',
+    subtitle: 'CV PNPE, networking, mentors & Studio IA',
     tint: 'bg-gold/15 text-gold',
     modules: [
+      {
+        to: '/cv',
+        label: 'CV PNPE',
+        description: 'Votre CV aux normes du PNPE, gratuit',
+        icon: FileText,
+        tint: 'bg-violet-500/15 text-violet-600',
+      },
       {
         to: '/studio-ia',
         label: 'Studio IA',

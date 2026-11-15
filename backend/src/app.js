@@ -45,6 +45,7 @@ const locationRoutes = require("./routes/locationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const photoReviewRoutes = require("./routes/photoReviewRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const cvRoutes = require("./routes/cvRoutes");
 const { startPaymentSweepScheduler } = require("./controllers/paymentController");
 const { startCallCleanupScheduler } = require("./services/callCleanupService");
 const { startStoryCleanupScheduler } = require("./services/storyCleanupService");
@@ -123,6 +124,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/admin/photo-reviews", photoReviewRoutes);
 app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
+app.use("/api/cv", cvRoutes);
 
 startCallCleanupScheduler();
 startStoryCleanupScheduler();
