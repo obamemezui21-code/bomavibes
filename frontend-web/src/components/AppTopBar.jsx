@@ -74,7 +74,15 @@ function AppTopBar({ sidebarOpen, onToggleSidebar }) {
         >
           {sidebarOpen ? <X size={20} strokeWidth={2.25} /> : <Menu size={20} strokeWidth={2.25} />}
         </button>
-        <img src={logo} alt="BomaVibes" className="h-8 w-8 rounded-2xl object-cover" />
+        <span className="relative">
+          <img src={logo} alt="BomaVibes" className="h-8 w-8 rounded-2xl object-cover" />
+          {/* Phones: the unread count in green on the logo (computers have it on the tab's icon). */}
+          {notificationsCount > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#25D366] px-1 text-[10px] font-bold text-white ring-2 ring-surface-soft desktop:hidden">
+              {notificationsCount > 9 ? '9+' : notificationsCount}
+            </span>
+          )}
+        </span>
         <span className="font-display text-lg font-bold tracking-tight max-[379px]:hidden">
           <span className="text-ink">Boma</span>
           <span className="text-pink-500">Vibes</span>

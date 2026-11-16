@@ -22,6 +22,7 @@ import { enablePushForUser, syncPushToken } from '../firebase/push.js'
 import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
 import { setUnreadConversations } from '../lib/appBadge.js'
+import { setTabBadge } from '../lib/tabBadge.js'
 import { photoVariant } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { EPHEMERAL_PREVIEW, expiryFor, isExpired, remainingLabel } from '../lib/ephemeral.js'
@@ -385,6 +386,11 @@ export function ConversationsProvider({ children }) {
     if (authLoading) return
     setUnreadConversations(uid && unreadIdsKey ? unreadIdsKey.split(',') : [])
   }, [authLoading, uid, unreadIdsKey, isPageVisible])
+
+  // And in green on the icon of the browser's tab (lib/tabBadge.js).
+  useEffect(() => {
+    setTabBadge(uid ? notificationsCount : 0)
+  }, [uid, notificationsCount])
 
   // Shaped like the others, for the Chat page, under the member's own name
   // and photo. Never unread, never online, never typing. Kept out of
