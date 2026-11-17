@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -18,6 +18,7 @@ import {
   House,
   Languages,
   MapPin,
+  Maximize2,
   MessageCircle,
   MessageCircleHeart,
   MoreVertical,
@@ -48,6 +49,7 @@ import { ageSuffix } from '../lib/profileDisplay.js'
 import { complimentAbout } from '../lib/compliments.js'
 import { distancesTo } from '../lib/geolocation.js'
 import PhotoSlideshow from './PhotoSlideshow.jsx'
+import PhotoLightbox from './PhotoLightbox.jsx'
 
 // Small round button on a bio / prompt card: compliment that answer.
 function ComplimentButton({ onClick }) {
@@ -158,7 +160,7 @@ function ProfileDetailModal({
   const photos = profile.photos?.length
     ? profile.photos
     : [fallbackAvatar(profile.firstName || profile.id, 'f3e8ff,fce7f3,ede9fe')]
-  // "À 5 km de toi": rounded by the server from both members' positions
+  // "À 7 km de toi": measured by the server from both members' positions
   // (lib/geolocation.js), never computed from coordinates here.
   const showDistance = !isSelf && !profile.hideDistance
   const [serverDistance, setServerDistance] = useState(null)
@@ -173,6 +175,17 @@ function ProfileDetailModal({
   const distanceLabel = showDistance
     ? capitalize(serverDistance?.label) || formatCityDistance(distanceKmBetween(publicProfile, profile))
     : null
+  // The photo shown, shared by the slideshow and the full-screen gallery.
+  const [photoIndex, setPhotoIndex] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  // Another profile in the same modal: back to its main photo.
+  const [photosOf, setPhotosOf] = useState(profile.id)
+  if (photosOf !== profile.id) {
+    setPhotosOf(profile.id)
+    setPhotoIndex(0)
+    setLightboxOpen(false)
+  }
+  const closeLightbox = useCallback(() => setLightboxOpen(false), [])
   const [showMenu, setShowMenu] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [showBlock, setShowBlock] = useState(false)
@@ -273,9 +286,28 @@ function ProfileDetailModal({
           {/* Photo — takes most of the screen, the details sheet slides over its bottom edge */}
           <div className="relative h-[64svh] w-full shrink-0 md:h-[58%]">
             {/* The photos, changed by hand (tap or swipe). */}
-            <PhotoSlideshow photos={photos} alt={profile.firstName}>
+            <PhotoSlideshow
+              photos={photos}
+              alt={profile.firstName}
+              index={photoIndex}
+              onIndexChange={setPhotoIndex}
+              onOpen={(i) => {
+                setPhotoIndex(i)
+                setLightboxOpen(true)
+              }}
+            >
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/35" />
             </PhotoSlideshow>
+
+            {/* Tapping the middle of the photo does the same: full screen. */}
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(true)}
+              className={`absolute ${isSelf ? 'right-4' : 'right-16'} top-[calc(max(0.75rem,env(safe-area-inset-top))+0.75rem)] flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-md transition hover:bg-white/30`}
+              aria-label="Voir les photos en grand"
+            >
+              <Maximize2 size={17} />
+            </button>
 
             <button
               type="button"
@@ -342,8 +374,8 @@ function ProfileDetailModal({
                 </span>
               )}
               {distanceLabel && (
-                <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.5)]">
-                  <Navigation size={11} strokeWidth={2.5} aria-hidden="true" />
+                <span className="ml-1.5 mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-mint-500 px-3 py-1 text-sm font-bold text-white shadow-md">
+                  <Navigation size={13} strokeWidth={2.5} aria-hidden="true" />
                   {distanceLabel}
                 </span>
               )}
@@ -580,6 +612,21 @@ function ProfileDetailModal({
           isBlocking={isSubmitting}
         />
       )}
+      {/* Rendered on <body>, but its clicks still bubble here: stop them before
+          they reach the backdrop, which closes the profile. */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <AnimatePresence>
+          {lightboxOpen && (
+            <PhotoLightbox
+              photos={photos}
+              alt={profile.firstName}
+              index={photoIndex}
+              onIndexChange={setPhotoIndex}
+              onClose={closeLightbox}
+            />
+          )}
+        </AnimatePresence>
+      </div>
     </motion.div>
   )
 }

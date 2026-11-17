@@ -22,22 +22,39 @@ function usePrefersReducedMotion() {
  *
  * The main photo comes first (photos[0]). Overlays (gradient, buttons) go in
  * `children`, drawn over the photos.
+ *
+ * onOpen(index): given, a tap on the middle of the photo (anywhere with a
+ * single photo) or Enter opens it full screen (PhotoLightbox); the edges
+ * still change photo. index / onIndexChange: optional, to share the photo
+ * shown with that full-screen view.
  */
-function PhotoSlideshow({ photos, alt, children }) {
-  const [index, setIndex] = useState(0)
+function PhotoSlideshow({ photos, alt, children, onOpen, index: shownIndex, onIndexChange }) {
+  const [ownIndex, setOwnIndex] = useState(0)
+  const controlled = shownIndex != null && !!onIndexChange
+  const index = controlled ? shownIndex : ownIndex
   const reducedMotion = usePrefersReducedMotion()
   const gesture = useRef(null)
   const count = photos.length
   const multiple = count > 1
+  const canOpen = !!onOpen
+
+  const setIndex = (update) => {
+    if (controlled) onIndexChange(typeof update === 'function' ? update(shownIndex) : update)
+    else setOwnIndex(update)
+  }
 
   // Another profile: start again from its main photo.
   const photosKey = photos.join('|')
-  useEffect(() => setIndex(0), [photosKey])
+  const [shownKey, setShownKey] = useState(photosKey)
+  if (shownKey !== photosKey) {
+    setShownKey(photosKey)
+    if (!controlled) setOwnIndex(0)
+  }
 
   const go = (step) => setIndex((i) => nextIndex(i, step, count))
 
   function onPointerDown(e) {
-    if (!multiple || (e.pointerType === 'mouse' && e.button !== 0)) return
+    if ((!multiple && !canOpen) || (e.pointerType === 'mouse' && e.button !== 0)) return
     const rect = e.currentTarget.getBoundingClientRect()
     gesture.current = {
       id: e.pointerId,
@@ -58,11 +75,17 @@ function PhotoSlideshow({ photos, alt, children }) {
     clearTimeout(g.timer)
     gesture.current = null
     if (cancelled) return
-    const step = gestureFor({ dx: e.clientX - g.x, dy: e.clientY - g.y, x: e.clientX - g.left, width: g.width, held: !!g.held })
-    if (step) go(step)
+    const step = gestureFor({ dx: e.clientX - g.x, dy: e.clientY - g.y, x: e.clientX - g.left, width: g.width, held: !!g.held, multiple, canOpen })
+    if (step === 'open') onOpen(index)
+    else if (step) go(step)
   }
 
   function onKeyDown(e) {
+    if (canOpen && e.key === 'Enter') {
+      e.preventDefault()
+      onOpen(index)
+      return
+    }
     if (!multiple) return
     if (e.key === 'ArrowRight') go(1)
     else if (e.key === 'ArrowLeft') go(-1)
@@ -76,8 +99,11 @@ function PhotoSlideshow({ photos, alt, children }) {
       style={{ touchAction: 'pan-y' }}
       role="group"
       aria-roledescription="diaporama"
-      aria-label={multiple ? `Photos de ${alt} : flèches gauche et droite pour changer` : `Photo de ${alt}`}
-      tabIndex={multiple ? 0 : -1}
+      aria-label={
+        (multiple ? `Photos de ${alt} : flèches gauche et droite pour changer` : `Photo de ${alt}`) +
+        (canOpen ? ', Entrée pour agrandir' : '')
+      }
+      tabIndex={multiple || canOpen ? 0 : -1}
       onPointerDown={onPointerDown}
       onPointerUp={(e) => endGesture(e, false)}
       onPointerCancel={(e) => endGesture(e, true)}
