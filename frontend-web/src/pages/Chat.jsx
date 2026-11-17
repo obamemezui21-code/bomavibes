@@ -77,7 +77,7 @@ import { STICKERS, stickerSrc } from '../lib/stickers.js'
 import ReportModal from '../components/ReportModal.jsx'
 import BlockConfirmModal from '../components/BlockConfirmModal.jsx'
 import EphemeralSheet from '../components/chat/EphemeralSheet.jsx'
-import { setEphemeralMessages } from '../firebase/chatSettings.js'
+import { clearConversation, setEphemeralMessages } from '../firebase/chatSettings.js'
 import { ephemeralLabel, ephemeralNotice } from '../lib/ephemeral.js'
 import ProfileDetailModal from '../components/ProfileDetailModal.jsx'
 import ConfirmDialog from '../components/ConfirmDialog.jsx'
@@ -212,7 +212,14 @@ function ImageLightbox({ url, onClose }) {
   )
 }
 
-function DeleteMessageModal({ onCancel, onConfirm, isDeleting }) {
+// Confirms deleting a message — or, with a title and text, the whole conversation.
+function DeleteMessageModal({
+  onCancel,
+  onConfirm,
+  isDeleting,
+  title = 'Supprimer ce message ?',
+  text = 'Cette action est définitive et ne peut pas être annulée.',
+}) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
@@ -227,8 +234,8 @@ function DeleteMessageModal({ onCancel, onConfirm, isDeleting }) {
         className="glass-panel w-full max-w-sm rounded-2xl p-6 text-center"
       >
         <TriangleAlert size={32} strokeWidth={1.5} className="mx-auto text-coral-500" />
-        <h2 className="mt-2 font-display text-lg font-semibold text-ink">Supprimer ce message ?</h2>
-        <p className="mt-1 text-sm text-ink-soft/70">Cette action est définitive et ne peut pas être annulée.</p>
+        <h2 className="mt-2 font-display text-lg font-semibold text-ink">{title}</h2>
+        <p className="mt-1 text-sm text-ink-soft/70">{text}</p>
         <div className="mt-5 flex gap-3">
           <button
             type="button"
@@ -432,6 +439,8 @@ function Chat() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [showBlock, setShowBlock] = useState(false)
+  const [showClear, setShowClear] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const [showEphemeral, setShowEphemeral] = useState(false)
   const [showGroupPicker, setShowGroupPicker] = useState(false)
   const [isSubmittingSafety, setIsSubmittingSafety] = useState(false)
@@ -463,7 +472,7 @@ function Chat() {
   const swipedAtRef = useRef(0)
   const pointerStartRef = useRef({ x: 0, y: 0 })
 
-  const activeId = conversationId || conversations[0]?.id
+  const activeId = conversationId || conversations.find((c) => !c.cleared)?.id || conversations[0]?.id
   // The conversation with yourself ("Vous", /chat/moi) isn't a match: no
   // calls, profile, safety menu, typing, icebreakers or date ideas there.
   const active = selfConversation && activeId === selfConversation.id ? selfConversation : conversations.find((c) => c.id === activeId)
@@ -1009,6 +1018,22 @@ function Chat() {
     }
   }
 
+  // "Supprimer la discussion": emptied and out of the list, for me only.
+  async function handleClearConversation() {
+    if (!active || active.isSelf) return
+    setIsClearing(true)
+    try {
+      await clearConversation(active.id)
+      showToast(`Discussion avec ${active.profile.firstName} supprimée.`, 'success')
+      setShowClear(false)
+      navigate('/chat')
+    } catch (err) {
+      showToast(err.message || 'Impossible de supprimer la discussion, réessayez.', 'error')
+    } finally {
+      setIsClearing(false)
+    }
+  }
+
   async function handleEphemeralChange(ttl) {
     try {
       await setEphemeralMessages(active.id, ttl)
@@ -1042,11 +1067,14 @@ function Chat() {
 
   // "Vous" takes its place by date once used; until then it waits at the top
   // of the list, where it can be found.
+  // A deleted conversation leaves the list (it stays a match, in "Matchs
+  // récents"), until a new message brings it back — or while it's open.
+  const listed = conversations.filter((c) => !c.cleared || c.id === conversationId)
   const listConversations = !selfConversation
-    ? conversations
+    ? listed
     : selfConversation.lastActivityAt
-      ? [...conversations, selfConversation].sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
-      : [selfConversation, ...conversations]
+      ? [...listed, selfConversation].sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
+      : [selfConversation, ...listed]
   const query = listSearch.trim().toLowerCase()
   const visibleConversations = query
     ? listConversations.filter((c) => c.profile.firstName.toLowerCase().includes(query))
@@ -1440,6 +1468,7 @@ function Chat() {
                                 Icon: Timer,
                                 onClick: () => setShowEphemeral(true),
                               },
+                              { label: 'Supprimer la discussion', Icon: Trash2, onClick: () => setShowClear(true), danger: true },
                               { label: 'Signaler', Icon: Flag, onClick: () => setShowReport(true), danger: true },
                               { label: `Bloquer ${active.profile.firstName || ''}`.trim(), Icon: ShieldOff, onClick: () => setShowBlock(true), danger: true },
                             ]
@@ -2283,6 +2312,18 @@ function Chat() {
           </>
         )}
       </div>
+
+      <AnimatePresence>
+        {showClear && active && !active.isSelf && (
+          <DeleteMessageModal
+            title={`Supprimer la discussion avec ${active.profile.firstName} ?`}
+            text={`Tous les messages disparaissent pour vous. ${active.profile.firstName} garde sa copie et peut encore vous écrire.`}
+            onCancel={() => setShowClear(false)}
+            onConfirm={handleClearConversation}
+            isDeleting={isClearing}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {deleteTarget && (

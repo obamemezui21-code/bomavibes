@@ -303,8 +303,16 @@ export function ConversationsProvider({ children }) {
         const profile = profilesById[otherUid]
         if (!profile) return null
         const otherLastReadAt = match.lastReadAt?.[otherUid]?.toMillis?.() ?? null
+        // "Supprimer la discussion" (clearChatController.js): for this member,
+        // nothing from before that moment, and out of the Messages list until
+        // a new message comes.
+        const clearedAtMs = match.clearedAt?.[uid]?.toMillis?.() ?? null
+        const loaded = activeMessages[match.id] || []
+        const afterClear = clearedAtMs ? loaded.filter((m) => m.pending || m.date.getTime() > clearedAtMs) : loaded
+        const reachedClear = clearedAtMs != null && afterClear.length < loaded.length
+        const cleared = clearedAtMs != null && (match.lastMessageAt?.toMillis?.() ?? 0) <= clearedAtMs
         // Ephemeral messages vanish at expiresAt; the server deletes them soon after.
-        const messages = (activeMessages[match.id] || []).filter((m) => !isExpired(m, now)).map((m) => {
+        const messages = afterClear.filter((m) => !isExpired(m, now)).map((m) => {
           if (m.expiresAt) m = { ...m, expiresIn: remainingLabel(m.expiresAt, now) }
           if (!m.fromMe) return m
           const status = m.pending ? 'sending' : otherLastReadAt && m.date.getTime() <= otherLastReadAt ? 'read' : 'sent'
@@ -342,12 +350,14 @@ export function ConversationsProvider({ children }) {
           lastActivityAt,
           isNewMatch: match.seen?.[uid] === false,
           unreadCount: match.seen?.[uid] === false ? 1 : 0,
-          lastMessage: match.lastMessage || null,
+          lastMessage: cleared ? null : match.lastMessage || null,
+          cleared,
           messages,
           online,
           lastSeenLabel: online ? 'En ligne' : isInvisible ? null : formatLastSeen(profile.lastActive, now),
           isTyping: isRecent(match.typing?.[otherUid], TYPING_THRESHOLD_MS, now),
-          hasOlderMessages: !!hasOlderMessages[match.id],
+          // Older than the deletion: nothing more to load.
+          hasOlderMessages: !!hasOlderMessages[match.id] && !reachedClear,
           ephemeralTtl: match.ephemeral?.ttl || 0,
         }
       })

@@ -15,3 +15,16 @@ export async function setEphemeralMessages(matchId, ttl) {
   if (!res.ok) throw new Error(body?.message || 'Impossible de changer ce réglage.')
   return body
 }
+
+// "Supprimer la discussion": emptied and out of the list, for me only (the
+// other person keeps theirs) — backend/src/controllers/clearChatController.js.
+export async function clearConversation(matchId) {
+  const idToken = await auth.currentUser?.getIdToken()
+  const res = await fetch(`/api/chat/${encodeURIComponent(matchId)}/clear`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  const body = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(body?.message || 'Impossible de supprimer la discussion.')
+  return body
+}
