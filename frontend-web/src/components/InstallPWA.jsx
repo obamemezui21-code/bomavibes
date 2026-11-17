@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CircleCheck, Download, Share, SquarePlus, X } from 'lucide-react'
-import { isInAppBrowser, isIOS, promptInstall, usePwa } from '../lib/pwa.js'
+import { CircleAlert, CircleCheck, Download, Share, SquarePlus, X } from 'lucide-react'
+import { isInAppBrowser, isIOS, promptInstall, resetInstall, usePwa } from '../lib/pwa.js'
 
 // "Install BomaVibes", in two forms:
 // - variant="banner": a card above the bottom bar, offered once in a while
@@ -66,8 +66,50 @@ function InstallButton({ onDone, className = '' }) {
   )
 }
 
+// The install as it goes: a bar while the phone installs, then "installed" or
+// what went wrong. The browser reports no percentage, so the bar is a time
+// estimate that only completes when the system confirms the install.
+function InstallProgress({ phase }) {
+  if (phase === 'installing') {
+    return (
+      <div role="status">
+        <p className="text-sm font-semibold text-ink">Installation en cours…</p>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink/10" role="progressbar" aria-label="Installation de BomaVibes">
+          <motion.div className="h-full rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3" initial={{ width: '5%' }} animate={{ width: '90%' }} transition={{ duration: 25, ease: 'easeOut' }} />
+        </div>
+        <p className="mt-2 text-xs text-ink-soft">Gardez cette page ouverte : l’icône BomaVibes arrive sur votre écran d’accueil.</p>
+      </div>
+    )
+  }
+  if (phase === 'done') {
+    return (
+      <div role="status">
+        <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <CircleCheck size={18} className="text-mint-500" /> BomaVibes est installée !
+        </p>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink/10">
+          <motion.div className="h-full rounded-full bg-mint-500" initial={{ width: '90%' }} animate={{ width: '100%' }} />
+        </div>
+        <p className="mt-2 text-xs text-ink-soft">Ouvrez-la depuis l’icône sur votre écran d’accueil.</p>
+      </div>
+    )
+  }
+  return (
+    <div role="alert">
+      <p className="flex items-center gap-2 text-sm font-semibold text-coral-600">
+        <CircleAlert size={18} /> {phase === 'cancelled' ? 'Installation annulée' : 'L’installation n’a pas abouti'}
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+        {phase === 'cancelled'
+          ? 'Vous avez refusé l’installation. Vous pourrez la relancer depuis Réglages → Application.'
+          : 'Vérifiez votre connexion et l’espace libre du téléphone, puis réessayez depuis le menu du navigateur : « Installer l’application » ou « Ajouter à l’écran d’accueil ».'}
+      </p>
+    </div>
+  )
+}
+
 function InstallBanner({ hidden }) {
-  const { canPrompt, installed } = usePwa()
+  const { canPrompt, installed, install } = usePwa()
   const [closed, setClosed] = useState(dismissedRecently)
   const [ready, setReady] = useState(false)
 
@@ -77,12 +119,21 @@ function InstallBanner({ hidden }) {
   }, [])
 
   const available = canPrompt || isIOS
-  const open = ready && !hidden && !closed && !installed && available
+  const underWay = install !== 'idle'
+  const open = underWay || (ready && !hidden && !closed && !installed && available)
 
   function close() {
     rememberDismissal()
     setClosed(true)
+    resetInstall()
   }
+
+  // "Installed" goes away by itself after a moment.
+  useEffect(() => {
+    if (install !== 'done') return undefined
+    const timer = setTimeout(resetInstall, 8000)
+    return () => clearTimeout(timer)
+  }, [install])
 
   return (
     <AnimatePresence>
@@ -98,6 +149,10 @@ function InstallBanner({ hidden }) {
           <div className="flex items-start gap-3">
             <img src="/icons/icon-192.png" alt="" className="h-11 w-11 shrink-0 rounded-2xl border border-ink/10 object-cover" />
             <div className="min-w-0 flex-1">
+              {underWay ? (
+                <InstallProgress phase={install} />
+              ) : (
+                <>
               <p className="font-display text-base font-semibold">Installez BomaVibes 📱</p>
               {canPrompt ? (
                 <p className="mt-1 text-sm leading-relaxed text-ink-soft">
@@ -105,6 +160,8 @@ function InstallBanner({ hidden }) {
                 </p>
               ) : (
                 <IosSteps className="mt-1" />
+              )}
+                </>
               )}
             </div>
             <button
@@ -116,13 +173,7 @@ function InstallBanner({ hidden }) {
               <X size={16} />
             </button>
           </div>
-          {canPrompt && (
-            <InstallButton
-              className="mt-3 w-full"
-              // Declined in the browser's dialog: same as closing the banner.
-              onDone={(outcome) => outcome !== 'accepted' && close()}
-            />
-          )}
+          {canPrompt && !underWay && <InstallButton className="mt-3 w-full" />}
         </motion.div>
       )}
     </AnimatePresence>
@@ -130,7 +181,15 @@ function InstallBanner({ hidden }) {
 }
 
 function InstallCard() {
-  const { canPrompt, installed } = usePwa()
+  const { canPrompt, installed, install } = usePwa()
+
+  if (install !== 'idle' && install !== 'done') {
+    return (
+      <div className="px-1 py-3">
+        <InstallProgress phase={install} />
+      </div>
+    )
+  }
 
   if (installed) {
     return (

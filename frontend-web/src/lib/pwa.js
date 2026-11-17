@@ -13,6 +13,8 @@ let state = {
   canPrompt: false,
   installed: false,
   updateReady: false,
+  // The install under way: 'idle' | 'installing' | 'done' | 'cancelled' | 'failed'.
+  install: 'idle',
 }
 const listeners = new Set()
 
@@ -55,6 +57,10 @@ export const isInAppBrowser = /FBAN|FBAV|FB_IAB|Instagram|Line\/|musical_ly|Snap
 // ---- Installation -------------------------------------------------------
 
 let deferredPrompt = null
+let installTimer = null
+// The browser gives no progress and no failure signal: past this without
+// `appinstalled`, the install is reported as failed.
+const INSTALL_TIMEOUT_MS = 60 * 1000
 
 if (typeof window !== 'undefined') {
   state = { ...state, installed: isStandalone() }
@@ -68,7 +74,8 @@ if (typeof window !== 'undefined') {
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null
-    set({ canPrompt: false, installed: true })
+    clearTimeout(installTimer)
+    set({ canPrompt: false, installed: true, install: state.install === 'installing' ? 'done' : state.install })
   })
 
   window.matchMedia?.('(display-mode: standalone)').addEventListener?.('change', (event) => {
@@ -80,14 +87,24 @@ if (typeof window !== 'undefined') {
 // 'unavailable' (each prompt can be used once; the browser offers a new one later).
 export async function promptInstall() {
   const event = deferredPrompt
-  if (!event) return 'unavailable'
+  if (!event) {
+    set({ install: 'failed' })
+    return 'unavailable'
+  }
   deferredPrompt = null
   set({ canPrompt: false })
   try {
     await event.prompt()
     const { outcome } = await event.userChoice
+    if (outcome === 'accepted') {
+      if (!state.installed) {
+        set({ install: 'installing' })
+        installTimer = setTimeout(() => state.install === 'installing' && set({ install: 'failed' }), INSTALL_TIMEOUT_MS)
+      }
+    } else set({ install: 'cancelled' })
     return outcome
   } catch {
+    set({ install: 'failed' })
     return 'unavailable'
   }
 }
@@ -123,4 +140,9 @@ export function installUpdate() {
   set({ updateReady: false })
   if (applyUpdate) applyUpdate(true)
   else window.location.reload()
+}
+
+export function resetInstall() {
+  clearTimeout(installTimer)
+  set({ install: 'idle' })
 }
