@@ -12,6 +12,14 @@ const AUTO_SPIN = 0.12 // rad/s
 const PIN_LIFT = 1.13
 const PITCH_MIN = -0.5
 const PITCH_MAX = 0.9
+// Zoomed in, the globe tilts further, to reach the far north and south.
+const PITCH_MIN_ZOOMED = -1.25
+const PITCH_MAX_ZOOMED = 1.25
+// How close one can get: at ×12 a country like Gabon fills the view. Closer,
+// the land's dots (1.5° apart) would only show a few blurry blobs.
+export const ZOOM_MIN = 1
+export const ZOOM_MAX = 12
+const DOT_SIZE = 0.03
 // Where the globe opens when nobody, you included, has a known city.
 const LIBREVILLE = [0.4087, 9.4419]
 
@@ -153,7 +161,15 @@ function cityMarker(lat, lng) {
   return { marker, ring }
 }
 
-export function createGlobeScene(container, { cities, groups, home, pins, reducedMotion }) {
+const clampZoom = (z) => Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX)
+
+/**
+ * @param {{ cities, groups, home, pins: Map<string, HTMLElement>, reducedMotion: boolean,
+ *   onZoom?: (state: { level: number, zoomed: boolean }) => void }} options
+ *   onZoom: called when the zoom crosses a level (1, 2, 4, 8: pins regroup
+ *   by it) or starts / stops being zoomed in.
+ */
+export function createGlobeScene(container, { cities, groups, home, pins, reducedMotion, onZoom }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
   renderer.domElement.style.position = 'absolute'
@@ -191,7 +207,7 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
     const { marker, ring } = cityMarker(g.lat, g.lng)
     marker.traverse((o) => o.geometry && keep(o.geometry, o.material))
     globe.add(marker)
-    return { ring, offset: i * 0.37 }
+    return { marker, ring, offset: i * 0.37 }
   })
 
   // Arcs from your city to each other active city (or, without yours, from the busiest one).
@@ -213,12 +229,68 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   let velocity = 0
   let dragging = null
   let pausedUntil = 0
+  // Zoom: `zoom` eases towards `zoomTarget`. The camera comes closer to the
+  // surface: at ×z it's z times nearer than in the whole-globe view.
+  let zoom = 1
+  let zoomTarget = 1
+  let baseDistance = 4.6
+  let reported = null
+  // Fingers on the globe, for the two-finger pinch.
+  const touches = new Map()
+  let pinch = null
+  // The mouse wheel zooms only once the globe was clicked (or with a
+  // trackpad pinch, which sends ctrl+wheel): scrolling the page over it
+  // shouldn't get stuck zooming.
+  let wheelArmed = false
+
+  const zoomProgress = () => (zoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)
+  const pitchMin = () => PITCH_MIN + (PITCH_MIN_ZOOMED - PITCH_MIN) * Math.min(zoomProgress() * 3, 1)
+  const pitchMax = () => PITCH_MAX + (PITCH_MAX_ZOOMED - PITCH_MAX) * Math.min(zoomProgress() * 3, 1)
+  const clampPitch = (p) => Math.min(Math.max(p, pitchMin()), pitchMax())
+
+  function setZoomTarget(z) {
+    zoomTarget = clampZoom(z)
+    container.dataset.zoom = zoomTarget.toFixed(2)
+    pausedUntil = performance.now() + 4000
+    // Zoomed in, a finger moves the globe every way instead of scrolling the page.
+    container.style.touchAction = zoomTarget > 1.05 ? 'none' : 'pan-y'
+  }
+
+  function report() {
+    const level = 2 ** Math.floor(Math.log2(zoom + 1e-6))
+    const state = { level, zoomed: zoomTarget > 1.05 }
+    if (reported && reported.level === state.level && reported.zoomed === state.zoomed) return
+    reported = state
+    onZoom?.(state)
+  }
+
+  const touchDistance = () => {
+    const [a, b] = [...touches.values()]
+    return Math.hypot(a.x - b.x, a.y - b.y)
+  }
 
   function onDown(e) {
+    wheelArmed = true
+    if (e.pointerType === 'touch') {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY })
+      if (touches.size === 2) {
+        // A second finger: pinch, no more turning.
+        pinch = { distance: touchDistance(), zoom: zoomTarget }
+        dragging = null
+        velocity = 0
+        return
+      }
+    }
     dragging = { x: e.clientX, y: e.clientY, moved: false, id: e.pointerId }
     target = null
   }
   function onMove(e) {
+    if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (pinch && touches.size >= 2) {
+      setZoomTarget(pinch.zoom * (touchDistance() / Math.max(pinch.distance, 1)))
+      zoom = zoomTarget // follow the fingers exactly
+      return
+    }
     if (!dragging || dragging.id !== e.pointerId) return
     const dx = e.clientX - dragging.x
     const dy = e.clientY - dragging.y
@@ -229,20 +301,57 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
     }
     dragging.x = e.clientX
     dragging.y = e.clientY
-    velocity = dx * 0.006
+    // Zoomed in, the same drag turns the globe less: the land under the
+    // finger follows it.
+    velocity = (dx * 0.006) / zoom
     yaw += velocity
-    // Vertical drags scroll the page on touch screens (touch-action: pan-y).
-    if (e.pointerType !== 'touch') pitch = Math.min(Math.max(pitch + dy * 0.004, PITCH_MIN), PITCH_MAX)
+    // On touch screens, vertical drags scroll the page, unless zoomed in.
+    if (e.pointerType !== 'touch' || zoomTarget > 1.05) pitch = clampPitch(pitch + (dy * 0.004) / zoom)
   }
   function onUp(e) {
+    touches.delete(e.pointerId)
+    if (pinch && touches.size < 2) {
+      pinch = null
+      pausedUntil = performance.now() + 4000
+      return
+    }
     if (dragging?.id !== e.pointerId) return
     dragging = null
     pausedUntil = performance.now() + 1500
   }
+  function onWheel(e) {
+    if (!wheelArmed && !e.ctrlKey) return
+    const factor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))
+    // At the limit, the wheel scrolls the page again.
+    if ((factor > 1 && zoomTarget >= ZOOM_MAX) || (factor < 1 && zoomTarget <= ZOOM_MIN)) return
+    e.preventDefault()
+    setZoomTarget(zoomTarget * factor)
+  }
+  function onDoubleClick(e) {
+    // Not on the + / − buttons or a pin: they act on their own clicks.
+    if (e.target.closest?.('button')) return
+    setZoomTarget(zoomTarget * 2)
+  }
+  // Two fingers never scroll or zoom the page itself.
+  function onTouchMove(e) {
+    if (e.touches.length >= 2 || zoomTarget > 1.05) e.preventDefault()
+  }
+  const disarmWheel = () => (wheelArmed = false)
+  container.style.touchAction = 'pan-y'
   container.addEventListener('pointerdown', onDown)
   container.addEventListener('pointermove', onMove)
   container.addEventListener('pointerup', onUp)
   container.addEventListener('pointercancel', onUp)
+  container.addEventListener('pointerleave', disarmWheel)
+  container.addEventListener('wheel', onWheel, { passive: false })
+  container.addEventListener('dblclick', onDoubleClick)
+  container.addEventListener('touchmove', onTouchMove, { passive: false })
+
+  function placeCamera() {
+    camera.position.z = 1 + (baseDistance - 1) / zoom
+    camera.near = Math.max(0.01, (camera.position.z - 1.3) * 0.5)
+    camera.updateProjectionMatrix()
+  }
 
   function resize() {
     const { clientWidth: w, clientHeight: h } = container
@@ -252,8 +361,8 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
     renderer.setSize(w, h, false)
     camera.aspect = w / h
     // Keep the whole globe in view on narrow screens.
-    camera.position.z = w / h < 1 ? 4.6 / (w / h) ** 0.55 : 4.6
-    camera.updateProjectionMatrix()
+    baseDistance = w / h < 1 ? 4.6 / (w / h) ** 0.55 : 4.6
+    placeCamera()
   }
   const resizeObserver = new ResizeObserver(resize)
   resizeObserver.observe(container)
@@ -262,12 +371,13 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   const pinVector = new THREE.Vector3()
   const normalVector = new THREE.Vector3()
   const toCamera = new THREE.Vector3()
-  const pinPoints = groups.map((g) => ({
-    key: g.key,
-    lifted: toVector(g.lat, g.lng, PIN_LIFT),
-    normal: toVector(g.lat, g.lng).normalize(),
-    last: {},
-  }))
+  const pinPointsFor = (list) =>
+    list.map((g) => ({
+      key: g.key,
+      normal: toVector(g.lat, g.lng).normalize(),
+      last: {},
+    }))
+  let pinPoints = pinPointsFor(groups)
 
   // Only what changed is written: a style change costs the page a recalc,
   // and this runs every frame.
@@ -279,10 +389,13 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   }
 
   function placePins() {
+    // Pins float at the top of their city's beam, which shortens as the
+    // globe zooms in: they stay right over their city.
+    const lift = 1 + ((PIN_LIFT - 1) * 1.004) / zoom ** 0.9
     for (const p of pinPoints) {
       const el = pins.get(p.key)
       if (!el) continue
-      pinVector.copy(p.lifted).applyMatrix4(globe.matrixWorld)
+      pinVector.copy(p.normal).multiplyScalar(lift).applyMatrix4(globe.matrixWorld)
       normalVector.copy(p.normal).transformDirection(globe.matrixWorld)
       toCamera.copy(camera.position).sub(pinVector).normalize()
       const facing = normalVector.dot(toCamera)
@@ -312,17 +425,33 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
     last = time
     clock.t += dt
 
+    if (Math.abs(zoomTarget - zoom) > 1e-4) {
+      // Eased in log space, so ×1→×2 feels as quick as ×6→×12.
+      const step = reducedMotion ? 1 : Math.min(dt * 8, 1)
+      zoom = Math.exp(Math.log(zoom) + (Math.log(zoomTarget) - Math.log(zoom)) * step)
+    } else zoom = zoomTarget
+    placeCamera()
+    // The camera is ~z times closer: dots shrink about as much, so they stay
+    // small dots on screen instead of growing into blobs.
+    dotsMaterial.size = DOT_SIZE / zoom ** 0.85
+    // Same for the city rings and beams: the same size on screen at any zoom.
+    const markerScale = 1 / zoom ** 0.9
+    for (const m of markers) m.marker.scale.setScalar(markerScale)
+    report()
+
     if (target) {
       // Shortest way round to the city asked for.
       const dYaw = Math.atan2(Math.sin(target.yaw - yaw), Math.cos(target.yaw - yaw))
       yaw += dYaw * Math.min(dt * 4, 1)
       pitch += (target.pitch - pitch) * Math.min(dt * 4, 1)
       if (Math.abs(dYaw) < 0.002 && Math.abs(target.pitch - pitch) < 0.002) target = null
-    } else if (!dragging) {
+    } else if (!dragging && !pinch) {
       velocity *= 0.94
       yaw += velocity
-      if (!reducedMotion && time > pausedUntil) yaw += AUTO_SPIN * dt
+      // Turning on its own only in the whole-globe view.
+      if (!reducedMotion && time > pausedUntil && zoomTarget <= 1.05) yaw += AUTO_SPIN * dt
     }
+    if (!target) pitch = clampPitch(pitch)
     globe.rotation.y = yaw
     pitchGroup.rotation.x = pitch
 
@@ -364,10 +493,16 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   start()
 
   return {
-    focus(lat, lng) {
-      target = { yaw: yawFor(lng), pitch: Math.min(Math.max(lat * DEG, PITCH_MIN), PITCH_MAX) }
+    // Brings a place in front; with `zoomTo`, also zooms in that far (never out).
+    focus(lat, lng, zoomTo) {
+      if (zoomTo) setZoomTarget(Math.max(zoomTarget, zoomTo))
+      target = { yaw: yawFor(lng), pitch: Math.min(Math.max(lat * DEG, PITCH_MIN_ZOOMED), PITCH_MAX_ZOOMED) }
       velocity = 0
       pausedUntil = performance.now() + 4000
+    },
+    // New pins (they regroup with the zoom), without rebuilding the scene.
+    setPins(list) {
+      pinPoints = pinPointsFor(list)
     },
     dispose() {
       stop()
@@ -378,6 +513,10 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
       container.removeEventListener('pointermove', onMove)
       container.removeEventListener('pointerup', onUp)
       container.removeEventListener('pointercancel', onUp)
+      container.removeEventListener('pointerleave', disarmWheel)
+      container.removeEventListener('wheel', onWheel)
+      container.removeEventListener('dblclick', onDoubleClick)
+      container.removeEventListener('touchmove', onTouchMove)
       for (const item of disposables) item.dispose?.()
       renderer.dispose()
       renderer.domElement.remove()

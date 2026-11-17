@@ -30,7 +30,8 @@ function activityLabel(lastActiveAt, now) {
 // their country when the city isn't known (never anyone's real position).
 // Members who hide their distance aren't placed on the globe. Most recently
 // active first, with no cut-off.
-function activeGroups(profiles) {
+// clusterDeg: smaller as the globe zooms in, so close cities get their own pin.
+function activeGroups(profiles, clusterDeg = CLUSTER_DEG) {
   const active = profiles
     .filter((p) => !p.hideDistance && globePlaceForProfile(p))
     .sort((a, b) => (b.lastActiveAt || 0) - (a.lastActiveAt || 0))
@@ -47,7 +48,7 @@ function activeGroups(profiles) {
   // pile up and hide each other. Each city keeps its own pulse on the globe.
   const groups = []
   for (const c of cities.values()) {
-    const near = groups.find((g) => Math.hypot(g.lat - c.lat, (g.lng - c.lng) * Math.cos((g.lat * Math.PI) / 180)) < CLUSTER_DEG)
+    const near = groups.find((g) => Math.hypot(g.lat - c.lat, (g.lng - c.lng) * Math.cos((g.lat * Math.PI) / 180)) < clusterDeg)
     if (near) {
       near.cities.push(c.city)
       near.profiles.push(...c.profiles)
@@ -63,25 +64,31 @@ function activeGroups(profiles) {
 
 // "Les plus actifs": a slowly turning globe of glowing dots, the most active
 // members pinned on their city, light running along arcs from your city to
-// theirs. Drag it to turn it; tap a city to bring it in front. Under it (on a
+// theirs. Drag it to turn it, pinch (or wheel) to zoom in, no buttons (pins split
+// into their cities as it does); tap a city to bring it in front, zoomed in.
+// Positions stay city or country centres at any zoom. Under it (on a
 // computer, beside it) the same members in a list, each opening their profile.
 // No WebGL: the list alone. No member with a known city yet: the globe turns
 // on its own, with a word saying members will show up on it.
 function ActiveGlobe({ profiles, me, onOpenProfile }) {
   const reducedMotion = useReducedMotion()
   const [now] = useState(() => Date.now())
-  const { active, cities, groups } = useMemo(() => activeGroups(profiles), [profiles])
+  // The zoom as the scene reports it: level 1, 2, 4 or 8 (pins regroup by it).
+  const [zoomState, setZoomState] = useState({ level: 1, zoomed: false })
+  const { active, cities, groups } = useMemo(() => activeGroups(profiles, CLUSTER_DEG / zoomState.level), [profiles, zoomState.level])
   const home = useMemo(() => {
     const place = me && globePlaceForProfile(me)
     return place ? [place.lat, place.lng] : null
   }, [me])
-  const [selectedKey, setSelectedKey] = useState(null)
+  // The city tapped, kept as it was then: zooming regroups the pins, the list stays.
+  const [selected, setSelected] = useState(null)
+  const selectedKey = selected?.key ?? null
   const [failed, setFailed] = useState(false)
   const stage = useRef(null)
   const pins = useRef(new Map())
   const scene = useRef(null)
 
-  const groupsKey = cities.map((c) => `${c.key}:${c.profiles.length}`).join('|')
+  const citiesKey = cities.map((c) => `${c.key}:${c.profiles.length}`).join('|')
 
   useEffect(() => {
     if (!stage.current) return undefined
@@ -93,6 +100,7 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
         home,
         pins: pins.current,
         reducedMotion: !!reducedMotion,
+        onZoom: setZoomState,
       })
     } catch {
       setFailed(true)
@@ -103,17 +111,27 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
       handle.dispose()
       scene.current = null
     }
-    // groupsKey stands for groups: the scene is only rebuilt when they change.
+    // citiesKey stands for cities: the scene is only rebuilt when they change
+    // (not when pins regroup with the zoom: see below).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupsKey, home?.[0], home?.[1], reducedMotion])
+  }, [citiesKey, home?.[0], home?.[1], reducedMotion])
+
+  // Pins regrouped (the zoom changed): the scene moves the new ones.
+  useEffect(() => {
+    scene.current?.setPins(groups)
+  }, [groups])
 
   const online = active.filter((p) => now - p.lastActiveAt < ONLINE_MS).length
-  const selected = groups.find((g) => g.key === selectedKey)
   const listed = selected ? selected.profiles : active
 
   function select(group) {
-    setSelectedKey((key) => (key === group.key ? null : group.key))
-    scene.current?.focus(group.lat, group.lng)
+    if (selectedKey === group.key) {
+      setSelected(null)
+      return
+    }
+    setSelected({ key: group.key, label: group.label, profiles: group.profiles })
+    // In front, and zoomed in on it.
+    scene.current?.focus(group.lat, group.lng, 4)
   }
 
   return (
@@ -132,7 +150,7 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
       </div>
 
       <div className="relative mt-3 overflow-hidden rounded-[24px] bg-[#0d0420] text-white shadow-xl shadow-violet-900/25 desktop:grid desktop:h-[460px] desktop:grid-cols-[minmax(0,1fr)_300px]">
-        <p className="pointer-events-none absolute bottom-2 left-4 z-20 hidden text-[10px] text-white/40 desktop:block">Position par ville ou pays uniquement</p>
+        <p className="pointer-events-none absolute bottom-2 left-4 z-20 hidden text-[10px] text-white/40 desktop:block">Position par ville ou pays uniquement · Pincement, double-clic ou clic puis molette pour zoomer</p>
         {/* Night sky behind the globe */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_40%,rgba(124,58,237,0.35),transparent_60%),radial-gradient(ellipse_at_80%_90%,rgba(233,70,125,0.25),transparent_55%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:radial-gradient(1px_1px_at_12%_18%,#fff,transparent),radial-gradient(1px_1px_at_72%_12%,#fff,transparent),radial-gradient(1.5px_1.5px_at_88%_42%,#fde68a,transparent),radial-gradient(1px_1px_at_22%_78%,#fff,transparent),radial-gradient(1px_1px_at_55%_88%,#fff,transparent),radial-gradient(1.5px_1.5px_at_8%_55%,#f9a8d4,transparent),radial-gradient(1px_1px_at_40%_8%,#fff,transparent),radial-gradient(1px_1px_at_95%_75%,#fff,transparent)]" />
@@ -177,6 +195,10 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
                 </button>
               )
             })}
+
+            <p className="pointer-events-none absolute bottom-3 left-4 z-20 text-[10px] text-white/45 desktop:hidden">
+              {zoomState.zoomed ? 'Glisse pour te déplacer · pince pour dézoomer' : 'Pince pour zoomer'}
+            </p>
           </div>
         )}
 
@@ -184,7 +206,7 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
           <div className="flex items-center justify-between px-1">
             <p className="min-w-0 truncate text-[11px] font-bold uppercase tracking-[0.2em] text-amber-200">{selected ? selected.label : 'Les plus actifs'}</p>
             {selected && (
-              <button type="button" onClick={() => setSelectedKey(null)} className="text-[11px] font-semibold text-white/60 hover:text-white">
+              <button type="button" onClick={() => setSelected(null)} className="text-[11px] font-semibold text-white/60 hover:text-white">
                 Tout le monde
               </button>
             )}
