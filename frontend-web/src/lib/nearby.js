@@ -59,17 +59,22 @@ export function distanceKmBetween(a, b, table = CITY_COORDS) {
   return 6371 * 2 * Math.asin(Math.sqrt(h))
 }
 
+// Two members of the same city, without both positions: within this.
+export const SAME_CITY_KM = 10
+
 /**
  * The short distance on a profile card ("7 km", "< 1 km", "≈ 40 km").
  * @param {number|null|undefined} serverKm from the server, to the kilometre,
  *   when both members shared their position (lib/geolocation.js)
  * @param {number|null} cityKm estimate between the two cities' centres
+ *   (same city: "< 10 km")
  * @returns {string|null} null when neither is known
  */
 export function cardDistance(serverKm, cityKm) {
   const fmt = (km) => Math.round(km).toLocaleString('fr-FR')
   if (serverKm != null) return serverKm < 1 ? '< 1 km' : `${fmt(serverKm)} km`
   if (cityKm == null) return null
-  if (cityKm < 5) return 'Même ville'
+  // Same city: their positions inside it aren't known, so a bound, not a guess.
+  if (cityKm < 5) return `< ${SAME_CITY_KM} km`
   return `≈ ${fmt(cityKm < 100 ? cityKm : Math.round(cityKm / 10) * 10)} km`
 }

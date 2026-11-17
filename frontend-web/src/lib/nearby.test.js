@@ -65,7 +65,8 @@ describe('cardDistance', () => {
   })
 
   it('falls back to an estimate from the cities', () => {
-    expect(cardDistance(null, 2)).toBe('Même ville')
+    expect(cardDistance(null, 2)).toBe('< 10 km')
+    expect(cardDistance(null, 0)).toBe('< 10 km')
     expect(cardDistance(undefined, 42.4)).toBe('≈ 42 km')
     expect(cardDistance(null, 147)).toBe('≈ 150 km')
     expect(cardDistance(null, null)).toBeNull()

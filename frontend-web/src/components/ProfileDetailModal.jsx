@@ -33,7 +33,7 @@ import {
   X,
 } from 'lucide-react'
 import InterestCard from './InterestCard.jsx'
-import { distanceKmBetween } from '../lib/nearby.js'
+import { SAME_CITY_KM, distanceKmBetween } from '../lib/nearby.js'
 import { activeStreakBadge } from '../lib/ngori.js'
 import { blockUser, reportUser } from '../firebase/safety.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -97,7 +97,7 @@ function InfoBlock({ title, chips }) {
 // one of the two members (lib/nearby.js).
 function formatCityDistance(km) {
   if (km == null) return null
-  if (km < 5) return 'Dans ta ville'
+  if (km < 5) return `À moins de ${SAME_CITY_KM} km de toi`
   return `À environ ${km < 100 ? Math.round(km) : Math.round(km / 10) * 10} km de toi`
 }
 
