@@ -1,19 +1,26 @@
 // Distance between members, computed on the server only. Members' positions
 // (locations/{uid}, Admin SDK only: firestore.rules opens nothing there) never
-// leave the server: other members only ever get a rounded distance, "à 5 km
+// leave the server: other members only ever get a distance in km, "à 7 km
 // de toi", never coordinates.
 
 // Stored to 3 decimals (about 110 m): enough for "moins de 1 km", and an
 // exact address is never kept.
 const COORD_DECIMALS = 3;
 
-// Distances are rounded UP to one of these steps (km): "à 5 km" means 3 to
-// 5 km. Coarse on purpose, so a few distances can't pin anyone down.
-const STEPS_KM = [2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200, 300, 500];
+// Before measuring, both positions are snapped to a grid of 0.01° (about
+// 1.1 km). The km shown is then exact to the kilometre, but moving one's own
+// position around and measuring again (trilateration) can only ever find the
+// grid square someone is in, never where they actually are.
+const GRID_DEG = 0.01;
 
 function roundCoord(value) {
     const f = 10 ** COORD_DECIMALS;
     return Math.round(value * f) / f;
+}
+
+function snapToGrid({ lat, lng }) {
+    const snap = (v) => Math.round(Math.round(v / GRID_DEG) * GRID_DEG * 1e6) / 1e6;
+    return { lat: snap(lat), lng: snap(lng) };
 }
 
 function isValidPosition(lat, lng) {
@@ -30,16 +37,25 @@ function haversineKm(a, b) {
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-/**
- * The rounded distance shown to members.
- * @returns {{ km: number, label: string }} km: the step's upper bound (0.9 for
- *   "moins de 1 km", 501 beyond the last step) — what filters compare with.
- */
-function distanceBucket(km) {
-    if (km < 1) return { km: 0.9, label: "à moins de 1 km de toi" };
-    const step = STEPS_KM.find((s) => km <= s);
-    if (!step) return { km: STEPS_KM[STEPS_KM.length - 1] + 1, label: `à plus de ${STEPS_KM[STEPS_KM.length - 1]} km de toi` };
-    return { km: step, label: `à ${step} km de toi` };
+// "1 234" with a French thin space between thousands.
+function formatKm(km) {
+    return String(km).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f");
 }
 
-module.exports = { COORD_DECIMALS, STEPS_KM, roundCoord, isValidPosition, haversineKm, distanceBucket };
+/**
+ * The distance shown to members, to the kilometre.
+ * @returns {{ km: number, label: string }} km: what filters and the sort by
+ *   distance compare with (0.5 for "moins de 1 km").
+ */
+function distanceLabel(km) {
+    if (km < 1) return { km: 0.5, label: "à moins de 1 km de toi" };
+    const whole = Math.round(km);
+    return { km: whole, label: `à ${formatKm(whole)} km de toi` };
+}
+
+// Distance between two members' stored positions, both snapped to the grid.
+function distanceBetween(a, b) {
+    return distanceLabel(haversineKm(snapToGrid(a), snapToGrid(b)));
+}
+
+module.exports = { COORD_DECIMALS, GRID_DEG, roundCoord, snapToGrid, isValidPosition, haversineKm, distanceLabel, distanceBetween };

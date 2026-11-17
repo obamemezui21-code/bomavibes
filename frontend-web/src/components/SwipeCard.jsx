@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
-import { Check, Heart, Info, MapPin, Target } from 'lucide-react'
+import { Check, Heart, Info, MapPin, Navigation, Target } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
@@ -40,7 +40,7 @@ function fullPhotoFor(profile, index) {
   return profile.photos?.[index] || FALLBACK_AVATAR_SEED(profile)
 }
 
-function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, onSwipe, onExited, onOpenDetail }) {
+function SwipeCard({ profile, matchPercent, distance = null, isTop, stackIndex, exitDirection, onSwipe, onExited, onOpenDetail }) {
   const [photoIndex, setPhotoIndex] = useState(0)
   // Fixed at first render so the badge can't flip mid-swipe.
   const [isNew] = useState(() => !!profile.createdAtMs && Date.now() - profile.createdAtMs < NEW_PROFILE_MS)
@@ -207,11 +207,21 @@ function SwipeCard({ profile, matchPercent, isTop, stackIndex, exitDirection, on
                 </span>
               )}
             </div>
-            {profile.city && (
-              <p className="mt-0.5 flex items-center gap-1 text-sm text-white/80">
-                <MapPin size={12} strokeWidth={2.5} />
-                {profile.city}
-                {profile.country ? `, ${profile.country}` : ''}
+            {(profile.city || distance) && (
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white/80">
+                {profile.city && (
+                  <span className="flex items-center gap-1">
+                    <MapPin size={12} strokeWidth={2.5} />
+                    {profile.city}
+                    {profile.country ? `, ${profile.country}` : ''}
+                  </span>
+                )}
+                {distance && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
+                    <Navigation size={11} strokeWidth={2.5} />
+                    {distance}
+                  </span>
+                )}
               </p>
             )}
             {(profile.interests?.length > 0 || profile.personalityTraits?.length > 0) && (

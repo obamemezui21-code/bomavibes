@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Heart } from 'lucide-react'
+import { Check, Heart, Navigation } from 'lucide-react'
 import { fallbackToFullPhoto, photoVariant } from '../lib/photoVariants.js'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 import { ageSuffix } from '../lib/profileDisplay.js'
@@ -17,7 +17,8 @@ function photoFor(profile) {
 // Portrait card for the Discover carousel ("Cartes" mode, Friendzy-style):
 // photo, NEW / % badges on top, name, age and city at the bottom. Tapping it
 // opens the full profile, where like / pass / super like live.
-function DiscoverProfileCard({ profile, matchPercent, index = 0, onOpen }) {
+// distance: "7 km" from Discover (lib/nearby.js cardDistance), null to hide.
+function DiscoverProfileCard({ profile, matchPercent, distance = null, index = 0, onOpen }) {
   const [isNew] = useState(() => !!profile.createdAtMs && Date.now() - profile.createdAtMs < NEW_PROFILE_MS)
 
   return (
@@ -74,6 +75,12 @@ function DiscoverProfileCard({ profile, matchPercent, index = 0, onOpen }) {
         {profile.city && (
           <p className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-wider text-white/70">
             {profile.city}
+          </p>
+        )}
+        {distance && (
+          <p className="mt-1 inline-flex max-w-full items-center gap-0.5 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+            <Navigation size={9} strokeWidth={3} className="shrink-0" />
+            <span className="truncate">{distance}</span>
           </p>
         )}
       </div>

@@ -58,3 +58,18 @@ export function distanceKmBetween(a, b, table = CITY_COORDS) {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(from[0])) * Math.cos(rad(to[0])) * Math.sin(dLng / 2) ** 2
   return 6371 * 2 * Math.asin(Math.sqrt(h))
 }
+
+/**
+ * The short distance on a profile card ("7 km", "< 1 km", "≈ 40 km").
+ * @param {number|null|undefined} serverKm from the server, to the kilometre,
+ *   when both members shared their position (lib/geolocation.js)
+ * @param {number|null} cityKm estimate between the two cities' centres
+ * @returns {string|null} null when neither is known
+ */
+export function cardDistance(serverKm, cityKm) {
+  const fmt = (km) => Math.round(km).toLocaleString('fr-FR')
+  if (serverKm != null) return serverKm < 1 ? '< 1 km' : `${fmt(serverKm)} km`
+  if (cityKm == null) return null
+  if (cityKm < 5) return 'Même ville'
+  return `≈ ${fmt(cityKm < 100 ? cityKm : Math.round(cityKm / 10) * 10)} km`
+}

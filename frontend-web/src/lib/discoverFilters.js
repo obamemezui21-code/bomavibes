@@ -96,7 +96,7 @@ export function matchesFilters(p, f, now = Date.now()) {
   return true
 }
 
-// km: the profile's distance (server bucket or city estimate), null if unknown.
+// km: the profile's distance (server, to the km, or city estimate), null if unknown.
 // With a maximum set, an unknown distance doesn't pass.
 export function passesDistance(km, f) {
   if (f.maxDistanceKm == null) return true

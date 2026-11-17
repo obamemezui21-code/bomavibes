@@ -85,7 +85,7 @@ function LocationRow() {
   }
 
   return (
-    <Row title="Ma position" subtitle="Sert seulement à calculer une distance arrondie. Jamais montrée aux autres membres.">
+    <Row title="Ma position" subtitle="Sert seulement à calculer une distance en km (à 1 km près). Jamais montrée aux autres membres.">
       <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
         <button
           type="button"

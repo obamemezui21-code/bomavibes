@@ -48,7 +48,7 @@ import DailySelection from '../components/DailySelection.jsx'
 import LocationPrompt from '../components/LocationPrompt.jsx'
 import { DEFAULT_FILTERS, activeFilterCount, loadKey, matchesFilters, passesDistance, sortProfiles } from '../lib/discoverFilters.js'
 import { distancesTo } from '../lib/geolocation.js'
-import { distanceKmBetween } from '../lib/nearby.js'
+import { cardDistance, distanceKmBetween } from '../lib/nearby.js'
 
 // Leaflet is heavy — load the map only once Discover has something to show.
 const NearbyMap = lazy(() => import('../components/map/NearbyMap.jsx'))
@@ -110,8 +110,7 @@ function Discover() {
   const [interestFilter, setInterestFilter] = useState('')
   const [viewMode, setViewMode] = useState('cards') // always opens on Cartes; Swipe is chosen per visit
   const [showSearch, setShowSearch] = useState(false)
-  // Rounded distances from the server (lib/geolocation.js), only fetched
-  // when the distance filter or sort needs them.
+  // Distances in km from the server (lib/geolocation.js), uid → { km, label }.
   const [distances, setDistances] = useState({})
   const [showAllInterests, setShowAllInterests] = useState(false)
   const [interestsHidden, setInterestsHidden] = useState(readInterestsHidden)
@@ -183,20 +182,26 @@ function Discover() {
     if (user?.id && cacheKeyRef.current) setCachedCandidates(user.id, cacheKeyRef.current, profiles)
   }, [profiles, user?.id])
 
-  const needsDistances = filters.maxDistanceKm != null || filters.sort === 'distance'
+  // Every card shows how far the member is, so the distances are always
+  // fetched (cached 10 min in lib/geolocation.js).
   useEffect(() => {
-    if (!needsDistances || !profiles.length) return undefined
+    if (!profiles.length) return undefined
     let live = true
     distancesTo(profiles.map((p) => p.id)).then((d) => live && setDistances(d))
     return () => {
       live = false
     }
-  }, [needsDistances, profiles])
+  }, [profiles])
 
   // A profile's distance in km: the server's rounded one, else the two
   // cities' centres; null when neither is known.
   const distanceOf = useCallback(
     (p) => distances[p.id]?.km ?? distanceKmBetween(publicProfile, p),
+    [distances, publicProfile],
+  )
+  // "7 km" on the cards; nothing for members who hide their distance.
+  const distanceTextOf = useCallback(
+    (p) => (p.hideDistance ? null : cardDistance(distances[p.id]?.km, distanceKmBetween(publicProfile, p))),
     [distances, publicProfile],
   )
 
@@ -661,6 +666,7 @@ function Discover() {
                           profile={p}
                           index={i}
                           matchPercent={matchPercent(publicProfile?.interests, p.interests)}
+                          distance={distanceTextOf(p)}
                           onOpen={() => openProfile(p)}
                         />
                       ))}
@@ -678,6 +684,7 @@ function Discover() {
                       key={p.id}
                       profile={p}
                       matchPercent={matchPercent(publicProfile?.interests, p.interests)}
+                      distance={distanceTextOf(p)}
                       isTop={i === 0}
                       stackIndex={i}
                       exitDirection={exitingId === p.id ? exitDirection : null}

@@ -2,7 +2,7 @@ import { deleteLocation, fetchDistances, saveLocation } from '../firebase/locati
 
 // The member's position, for "à 5 km de toi". It's only ever asked for when
 // the member taps "Activer ma position" (never on its own), sent to the
-// server, and never shown to anyone: other members get a rounded distance.
+// server, and never shown to anyone: other members get a distance in km.
 
 const SENT_KEY = 'bv.location.sentAt'
 // Set when the member wipes their position: it then stays off, even if the
@@ -118,7 +118,7 @@ export async function forgetLocation() {
 }
 
 /**
- * Rounded distances to these members, from the server (cached 10 min).
+ * Distances in km to these members, from the server (cached 10 min).
  * @returns {Promise<Record<string, { km: number, label: string } | null>>}
  *   null: unknown (no recent position on one side, or hidden)
  */

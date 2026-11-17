@@ -90,7 +90,7 @@ function LocationPrompt() {
               </p>
               <p className="mt-1 flex items-start gap-1 text-[11px] leading-relaxed text-ink-soft/70">
                 <Lock size={11} className="mt-0.5 shrink-0" aria-hidden="true" />
-                Ta position exacte n’est jamais montrée : les autres voient seulement une distance arrondie, et tu peux la masquer dans les réglages.
+                Ta position exacte n’est jamais montrée : les autres voient seulement ta distance en km (à 1 km près), et tu peux la masquer dans les réglages.
               </p>
               <button
                 type="button"

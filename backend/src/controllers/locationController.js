@@ -1,17 +1,17 @@
 const admin = require("../config/firebaseAdmin");
 const { periodKey } = require("../config/plans");
-const { roundCoord, isValidPosition, haversineKm, distanceBucket } = require("../services/distance");
+const { roundCoord, isValidPosition, distanceBetween } = require("../services/distance");
 
 const db = admin.firestore();
 const { FieldValue } = admin.firestore;
 
-// Members' positions, for "à 5 km de toi" (services/distance.js).
+// Members' positions, for "à 7 km de toi" (services/distance.js).
 //
 // Firestore (Admin SDK only — no client rule opens it):
 //   locations/{uid}   lat, lng (3 decimals), updatedAt, day, updates (that day)
 //
 // A position can't be updated too often: moving one's own position around is
-// how someone would try to triangulate another member from the rounded
+// how someone would try to triangulate another member from the
 // distances.
 
 const MIN_UPDATE_MS = 2 * 60 * 1000;
@@ -87,7 +87,7 @@ async function getDistances(req, res) {
         others.forEach((other, i) => {
             const loc = locs[i].data();
             if (!usable(loc, now) || profiles[i].data()?.hideDistance) return;
-            distances[other] = distanceBucket(haversineKm(mine, loc));
+            distances[other] = distanceBetween(mine, loc);
         });
         res.json({ located: true, distances });
     } catch (err) {

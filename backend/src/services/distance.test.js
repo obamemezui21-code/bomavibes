@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { roundCoord, isValidPosition, haversineKm, distanceBucket } = require("./distance");
+const { roundCoord, snapToGrid, isValidPosition, haversineKm, distanceLabel, distanceBetween } = require("./distance");
 
 const LIBREVILLE = { lat: 0.4162, lng: 9.4673 };
 const OWENDO = { lat: 0.2917, lng: 9.5044 };
@@ -15,15 +15,22 @@ test("Haversine gives real distances", () => {
     assert.strictEqual(Math.round(haversineKm(LIBREVILLE, OWENDO) * 1000), Math.round(haversineKm(OWENDO, LIBREVILLE) * 1000));
 });
 
-test("distances are rounded up to coarse steps", () => {
-    assert.deepStrictEqual(distanceBucket(0), { km: 0.9, label: "à moins de 1 km de toi" });
-    assert.deepStrictEqual(distanceBucket(0.99), { km: 0.9, label: "à moins de 1 km de toi" });
-    assert.deepStrictEqual(distanceBucket(1), { km: 2, label: "à 2 km de toi" });
-    assert.deepStrictEqual(distanceBucket(2.4), { km: 3, label: "à 3 km de toi" });
-    assert.deepStrictEqual(distanceBucket(4.2), { km: 5, label: "à 5 km de toi" });
-    assert.deepStrictEqual(distanceBucket(14), { km: 15, label: "à 15 km de toi" });
-    assert.deepStrictEqual(distanceBucket(147), { km: 150, label: "à 150 km de toi" });
-    assert.deepStrictEqual(distanceBucket(2000), { km: 501, label: "à plus de 500 km de toi" });
+test("distances are shown to the kilometre", () => {
+    assert.deepStrictEqual(distanceLabel(0), { km: 0.5, label: "à moins de 1 km de toi" });
+    assert.deepStrictEqual(distanceLabel(0.99), { km: 0.5, label: "à moins de 1 km de toi" });
+    assert.deepStrictEqual(distanceLabel(1), { km: 1, label: "à 1 km de toi" });
+    assert.deepStrictEqual(distanceLabel(7.4), { km: 7, label: "à 7 km de toi" });
+    assert.deepStrictEqual(distanceLabel(147.6), { km: 148, label: "à 148 km de toi" });
+    assert.deepStrictEqual(distanceLabel(2345.2), { km: 2345, label: "à 2 345 km de toi" });
+});
+
+test("positions are snapped to a ~1 km grid before measuring", () => {
+    assert.deepStrictEqual(snapToGrid({ lat: 0.4162, lng: 9.4673 }), { lat: 0.42, lng: 9.47 });
+    assert.deepStrictEqual(snapToGrid({ lat: -0.7193, lng: 8.7815 }), { lat: -0.72, lng: 8.78 });
+    // Moving within the same square gives the same distance: nothing to triangulate.
+    assert.deepStrictEqual(distanceBetween({ lat: 0.4162, lng: 9.4673 }, OWENDO), distanceBetween({ lat: 0.4189, lng: 9.4651 }, OWENDO));
+    const d = distanceBetween(LIBREVILLE, PORT_GENTIL);
+    assert.ok(d.km >= 145 && d.km <= 150, `Libreville–Port-Gentil ≈ 147 km, got ${d.km}`);
 });
 
 test("positions are kept to about 100 m, never more precise", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coordsForProfile, distanceKmBetween, groupProfilesByCity } from './nearby.js'
+import { cardDistance, coordsForProfile, distanceKmBetween, groupProfilesByCity } from './nearby.js'
 
 const TABLE = {
   'GA|Libreville': [0.4087, 9.4419],
@@ -54,5 +54,20 @@ describe('distanceKmBetween', () => {
 
   it('is null when a city is unknown', () => {
     expect(distanceKmBetween({ countryCode: 'GA', city: 'Libreville' }, { countryCode: 'GA', city: 'Atlantis' }, TABLE)).toBeNull()
+  })
+})
+
+describe('cardDistance', () => {
+  it('shows the server distance to the kilometre', () => {
+    expect(cardDistance(0.5, 3)).toBe('< 1 km')
+    expect(cardDistance(7, 3)).toBe('7 km')
+    expect(cardDistance(1234, null)).toBe(`${(1234).toLocaleString('fr-FR')} km`)
+  })
+
+  it('falls back to an estimate from the cities', () => {
+    expect(cardDistance(null, 2)).toBe('Même ville')
+    expect(cardDistance(undefined, 42.4)).toBe('≈ 42 km')
+    expect(cardDistance(null, 147)).toBe('≈ 150 km')
+    expect(cardDistance(null, null)).toBeNull()
   })
 })
