@@ -12,7 +12,7 @@ const { FieldValue } = admin.firestore;
 //
 // Firestore (Admin SDK only — no client rule opens these):
 //   motDuJourDays/{day}           the day's word, fixed the first time anyone opens it
-//   motDuJourGames/{day}_{uid}    one player's game: guesses, marks, status, credited
+//   motDuJourGames/{day}_{uid}    one player's game: guesses, marks, status, hintsUsed, credited
 //   motDuJourStats/{uid}          played, won, streak, bestStreak, lastWonDay, distribution
 
 let enginePromise = null;
@@ -56,9 +56,42 @@ async function dayWord(day) {
         const snap = await tx.get(ref);
         if (snap.exists) return snap.data();
         const entry = wordForDay(day);
-        const data = { word: entry.word, answer: normalizeWord(entry.word), hint: entry.hint, fact: entry.fact, createdAt: Date.now() };
+        const data = { word: entry.word, answer: normalizeWord(entry.word), hint: entry.hint, clues: entry.clues || null, fact: entry.fact, createdAt: Date.now() };
         tx.set(ref, data);
         return data;
+    });
+}
+
+// The two written clues of a day's word. Days fixed before clues existed
+// find theirs in the list; a word without any gets two clues made from its
+// letters, so every word has its four hints.
+function cluesFor(word) {
+    if (word.clues?.length >= 2) return word.clues;
+    const entry = WORDS.find((w) => w.word === word.word);
+    if (entry?.clues?.length >= 2) return entry.clues;
+    const vowels = [...word.answer].filter((l) => "AEIOUY".includes(l)).length;
+    return [
+        `Le mot contient ${vowels} voyelle${vowels > 1 ? "s" : ""}.`,
+        `Le mot se termine par « ${word.answer[word.answer.length - 1]} ».`,
+    ];
+}
+
+// The hints the player has asked for so far: never one more. Levels 3 and 4
+// show letters in place: pattern "G____", "G_B_N" ("_" = still to find).
+function hintsFor(word, used, engine) {
+    const clues = cluesFor(word);
+    const n = word.answer.length;
+    return Array.from({ length: Math.min(used, engine.MAX_HINTS) }, (_, i) => {
+        const level = i + 1;
+        const hint = { level, label: engine.HINT_LABELS[i] };
+        if (level <= 2) return { ...hint, text: clues[i] };
+        const pattern = engine.letterPattern(word.answer, level);
+        const shown = [...pattern].filter((l) => l !== "_").length;
+        return {
+            ...hint,
+            pattern,
+            text: level === 3 ? `Le mot commence par « ${word.answer[0]} ».` : `${shown} lettres sur ${n} dévoilées, à leur place.`,
+        };
     });
 }
 
@@ -67,12 +100,17 @@ function liveStreak(stats, today) {
     return stats.lastWonDay === today || stats.lastWonDay === previousDay(today) ? stats.streak || 0 : 0;
 }
 
-function view({ day, word, game, stats, maxTries }) {
+function view({ day, word, game, stats, engine }) {
     const done = game.status === "won" || game.status === "lost";
+    const maxTries = engine.MAX_TRIES;
+    const hintsUsed = game.hintsUsed || 0;
     return {
         day,
         length: word.answer.length,
         hint: word.hint,
+        hints: hintsFor(word, hintsUsed, engine),
+        hintsUsed,
+        maxHints: engine.MAX_HINTS,
         maxTries,
         guesses: game.guesses || [],
         marks: game.marks || [],
@@ -98,9 +136,9 @@ async function getToday(req, res) {
     const uid = req.firebaseUser.uid;
     const day = periodKey("day");
     try {
-        const { MAX_TRIES } = await loadEngine();
+        const engine = await loadEngine();
         const [word, gameSnap, statsSnap] = await Promise.all([dayWord(day), gameRef(day, uid).get(), statsRef(uid).get()]);
-        res.json(view({ day, word, game: gameSnap.data() || {}, stats: statsSnap.data() || {}, maxTries: MAX_TRIES }));
+        res.json(view({ day, word, game: gameSnap.data() || {}, stats: statsSnap.data() || {}, engine }));
     } catch (err) {
         sendError(res, err, "Impossible de charger le mot du jour");
     }
@@ -147,8 +185,7 @@ async function submitGuess(req, res) {
 
                 let credited = 0;
                 if (won) {
-                    credited = tries <= MOT_DU_JOUR.quickWinTries ? MOT_DU_JOUR.quickWinReward : MOT_DU_JOUR.winReward;
-                    if (streak % MOT_DU_JOUR.streakLength === 0) credited += MOT_DU_JOUR.streakBonus;
+                    credited = engine.rewardFor({ tries, hintsUsed: game.hintsUsed || 0, streak }, MOT_DU_JOUR);
                     tx.update(userRef, { ngori: FieldValue.increment(credited) });
                 }
                 game.credited = credited;
@@ -168,10 +205,37 @@ async function submitGuess(req, res) {
             return { game, stats: nextStats };
         });
 
-        res.json(view({ day, word, game: out.game, stats: out.stats, maxTries: engine.MAX_TRIES }));
+        res.json(view({ day, word, game: out.game, stats: out.stats, engine }));
     } catch (err) {
         sendError(res, err, "Impossible d’enregistrer ce mot");
     }
 }
 
-module.exports = { getToday, submitGuess, wordForDay };
+// POST /api/mot-du-jour/hint { day } → the game with one more hint shown.
+// Only while playing, one at a time, at most MAX_HINTS; hints past the free
+// ones lower the win's reward (engine.rewardFor), never the balance.
+async function takeHint(req, res) {
+    const uid = req.firebaseUser.uid;
+    const day = periodKey("day");
+    if (req.body?.day && req.body.day !== day) {
+        return res.status(409).json({ message: "Un nouveau mot vient d’arriver ! Recharge la page pour le découvrir." });
+    }
+    try {
+        const engine = await loadEngine();
+        const word = await dayWord(day);
+        const out = await db.runTransaction(async (tx) => {
+            const [gameSnap, statsSnap] = await Promise.all([tx.get(gameRef(day, uid)), tx.get(statsRef(uid))]);
+            const game = gameSnap.data() || { uid, day, guesses: [], marks: [], status: "playing", startedAt: Date.now() };
+            if (game.status !== "playing") throw new GameError(409, "La partie est terminée : plus besoin d’indice !");
+            if ((game.hintsUsed || 0) >= engine.MAX_HINTS) throw new GameError(409, "Tu as déjà tous les indices. À toi de jouer !");
+            game.hintsUsed = (game.hintsUsed || 0) + 1;
+            tx.set(gameRef(day, uid), game);
+            return { game, stats: statsSnap.data() || {} };
+        });
+        res.json(view({ day, word, game: out.game, stats: out.stats, engine }));
+    } catch (err) {
+        sendError(res, err, "Impossible d’afficher l’indice");
+    }
+}
+
+module.exports = { getToday, submitGuess, takeHint, wordForDay, cluesFor };

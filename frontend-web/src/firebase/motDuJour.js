@@ -18,7 +18,9 @@ async function api(path, options = {}) {
   return body
 }
 
-// → { day, length, hint, maxTries, guesses, marks, status, credited, reveal, stats, rewards }
+// → { day, length, hint, hints, hintsUsed, maxHints, maxTries, guesses, marks,
+//     status, credited, reveal, stats, rewards }
+// hints: the ones asked for so far, [{ level, label, text, pattern? }]
 export function getMotDuJour() {
   return api('/api/mot-du-jour')
 }
@@ -26,4 +28,9 @@ export function getMotDuJour() {
 // → the same game, with the guess marked
 export function submitMotDuJourGuess(day, guess) {
   return api('/api/mot-du-jour/guess', { method: 'POST', body: JSON.stringify({ day, guess }) })
+}
+
+// → the same game, with the next hint shown
+export function takeMotDuJourHint(day) {
+  return api('/api/mot-du-jour/hint', { method: 'POST', body: JSON.stringify({ day }) })
 }

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createRequire } from 'node:module'
-import { MAX_LENGTH, MIN_LENGTH, isValidGuess, keyboardMarks, markGuess, normalizeWord, shareText } from '../../../shared/mot-du-jour/engine.mjs'
+import { MAX_HINTS, MAX_LENGTH, MIN_LENGTH, isValidGuess, keyboardMarks, letterPattern, markGuess, normalizeWord, rewardFor, shareText } from '../../../shared/mot-du-jour/engine.mjs'
 
 const require = createRequire(import.meta.url)
 const { WORDS } = require('../../../backend/src/config/motDuJourWords.js')
+const { MOT_DU_JOUR } = require('../../../backend/src/config/ngori.js')
 
 describe('normalizeWord', () => {
   it('drops accents, hyphens and case', () => {
@@ -48,6 +49,8 @@ describe('shareText', () => {
     expect(text).toContain('15/10 — 2/6')
     expect(text).toContain('⬛🟨⬛⬛⬛\n🟩🟩🟩🟩🟩')
     expect(shareText({ day: '2026-10-15', marks: ['AAAAA'], won: false })).toContain('X/6')
+    expect(text).not.toContain('💡')
+    expect(shareText({ day: '2026-10-15', marks: ['CCCCC'], won: true, hints: 2 })).toContain('1/6 · 💡 2')
   })
 })
 
@@ -60,5 +63,46 @@ describe('the word list', () => {
       expect(WORDS[i].hint && WORDS[i].fact, WORDS[i].word).toBeTruthy()
     }
     expect(new Set(answers).size).toBe(answers.length)
+  })
+})
+
+describe('hints', () => {
+  it('shows the first letter, then every other letter: never the whole word', () => {
+    expect(letterPattern('GABON', 3)).toBe('G____')
+    expect(letterPattern('GABON', 4)).toBe('G_B_N')
+    expect(letterPattern('MANDRILL', 4)).toBe('M_N_R_L_')
+    for (const w of WORDS) {
+      const answer = normalizeWord(w.word)
+      const hidden = [...letterPattern(answer, MAX_HINTS)].filter((l) => l === '_').length
+      expect(hidden, w.word).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('every word has two written clues that never give the word away', () => {
+    for (const w of WORDS) {
+      expect(w.clues, w.word).toHaveLength(2)
+      const [light, medium] = w.clues
+      expect(light.length, w.word).toBeGreaterThan(5)
+      expect(medium.length, w.word).toBeGreaterThan(light.length / 2)
+      expect(light, w.word).not.toBe(medium)
+      for (const clue of w.clues) {
+        expect(normalizeWord(clue), `${w.word}: ${clue}`).not.toContain(normalizeWord(w.word))
+      }
+    }
+  })
+})
+
+describe('rewardFor', () => {
+  const r = MOT_DU_JOUR
+  it('pays as before without hints, or with the free one', () => {
+    expect(rewardFor({ tries: 2, hintsUsed: 0, streak: 1 }, r)).toBe(r.quickWinReward)
+    expect(rewardFor({ tries: 5, hintsUsed: 1, streak: 1 }, r)).toBe(r.winReward)
+    expect(rewardFor({ tries: 5, streak: r.streakLength }, r)).toBe(r.winReward + r.streakBonus)
+  })
+
+  it('each paid hint lowers the win, never under the minimum', () => {
+    expect(rewardFor({ tries: 3, hintsUsed: 2, streak: 1 }, r)).toBe(r.quickWinReward - r.hintCost)
+    expect(rewardFor({ tries: 6, hintsUsed: 4, streak: 1 }, r)).toBe(r.minHintedReward)
+    expect(rewardFor({ tries: 6, hintsUsed: 4, streak: r.streakLength }, r)).toBe(r.minHintedReward + r.streakBonus)
   })
 })

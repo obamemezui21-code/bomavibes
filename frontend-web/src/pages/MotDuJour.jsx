@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, BarChart3, Delete, HelpCircle, Share2, X } from 'lucide-react'
+import { ArrowLeft, BarChart3, Delete, HelpCircle, Lightbulb, Share2, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { getMotDuJour, submitMotDuJourGuess } from '../firebase/motDuJour.js'
-import { ABSENT, CORRECT, PRESENT, keyboardMarks, normalizeWord, shareText } from '../../../shared/mot-du-jour/engine.mjs'
+import { getMotDuJour, submitMotDuJourGuess, takeMotDuJourHint } from '../firebase/motDuJour.js'
+import { ABSENT, CORRECT, HINT_LABELS, PRESENT, keyboardMarks, normalizeWord, shareText } from '../../../shared/mot-du-jour/engine.mjs'
 import NgoriCoin from '../components/NgoriCoin.jsx'
 
 const ROWS = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN']
@@ -85,8 +85,15 @@ function Rules({ rewards }) {
   return (
     <div className="space-y-3 text-sm text-ink-soft">
       <p>
-        Trouve le mot du jour en <strong className="text-ink">6 essais</strong>. Un indice t’aide dès le départ, et le mot est le même pour tout
-        le monde. Les accents ne comptent pas.
+        Trouve le mot du jour en <strong className="text-ink">6 essais</strong>. La catégorie t’aide dès le départ, et le mot est le même pour
+        tout le monde. Les accents ne comptent pas.
+      </p>
+      <p className="flex gap-2 rounded-2xl bg-violet-600/8 p-3 text-ink">
+        <Lightbulb size={16} className="mt-0.5 shrink-0 text-violet-600" />
+        <span>
+          Bloqué ? Demande jusqu’à <strong>4 indices</strong>, un à la fois, du plus léger au plus fort. Le premier est gratuit, chaque suivant
+          retire {rewards.hintCost} Ngori à ton gain (tu gagnes toujours au moins {rewards.minHintedReward}).
+        </span>
       </p>
       {examples.map(([word, marks, text]) => (
         <div key={word}>
@@ -109,6 +116,88 @@ function Rules({ rewards }) {
         <NgoriCoin size={16} /> Trouvé : <strong>{rewards.winReward} Ngori</strong>, en {rewards.quickWinTries} essais ou moins :{' '}
         <strong>{rewards.quickWinReward}</strong>. Et +{rewards.streakBonus} tous les {rewards.streakLength} jours gagnés d’affilée !
       </p>
+    </div>
+  )
+}
+
+// "G _ B _ N": the letters a strong hint shows, in place.
+function LetterPattern({ pattern }) {
+  return (
+    <div className="mt-1.5 flex gap-1" aria-label={`Lettres dévoilées : ${[...pattern].map((l) => (l === '_' ? 'blanc' : l)).join(' ')}`}>
+      {[...pattern].map((l, i) => (
+        <span
+          key={i}
+          className={`flex h-7 w-7 items-center justify-center rounded-lg font-display text-sm font-black ${
+            l === '_' ? 'border border-dashed border-ink/20 text-ink/25' : 'bg-mint-500 text-white'
+          }`}
+        >
+          {l === '_' ? '·' : l}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function HintCard({ hint }) {
+  return (
+    <div className="rounded-2xl bg-surface-soft p-3">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-violet-600">
+        {hint.level}. {hint.label}
+      </p>
+      <p className="mt-0.5 text-sm text-ink">{hint.text}</p>
+      {hint.pattern && <LetterPattern pattern={hint.pattern} />}
+    </div>
+  )
+}
+
+// What the next hint costs: free, or Ngori off the win (never under the minimum).
+function hintCostText(next, rewards) {
+  if (next <= rewards.freeHints) return 'Gratuit'
+  return `−${rewards.hintCost} Ngori sur ta victoire (minimum ${rewards.minHintedReward})`
+}
+
+function Hints({ game, busy, onTake }) {
+  const next = game.hintsUsed + 1
+  const more = game.hintsUsed < game.maxHints
+  // "l’indice léger", but "la révélation partielle".
+  const nextName = (HINT_LABELS[next - 1] || '').toLowerCase()
+  const nextLabel = /^[aeiouéh]/.test(nextName) ? `l’${nextName}` : `la ${nextName}`
+  // The newest hint scrolled into view, even when the list is longer than the sheet.
+  const listRef = useRef(null)
+  const shown = game.hints.length
+  useEffect(() => {
+    const list = listRef.current
+    if (list && shown) list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' })
+  }, [shown])
+  return (
+    <div>
+      <div ref={listRef} className="max-h-[50svh] space-y-2 overflow-y-auto">
+        {game.hints.length === 0 && (
+          <p className="text-sm text-ink-soft">
+            Des indices de plus en plus forts, un à la fois : d’abord des pistes, puis des lettres. À n’utiliser qu’en cas de besoin !
+          </p>
+        )}
+        {game.hints.map((hint) => (
+          <motion.div key={hint.level} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+            <HintCard hint={hint} />
+          </motion.div>
+        ))}
+      </div>
+      {more ? (
+        <button
+          type="button"
+          onClick={onTake}
+          disabled={busy}
+          className="mt-4 flex w-full flex-col items-center rounded-full bg-violet-600 py-2.5 text-white transition active:scale-[0.98] disabled:opacity-60"
+        >
+          <span className="text-sm font-bold">
+            {busy ? 'Un instant…' : `Voir ${nextLabel} (${next}/${game.maxHints})`}
+          </span>
+          <span className="text-[11px] text-white/75">{hintCostText(next, game.rewards)}</span>
+        </button>
+      ) : (
+        <p className="mt-4 text-center text-sm font-semibold text-ink-soft">Tous les indices sont dévoilés. À toi de jouer !</p>
+      )}
     </div>
   )
 }
@@ -164,7 +253,8 @@ function MotDuJour() {
   const [busy, setBusy] = useState(false)
   const [shake, setShake] = useState(0)
   const [revealRow, setRevealRow] = useState(-1)
-  const [modal, setModal] = useState(null) // 'rules' | 'stats'
+  const [modal, setModal] = useState(null) // 'rules' | 'stats' | 'hints'
+  const [hintBusy, setHintBusy] = useState(false)
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -215,6 +305,18 @@ function MotDuJour() {
     }
   }, [game, busy, current, showToast])
 
+  async function takeHint() {
+    if (!game || hintBusy) return
+    setHintBusy(true)
+    try {
+      setGame(await takeMotDuJourHint(game.day))
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setHintBusy(false)
+    }
+  }
+
   const press = useCallback(
     (key) => {
       if (!playing || busy) return
@@ -241,7 +343,7 @@ function MotDuJour() {
   }, [press, modal])
 
   async function share() {
-    const text = shareText({ day: game.day, marks: game.marks, won: game.status === 'won' })
+    const text = shareText({ day: game.day, marks: game.marks, won: game.status === 'won', hints: game.hintsUsed })
     try {
       if (navigator.share) await navigator.share({ text })
       else {
@@ -254,6 +356,7 @@ function MotDuJour() {
   }
 
   const keys = game ? keyboardMarks(game.guesses, game.marks) : {}
+  const lastHint = game?.hints?.[game.hints.length - 1]
   const balance = account?.ngori || 0
 
   return (
@@ -289,9 +392,48 @@ function MotDuJour() {
 
       {game && (
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-4">
-          <p className="text-center text-sm text-ink-soft">
-            Indice : <strong className="text-violet-600">{game.hint}</strong> · {game.length} lettres
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+            <p className="text-sm text-ink-soft">
+              Catégorie : <strong className="text-violet-600">{game.hint}</strong> · {game.length} lettres
+            </p>
+            {playing && (
+              <button
+                type="button"
+                onClick={() => setModal('hints')}
+                className="flex shrink-0 items-center gap-1 rounded-full bg-violet-600/10 px-2.5 py-1 text-xs font-bold text-violet-600 transition active:scale-95"
+                aria-label={`Indices : ${game.hintsUsed} sur ${game.maxHints} utilisés`}
+              >
+                <Lightbulb size={13} strokeWidth={2.5} />
+                {game.hintsUsed ? `${game.hintsUsed}/${game.maxHints}` : 'Indice'}
+              </button>
+            )}
+          </div>
+
+          {/* The latest hint stays in view while playing; tap it for all of them. */}
+          <AnimatePresence mode="wait">
+            {playing && lastHint && (
+              <motion.button
+                key={lastHint.level}
+                type="button"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setModal('hints')}
+                className="mx-auto mt-2 flex w-full max-w-sm items-start gap-2 rounded-2xl bg-surface px-3 py-2 text-left shadow-sm"
+              >
+                <Lightbulb size={15} className="mt-0.5 shrink-0 text-violet-600" />
+                <span className="min-w-0 flex-1">
+                  <span className="line-clamp-2 text-xs text-ink">{lastHint.text}</span>
+                  {lastHint.pattern && (
+                    <span className="mt-0.5 block font-display text-sm font-black tracking-[0.3em] text-mint-500">
+                      {[...lastHint.pattern].join(' ')}
+                    </span>
+                  )}
+                </span>
+              </motion.button>
+            )}
+          </AnimatePresence>
 
           <div className="mx-auto mt-4 w-full space-y-1.5" style={{ maxWidth: game.length * 58 }}>
             {Array.from({ length: game.maxTries }, (_, r) => {
@@ -395,6 +537,11 @@ function MotDuJour() {
         {modal === 'rules' && game && (
           <Modal title="Comment jouer" onClose={() => setModal(null)}>
             <Rules rewards={game.rewards} />
+          </Modal>
+        )}
+        {modal === 'hints' && game && (
+          <Modal title="Indices" onClose={() => setModal(null)}>
+            <Hints game={game} busy={hintBusy} onTake={takeHint} />
           </Modal>
         )}
         {modal === 'stats' && game && (

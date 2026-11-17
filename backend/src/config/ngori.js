@@ -129,6 +129,12 @@ const MOT_DU_JOUR = {
     // Bonus every streakLength days won in a row (a lost or skipped day resets it).
     streakLength: 7,
     streakBonus: 3,
+    // Hints (shared/mot-du-jour/engine.mjs): the first freeHints are free;
+    // each one after takes hintCost Ngori off the win, which still pays at
+    // least minHintedReward. Nothing is ever taken from the balance.
+    freeHints: 1,
+    hintCost: 1,
+    minHintedReward: 1,
 };
 
 // VIBE CHECK, the blind-matching game: Ngori for answering the day's
