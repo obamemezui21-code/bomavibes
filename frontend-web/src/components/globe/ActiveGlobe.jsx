@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { Globe2 } from 'lucide-react'
 import { createGlobeScene } from './globeScene.js'
+
+// The street map at the end of the zoom, loaded only when someone gets there.
+const GlobeStreetMap = lazy(() => import('./GlobeStreetMap.jsx'))
 import { globePlaceForProfile } from '../../lib/nearby.js'
 import { fallbackToFullPhoto, photoVariant } from '../../lib/photoVariants.js'
 import { fallbackAvatar } from '../../lib/fallbackAvatar.js'
@@ -74,7 +77,9 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
   const reducedMotion = useReducedMotion()
   const [now] = useState(() => Date.now())
   // The zoom as the scene reports it: level 1, 2, 4 or 8 (pins regroup by it).
-  const [zoomState, setZoomState] = useState({ level: 1, zoomed: false })
+  const [zoomState, setZoomState] = useState({ level: 1, zoomed: false, atMax: false })
+  // Zoomed in past the globe's maximum: a street map of that place.
+  const [streetMap, setStreetMap] = useState(null)
   const { active, cities, groups } = useMemo(() => activeGroups(profiles, CLUSTER_DEG / zoomState.level), [profiles, zoomState.level])
   const home = useMemo(() => {
     const place = me && globePlaceForProfile(me)
@@ -101,6 +106,7 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
         pins: pins.current,
         reducedMotion: !!reducedMotion,
         onZoom: setZoomState,
+        onDive: setStreetMap,
       })
     } catch {
       setFailed(true)
@@ -123,6 +129,16 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
 
   const online = active.filter((p) => now - p.lastActiveAt < ONLINE_MS).length
   const listed = selected ? selected.profiles : active
+
+  function backToGlobe() {
+    if (streetMap) scene.current?.returnFrom(streetMap.lat, streetMap.lng)
+    setStreetMap(null)
+  }
+
+  function selectCity(key) {
+    const city = cities.find((c) => c.key === key)
+    if (city) setSelected({ key: city.key, label: city.city, profiles: city.profiles })
+  }
 
   function select(group) {
     if (selectedKey === group.key) {
@@ -197,8 +213,17 @@ function ActiveGlobe({ profiles, me, onOpenProfile }) {
             })}
 
             <p className="pointer-events-none absolute bottom-3 left-4 z-20 text-[10px] text-white/45 desktop:hidden">
-              {zoomState.zoomed ? 'Glisse pour te déplacer · pince pour dézoomer' : 'Pince pour zoomer'}
+              {zoomState.atMax
+                ? 'Écarte encore les doigts pour voir les villes et les rues'
+                : zoomState.zoomed
+                  ? 'Glisse pour te déplacer · pince pour dézoomer'
+                  : 'Pince pour zoomer'}
             </p>
+            {streetMap && (
+              <Suspense fallback={null}>
+                <GlobeStreetMap lat={streetMap.lat} lng={streetMap.lng} cities={cities} onSelect={selectCity} onBack={backToGlobe} />
+              </Suspense>
+            )}
           </div>
         )}
 

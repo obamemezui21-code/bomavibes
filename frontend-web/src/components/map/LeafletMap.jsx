@@ -38,6 +38,13 @@ function LeafletMapView({
   onMapClick,
   draggableMarker = null,
   fitToMarkers = false,
+  // Called with the zoom level after each zoom (the globe takes back over
+  // when it's zoomed far out: ActiveGlobe.jsx).
+  onZoomChange,
+  minZoom,
+  // false: no + / − buttons (zoom with the fingers or the wheel).
+  zoomControl = true,
+  className = 'overflow-hidden rounded-xl',
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
@@ -46,16 +53,18 @@ function LeafletMapView({
   const hasFittedRef = useRef(false)
   const onMarkerClickRef = useRef(onMarkerClick)
   const onMapClickRef = useRef(onMapClick)
+  const onZoomChangeRef = useRef(onZoomChange)
 
   // Keep the latest callbacks for Leaflet's own event handlers, which are
   // bound once when the map is created.
   useEffect(() => {
     onMarkerClickRef.current = onMarkerClick
     onMapClickRef.current = onMapClick
+    onZoomChangeRef.current = onZoomChange
   })
 
   useEffect(() => {
-    const map = L.map(containerRef.current, { attributionControl: true }).setView(center, zoom)
+    const map = L.map(containerRef.current, { attributionControl: true, minZoom, zoomControl }).setView(center, zoom)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -64,6 +73,7 @@ function LeafletMapView({
     mapRef.current = map
 
     map.on('click', (e) => onMapClickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng }))
+    map.on('zoomend', () => onZoomChangeRef.current?.(map.getZoom()))
 
     return () => {
       map.remove()
@@ -122,7 +132,7 @@ function LeafletMapView({
     }
   }, [draggableMarker])
 
-  return <div ref={containerRef} style={{ height, width: '100%' }} className="overflow-hidden rounded-xl" />
+  return <div ref={containerRef} style={{ height, width: '100%' }} className={className} />
 }
 
 // The OpenStreetMap tiles only load once the visitor has allowed maps

@@ -165,11 +165,14 @@ const clampZoom = (z) => Math.min(Math.max(z, ZOOM_MIN), ZOOM_MAX)
 
 /**
  * @param {{ cities, groups, home, pins: Map<string, HTMLElement>, reducedMotion: boolean,
- *   onZoom?: (state: { level: number, zoomed: boolean }) => void }} options
+ *   onZoom?: (state: { level: number, zoomed: boolean, atMax: boolean }) => void,
+ *   onDive?: (place: { lat: number, lng: number }) => void }} options
+ *   onDive: zooming on past the maximum (pinch, wheel, double-click): the
+ *   place in front, for a street map to take over (ActiveGlobe.jsx).
  *   onZoom: called when the zoom crosses a level (1, 2, 4, 8: pins regroup
  *   by it) or starts / stops being zoomed in.
  */
-export function createGlobeScene(container, { cities, groups, home, pins, reducedMotion, onZoom }) {
+export function createGlobeScene(container, { cities, groups, home, pins, reducedMotion, onZoom, onDive }) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
   renderer.domElement.style.position = 'absolute'
@@ -258,10 +261,33 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
 
   function report() {
     const level = 2 ** Math.floor(Math.log2(zoom + 1e-6))
-    const state = { level, zoomed: zoomTarget > 1.05 }
-    if (reported && reported.level === state.level && reported.zoomed === state.zoomed) return
+    const state = { level, zoomed: zoomTarget > 1.05, atMax: zoomTarget >= ZOOM_MAX - 1e-3 }
+    if (reported && reported.level === state.level && reported.zoomed === state.zoomed && reported.atMax === state.atMax) return
     reported = state
     onZoom?.(state)
+  }
+
+  // The place in front of the camera: the globe's local point under (0, 0, 1).
+  const inverse = new THREE.Matrix4()
+  function centerLatLng() {
+    globe.updateMatrixWorld(true)
+    const v = new THREE.Vector3(0, 0, 1).applyMatrix4(inverse.copy(globe.matrixWorld).invert()).normalize()
+    const lat = 90 - Math.acos(Math.min(Math.max(v.y, -1), 1)) / DEG
+    let lng = Math.atan2(v.z, -v.x) / DEG - 180
+    if (lng < -180) lng += 360
+    return { lat, lng }
+  }
+
+  // Past the maximum: hand over to the street map, once per gesture.
+  let dived = false
+  function dive() {
+    if (!onDive || dived) return false
+    dived = true
+    pinch = null
+    touches.clear()
+    dragging = null
+    onDive(centerLatLng())
+    return true
   }
 
   const touchDistance = () => {
@@ -287,7 +313,10 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   function onMove(e) {
     if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY })
     if (pinch && touches.size >= 2) {
-      setZoomTarget(pinch.zoom * (touchDistance() / Math.max(pinch.distance, 1)))
+      const wanted = pinch.zoom * (touchDistance() / Math.max(pinch.distance, 1))
+      // Fingers still spreading at the maximum: on to the street map.
+      if (wanted > ZOOM_MAX * 1.3 && dive()) return
+      setZoomTarget(wanted)
       zoom = zoomTarget // follow the fingers exactly
       return
     }
@@ -322,6 +351,12 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   function onWheel(e) {
     if (!wheelArmed && !e.ctrlKey) return
     const factor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))
+    // Zooming on at the maximum: the street map.
+    if (factor > 1 && zoomTarget >= ZOOM_MAX && zoom >= ZOOM_MAX - 0.05 && onDive) {
+      e.preventDefault()
+      dive()
+      return
+    }
     // At the limit, the wheel scrolls the page again.
     if ((factor > 1 && zoomTarget >= ZOOM_MAX) || (factor < 1 && zoomTarget <= ZOOM_MIN)) return
     e.preventDefault()
@@ -330,6 +365,7 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   function onDoubleClick(e) {
     // Not on the + / − buttons or a pin: they act on their own clicks.
     if (e.target.closest?.('button')) return
+    if (zoomTarget >= ZOOM_MAX && dive()) return
     setZoomTarget(zoomTarget * 2)
   }
   // Two fingers never scroll or zoom the page itself.
@@ -423,6 +459,11 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
   function tick(time) {
     const dt = Math.min((time - last) / 1000, 0.05)
     last = time
+    // Under the street map: nothing to draw.
+    if (dived) {
+      frame = requestAnimationFrame(tick)
+      return
+    }
     clock.t += dt
 
     if (Math.abs(zoomTarget - zoom) > 1e-4) {
@@ -499,6 +540,17 @@ export function createGlobeScene(container, { cities, groups, home, pins, reduce
       target = { yaw: yawFor(lng), pitch: Math.min(Math.max(lat * DEG, PITCH_MIN_ZOOMED), PITCH_MAX_ZOOMED) }
       velocity = 0
       pausedUntil = performance.now() + 4000
+    },
+    // Back from the street map: facing that place, zoomed in a little less,
+    // ready to dive again with a new gesture.
+    returnFrom(lat, lng) {
+      yaw = yawFor(lng)
+      pitch = Math.min(Math.max(lat * DEG, PITCH_MIN_ZOOMED), PITCH_MAX_ZOOMED)
+      target = null
+      velocity = 0
+      setZoomTarget(ZOOM_MAX * 0.6)
+      zoom = ZOOM_MAX
+      dived = false
     },
     // New pins (they regroup with the zoom), without rebuilding the scene.
     setPins(list) {
