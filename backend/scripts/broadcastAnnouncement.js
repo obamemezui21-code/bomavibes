@@ -54,7 +54,11 @@ async function main() {
     let failed = 0;
     for (const email of emails) {
         try {
-            await resend.emails.send({ from: FROM_ADDRESS, to: email, subject, html });
+            // Resend answers a refusal (unverified domain, bad address…) with
+            // `error`, without throwing: counted as sent, it hid a whole
+            // campaign that reached nobody.
+            const { error } = await resend.emails.send({ from: FROM_ADDRESS, to: email, subject, html });
+            if (error) throw new Error(error.message);
             sent += 1;
         } catch (err) {
             failed += 1;
