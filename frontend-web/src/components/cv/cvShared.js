@@ -1,10 +1,16 @@
 import { inputClass } from '../../lib/formStyles.js'
+import { GABON_LANGUAGES } from '../../lib/gabonLanguages.js'
 
 // Shared by the CV PNPE screens (pages/CvBuilder.jsx, components/cv/*).
 
 export const NIVEAUX = ['maternel', 'courant', 'bon', 'moyen', 'notions']
 
-export const LANGUES = ['Français', 'Anglais', 'Espagnol', 'Portugais', 'Arabe', 'Chinois', 'Fang', 'Punu', 'Myènè', 'Nzébi', 'Téké', 'Obamba', 'Kota', 'Vili', 'Lingala']
+export const LANGUES_MONDE = ['Français', 'Anglais', 'Espagnol', 'Portugais', 'Arabe', 'Chinois', 'Allemand', 'Italien', 'Lingala', 'Swahili']
+
+// Languages of Gabon: lib/gabonLanguages.js, shared with the dating profile.
+export const LANGUES_GABON = GABON_LANGUAGES
+
+export const LANGUES = [...LANGUES_MONDE, ...LANGUES_GABON]
 
 export const PERMIS = ['Aucun', 'Permis A', 'Permis B', 'Permis C', 'Permis D', 'Permis E']
 

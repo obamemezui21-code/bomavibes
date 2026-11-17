@@ -15,7 +15,7 @@ import ProfileLaunchOverlay from '../components/ProfileLaunchOverlay.jsx'
 import { FullPageSpinner } from '../components/ui/Spinner.jsx'
 import {
   DATING_GOALS,
-  LANGUAGES,
+  LANGUAGE_GROUPS,
   LIFESTYLE_GROUPS,
   MAX_PERSONALITY_TRAITS,
   PERSONALITY_TRAITS,
@@ -617,18 +617,23 @@ function Onboarding() {
                   <div>
                     <h2 className="font-display text-xl font-semibold text-ink">Vos langues</h2>
                     <p className="mt-1 text-sm text-ink-soft/60">Choisissez-en au moins une.</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {LANGUAGES.map((language) => (
-                        <button
-                          key={language}
-                          type="button"
-                          onClick={() => toggleLanguage(language)}
-                          className={chipClass(form.languages.includes(language))}
-                        >
-                          {language}
-                        </button>
-                      ))}
-                    </div>
+                    {LANGUAGE_GROUPS.map(([group, languages]) => (
+                      <div key={group} className="mt-4">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/50">{group}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {languages.map((language) => (
+                            <button
+                              key={language}
+                              type="button"
+                              onClick={() => toggleLanguage(language)}
+                              className={chipClass(form.languages.includes(language))}
+                            >
+                              {language}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   <div>

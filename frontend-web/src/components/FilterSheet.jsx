@@ -8,7 +8,7 @@ import {
   SORTS,
   activeFilterCount,
 } from '../lib/discoverFilters.js'
-import { DATING_GOALS, EDUCATION_LEVELS, LANGUAGES, RELATIONSHIP_STATUSES, RELIGIONS } from '../lib/onboardingOptions.js'
+import { DATING_GOALS, EDUCATION_LEVELS, LANGUAGE_GROUPS, RELATIONSHIP_STATUSES, RELIGIONS } from '../lib/onboardingOptions.js'
 import { INTEREST_ICONS } from '../lib/interests.js'
 import { CONTINENT_ORDER, COUNTRIES } from '../lib/geography.js'
 
@@ -300,7 +300,14 @@ function FilterSheet({ filters, onChange, onClose, onReset }) {
           </Section>
 
           <Section title="Langues parlées">
-            <MultiChips options={LANGUAGES} values={filters.languages} onChange={(languages) => set({ languages })} />
+            <div className="space-y-3">
+              {LANGUAGE_GROUPS.map(([group, options]) => (
+                <div key={group}>
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink-soft/50">{group}</p>
+                  <MultiChips options={options} values={filters.languages} onChange={(languages) => set({ languages })} />
+                </div>
+              ))}
+            </div>
           </Section>
 
           <Section title="Religion (optionnel)">

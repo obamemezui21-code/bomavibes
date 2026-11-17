@@ -4,7 +4,7 @@ import { Award, CheckCircle2, ChevronDown, CircleAlert, GraduationCap, Plus, Spa
 import { inputClass } from '../../lib/formStyles.js'
 import { isCertificate, skillSuggestions, sortSkills, splitSkills, splitTasks, startsWithVerb, tidySkill, toTask } from '../../lib/cvAssistant.js'
 import { AddButton, Chip, ChipRow, Field, LevelPills, MonthYear, RemoveButton, StepCard, Toggle } from './CvUi.jsx'
-import { ACTION_VERBS, DIPLOMAS, JOB_TITLES, LANGUES, PERMIS, SCHOOLS, YEARS, textareaClass } from './cvShared.js'
+import { ACTION_VERBS, DIPLOMAS, JOB_TITLES, LANGUES_GABON, LANGUES_MONDE, PERMIS, SCHOOLS, YEARS, textareaClass } from './cvShared.js'
 
 // The CV PNPE form, one screen per PNPE section (see pages/CvBuilder.jsx).
 // Every step shows at once what will be on the CV.
@@ -431,13 +431,20 @@ export function LanguagesStep({ form, setForm }) {
             </motion.div>
           ))}
       </AnimatePresence>
-      <ChipRow label="Ajouter une langue">
-        {LANGUES.filter((l) => !taken.has(l.toLowerCase())).map((l) => (
-          <Chip key={l} small icon={Plus} onClick={() => add(l, taken.size === 0 ? 'maternel' : 'moyen')}>
-            {l}
-          </Chip>
-        ))}
-      </ChipRow>
+      {[
+        ['Langues gabonaises', LANGUES_GABON],
+        ['Autres langues', LANGUES_MONDE],
+      ].map(([label, names]) => (
+        <ChipRow key={label} label={label}>
+          {names
+            .filter((l) => !taken.has(l.toLowerCase()))
+            .map((l) => (
+              <Chip key={l} small icon={Plus} onClick={() => add(l, taken.size === 0 ? 'maternel' : 'moyen')}>
+                {l}
+              </Chip>
+            ))}
+        </ChipRow>
+      ))}
       <div className="flex gap-2">
         <input className={inputClass} value={other} onChange={(e) => setOther(e.target.value)} placeholder="Une autre langue…" aria-label="Autre langue" />
         <button

@@ -62,7 +62,7 @@ Formations et diplômes :
 
 Compétences : sépare les compétences techniques (logiciels comme le Pack Office, outils, techniques du métier) des savoir-faire (rédaction de rapports, gestion de stock, prospection…). Tu peux tirer une compétence des tâches décrites seulement si elle en découle directement. 3 à 10 éléments par liste, sans répétition, sans qualités vagues (« dynamique », « motivé »).
 
-Langues : niveau parmi maternel, courant, bon, moyen, notions. Les langues gabonaises (fang, punu, myènè, nzébi, téké, obamba…) sont des langues à part entière.
+Langues : niveau parmi maternel, courant, bon, moyen, notions. Les langues gabonaises (fang, punu, nzébi, myènè et ses dialectes mpongwè, orungu, galwa, nkomi ; téké, obamba, kota, sira, lumbu, vili, tsogo, massango, kélé…) sont des langues à part entière.
 
 Texte libre ou ancien CV : sers-t'en pour compléter les rubriques ; ignore les coordonnées personnelles qu'il contient.
 

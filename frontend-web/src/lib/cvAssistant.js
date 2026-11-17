@@ -64,6 +64,7 @@ const ACCENTED = list(`
   compléter considérer coopérer décider décharger décorer découper défendre démarcher démarrer démonter
   déployer désinfecter détailler réapprovisionner récolter réserver numériser éplucher étiqueter équiper
   étudier émettre également
+  kélé mpongwè sékiani kwélé mahongwé pové
   lambaréné ndendé lébamba mékambo booué ndjolé omboué médouneu akiéni léconi ogooué ngounié akébé
 `)
 const ACCENTS = new Map(ACCENTED.map((word) => [fold(word), word]))

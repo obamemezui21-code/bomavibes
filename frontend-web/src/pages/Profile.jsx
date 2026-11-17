@@ -22,7 +22,7 @@ import {
   CHILDREN_OPTIONS,
   DATING_GOALS,
   EDUCATION_LEVELS,
-  LANGUAGES,
+  LANGUAGE_GROUPS,
   LIFESTYLE_GROUPS,
   MAX_PERSONALITY_TRAITS,
   PERSONALITY_TRAITS,
@@ -748,16 +748,23 @@ function Profile() {
 
           <div>
             <label className={labelClass}>Langues</label>
-            <div className="flex flex-wrap gap-2">
-              {LANGUAGES.map((language) => (
-                <button
-                  key={language}
-                  type="button"
-                  onClick={() => toggleLanguage(language)}
-                  className={chipClass(form.languages.includes(language))}
-                >
-                  {language}
-                </button>
+            <div className="space-y-3">
+              {LANGUAGE_GROUPS.map(([group, languages]) => (
+                <div key={group}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-soft/50">{group}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {languages.map((language) => (
+                      <button
+                        key={language}
+                        type="button"
+                        onClick={() => toggleLanguage(language)}
+                        className={chipClass(form.languages.includes(language))}
+                      >
+                        {language}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

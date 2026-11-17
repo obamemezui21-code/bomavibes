@@ -1,11 +1,22 @@
 // Extra selectable options for onboarding, kept as flat data so new
 // entries can be appended without touching any component logic.
 
-export const LANGUAGES = [
-  'Français', 'Anglais', 'Portugais', 'Arabe', 'Espagnol',
-  'Fang', 'Lingala', 'Wolof', 'Bambara', 'Swahili', 'Yoruba', 'Haoussa',
+import { GABON_LANGUAGES } from './gabonLanguages.js'
+
+// The profile's languages, in two groups for the pickers (onboarding,
+// profile, Discover's filters). Values are stored as written: never rename one.
+export const OTHER_LANGUAGES = [
+  'Français', 'Anglais', 'Portugais', 'Arabe', 'Espagnol', 'Chinois', 'Allemand', 'Italien',
+  'Lingala', 'Wolof', 'Bambara', 'Swahili', 'Yoruba', 'Haoussa',
   'Éwé', 'Peul', 'Berbère', 'Kikongo', 'Douala', 'Malinké',
 ]
+
+export const LANGUAGE_GROUPS = [
+  ['Langues du Gabon', GABON_LANGUAGES],
+  ['Autres langues', OTHER_LANGUAGES],
+]
+
+export const LANGUAGES = [...OTHER_LANGUAGES, ...GABON_LANGUAGES]
 
 export const PERSONALITY_TRAITS = [
   'Ambitieux', 'Créatif', 'Sociable', 'Introverti', 'Aventurier', 'Romantique',
