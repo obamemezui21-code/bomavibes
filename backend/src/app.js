@@ -67,6 +67,8 @@ app.use(cors());
 app.use("/api/escadrille/finish", express.json({ limit: "300kb" }));
 // A long game of Perles Punu (30 min, a throw every 10 ticks) can pass 100 KB.
 app.use("/api/perles/finish", express.json({ limit: "300kb" }));
+// EDU-CHECK: a long homework (20 000 words) is well over 100 KB.
+app.use("/api/edu-check", express.json({ limit: "2mb" }));
 app.use(express.json());
 app.use("/api", apiLimiter);
 
@@ -125,6 +127,8 @@ app.use("/api/admin/photo-reviews", photoReviewRoutes);
 app.use("/api/payments", paymentRoutes.router);
 app.use("/api/admin/payments", paymentRoutes.adminRouter);
 app.use("/api/cv", cvRoutes);
+// EDU-CHECK, the homework-analysis assistant: an independent module (src/eduCheck/).
+app.use("/api/edu-check", require("./eduCheck/routes"));
 
 startCallCleanupScheduler();
 startStoryCleanupScheduler();

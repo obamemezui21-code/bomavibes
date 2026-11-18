@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, ChevronRight, Clapperboard, FileText, Gamepad2, Globe, Heart, MapPin, Search, Sparkles, Ticket } from 'lucide-react'
+import { Briefcase, ChevronRight, Clapperboard, FileSearch, FileText, Gamepad2, Globe, GraduationCap, Heart, MapPin, Search, Sparkles, Ticket } from 'lucide-react'
 import { GAMES } from '../lib/games.js'
 import { cancelEventTicket, fetchMyTickets, fetchPublishedEvents, reserveEventTicket } from '../firebase/events.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -50,6 +50,21 @@ const CATEGORY_CARDS = [
         label: 'Studio IA',
         description: 'Outils vidéo IA pour créer',
         icon: Sparkles,
+        tint: 'bg-sky-500/15 text-sky-500',
+      },
+    ],
+  },
+  {
+    icon: GraduationCap,
+    title: 'Outils pédagogiques',
+    subtitle: 'Pour les enseignants et responsables pédagogiques',
+    tint: 'bg-sky-500/15 text-sky-500',
+    modules: [
+      {
+        to: '/edu-check',
+        label: 'EDU-CHECK',
+        description: 'Vérification des devoirs : IA, sources, qualité',
+        icon: FileSearch,
         tint: 'bg-sky-500/15 text-sky-500',
       },
     ],

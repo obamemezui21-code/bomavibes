@@ -86,6 +86,8 @@ const cvLimiter = limiter({
 });
 
 module.exports = {
+    // The helper itself, for a module's own limits (eduCheck/routes.js).
+    limiter,
     apiLimiter,
     ngoriRunLimiter,
     cvLimiter,
