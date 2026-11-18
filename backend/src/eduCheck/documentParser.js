@@ -28,6 +28,38 @@ function kindOf(buffer, name) {
     return ext;
 }
 
+// The header and footer a PDF repeats on every page ("Corrigé du formateur
+// - Page 2", "Lycée X — 3/12"), and bare page numbers: not the homework's text.
+function withoutRunningHeads(pages) {
+    // Same line (page numbers aside), same place (top or bottom), on at least
+    // half of the pages: a running head. Only pages long enough to have a
+    // body count, so a short page's own text is never taken for one.
+    // Numbers are ignored only on a line that holds a page number ("Page 2",
+    // "3 / 12"): "Exercice 1.1" and "Exercice 2.1" are different lines.
+    const PAGE_REF = /\bpage\s*\d+|\b\d+\s*(?:\/|sur|of)\s*\d+\b/i;
+    const key = (line) => {
+        const t = line.trim().toLowerCase().replace(/\s+/g, " ");
+        return PAGE_REF.test(t) ? t.replace(/\d+/g, "#") : t;
+    };
+    const split = pages.map((p) => String(p).split("\n").filter((l) => l.trim()));
+    const edge = (lines, i) => (lines.length < 6 ? null : i < 2 ? "top" : i >= lines.length - 2 ? "bottom" : null);
+    const seen = new Map();
+    for (const lines of split) {
+        const keys = new Set();
+        lines.forEach((l, i) => {
+            const where = edge(lines, i);
+            if (where && l.trim().length <= 140) keys.add(`${where}|${key(l)}`);
+        });
+        for (const k of keys) seen.set(k, (seen.get(k) || 0) + 1);
+    }
+    const minPages = Math.max(3, Math.ceil(pages.length * 0.5));
+    const repeated = new Set([...seen].filter(([, n]) => n >= minPages).map(([k]) => k));
+    const pageNumber = /^\s*(?:page\s*)?\d+\s*(?:(?:\/|sur|of)\s*\d+)?\s*$/i;
+    return split.map((lines) =>
+        lines.filter((l, i) => !pageNumber.test(l) && !(edge(lines, i) && repeated.has(`${edge(lines, i)}|${key(l)}`))).join("\n"),
+    );
+}
+
 async function pdfText(buffer) {
     const { extractText, getDocumentProxy } = await import("unpdf");
     let pdf;
@@ -39,7 +71,7 @@ async function pdfText(buffer) {
     try {
         const { text } = await extractText(pdf, { mergePages: false });
         // A page per paragraph break, so pages don't run into each other.
-        return (Array.isArray(text) ? text : [text]).join("\n\n");
+        return withoutRunningHeads(Array.isArray(text) ? text : [text]).join("\n\n");
     } finally {
         await pdf.destroy?.().catch(() => {});
     }
@@ -107,4 +139,4 @@ async function parseDocument(file) {
     return { text, words, kind };
 }
 
-module.exports = { parseDocument, ParseError };
+module.exports = { parseDocument, ParseError, withoutRunningHeads };

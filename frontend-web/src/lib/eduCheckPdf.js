@@ -96,7 +96,7 @@ export async function buildEduCheckPdf(analysis, { disclaimer }) {
     ['Niveau', r.level?.label || meta.levelLabel],
     ['Date de soumission', meta.submittedAt ? new Date(`${meta.submittedAt}T00:00:00`).toLocaleDateString('fr-FR') : ''],
     ['Analyse du', new Date(analysis.createdAt || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })],
-    ['Longueur', `${r.words ?? analysis.words} mots`],
+    ['Longueur', `${r.words ?? analysis.words} mots${r.document ? ` (${r.document.proseShare} % de texte rédigé)` : ''}`],
   ].filter(([, v]) => v)
   for (const [k, v] of rows) {
     font('bold', 9.5, SOFT)
@@ -125,24 +125,64 @@ export async function buildEduCheckPdf(analysis, { disclaimer }) {
 
   // ---- Summary: each indicator on its own ------------------------------------
   heading('Synthèse des indicateurs (jamais additionnés)')
+  const mlText = (ml) => (ml.status === 'ok' ? `${ml.label} (score médian ${ml.score} ; ${ml.passages.filter((x) => x.band !== 'faible').length}/${ml.passages.length} passage(s) à vérifier) — ${ml.engine}` : ml.reason)
   const summary = [
-    ['Caractéristiques compatibles avec une assistance IA', r.ai ? (r.ai.status === 'ok' ? `${r.ai.score}/100 — ${BAND_LABEL[r.ai.band]} (fiabilité ${r.ai.reliability})` : `Analyse non concluante — ${r.ai.reason}`) : 'Non demandé'],
+    r.provenance && ['A. Preuves de provenance IA', `${r.provenance.label}${r.provenance.tools?.length ? ` — outil nommé par la preuve : ${r.provenance.tools.join(', ')}` : ''} (${r.provenance.engines?.filter((e) => e.status === 'ok').map((e) => e.name).join(' + ')})`],
+    r.ml && ['B. Estimation ML de rédaction IA', mlText(r.ml)],
+    ['C. Analyse stylistique (caractéristiques compatibles avec une assistance IA)', r.ai ? (r.ai.status === 'ok' ? `${r.ai.score}/100 — ${BAND_LABEL[r.ai.band]} (fiabilité ${r.ai.reliability})` : `Analyse non concluante — ${r.ai.reason}`) : 'Non demandé'],
     ['Qualité rédactionnelle', r.quality ? (r.quality.status === 'ok' ? `${r.quality.score}/100 — ${r.quality.label}` : `Non concluant — ${r.quality.reason}`) : 'Non demandé'],
     ['Cohérence du contenu', r.coherence ? (r.coherence.status === 'ok' ? `${r.coherence.score}/100 — ${r.coherence.label}` : `Non concluant — ${r.coherence.reason}`) : 'Non demandé'],
     ['Respect du sujet', r.coherence?.topic ? `${r.coherence.topic.covered}/${r.coherence.topic.keyWords} mots clés du sujet présents (${r.coherence.topic.coverage} %)` : r.coherence ? 'Sujet non renseigné' : 'Non demandé'],
     ['Vérification des sources', r.sources ? `${r.sources.summary} ${r.sources.toVerify} point(s) à vérifier.` : 'Non demandé'],
     ['Similarité avec les travaux antérieurs', r.style?.status === 'ok' ? `${r.style.similarity}/100 — ${r.style.label} (${r.style.priorCount} travail/travaux)` : r.style?.reason || 'Non demandé'],
     ['Niveau académique', r.academicLevel?.status === 'ok' ? r.academicLevel.summary : r.academicLevel?.reason || 'Non demandé'],
-  ]
+  ].filter(Boolean)
   for (const [k, v] of summary) {
     write(k, { size: 10, style: 'bold', gap: 0.3 })
     write(v, { size: 9.5, color: SOFT, gap: 2 })
   }
   write('L’indice IA est un indicateur heuristique, pas une probabilité : il ne dit pas « X % de chances » qu’un devoir ait été produit par une IA.', { size: 8.5, style: 'italic', color: SOFT })
 
-  // ---- AI-writing indicators ---------------------------------------------------
+  // ---- A. Provenance --------------------------------------------------------------
+  if (r.provenance) {
+    const p = r.provenance
+    heading(`A. Preuves de provenance IA — ${p.label}`)
+    write(`Moteurs : ${p.engines.map((e) => `${e.name} (${e.note})`).join(' ; ')}. Vérifié le ${new Date(p.checkedAt || analysis.createdAt || Date.now()).toLocaleString('fr-FR')}.`, { size: 8.5, color: SOFT })
+    const KIND = { declaration: 'Déclaration', trace: 'Trace d’outil', leftover: 'Phrase d’assistant' }
+    if (!p.findings.length) write(p.level === 'faible' ? 'Des outils d’IA sont seulement nommés dans le texte : ce n’est pas une preuve d’utilisation.' : 'Aucune déclaration, trace d’outil ni phrase d’assistant trouvée dans le texte.', { size: 9.5 })
+    for (const f of p.findings) {
+      write(`${KIND[f.kind] || f.kind} — ${f.label}${f.tools?.length ? ` (${f.tools.join(', ')})` : ''}`, { size: 9.5, style: 'bold', gap: 0.3 })
+      passage(f.passage)
+    }
+    if (p.mentions?.length) write(`Outils nommés (contexte, pas une preuve) : ${p.mentions.map((m) => `${m.tool} (${m.count})`).join(', ')}.`, { size: 8.5, color: SOFT })
+    if (p.isgenai) {
+      write(`Avis d’isGenAI : ${p.isgenai.headline || p.isgenai.label}${p.isgenai.confidence ? ` (confiance ${p.isgenai.confidence})` : ''}. ${p.isgenai.summary || ''}`, { size: 9.5, gap: 0.5 })
+      p.isgenai.evidence?.forEach((e) => bullet(`${e.summary} (force : ${e.strength})${e.snippet ? ` — « ${e.snippet} »` : ''}`))
+    }
+    write('Limites', { size: 9, style: 'bold', color: SOFT, gap: 0.3 })
+    p.limitations.forEach((l) => bullet(l, { color: SOFT }))
+  }
+
+  // ---- B. Model estimate --------------------------------------------------------------
+  if (r.ml) {
+    const ml = r.ml
+    heading(`B. Estimation ML de rédaction IA — ${ml.status === 'ok' ? ml.label : 'non disponible'}`)
+    if (ml.status !== 'ok') write(ml.reason, { size: 9.5 })
+    else {
+      write(`${ml.engine}. Analysé le ${new Date(ml.checkedAt || analysis.createdAt || Date.now()).toLocaleString('fr-FR')}. Score médian ${ml.score} (seuils : élevée sous ${ml.thresholds.high}, modérée sous ${ml.thresholds.moderate}) ; plus il est bas, plus le texte est prévisible pour un modèle. Ce n’est pas une probabilité.`, { size: 8.5, color: SOFT })
+      ml.observations.forEach((o) => bullet(o))
+      for (const x of ml.passages) {
+        write(`Passage ${x.index + 1} — ${x.band === 'elevee' ? 'indication élevée' : x.band === 'moderee' ? 'indication modérée' : 'indication faible'} (score ${x.score}, ${x.words} mots)${x.band !== 'faible' ? ' — à vérifier' : ''}`, { size: 9.5, style: 'bold', gap: 0.3, color: x.band !== 'faible' ? WARN : INK })
+        if (x.band !== 'faible') write(`« ${x.preview}… »`, { size: 8.5, color: SOFT, x: M + 5, width: W - 5, gap: 1 })
+      }
+      write('Limites', { size: 9, style: 'bold', color: SOFT, gap: 0.3 })
+      ml.limitations.forEach((l) => bullet(l, { color: SOFT }))
+    }
+  }
+
+  // ---- C. AI-writing style indicators ---------------------------------------------------
   if (r.ai?.status === 'ok') {
-    heading('Indices de rédaction assistée : éléments observés')
+    heading('C. Analyse stylistique : éléments observés')
     for (const s of r.ai.signals) {
       write(`${s.label} — ${s.value}/100`, { size: 10, style: 'bold', gap: 0.3 })
       write(s.observed, { size: 9.5, gap: 0.5 })

@@ -178,8 +178,12 @@ function HistoryPanel({ config }) {
                   {loadingId === a.id ? (
                     <Loader2 size={16} className="animate-spin text-violet-600" />
                   ) : a.summary?.aiBand ? (
-                    <span className="flex items-center gap-2">
-                      {a.summary.aiScore != null && <span className="text-xs font-bold text-ink">{a.summary.aiScore}/100</span>}
+                    <span className="flex flex-wrap items-center gap-2">
+                      {['elevee', 'moderee'].includes(a.summary.provenance) && (
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${a.summary.provenance === 'elevee' ? 'bg-coral-500/15 text-coral-600' : 'bg-gold/20 text-[#7a5200] dark:text-gold'}`}>Preuve de provenance</span>
+                      )}
+                      {['elevee', 'moderee'].includes(a.summary.mlBand) && <span className="rounded-full bg-orange-500/15 px-2 py-0.5 text-[11px] font-bold text-orange-700 dark:text-orange-300">Estimation ML {a.summary.mlBand === 'elevee' ? 'élevée' : 'modérée'}</span>}
+                      {a.summary.aiScore != null && <span className="text-xs font-bold text-ink">Style {a.summary.aiScore}/100</span>}
                       <BandPill band={a.summary.aiBand} />
                     </span>
                   ) : (

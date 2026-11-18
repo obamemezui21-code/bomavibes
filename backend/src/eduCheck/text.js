@@ -36,6 +36,94 @@ function paragraphs(text) {
         .filter((p) => wordCount(p) > 0);
 }
 
+// --- Prose vs everything else ---------------------------------------------
+// The style indices only make sense on written sentences. A homework may
+// also hold code, tables, lists, exercise titles: they are set aside, and
+// their share is reported (a document that is mostly code is "non concluant").
+
+const CODE_START = /^\s*(?:const|let|var|function|return|import|export|if|else|for|while|switch|case|class|async|await|try|catch|def|print\(|console\.|document\.|\/\/|\/\*|\*\/|#include|<\/?[a-zA-Z][\w-]*[\s>/]|[{}\])]|\.\w+\()/;
+
+function isCodeLine(line) {
+    const t = line.trim();
+    if (!t) return false;
+    if (CODE_START.test(t)) return true;
+    if (/[{};]\s*$|=>|===|!==|\+\+|&&|\|\||\$\{|`/.test(t)) return true;
+    const symbols = (t.match(/[{}()[\];=<>`$+*/\\|&%#]/g) || []).length;
+    return symbols / t.length > 0.12;
+}
+
+function isTableLine(line) {
+    const t = line.trim();
+    if (/\t/.test(line) || (t.match(/ {2,}/g) || []).length >= 2) return true;
+    const ws = words(t);
+    return ws.length > 0 && ws.filter((w) => /^\d+(?:[.,]\d+)?$/.test(w)).length / ws.length > 0.4;
+}
+
+// Short line, no final punctuation: a title ("Exercice 3.2.1 - Compter [Facile]").
+const isHeadingLine = (line) => {
+    const t = line.trim();
+    return wordCount(t) <= 10 && !/[.!?…:;»"]$/.test(t);
+};
+
+const BULLET = /^\s*(?:[-–•*▪◦]|\d+[.)]|[a-z][.)])\s+/;
+
+/**
+ * The written sentences of a text, rebuilt as paragraphs: code, tables,
+ * titles set aside; lines a PDF cut at the margin joined back.
+ * @returns {{ prose: string, proseWords: number, totalWords: number, share: number, codeLines: number, tableLines: number }}
+ */
+function proseOf(text) {
+    const lines = String(text).split("\n");
+    const lengths = lines.map((l) => l.trim().length).filter((n) => n > 30).sort((a, b) => a - b);
+    const typical = lengths.length ? lengths[Math.floor(lengths.length * 0.75)] : 80;
+    const paragraphsOut = [];
+    let current = [];
+    let codeLines = 0;
+    let tableLines = 0;
+    const flush = () => {
+        if (current.length) paragraphsOut.push(current.join(" ").replace(/\s+/g, " ").trim());
+        current = [];
+    };
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const t = line.trim();
+        if (!t) {
+            flush();
+            continue;
+        }
+        if (isCodeLine(line)) {
+            codeLines++;
+            flush();
+            continue;
+        }
+        if (isTableLine(line)) {
+            tableLines++;
+            flush();
+            continue;
+        }
+        const next = lines[i + 1]?.trim() || "";
+        if (isHeadingLine(line) && (!next || /^\p{Lu}|^\d/u.test(next) || BULLET.test(next))) {
+            flush();
+            continue;
+        }
+        if (BULLET.test(line)) flush();
+        // A word cut at the margin: "dévelop-" + "pement".
+        if (current.length && /\p{L}-$/u.test(current[current.length - 1]) && /^\p{Ll}/u.test(t)) {
+            current[current.length - 1] = current[current.length - 1].slice(0, -1) + t;
+        } else {
+            current.push(t);
+        }
+        // A sentence ending on a short line ends the paragraph (PDF layout).
+        if (/[.!?…:»"]$/.test(t) && t.length < typical * 0.8) flush();
+    }
+    flush();
+    const kept = paragraphsOut.filter((p) => wordCount(p) >= 3);
+    const prose = kept.join("\n\n");
+    const proseWords = wordCount(prose);
+    const totalWords = wordCount(text);
+    return { prose, proseWords, totalWords, share: totalWords ? proseWords / totalWords : 0, codeLines, tableLines };
+}
+
 // Section titles ("Introduction", "II. Les limites") left out: they are not
 // prose, and would distort sentence and paragraph measures.
 function withoutHeadings(text) {
@@ -159,6 +247,8 @@ module.exports = {
     wordCount,
     paragraphs,
     withoutHeadings,
+    proseOf,
+    isCodeLine,
     sentences,
     detectLanguage,
     contentWords,

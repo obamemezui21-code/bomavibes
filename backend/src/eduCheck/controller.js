@@ -4,6 +4,8 @@ const { CONFIG, LEVELS, CHECKS, DISCLAIMER } = require("./config");
 const { eduAccess, canRead, canDelete, ROLES } = require("./access");
 const { parseDocument, ParseError } = require("./documentParser");
 const { runAnalysis, plannedSteps, STEP_LABELS } = require("./engine");
+const { isGenAIEnabled } = require("./provenance/isgenai");
+const { modelStatus } = require("./ml/detector");
 const { compareTexts } = require("./analysis/styleComparison");
 const { wordCount, normalizeText, detectLanguage } = require("./text");
 const { providerStatus } = require("./ai/provider");
@@ -59,6 +61,8 @@ const AnalysisSchema = z.object({
     meta: MetaSchema.default({}),
     checks: z.array(z.enum(CHECKS)).min(1),
     priorTexts: z.array(z.string()).max(CONFIG.maxPriorTexts).default([]),
+    // isgenai: the teacher agreed to send the text to isGenAI (see provenance/isgenai.js).
+    options: z.object({ isgenai: z.boolean().default(false) }).default({}),
 });
 
 const CompareSchema = z.object({
@@ -89,6 +93,8 @@ async function getMe(req, res) {
             disclaimer: DISCLAIMER,
             sourceVerification: CONFIG.sourceVerification,
             ai: providerStatus(),
+            isgenai: isGenAIEnabled(),
+            model: modelStatus(),
         });
     } catch (err) {
         fail(res, err, "Une erreur interne est survenue");
@@ -145,6 +151,8 @@ function summaryOf(r) {
         language: r.language,
         aiScore: r.ai?.status === "ok" ? r.ai.score : null,
         aiBand: r.ai?.status === "ok" ? r.ai.band : r.ai ? "non_concluant" : null,
+        provenance: r.provenance?.level || null,
+        mlBand: r.ml?.status === "ok" ? r.ml.band : null,
         quality: r.quality?.status === "ok" ? r.quality.score : null,
         coherence: r.coherence?.status === "ok" ? r.coherence.score : null,
         sourcesToVerify: r.sources?.status === "ok" ? r.sources.toVerify : 0,
@@ -158,7 +166,7 @@ async function createAnalysis(req, res) {
     try {
         const parsed = AnalysisSchema.safeParse(req.body);
         if (!parsed.success) return res.status(400).json({ message: "Données invalides : vérifiez le texte, le niveau et les analyses choisies." });
-        const { meta, checks, priorTexts } = parsed.data;
+        const { meta, checks, priorTexts, options } = parsed.data;
         const text = normalizeText(parsed.data.text);
         const words = checkLength(text);
         if (!words) return res.status(400).json({ message: "Le texte est vide." });
@@ -171,6 +179,7 @@ async function createAnalysis(req, res) {
             org: req.edu.org,
             meta,
             checks,
+            options,
             priorCount: priorTexts.length,
             text,
             words,
@@ -182,7 +191,7 @@ async function createAnalysis(req, res) {
         log(req.edu.uid, "analyse", ref.id, { checks, words });
         res.status(202).json({ id: ref.id });
         // Prior works are used for this run only, never stored.
-        execute(ref, { text, checks, meta, priorTexts });
+        execute(ref, { text, checks, meta, priorTexts, options });
     } catch (err) {
         fail(res, err, "Impossible de lancer l’analyse.");
     }

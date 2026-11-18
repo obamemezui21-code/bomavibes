@@ -5,6 +5,7 @@ import { downloadEduCheckPdf } from '../../lib/eduCheckPdf.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { inputClass, labelClass } from '../../lib/formStyles.js'
 import AnalysisResult from './AnalysisResult.jsx'
+import { Console } from './resultUi.jsx'
 import { TextSource } from './eduUi.jsx'
 import { countWords } from '../../lib/eduCheckShared.js'
 
@@ -12,7 +13,7 @@ import { countWords } from '../../lib/eduCheckShared.js'
 // the steps as the server runs them, then the results.
 
 const CHECK_OPTIONS = [
-  { key: 'ai', label: 'Indices de rédaction assistée par IA', hint: 'Uniformité, formulations génériques, transitions, répétitions.' },
+  { key: 'ai', label: 'Détection IA · 3 moteurs', hint: 'Preuves de provenance, estimation par modèle de langage, analyse stylistique : trois résultats séparés.' },
   { key: 'quality', label: 'Qualité rédactionnelle', hint: 'Ponctuation, fautes fréquentes, phrases, paragraphes, argumentation.' },
   { key: 'sources', label: 'Vérification des sources', hint: 'Références, citations, recherche dans Crossref et OpenAlex.' },
   { key: 'coherence', label: 'Cohérence et respect du sujet', hint: 'Sujet, introduction et conclusion, répétitions, exemples.' },
@@ -21,11 +22,11 @@ const CHECK_OPTIONS = [
 ]
 
 const STEP_STATUS = {
-  pending: { label: 'En attente', icon: Circle, className: 'text-ink-soft' },
-  running: { label: 'En cours', icon: Loader2, className: 'text-violet-600', spin: true },
-  done: { label: 'Terminé', icon: CheckCircle2, className: 'text-mint-500' },
-  failed: { label: 'Échec', icon: XCircle, className: 'text-coral-500' },
-  inconclusive: { label: 'Non concluant', icon: MinusCircle, className: 'text-gold' },
+  pending: { label: 'En attente', icon: Circle, className: 'text-white/35' },
+  running: { label: 'En cours', icon: Loader2, className: 'text-[#d9a6ff]', spin: true },
+  done: { label: 'Terminé', icon: CheckCircle2, className: 'text-[#2fd083]' },
+  failed: { label: 'Échec', icon: XCircle, className: 'text-[#ff6b5e]' },
+  inconclusive: { label: 'Non concluant', icon: MinusCircle, className: 'text-[#ffc83d]' },
 }
 
 const POLL_MS = 900
@@ -34,20 +35,27 @@ const today = () => new Date().toISOString().slice(0, 10)
 const EMPTY_META = { establishment: '', student: '', className: '', subject: '', teacher: '', topic: '', level: 'premiere_annee', levelLabel: '', submittedAt: today() }
 
 function Steps({ steps }) {
+  const done = steps.filter((s) => s.status !== 'pending' && s.status !== 'running').length
   return (
-    <ol className="space-y-2">
-      {steps.map((s) => {
-        const st = STEP_STATUS[s.status] || STEP_STATUS.pending
-        const Icon = st.icon
-        return (
-          <li key={s.key} className="flex items-center gap-3 rounded-2xl border border-ink/8 bg-surface px-3 py-2.5">
-            <Icon size={18} className={`${st.className} ${st.spin ? 'animate-spin' : ''}`} />
-            <span className="min-w-0 flex-1 text-sm font-medium text-ink">{s.label}</span>
-            <span className={`text-xs font-bold ${st.className}`}>{st.label}</span>
-          </li>
-        )
-      })}
-    </ol>
+    <div>
+      <div className="mb-3 h-1 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-gradient-to-r from-[#7b1fa2] via-[#d3187f] to-[#ffc83d] transition-all duration-700" style={{ width: `${Math.max(6, (done / Math.max(1, steps.length)) * 100)}%` }} />
+      </div>
+      <ol className="space-y-1.5">
+        {steps.map((s, i) => {
+          const st = STEP_STATUS[s.status] || STEP_STATUS.pending
+          const Icon = st.icon
+          return (
+            <li key={s.key} className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition ${s.status === 'running' ? 'border-[#ad52ec]/50 bg-[#ad52ec]/10' : 'border-white/8 bg-white/[.03]'}`}>
+              <span className="w-6 font-mono text-[11px] text-white/35">{String(i + 1).padStart(2, '0')}</span>
+              <Icon size={17} className={`${st.className} ${st.spin ? 'animate-spin' : ''}`} />
+              <span className="min-w-0 flex-1 text-sm font-medium text-white/90">{s.label}</span>
+              <span className={`font-mono text-[11px] font-bold uppercase tracking-wider ${st.className}`}>{st.label}</span>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
   )
 }
 
@@ -57,6 +65,7 @@ function AnalyzePanel({ config, onOpenHistory }) {
   const [meta, setMeta] = useState(EMPTY_META)
   const [checks, setChecks] = useState(['ai', 'quality', 'sources', 'coherence', 'level'])
   const [priors, setPriors] = useState([])
+  const [isgenai, setIsgenai] = useState(false)
   const [phase, setPhase] = useState('form') // form | running | result
   const [analysis, setAnalysis] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -103,6 +112,7 @@ function AnalyzePanel({ config, onOpenHistory }) {
         meta: { ...meta, levelLabel: meta.level === 'autre' ? meta.levelLabel : '' },
         checks: wanted.length ? wanted : ['quality'],
         priorTexts: checks.includes('style') || checks.includes('ai') ? usablePriors : [],
+        options: { isgenai: checks.includes('ai') && isgenai },
       })
       setAnalysis({ id, status: 'pending', steps: [] })
       setPhase('running')
@@ -148,16 +158,21 @@ function AnalyzePanel({ config, onOpenHistory }) {
   if (phase === 'running') {
     const failed = analysis?.status === 'failed'
     return (
-      <div className="mx-auto max-w-lg space-y-4">
-        <h2 className="font-display text-lg font-bold text-ink">{failed ? 'L’analyse a échoué' : 'Analyse en cours…'}</h2>
-        <p className="text-sm text-ink-soft">Chaque étape s’affiche au moment où le serveur la termine.</p>
-        <Steps steps={analysis?.steps?.length ? analysis.steps : [{ key: 'prepare', label: 'Envoi du devoir', status: 'running' }]} />
-        {failed && (
-          <button type="button" onClick={() => setPhase('form')} className="rounded-full bg-violet-600 px-4 py-2 text-sm font-bold text-white">
-            Revenir au formulaire
-          </button>
-        )}
-      </div>
+      <Console className="mx-auto max-w-xl">
+        <div className="space-y-4 p-5 sm:p-6">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[.2em] text-[#d9a6ff]">EDU-CHECK · analyse</p>
+            <h2 className="mt-1 font-display text-xl font-black text-white">{failed ? 'L’analyse a échoué' : 'Analyse en cours…'}</h2>
+            <p className="mt-1 text-xs text-white/50">Chaque étape s’affiche au moment où le serveur la termine.</p>
+          </div>
+          <Steps steps={analysis?.steps?.length ? analysis.steps : [{ key: 'prepare', label: 'Envoi du devoir', status: 'running' }]} />
+          {failed && (
+            <button type="button" onClick={() => setPhase('form')} className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#2b1a2c]">
+              Revenir au formulaire
+            </button>
+          )}
+        </div>
+      </Console>
     )
   }
 
@@ -242,6 +257,18 @@ function AnalyzePanel({ config, onOpenHistory }) {
             </label>
           ))}
         </div>
+
+        {checks.includes('ai') && config.isgenai && (
+          <label className={`mt-3 flex cursor-pointer items-start gap-2.5 rounded-2xl border p-3 transition ${isgenai ? 'border-violet-400 bg-violet-600/5' : 'border-ink/10 bg-surface'}`}>
+            <input type="checkbox" checked={isgenai} onChange={(e) => setIsgenai(e.target.checked)} className="mt-0.5 h-4 w-4 accent-violet-600" />
+            <span>
+              <span className="block text-sm font-semibold text-ink">Demander aussi l’avis d’isGenAI (service externe gratuit)</span>
+              <span className="block text-xs text-ink-soft">
+                Cherche les déclarations d’usage d’une IA et les noms d’outils. Le texte (16 000 premiers caractères) est envoyé à isgenai.com en mode privé, sans reçu public ; isGenAI indique pouvoir le transmettre à son prestataire (DeepSeek). Sans cette case, le texte du devoir ne quitte pas le serveur.
+              </span>
+            </span>
+          </label>
+        )}
 
         {(checks.includes('style') || checks.includes('ai')) && (
           <div className="mt-4 space-y-3">

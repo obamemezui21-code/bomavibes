@@ -10,3 +10,17 @@ export const BANDS = {
 }
 
 export const countWords = (text) => (String(text).match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || []).length
+
+// A level shared by the three AI engines: how strong the indication is.
+export const LEVEL_TONES = {
+  aucune: { label: 'Aucune preuve', color: '#4cc3ff', glow: 'rgba(76,195,255,.35)', step: 0 },
+  faible: { label: 'Indication faible', color: '#2fd083', glow: 'rgba(47,208,131,.35)', step: 1 },
+  moderee: { label: 'Indication modérée', color: '#ffc83d', glow: 'rgba(255,200,61,.35)', step: 2 },
+  elevee: { label: 'Indication élevée', color: '#ff6b5e', glow: 'rgba(255,107,94,.4)', step: 3 },
+  off: { label: 'Indisponible', color: '#8b8198', glow: 'rgba(139,129,152,.2)', step: 0 },
+}
+
+// The style index (0–100) on the same three steps.
+export const styleLevel = (score) => (score > 60 ? 'elevee' : score > 40 ? 'moderee' : 'faible')
+
+export const scoreColor = (v) => (v >= 80 ? '#2fd083' : v >= 60 ? '#ffc83d' : '#ff6b5e')

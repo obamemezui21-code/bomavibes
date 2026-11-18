@@ -151,6 +151,35 @@ test("style against earlier works feeds the AI index, without deciding it alone"
     assert.ok(r.ai.signals.some((s) => s.key === "style_shift"));
 });
 
+test("a document that is mostly code: non concluant, never a score", async () => {
+    const code = Array.from({ length: 40 }, (_, i) => `function exercice${i}(tableau) {\n  let total = 0;\n  for (const n of tableau) total += n;\n  return total;\n}`).join("\n");
+    const text = `Corrigé des exercices\n\nCe document donne les solutions des exercices de la semaine, avec le code complet de chaque fonction demandée aux étudiants.\n\n${code}`;
+    const r = await analyse(text);
+    assert.strictEqual(r.ai.status, "inconclusive");
+    assert.match(r.ai.reason, /code/);
+    assert.strictEqual(r.document.kind, "technique");
+});
+
+test("PDF layout: running heads and page numbers removed, cut lines joined", () => {
+    const { proseOf } = require("./text");
+    const r = proseOf("Le téléphone portable est devenu un objet du quotidien pour les lycéens, qui l’emportent par-\ntout avec eux, même en classe.\nIls s’en servent pour réviser.");
+    assert.match(r.prose, /partout avec eux/);
+    assert.ok(!r.prose.includes("par-\n"));
+});
+
+test("PDF running heads are removed, the pages' own text is kept", () => {
+    const { withoutRunningHeads } = require("./documentParser");
+    const page = (n) =>
+        [`Corrigé du formateur - JavaScript Page ${n}`, `Exercice ${n}.1 - Compter`, `Première ligne propre à la page ${n}.`, "Une autre ligne de texte.", `Encore du texte, page ${n}.`, "Fin du contenu.", `${n}`].join("\n");
+    const out = withoutRunningHeads([1, 2, 3, 4].map(page))
+    assert.ok(out.every((p) => !p.includes("Corrigé du formateur")), "running head removed");
+    assert.ok(out.every((p, i) => p.includes(`Exercice ${i + 1}.1`) && p.includes(`propre à la page ${i + 1}`)), "page text kept");
+    assert.ok(out.every((p, i) => !p.split("\n").includes(String(i + 1))), "bare page number removed");
+    // Short pages: nothing taken for a running head.
+    const short = withoutRunningHeads(["Texte de la page 1.", "Texte de la page 2.", "Texte de la page 3."]);
+    assert.deepStrictEqual(short, ["Texte de la page 1.", "Texte de la page 2.", "Texte de la page 3."]);
+});
+
 test("the disclaimer is always part of the result", async () => {
     const r = await analyse(T.natural);
     assert.match(r.disclaimer, /ne permettent pas d’établir avec certitude/);

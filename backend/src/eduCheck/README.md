@@ -99,6 +99,70 @@ aux clients par défaut. Les devoirs ne servent à entraîner aucun modèle.
 | `EDU_CHECK_MAX_SOURCE_LOOKUPS` | 15 | recherches de sources par analyse |
 | `EDU_CHECK_SOURCE_VERIFICATION` | (activée) | `off` : aucune requête vers Crossref / OpenAlex |
 | `EDU_CHECK_AI_PROVIDER` | (aucun) | réservé au moteur IA facultatif (non branché) |
+| `EDU_CHECK_ISGENAI` | (activé) | `off` : la case « avis d’isGenAI » disparaît, aucun texte n’est envoyé |
+| `EDU_CHECK_ML_ENGINE` | `off` | `binoculars` : active l’estimation par modèle de langage (voir « Moteur ML ») |
+| `EDU_CHECK_ML_OBSERVER` / `_PERFORMER` | Qwen2.5-0.5B / -Instruct (ONNX) | les deux modèles de Binoculars |
+| `EDU_CHECK_ML_DTYPE` | `q8` | quantification des modèles (`q8` ≈ 512 Mo chacun) |
+| `EDU_CHECK_ML_THREADS` | 2 | cœurs utilisés par le moteur (le reste sert l’application) |
+| `EDU_CHECK_ML_MAX_TOKENS` / `_MAX_WINDOWS` | 320 / 4 | taille d’un passage lu, nombre de passages par devoir |
+| `EDU_CHECK_ML_HIGH` / `_MODERATE` | 0.8 / 0.88 | seuils (provisoires, voir « Moteur ML ») |
+| `EDU_CHECK_ML_IDLE_MINUTES` | 10 | modèles déchargés de la mémoire après ce délai sans analyse |
+| `EDU_CHECK_ML_CACHE_DIR` | `~/.cache/bomavibes-models` | où les modèles sont téléchargés (une fois) |
+
+## Détection IA : trois moteurs, trois résultats séparés
+
+Jamais additionnés, jamais fusionnés en un score.
+
+### A. Preuves de provenance (`provenance/`)
+- **Recherche locale** (toujours) : déclarations (« rédigé avec l’aide de
+  ChatGPT »), traces d’outil (`utm_source=chatgpt.com`, `【4†source】`,
+  `contentReference[oaicite…]`, liens de partage de conversation), phrases
+  d’assistant restées dans le texte (« Bien sûr ! Voici… », « [Votre nom] »).
+  Un outil n’est nommé que si la preuve le nomme. Une simple mention d’un
+  outil (devoir qui parle d’IA) reste du contexte : indication faible.
+- **isGenAI** (`POST https://isgenai.com/v1/check`, sans clé, `privacy:
+  private`, `public_receipt: false`) : seulement si l’enseignant coche la case
+  pour cette analyse. Le texte (16 000 premiers caractères) part alors chez
+  isGenAI, qui indique pouvoir le transmettre à son prestataire (DeepSeek).
+  isGenAI lit des preuves, pas le style. Testé le 18/11/2026 : il reconnaît
+  « Drafted with ChatGPT » mais pas la même déclaration en français. S’il est
+  indisponible ou saturé, la recherche locale reste seule.
+- Limite : un texte recopié ou reformulé ne garde aucune preuve ; l’absence de
+  preuve ne montre rien.
+
+### B. Moteur ML (`ml/`) — désactivé par défaut
+Binoculars (Hans et al., 2024) : perplexité / perplexité croisée de deux
+modèles ouverts (Qwen2.5-0.5B et Qwen2.5-0.5B-Instruct, Apache 2.0, ONNX q8,
+~512 Mo chacun), dans un *worker thread* (le serveur de l’application n’est
+jamais bloqué), un devoir à la fois, déchargé après 10 min sans analyse.
+Zéro-shot : entraîné sur aucun chatbot, il ne reconnaît pas le fournisseur.
+
+Avant de l’activer : vérifier le VPS (≥ 2 Go de RAM libres en plus des
+services, disque ≥ 2 Go pour les modèles). Puis :
+
+```bash
+cd /var/www/bomavibes/backend && npm install @huggingface/transformers@3.7.6
+# .env : EDU_CHECK_ML_ENGINE=binoculars   puis   pm2 restart kani-api
+```
+
+(Le paquet doit aussi être ajouté à `package.json`, sinon le prochain
+déploiement le retire.)
+
+Mesures locales (PC Pentium N5030, 8 Go) : ~1,5 Go de RAM avec les deux
+modèles, ~1,5 à 2 min par passage de 320 tokens. **Les seuils 0,8 / 0,88 sont
+provisoires** : la calibration sur 38 textes français (24 humains d’avant
+2022 — critiques Allociné, Wikipédia — et 14 textes écrits par Claude) est en
+cours. Premier constat : une critique humaine pleine de fautes obtient 0,74,
+un score typique d’IA. Textes de ChatGPT, Gemini, DeepSeek : non testés.
+
+Écarté après mesure : le classifieur XLM-R `mujian2026/multilingual-ai-text-detector`
+(MIT) répond « humain » à 99,9 % sur les 38 textes, y compris les 14 de Claude
+(il n’a été entraîné qu’en anglais, chinois et vietnamien).
+
+### C. Analyse stylistique (`analysis/aiWriting.js`)
+Règles locales (uniformité, formules, transitions…). Sur le même corpus, elle
+range plutôt bien les textes (AUC 0,89) mais ne dépasse pas 27/100 sur les
+textes de Claude : elle repère le style caricatural, pas une IA bien utilisée.
 
 ## Limites connues
 
