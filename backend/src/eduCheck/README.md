@@ -105,7 +105,7 @@ aux clients par défaut. Les devoirs ne servent à entraîner aucun modèle.
 | `EDU_CHECK_ML_DTYPE` | `q8` | quantification des modèles (`q8` ≈ 512 Mo chacun) |
 | `EDU_CHECK_ML_THREADS` | 2 | cœurs utilisés par le moteur (le reste sert l’application) |
 | `EDU_CHECK_ML_MAX_TOKENS` / `_MAX_WINDOWS` | 320 / 4 | taille d’un passage lu, nombre de passages par devoir |
-| `EDU_CHECK_ML_HIGH` / `_MODERATE` | 0.8 / 0.88 | seuils (provisoires, voir « Moteur ML ») |
+| `EDU_CHECK_ML_HIGH` / `_MODERATE` | 0.8 / 0.9 | seuils (mesurés, voir « Moteur ML ») |
 | `EDU_CHECK_ML_IDLE_MINUTES` | 10 | modèles déchargés de la mémoire après ce délai sans analyse |
 | `EDU_CHECK_ML_CACHE_DIR` | `~/.cache/bomavibes-models` | où les modèles sont téléchargés (une fois) |
 
@@ -148,12 +148,25 @@ cd /var/www/bomavibes/backend && npm install @huggingface/transformers@3.7.6
 (Le paquet doit aussi être ajouté à `package.json`, sinon le prochain
 déploiement le retire.)
 
-Mesures locales (PC Pentium N5030, 8 Go) : ~1,5 Go de RAM avec les deux
-modèles, ~1,5 à 2 min par passage de 320 tokens. **Les seuils 0,8 / 0,88 sont
-provisoires** : la calibration sur 38 textes français (24 humains d’avant
-2022 — critiques Allociné, Wikipédia — et 14 textes écrits par Claude) est en
-cours. Premier constat : une critique humaine pleine de fautes obtient 0,74,
-un score typique d’IA. Textes de ChatGPT, Gemini, DeepSeek : non testés.
+Mesures (18/11/2026, PC Pentium N5030, 8 Go) : ~1,5 Go de RAM avec les deux
+modèles, ~3 min par passage de 300 tokens. Corpus : 38 textes français, 24
+humains d’avant 2022 (12 critiques Allociné, 12 extraits de Wikipédia) et 14
+textes écrits par Claude dans 6 registres (dissertation, commentaire, copie
+d’élève, rapport, encyclopédie, critique).
+
+| Score Binoculars | humains | Claude |
+|---|---|---|
+| min · médiane · max | 0,74 · 1,10 · 1,32 | 0,87 · 1,05 · 1,28 |
+
+AUC 0,64 seulement (0,5 = hasard). Au seuil 0,9 : 4 textes d’IA sur 14
+repérés, 1 texte humain sur 24 signalé à tort (une critique pleine de fautes,
+à 0,74). Au seuil 1,0 : 7 sur 14, mais 3 humains sur 24. **Conclusion : avec
+ces modèles de 0,5 milliard de paramètres, le moteur B n’est pas assez
+fiable en français pour être activé.** Pistes : une paire plus grosse
+(Qwen2.5-1.5B, ~3,5 Go de RAM, 3 fois plus lente) ou le profil français de
+`linagora/binoculars-eu` (Luciole 1B, Python, AUC 0,96 annoncée mais mesurée
+sur des textes de Luciole seulement) — à mesurer sur ce même corpus avant
+toute activation. Textes de ChatGPT, Gemini, DeepSeek : non testés.
 
 Écarté après mesure : le classifieur XLM-R `mujian2026/multilingual-ai-text-detector`
 (MIT) répond « humain » à 99,9 % sur les 38 textes, y compris les 14 de Claude
@@ -161,8 +174,10 @@ un score typique d’IA. Textes de ChatGPT, Gemini, DeepSeek : non testés.
 
 ### C. Analyse stylistique (`analysis/aiWriting.js`)
 Règles locales (uniformité, formules, transitions…). Sur le même corpus, elle
-range plutôt bien les textes (AUC 0,89) mais ne dépasse pas 27/100 sur les
-textes de Claude : elle repère le style caricatural, pas une IA bien utilisée.
+range plutôt bien les textes qu’elle peut lire (AUC 0,89 sur 23 textes ; 15
+extraits de ~200 mots sont « non concluants ») mais ne dépasse pas 27/100 sur
+les textes de Claude : elle repère le style caricatural, pas une IA bien
+utilisée.
 
 ## Limites connues
 

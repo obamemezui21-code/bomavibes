@@ -30,10 +30,11 @@ function settings() {
         maxTokens: Math.max(64, Math.min(1024, Math.round(num("EDU_CHECK_ML_MAX_TOKENS", 320)))),
         maxWindows: Math.max(1, Math.min(12, Math.round(num("EDU_CHECK_ML_MAX_WINDOWS", 4)))),
         cacheDir: process.env.EDU_CHECK_ML_CACHE_DIR || path.join(os.homedir(), ".cache", "bomavibes-models"),
-        // Below `high`: élevée; below `moderate`: modérée. Calibrated on French
-        // texts (README.md, "Moteur ML"): change them only after measuring.
+        // Below `high`: élevée; below `moderate`: modérée. Set from the French
+        // benchmark (README.md, "Moteur ML") to keep false alarms rare: at
+        // 0.9, 4 AI texts out of 14 flagged, 1 human out of 24.
         high: num("EDU_CHECK_ML_HIGH", 0.8),
-        moderate: num("EDU_CHECK_ML_MODERATE", 0.88),
+        moderate: num("EDU_CHECK_ML_MODERATE", 0.9),
         idleMs: num("EDU_CHECK_ML_IDLE_MINUTES", 10) * 60000,
         timeoutMs: num("EDU_CHECK_ML_TIMEOUT_SECONDS", 240) * 1000,
     };
@@ -143,7 +144,7 @@ const BANDS = { faible: "Indication faible", moderee: "Indication modérée", el
 const LIMITATIONS = [
     "Mesure à quel point le texte est prévisible pour un modèle de langage. Un texte très scolaire, encyclopédique ou appris par cœur peut paraître « prévisible » sans IA ; un texte d’IA reformulé à la main ou par un outil de « réécriture » peut ne pas l’être.",
     "Le moteur ne reconnaît pas le fournisseur (ChatGPT, Claude, Gemini, DeepSeek…) : il n’a été entraîné sur aucun d’eux.",
-    "Calibré sur un petit échantillon de textes français (voir README) : c’est une estimation, pas une probabilité, et jamais une preuve.",
+    "Mesuré sur 38 textes français : il repère moins d’un texte d’IA sur trois et signale parfois un texte humain. C’est une estimation, pas une probabilité, et jamais une preuve.",
 ];
 
 /**
