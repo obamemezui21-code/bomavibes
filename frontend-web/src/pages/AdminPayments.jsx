@@ -27,6 +27,7 @@ const STATUS_FILTERS = [
 ]
 
 const PLAN_LABELS = { vip: 'VIP', diamant: 'Diamant Rouge', jade: 'Jadéite Impériale' }
+const PROVIDER_LABELS = { monerails: 'Monerails', singpay: 'SingPay' }
 const OPERATOR_LABELS = { airtel: 'Airtel Money', moov: 'Moov Money' }
 
 const fcfa = (n) => `${Math.round(n || 0).toLocaleString('fr-FR')} FCFA`
@@ -189,7 +190,7 @@ function Breakdown({ title, rows }) {
 const BOM = String.fromCharCode(0xfeff)
 
 function exportCsv(payments) {
-  const header = ['Référence', 'Date', 'Statut', 'Forfait', 'Montant (FCFA)', 'Opérateur', 'Numéro', 'Prénom', 'E-mail', 'Raison échec', 'Statut SingPay']
+  const header = ['Référence', 'Date', 'Statut', 'Forfait', 'Montant (FCFA)', 'Opérateur', 'Numéro', 'Prénom', 'E-mail', 'Raison échec', 'Prestataire', 'Statut prestataire']
   const rows = payments.map((p) => [
     p.reference,
     p.createdAt ? new Date(p.createdAt).toISOString() : '',
@@ -201,6 +202,7 @@ function exportCsv(payments) {
     p.firstName || '',
     p.email || '',
     p.failureReason || '',
+    `${PROVIDER_LABELS[p.provider] || p.provider || ''}${p.testMode ? ' (test)' : ''}`,
     p.singpayStatus || '',
   ])
   const csv = [header, ...rows].map((r) => r.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n')
@@ -233,7 +235,7 @@ function PaymentRow({ p }) {
       {p.failureReason && <p className="mt-1 text-xs text-coral-600">{p.failureReason}</p>}
       <p className="mt-1 text-[11px] text-ink-soft/50">
         {formatDate(p.createdAt)} · <span className="font-mono">{p.reference}</span>
-        {p.singpayStatus && <> · SingPay : {p.singpayStatus}</>}
+        {p.singpayStatus && <> · {PROVIDER_LABELS[p.provider] || 'SingPay'}{p.testMode ? ' (test)' : ''} : {p.singpayStatus}</>}
       </p>
     </div>
   )
@@ -279,7 +281,7 @@ function AdminPayments() {
         </span>
         <div className="min-w-0 flex-1">
           <h1 className="font-display text-xl font-semibold text-ink">Paiements</h1>
-          <p className="text-xs text-ink-soft/60">Revenus et transactions Mobile Money (SingPay)</p>
+          <p className="text-xs text-ink-soft/60">Revenus et transactions Mobile Money (Monerails, SingPay)</p>
         </div>
         <button
           type="button"

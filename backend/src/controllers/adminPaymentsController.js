@@ -51,10 +51,13 @@ async function getPaymentsDashboard(req, res) {
             db.collection("users").where("planExpiresAt", ">", Timestamp.fromMillis(now)).get(),
         ]);
 
-        const all = paymentsSnap.docs.map((d) => {
+        const everything = paymentsSnap.docs.map((d) => {
             const p = d.data();
             return { ...p, reference: d.id, createdAtMs: toMillis(p.createdAt), paidAtMs: toMillis(p.paidAt) };
         });
+        // Test-mode payments (Monerails test key, admins only) moved no real
+        // money: listed, never counted.
+        const all = everything.filter((p) => !p.testMode);
         const inPeriod = all.filter((p) => p.createdAtMs >= periodStart);
         // Revenue is dated when the money arrived.
         const paidAt = (p) => p.paidAtMs || p.createdAtMs;
@@ -111,7 +114,7 @@ async function getPaymentsDashboard(req, res) {
         const monthlyRecurring = PAID_PLANS.reduce((s, id) => s + activeByPlan[id] * PLANS[id].price, 0);
 
         // Latest transactions, with who paid.
-        const list = inPeriod.slice(0, LIST_LIMIT);
+        const list = everything.filter((p) => p.createdAtMs >= periodStart).slice(0, LIST_LIMIT);
         const uids = [...new Set(list.map((p) => p.uid))];
         const people = {};
         if (uids.length) {
@@ -157,7 +160,9 @@ async function getPaymentsDashboard(req, res) {
                 msisdn: p.msisdn,
                 status: p.status === "confirming" ? "pending" : p.status,
                 failureReason: p.status === "failed" || p.status === "expired" ? reasonOf(p) : null,
-                singpayStatus: p.singpayStatus || null,
+                provider: p.provider || "singpay",
+                testMode: !!p.testMode,
+                singpayStatus: p.providerStatus || p.singpayStatus || null,
                 createdAt: p.createdAtMs || null,
                 paidAt: p.paidAtMs || null,
             })),

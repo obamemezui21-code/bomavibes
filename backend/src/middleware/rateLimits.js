@@ -23,13 +23,13 @@ function limiter({ windowMs, limit, message, keyGenerator, skip, skipFailedReque
 
 const TOO_MANY = "Trop de requêtes, réessayez dans quelques minutes.";
 
-// Every /api call. SingPay's callback is exempt: it always comes from the
-// same few SingPay IPs and must never be dropped.
+// Every /api call. The payment providers' notifications are exempt: they
+// come from the same few IPs and must never be dropped (both are verified).
 const apiLimiter = limiter({
     windowMs: 5 * MINUTE,
     limit: 1500,
     message: TOO_MANY,
-    skip: (req) => req.path === "/payments/singpay/callback",
+    skip: (req) => req.path === "/payments/singpay/callback" || req.path === "/payments/monerails/webhook",
 });
 
 // Only accounts actually created count: a typo, an email already taken or

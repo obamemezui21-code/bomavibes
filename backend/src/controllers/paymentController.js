@@ -1,23 +1,28 @@
 const crypto = require("crypto");
 const admin = require("../config/firebaseAdmin");
 const { PLANS, PAID_PLANS, PLAN_DURATIONS, toMillis } = require("../config/plans");
+const { hasFullAdminAccess } = require("../config/roles");
 const singpay = require("../services/singpayService");
+const monerails = require("../services/monerailsService");
 const { grantPlan } = require("../services/subscriptionService");
 
 const db = admin.firestore();
 const { FieldValue } = admin.firestore;
 
-// Online plan payments. One payments/{reference} doc per attempt (Admin SDK
-// only — no client rules):
-//   pending    → USSD Push sent, waiting for the customer's PIN
-//   confirming → SingPay confirmed, the plan is being granted
+// Online plan payments, by Mobile Money (Airtel Money / Moov Money, Gabon),
+// through Monerails — or SingPay, the previous provider, still able to settle
+// the payments it started and to take over again (PAYMENT_PROVIDER=singpay).
+//
+// One payments/{reference} doc per attempt (Admin SDK only — no client rules):
+//   pending    → request sent to the phone, waiting for the customer's PIN
+//   confirming → the provider confirmed, the plan is being granted
 //   paid       → plan granted (planExpiresAt recorded)
 //   failed     → refused / cancelled / insufficient balance / gateway error
-//   expired    → never settled within PENDING_MAX_AGE_MS
+//   expired    → never settled in time
 //
-// Nothing the browser or the callback sends is trusted: every settlement is
-// re-read from SingPay's status API with our own credentials, and the amount
-// is checked against the plan price fixed here.
+// Nothing the browser, the callback or the webhook sends is trusted: every
+// settlement is re-read from the provider's API with our own credentials, and
+// the amount is checked against the plan price fixed here.
 
 const REQUEST_COOLDOWN_MS = 30 * 1000;
 const CONFIRMING_STALE_MS = 2 * 60 * 1000;
@@ -25,6 +30,25 @@ const PENDING_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const SWEEP_INTERVAL_MS = 2 * 60 * 1000;
 
 const payments = db.collection("payments");
+const DURATION_LABELS = { week: "1 semaine", month: "1 mois", semester: "6 mois", year: "1 an" };
+
+const PROVIDERS = {
+    monerails: { configured: () => monerails.isConfigured() },
+    singpay: { configured: () => singpay.isConfigured() },
+};
+
+// The provider new payments go through: PAYMENT_PROVIDER if set and ready,
+// else Monerails once its key is there, else SingPay, else none (WhatsApp).
+function activeProvider() {
+    const wanted = (process.env.PAYMENT_PROVIDER || "").trim().toLowerCase();
+    if (PROVIDERS[wanted]?.configured()) return wanted;
+    if (wanted && wanted !== "auto") return null;
+    return ["monerails", "singpay"].find((p) => PROVIDERS[p].configured()) || null;
+}
+
+// With a Monerails test key, Monerails' test numbers always "succeed": only
+// admins may pay then, so nobody gets a plan for free.
+const testMode = (provider) => provider === "monerails" && monerails.isTestMode();
 
 function newReference() {
     return `BV${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
@@ -39,12 +63,52 @@ function publicView(p) {
         operator: p.operator,
         status: p.status === "confirming" ? "pending" : p.status,
         message: p.failureReason || null,
+        // What to do on the phone, when the provider says (Monerails).
+        instruction: p.status === "pending" ? p.instruction || null : null,
         planExpiresAt: p.planExpiresAt || null,
+        testMode: !!p.testMode,
     };
 }
 
-// Re-reads the transaction from SingPay and moves the payment forward.
-// Safe to call any number of times, from any path (poll, callback, sweep).
+// Each provider's view of a payment, in one shape:
+//   { verdict: pending|succeeded|failed|expired, providerStatus, amount,
+//     reference, currency, livemode, failureReason, instruction, transactionId }
+async function checkSingPay(p) {
+    const payload = p.transactionId ? await singpay.getTransactionStatus(p.transactionId) : await singpay.findByReference(p.reference);
+    const tx = singpay.transactionOf(payload);
+    const verdict = singpay.classify(payload);
+    return {
+        verdict,
+        providerStatus: [tx?.status, tx?.result].filter(Boolean).join(" · ") || null,
+        amount: Number(tx?.amount),
+        reference: tx?.reference || null,
+        currency: "XAF",
+        livemode: true,
+        failureReason: verdict === "failed" ? singpay.failureMessage(tx?.result) : null,
+    };
+}
+
+async function checkMonerails(p) {
+    const c = p.transactionId ? await monerails.getCollection(p.transactionId) : await monerails.findByReference(p.reference);
+    if (!c) return { verdict: "pending", providerStatus: null };
+    const verdict = monerails.classify(c);
+    return {
+        verdict,
+        providerStatus: [c.status, c.failure_code].filter(Boolean).join(" · "),
+        amount: Number(c.amount),
+        reference: c.client_reference || null,
+        currency: c.currency,
+        livemode: c.livemode === true,
+        failureReason: verdict === "failed" || verdict === "expired" ? monerails.failureMessage(c) : null,
+        instruction: monerails.instructionOf(c),
+        transactionId: c.id,
+    };
+}
+
+const CHECKS = { singpay: checkSingPay, monerails: checkMonerails };
+
+// Re-reads the payment from its provider and moves it forward. Safe to call
+// any number of times, from any path (poll, callback, webhook, sweep).
 async function reconcile(reference) {
     const ref = payments.doc(reference);
     const p = (await ref.get()).data();
@@ -52,20 +116,22 @@ async function reconcile(reference) {
     const stale = p.status === "confirming" && Date.now() - toMillis(p.updatedAt) > CONFIRMING_STALE_MS;
     if (p.status !== "pending" && !stale) return p;
 
-    let payload;
+    const provider = p.provider || "singpay";
+    let check;
     try {
-        payload = p.transactionId ? await singpay.getTransactionStatus(p.transactionId) : await singpay.findByReference(reference);
+        check = await CHECKS[provider](p);
     } catch (err) {
-        console.error(`[singpay] statut illisible pour ${reference}:`, err.message);
+        console.error(`[${provider}] statut illisible pour ${reference}:`, err.message);
         return p;
     }
-    const tx = singpay.transactionOf(payload);
-    const verdict = singpay.classify(payload);
-    const singpayStatus = [tx?.status, tx?.result].filter(Boolean).join(" · ") || null;
-    console.log(`[singpay] ${reference} → ${verdict} (${singpayStatus})`);
+    const { verdict, providerStatus } = check;
+    console.log(`[${provider}] ${reference} → ${verdict} (${providerStatus})`);
+    const base = { providerStatus, updatedAt: FieldValue.serverTimestamp() };
+    if (provider === "singpay") base.singpayStatus = providerStatus;
+    if (check.transactionId && !p.transactionId) base.transactionId = check.transactionId;
 
     if (verdict === "pending") {
-        const updates = { singpayStatus, updatedAt: FieldValue.serverTimestamp() };
+        const updates = { ...base, instruction: check.instruction || null };
         if (Date.now() - toMillis(p.createdAt) > PENDING_MAX_AGE_MS) {
             Object.assign(updates, { status: "expired", failureReason: "Le paiement n'a pas été validé à temps." });
         }
@@ -73,26 +139,21 @@ async function reconcile(reference) {
         return (await ref.get()).data();
     }
 
-    if (verdict === "failed") {
-        await ref.update({
-            status: "failed",
-            singpayStatus,
-            failureReason: singpay.failureMessage(tx?.result),
-            updatedAt: FieldValue.serverTimestamp(),
-        });
+    if (verdict === "failed" || verdict === "expired") {
+        await ref.update({ ...base, status: verdict, failureReason: check.failureReason || "Le paiement n'a pas abouti." });
         return (await ref.get()).data();
     }
 
-    // Succeeded — make sure it's really this payment, for the full price.
-    const paidAmount = Number(tx?.amount);
-    if ((tx?.reference && tx.reference !== reference) || !(paidAmount >= p.amount)) {
-        console.error(`[singpay] ${reference} : montant/référence inattendus`, { amount: tx?.amount, reference: tx?.reference });
-        await ref.update({
-            status: "failed",
-            singpayStatus,
-            failureReason: "Montant reçu incorrect — contactez le support.",
-            updatedAt: FieldValue.serverTimestamp(),
-        });
+    // Succeeded — make sure it's really this payment, for the full price, in
+    // real money (test money only for a payment started in test mode).
+    const wrong =
+        (check.reference && check.reference !== reference) ||
+        !(check.amount >= p.amount) ||
+        (check.currency && check.currency !== "XAF") ||
+        (!check.livemode && !p.testMode);
+    if (wrong) {
+        console.error(`[${provider}] ${reference} : paiement inattendu`, { amount: check.amount, reference: check.reference, currency: check.currency, livemode: check.livemode });
+        await ref.update({ ...base, status: "failed", failureReason: "Montant reçu incorrect — contactez le support." });
         return (await ref.get()).data();
     }
 
@@ -101,44 +162,81 @@ async function reconcile(reference) {
         const cur = (await t.get(ref)).data();
         const curStale = cur.status === "confirming" && Date.now() - toMillis(cur.updatedAt) > CONFIRMING_STALE_MS;
         if (cur.status !== "pending" && !curStale) return false;
-        t.update(ref, { status: "confirming", singpayStatus, updatedAt: FieldValue.serverTimestamp() });
+        t.update(ref, { ...base, status: "confirming" });
         return true;
     });
     if (!claimed) return (await ref.get()).data();
 
-    const planExpiresAt = await grantPlan(p.uid, p.plan, p.days, `singpay:${reference}`);
+    const planExpiresAt = await grantPlan(p.uid, p.plan, p.days, `${provider}${p.testMode ? "-test" : ""}:${reference}`);
     await ref.update({
         status: "paid",
         planExpiresAt,
+        instruction: null,
         paidAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     });
     return (await ref.get()).data();
 }
 
-// GET /api/payments/config — lets the pricing page know whether to offer
-// in-app Mobile Money or fall back to WhatsApp.
-function getPaymentConfig(req, res) {
-    res.json({ singpay: singpay.isConfigured() });
+async function isAdmin(uid) {
+    const snap = await db.collection("users").doc(uid).get();
+    return hasFullAdminAccess(snap.data()?.role);
 }
 
-// POST /api/payments/singpay { plan, duration, phone } — duration: week | month | semester | year
-async function startSingPayPayment(req, res) {
-    if (!singpay.isConfigured()) {
+// The signed-in member, when the request carries a valid token (optional).
+async function optionalUid(req) {
+    const token = (req.get("Authorization") || "").match(/^Bearer (.+)$/)?.[1];
+    if (!token) return null;
+    try {
+        return (await admin.auth().verifyIdToken(token)).uid;
+    } catch {
+        return null;
+    }
+}
+
+// GET /api/payments/config — whether the pricing page offers in-app Mobile
+// Money (else WhatsApp). In test mode, to admins only.
+async function getPaymentConfig(req, res) {
+    const provider = activeProvider();
+    let mobileMoney = !!provider;
+    if (provider && testMode(provider)) {
+        const uid = await optionalUid(req);
+        mobileMoney = !!uid && (await isAdmin(uid).catch(() => false));
+    }
+    // `singpay` kept for app versions still cached on phones.
+    res.json({ mobileMoney, singpay: mobileMoney, provider: mobileMoney ? provider : null, testMode: mobileMoney && testMode(provider) });
+}
+
+// POST /api/payments/mobile-money { plan, duration, phone } — duration:
+// week | month | semester | year. (/api/payments/singpay: same, for old app versions.)
+async function startPayment(req, res) {
+    const provider = activeProvider();
+    if (!provider) return res.status(503).json({ message: "Le paiement Mobile Money n'est pas encore disponible." });
+    const uid = req.firebaseUser.uid;
+    const test = testMode(provider);
+    if (test && !(await isAdmin(uid))) {
         return res.status(503).json({ message: "Le paiement Mobile Money n'est pas encore disponible." });
     }
-    const uid = req.firebaseUser.uid;
     const { plan, phone, duration = "month" } = req.body || {};
     if (!PAID_PLANS.includes(plan)) return res.status(400).json({ message: "Forfait invalide" });
     if (!Object.hasOwn(PLAN_DURATIONS, duration)) return res.status(400).json({ message: "Durée invalide" });
-    const msisdn = singpay.normalizeMsisdn(phone);
-    const operator = msisdn && singpay.operatorFor(msisdn);
+
+    let msisdn;
+    let operator;
+    if (provider === "monerails") {
+        const parsed = monerails.parsePhone(phone);
+        msisdn = parsed?.phone;
+        operator = parsed?.operator;
+    } else {
+        msisdn = singpay.normalizeMsisdn(phone);
+        operator = msisdn && singpay.operatorFor(msisdn);
+    }
     if (!operator) {
         return res.status(400).json({ message: "Numéro Airtel Money ou Moov Money (Gabon) invalide." });
     }
 
     try {
-        // One request at a time per user — a USSD Push is a real phone prompt.
+        // One request at a time per user — it is a real prompt on a phone.
         const usageRef = db.collection("usage").doc(uid);
         const tooSoon = await db.runTransaction(async (t) => {
             const last = toMillis((await t.get(usageRef)).data()?.paymentRequestedAt);
@@ -160,15 +258,55 @@ async function startSingPayPayment(req, res) {
             days: PLAN_DURATIONS[duration].days,
             amount: PLANS[plan].prices[duration],
             currency: "XAF",
-            provider: "singpay",
+            provider,
             operator,
             msisdn,
             status: "pending",
             transactionId: null,
+            ...(test ? { testMode: true } : {}),
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
         };
         await ref.set(payment);
+
+        if (provider === "monerails") {
+            let collection;
+            try {
+                const profile = (await db.collection("profiles").doc(uid).get()).data();
+                collection = await monerails.createCollection({
+                    reference,
+                    amount: payment.amount,
+                    phone: msisdn,
+                    operator,
+                    name: profile?.firstName,
+                    description: `BomaVibes ${PLANS[plan].label || plan} · ${DURATION_LABELS[duration] || duration}`,
+                    metadata: { uid, plan, duration },
+                });
+            } catch (err) {
+                // A timeout may hide a collection Monerails did create: the
+                // sweep looks it up by reference before calling it failed.
+                if (err.name === "TimeoutError" || err.name === "AbortError") {
+                    console.error(`[monerails] ${reference} : pas de réponse, vérification par la référence`);
+                    return res.status(201).json(publicView(payment));
+                }
+                console.error(`[monerails] envoi refusé pour ${reference}:`, err.message, err.code || "", JSON.stringify(err.body || null));
+                const message = err.code === "test_phone_required" ? "En mode test, utilisez le numéro de test 24100000001." : "La demande de paiement n'a pas pu être envoyée. Réessayez.";
+                await ref.update({ status: "failed", failureReason: err.message, updatedAt: FieldValue.serverTimestamp() });
+                return res.status(502).json({ message });
+            }
+            console.log(`[monerails] ${reference} envoyé`, JSON.stringify({ id: collection?.id, status: collection?.status, livemode: collection?.livemode }));
+            const verdict = monerails.classify(collection);
+            if (verdict === "failed" || verdict === "expired") {
+                const reason = monerails.failureMessage(collection);
+                await ref.update({ status: verdict, transactionId: collection?.id || null, failureReason: reason, updatedAt: FieldValue.serverTimestamp() });
+                return res.status(402).json({ message: reason });
+            }
+            const instruction = monerails.instructionOf(collection);
+            await ref.update({ transactionId: collection?.id || null, instruction, providerStatus: collection?.status || null, updatedAt: FieldValue.serverTimestamp() });
+            // Already succeeded (some test numbers do): settle it now.
+            const settled = verdict === "succeeded" ? await reconcile(reference) : null;
+            return res.status(201).json(publicView(settled || { ...payment, instruction }));
+        }
 
         let result;
         try {
@@ -230,16 +368,49 @@ async function singPayCallback(req, res) {
     }
 }
 
-// Safety net for customers who close the page and callbacks that never come.
+// POST /api/payments/monerails/webhook — raw body (app.js), signed with
+// MONERAILS_WEBHOOK_SECRET. Only says which payment to re-check: the outcome
+// is read back from the API (reconcile). Events can repeat or come out of
+// order: reconcile is idempotent and goes by the current status.
+async function monerailsWebhook(req, res) {
+    if (!monerails.verifySignature(req.body, req.get("Monerail-Signature"))) {
+        return res.status(400).json({ message: "Signature invalide" });
+    }
+    let event;
+    try {
+        event = JSON.parse(req.body.toString("utf8"));
+    } catch {
+        return res.status(400).json({ message: "Corps invalide" });
+    }
+    res.json({ received: true });
+    try {
+        const object = event?.data?.object;
+        if (!String(event?.type || "").startsWith("collection.") || object?.object !== "collection") return;
+        let reference = typeof object.client_reference === "string" ? object.client_reference : null;
+        if (!reference || !(await payments.doc(reference).get()).exists) {
+            if (!object.id) return;
+            const snap = await payments.where("transactionId", "==", String(object.id)).limit(1).get();
+            if (snap.empty) return;
+            reference = snap.docs[0].id;
+        }
+        await reconcile(reference);
+    } catch (err) {
+        console.error("[monerails] webhook", err);
+    }
+}
+
+// Safety net for customers who close the page and notifications that never
+// come. Each payment is checked with its own provider, if still configured.
 async function sweepPendingPayments() {
-    if (!singpay.isConfigured()) return;
     try {
         const snap = await payments.where("status", "in", ["pending", "confirming"]).limit(50).get();
         for (const doc of snap.docs) {
-            await reconcile(doc.id).catch((err) => console.error(`[singpay] sweep ${doc.id}`, err));
+            const provider = doc.data().provider || "singpay";
+            if (!PROVIDERS[provider]?.configured()) continue;
+            await reconcile(doc.id).catch((err) => console.error(`[${provider}] sweep ${doc.id}`, err));
         }
     } catch (err) {
-        console.error("[singpay] sweep impossible", err);
+        console.error("[payments] sweep impossible", err);
     }
 }
 
@@ -247,4 +418,14 @@ function startPaymentSweepScheduler() {
     setInterval(sweepPendingPayments, SWEEP_INTERVAL_MS);
 }
 
-module.exports = { getPaymentConfig, startSingPayPayment, getPayment, singPayCallback, startPaymentSweepScheduler };
+module.exports = {
+    getPaymentConfig,
+    startPayment,
+    startSingPayPayment: startPayment,
+    getPayment,
+    singPayCallback,
+    monerailsWebhook,
+    startPaymentSweepScheduler,
+    reconcile,
+    activeProvider,
+};

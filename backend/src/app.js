@@ -69,6 +69,8 @@ app.use("/api/escadrille/finish", express.json({ limit: "300kb" }));
 app.use("/api/perles/finish", express.json({ limit: "300kb" }));
 // EDU-CHECK: a long homework (20 000 words) is well over 100 KB.
 app.use("/api/edu-check", express.json({ limit: "2mb" }));
+// Monerails signs the exact bytes of its webhooks: kept raw (paymentController.js).
+app.use("/api/payments/monerails/webhook", express.raw({ type: "*/*", limit: "1mb" }));
 app.use(express.json());
 app.use("/api", apiLimiter);
 

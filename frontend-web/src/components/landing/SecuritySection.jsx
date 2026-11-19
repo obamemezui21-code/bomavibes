@@ -35,7 +35,7 @@ const PILLARS = [
   {
     icon: CreditCard,
     title: 'Paiements sécurisés',
-    text: 'Airtel Money et Moov Money via notre partenaire SingPay. Chaque paiement est confirmé par nos serveurs, et nous ne vous demanderons jamais votre code secret.',
+    text: 'Airtel Money et Moov Money via notre partenaire de paiement agréé. Chaque paiement est confirmé par nos serveurs, et nous ne vous demanderons jamais votre code secret.',
   },
 ]
 

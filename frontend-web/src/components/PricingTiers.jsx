@@ -23,12 +23,12 @@ function WhatsAppLink({ tier, price, email, className, children }) {
   )
 }
 
-// In-app Mobile Money (SingPay — Airtel Money / Moov Money, Gabon): the user
-// enters their number, confirms the USSD prompt on their phone with their
-// PIN, and the backend activates the plan once SingPay confirms. Outside
-// Gabon, or while SingPay isn't configured, the WhatsApp flow remains: the
+// In-app Mobile Money (Monerails — Airtel Money / Moov Money, Gabon): the
+// user enters their number, confirms the prompt on their phone with their
+// PIN, and the backend activates the plan once the provider confirms. Outside
+// Gabon, or while no provider is configured, the WhatsApp flow remains: the
 // team takes the payment and an admin activates the plan.
-function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
+function SubscribeSheet({ tier, email, mobileMoney, testMode, onClose }) {
   const [durationId, setDurationId] = useState('month')
   const price = tier.prices.find((p) => p.id === durationId)
   const [phone, setPhone] = useState('')
@@ -36,6 +36,8 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
   const [step, setStep] = useState('form')
   const [error, setError] = useState('')
   const [paidUntil, setPaidUntil] = useState(null)
+  // What to do on the phone, when the provider says (e.g. a USSD code).
+  const [instruction, setInstruction] = useState('')
   const pollRef = useRef(null)
 
   useEffect(() => () => clearTimeout(pollRef.current), [])
@@ -54,6 +56,7 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
           setStep('failed')
           return
         }
+        setInstruction(p.instruction || '')
       } catch {
         // Network hiccup: keep polling until the timeout.
       }
@@ -68,6 +71,12 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
     setStep('sending')
     try {
       const p = await startMobileMoneyPayment(tier.id, durationId, phone)
+      if (p.status === 'paid') {
+        setPaidUntil(p.planExpiresAt)
+        setStep('paid')
+        return
+      }
+      setInstruction(p.instruction || '')
       setStep('waiting')
       poll(p.reference, Date.now())
     } catch (err) {
@@ -143,6 +152,12 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
           </>
         )}
 
+        {mobileMoney && testMode && (
+          <p className="mt-4 rounded-xl bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900">
+            Mode test (admins seulement) : aucun argent réel. Après +241, tapez 00000001 (réussit), 00000002 (reste en attente) ou 00000003 (échoue).
+          </p>
+        )}
+
         {mobileMoney && (step === 'form' || step === 'sending') && (
           <form onSubmit={pay} className="mt-4">
             <label htmlFor="momo-phone" className="text-sm font-semibold text-[#261b28]">
@@ -186,6 +201,7 @@ function SubscribeSheet({ tier, email, mobileMoney, onClose }) {
             <p className="mt-1 text-xs text-[#635a65]">
               Entrez votre code secret Mobile Money dans la fenêtre qui s’est ouverte. Cette page se met à jour toute seule.
             </p>
+            {instruction && <p className="mt-3 rounded-xl bg-violet-600/5 px-3 py-2 text-xs font-medium text-[#261b28]">{instruction}</p>}
           </div>
         )}
 
@@ -231,11 +247,15 @@ function PricingTiers() {
   const { user } = useAuth()
   const [chosen, setChosen] = useState(null)
   const [mobileMoney, setMobileMoney] = useState(false)
+  const [testMode, setTestMode] = useState(false)
 
   useEffect(() => {
     if (!user) return
     getPaymentConfig()
-      .then((c) => setMobileMoney(!!c.singpay))
+      .then((c) => {
+        setMobileMoney(!!(c.mobileMoney ?? c.singpay))
+        setTestMode(!!c.testMode)
+      })
       .catch(() => {})
   }, [user])
   return (
@@ -323,7 +343,7 @@ function PricingTiers() {
       ))}
     </div>
     <AnimatePresence>
-      {chosen && <SubscribeSheet tier={chosen} email={user?.email} mobileMoney={mobileMoney} onClose={() => setChosen(null)} />}
+      {chosen && <SubscribeSheet tier={chosen} email={user?.email} mobileMoney={mobileMoney} testMode={testMode} onClose={() => setChosen(null)} />}
     </AnimatePresence>
     </>
   )
