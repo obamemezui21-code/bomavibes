@@ -112,6 +112,14 @@ describe('messages', () => {
     await assertFails(addDoc(messages('alice'), { senderId: 'alice', text: 'Hello?' }))
   })
 
+  it('stays readable, but closed to new messages, once the other member deleted their account', async () => {
+    await env.withSecurityRulesDisabled((ctx) => updateDoc(doc(ctx.firestore(), `matches/${MATCH}`), { deletedUsers: ['bob'] }))
+    await assertSucceeds(getDoc(doc(as('alice'), `matches/${MATCH}/messages/fromBob`)))
+    await assertFails(addDoc(messages('alice'), { senderId: 'alice', text: 'Tu es là ?' }))
+    // Opening it still marks it read.
+    await assertSucceeds(updateDoc(doc(as('alice'), `matches/${MATCH}`), { 'lastReadAt.alice': serverTimestamp() }))
+  })
+
   it("accepts a reaction to the other person's message (regression)", async () => {
     await assertSucceeds(updateDoc(doc(as('alice'), `matches/${MATCH}/messages/fromBob`), { 'reactions.alice': '❤️' }))
     await assertSucceeds(updateDoc(doc(as('alice'), `matches/${MATCH}/messages/fromBob`), { 'reactions.alice': deleteField() }))

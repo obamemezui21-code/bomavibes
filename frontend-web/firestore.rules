@@ -396,6 +396,9 @@ service cloud.firestore {
           // User-made sticker (POST /api/stickers): just its image URL.
           && isOptionalString('stickerUrl', 500)
           && !isBlockedByRecipient(matchId)
+          // A member deleted their account: the other keeps the conversation
+          // to read (accountDeletionService.js), but nobody writes to it.
+          && get(/databases/$(database)/documents/matches/$(matchId)).data.get('deletedUsers', []).size() == 0
           && canInteract();
         allow update: if isMatchParticipant() && (isOwnTextEdit() || isOwnReaction());
         allow delete: if isSignedIn() && resource.data.senderId == request.auth.uid;

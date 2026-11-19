@@ -46,7 +46,7 @@ const FAQS = [
   },
   {
     question: 'Comment supprimer mon compte ?',
-    answer: 'Directement depuis Paramètres → Supprimer mon compte. Toutes vos données sont effacées définitivement, sans délai.',
+    answer: 'Directement depuis Paramètres → Supprimer mon compte. Vos données sont effacées définitivement, sans délai ; vos messages texte restent visibles chez vos matchs, sous le nom « Compte supprimé ».',
   },
   {
     question: 'Que faire si un profil me met mal à l\'aise ?',

@@ -187,7 +187,10 @@ export function ConversationsProvider({ children }) {
     isFirstMatchesSnapshot.current = true
     const q = query(collection(db, 'matches'), where('users', 'array-contains', uid))
     const unsubscribe = onSnapshot(q, (snap) => {
-      const next = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      // Estimated while a write is pending: lastMessageAt is never empty
+      // right after sending (it would sort the conversation last, and hide
+      // one deleted "for me" until the server answers).
+      const next = snap.docs.map((d) => ({ id: d.id, ...d.data({ serverTimestamps: 'estimate' }) }))
 
       if (!isFirstMatchesSnapshot.current) {
         for (const match of next) {
@@ -230,9 +233,15 @@ export function ConversationsProvider({ children }) {
     if (!uid || !matchedOtherUidsKey) return
     const otherUids = matchedOtherUidsKey.split(',')
     const unsubscribes = otherUids.map((otherUid) =>
-      onSnapshot(doc(db, 'profiles', otherUid), (snap) => {
-        setProfilesById((prev) => ({ ...prev, [otherUid]: snap.exists() ? snap.data() : null }))
-      }),
+      onSnapshot(
+        doc(db, 'profiles', otherUid),
+        (snap) => {
+          setProfilesById((prev) => ({ ...prev, [otherUid]: snap.exists() ? snap.data() : null }))
+        },
+        // Unreadable (network, rules): shown as unavailable rather than
+        // leaving the conversation out of the list for good.
+        () => setProfilesById((prev) => (otherUid in prev ? prev : { ...prev, [otherUid]: null })),
+      ),
     )
     return () => unsubscribes.forEach((unsub) => unsub())
   }, [uid, matchedOtherUidsKey])
@@ -295,13 +304,20 @@ export function ConversationsProvider({ children }) {
     setMessageLimits((prev) => ({ ...prev, [matchId]: (prev[matchId] || MESSAGES_PAGE_SIZE) + MESSAGES_PAGE_SIZE }))
   }
 
-  const conversations = useMemo(() => {
+  // Every conversation, including those whose other member deleted their
+  // account (accountDeletionService.js keeps them for the one who stays, as
+  // WhatsApp does): `closed`, shown "Compte supprimé", read-only.
+  const allConversations = useMemo(() => {
     return matches
       .map((match) => {
         const otherUid = match.users.find((u) => u !== uid)
         if (blockedIds.has(otherUid)) return null
-        const profile = profilesById[otherUid]
-        if (!profile) return null
+        const gone = !!match.deletedUsers?.includes(otherUid)
+        // undefined: still loading. null: no profile any more.
+        const loadedProfile = profilesById[otherUid]
+        if (loadedProfile === undefined && !gone) return null
+        const closed = gone || loadedProfile === null
+        const profile = closed ? { firstName: gone ? 'Compte supprimé' : 'Profil indisponible' } : loadedProfile
         const otherLastReadAt = match.lastReadAt?.[otherUid]?.toMillis?.() ?? null
         // "Supprimer la discussion" (clearChatController.js): for this member,
         // nothing from before that moment, and out of the Messages list until
@@ -352,6 +368,7 @@ export function ConversationsProvider({ children }) {
           unreadCount: match.seen?.[uid] === false ? 1 : 0,
           lastMessage: cleared ? null : match.lastMessage || null,
           cleared,
+          closed,
           messages,
           online,
           lastSeenLabel: online ? 'En ligne' : isInvisible ? null : formatLastSeen(profile.lastActive, now),
@@ -364,6 +381,11 @@ export function ConversationsProvider({ children }) {
       .filter(Boolean)
       .sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
   }, [matches, profilesById, activeMessages, hasOlderMessages, uid, now, blockedIds])
+
+  // "My matches", as every page but Messages reads them: people still here.
+  const conversations = useMemo(() => allConversations.filter((c) => !c.closed), [allConversations])
+  // Kept for reading only, in the Messages list (pages/Chat.jsx).
+  const closedConversations = useMemo(() => allConversations.filter((c) => c.closed), [allConversations])
 
   const typingId = conversations.find((c) => c.isTyping)?.id ?? null
   const newMatchesCount = useMemo(() => conversations.filter((c) => c.isNewMatch).length, [conversations])
@@ -641,6 +663,7 @@ export function ConversationsProvider({ children }) {
     <ConversationsContext.Provider
       value={{
         conversations,
+        closedConversations,
         selfConversation,
         typingId,
         setTyping,

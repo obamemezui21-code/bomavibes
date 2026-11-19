@@ -35,7 +35,7 @@ const SECTIONS = [
     body: [
       'Tant que votre compte est actif, pour vous fournir le service.',
       'La photo de votre pièce d\'identité et votre selfie de vérification sont supprimés dès que notre équipe a pris sa décision. Nous gardons seulement le résultat (vérifié ou non) et le type de pièce présentée.',
-      'Si vous supprimez votre compte depuis les Paramètres, toutes vos données (profil, photos, messages) sont définitivement effacées de nos systèmes.',
+      'Si vous supprimez votre compte depuis les Paramètres, vos données (profil, photos, matchs, fichiers) sont définitivement effacées de nos systèmes. Vos messages texte restent visibles chez les membres avec qui vous discutiez, sous le nom « Compte supprimé » ; vos photos, fichiers, notes vocales et positions envoyés sont effacés.',
     ],
   },
   {
@@ -51,7 +51,7 @@ const SECTIONS = [
     title: '6. Vos droits',
     body: [
       'Vous pouvez à tout moment consulter et modifier vos informations de profil directement dans l\'app.',
-      'Vous pouvez supprimer votre compte et toutes les données associées depuis Paramètres → Supprimer mon compte.',
+      'Vous pouvez supprimer votre compte et les données associées depuis Paramètres → Supprimer mon compte (vos messages texte restent chez vos matchs, voir ci-dessus).',
       'Pour toute autre demande (accès, rectification, question sur vos données), écrivez-nous à Bomavibes241@gmail.com.',
     ],
   },

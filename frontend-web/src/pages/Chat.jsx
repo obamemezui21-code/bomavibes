@@ -389,6 +389,7 @@ function Chat() {
   const navigate = useNavigate()
   const {
     conversations,
+    closedConversations,
     selfConversation,
     typingId,
     sendMessage,
@@ -475,11 +476,17 @@ function Chat() {
   const activeId = conversationId || conversations.find((c) => !c.cleared)?.id || conversations[0]?.id
   // The conversation with yourself ("Vous", /chat/moi) isn't a match: no
   // calls, profile, safety menu, typing, icebreakers or date ideas there.
-  const active = selfConversation && activeId === selfConversation.id ? selfConversation : conversations.find((c) => c.id === activeId)
+  // A conversation whose other member deleted their account stays readable
+  // (closedConversations): no reply, call, profile or date ideas there.
+  const active =
+    selfConversation && activeId === selfConversation.id
+      ? selfConversation
+      : conversations.find((c) => c.id === activeId) || closedConversations.find((c) => c.id === activeId)
   // Once a conversation is going and no place was proposed yet.
   const showDateNudge =
     !!active &&
     !active.isSelf &&
+    !active.closed &&
     !editingMessageId &&
     active.messages.length >= DATE_NUDGE_MIN_MESSAGES &&
     !active.messages.some((m) => m.type === 'venue-invite') &&
@@ -1069,7 +1076,10 @@ function Chat() {
   // of the list, where it can be found.
   // A deleted conversation leaves the list (it stays a match, in "Matchs
   // récents"), until a new message brings it back — or while it's open.
-  const listed = conversations.filter((c) => !c.cleared || c.id === conversationId)
+  // Conversations with a deleted account stay too, by date, read-only.
+  const listed = [...conversations, ...closedConversations]
+    .filter((c) => !c.cleared || c.id === conversationId)
+    .sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
   const listConversations = !selfConversation
     ? listed
     : selfConversation.lastActivityAt
@@ -1359,7 +1369,7 @@ function Chat() {
                 <button
                   type="button"
                   onClick={() => setExpandedProfile(buildChatProfile(active))}
-                  disabled={!!active.isSelf}
+                  disabled={!!active.isSelf || !!active.closed}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
                   <img
@@ -1390,6 +1400,8 @@ function Chat() {
                       )}
                       {active.isSelf ? (
                         <span className="text-white/55">Message à vous-même</span>
+                      ) : active.closed ? (
+                        <span className="text-white/55">Ce compte n’existe plus</span>
                       ) : active.online ? (
                         <span className="text-mint-400">En ligne</span>
                       ) : (
@@ -1399,7 +1411,18 @@ function Chat() {
                   </div>
                 </button>
 
-                {!active.isSelf && (
+                {active.closed && (
+                  <button
+                    type="button"
+                    onClick={() => setShowClear(true)}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/85 transition hover:bg-white/20"
+                    aria-label="Supprimer la discussion"
+                    title="Supprimer la discussion"
+                  >
+                    <Trash2 size={16} strokeWidth={2} />
+                  </button>
+                )}
+                {!active.isSelf && !active.closed && (
                 <div className="flex shrink-0 items-center gap-1.5">
                   {/* Signaler stays in view on every screen; Bloquer and the
                       conversation settings are in the ⋮ menu. */}
@@ -1500,7 +1523,7 @@ function Chat() {
             )}
 
             <div className="relative min-w-0 flex-1 overflow-hidden">
-            {!active.isSelf && <WeMetPrompt key={active.id} matchId={active.id} firstName={active.profile.firstName} />}
+            {!active.isSelf && !active.closed && <WeMetPrompt key={active.id} matchId={active.id} firstName={active.profile.firstName} />}
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <img
                 src={active.profile.photoFull || active.profile.photo}
@@ -1992,7 +2015,16 @@ function Chat() {
                 </button>
               </div>
             )}
-            {isRecording ? (
+            {active.closed ? (
+              <div className="flex shrink-0 items-start gap-2.5 border-t border-ink/8 bg-ink/[0.03] px-4 py-3 text-sm text-ink-soft">
+                <Info size={17} strokeWidth={2.25} className="mt-0.5 shrink-0" />
+                <p>
+                  {active.profile.firstName === 'Compte supprimé'
+                    ? 'Ce membre a supprimé son compte. Vous pouvez relire la conversation, mais plus y répondre.'
+                    : 'Ce profil n’est plus disponible. Vous pouvez relire la conversation, mais plus y répondre.'}
+                </p>
+              </div>
+            ) : isRecording ? (
               <div className={`flex shrink-0 items-center gap-3 p-3 ${editingMessageId ? '' : 'border-t border-ink/8'}`}>
                 <button
                   type="button"

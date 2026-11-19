@@ -650,7 +650,7 @@ function Settings() {
       {confirmDelete && (
         <ConfirmModal
           title="Supprimer votre compte ?"
-          description="Toutes vos données, matchs et conversations seront définitivement perdus."
+          description="Votre profil, vos photos, vos matchs et vos données seront définitivement effacés. Comme sur WhatsApp, vos messages texte restent visibles chez vos matchs, sous le nom « Compte supprimé » ; vos photos, fichiers et notes vocales envoyés sont effacés."
           confirmLabel="Supprimer"
           confirmingLabel="Suppression…"
           isConfirming={isDeleting}

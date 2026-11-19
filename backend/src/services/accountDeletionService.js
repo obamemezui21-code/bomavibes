@@ -10,9 +10,71 @@ const { removeVerificationFiles } = require("../controllers/verificationControll
 const db = admin.firestore();
 const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads", "profile-photos");
 const VOICE_ROOT = path.join(__dirname, "..", "..", "uploads", "voice-notes");
+const CHAT_FILES_ROOT = path.join(__dirname, "..", "..", "uploads", "chat-attachments");
+const { FieldValue } = admin.firestore;
 // Firestore caps a single batch at 500 writes — chunk so this stays correct
 // for a user with many matches/messages instead of only working by luck.
 const BATCH_LIMIT = 500;
+
+async function batchUpdateAll(updates) {
+    for (let i = 0; i < updates.length; i += BATCH_LIMIT) {
+        const batch = db.batch();
+        for (const [ref, data] of updates.slice(i, i + BATCH_LIMIT)) batch.update(ref, data);
+        await batch.commit();
+    }
+}
+
+// What replaces a deleted member's photo, file, voice note or position in
+// the conversations they leave behind.
+const REMOVED = {
+    image: "📷 Photo supprimée avec le compte",
+    file: "📎 Fichier supprimé avec le compte",
+    voice: "🎤 Message vocal supprimé avec le compte",
+    location: "📍 Position supprimée avec le compte",
+};
+
+function strippedMessage(data) {
+    const type = data.type || "text";
+    const label = REMOVED[type] || (data.fileUrl || data.audioUrl ? REMOVED.file : null);
+    if (!label) return null;
+    return {
+        type: "text",
+        text: label,
+        removedWithAccount: true,
+        fileUrl: FieldValue.delete(),
+        fileName: FieldValue.delete(),
+        fileSize: FieldValue.delete(),
+        audioUrl: FieldValue.delete(),
+        duration: FieldValue.delete(),
+        location: FieldValue.delete(),
+    };
+}
+
+// Their conversations stay with the people they talked to, as on WhatsApp:
+// the match is marked (deletedUsers), nobody can write to it any more
+// (firestore.rules), and the app shows it "Compte supprimé", read-only.
+// Their text messages stay; their photos, files, voice notes and positions
+// go. A conversation both members have left is deleted outright.
+async function leaveConversations(uid) {
+    const matchesSnap = await db.collection("matches").where("users", "array-contains", uid).get();
+    for (const matchDoc of matchesSnap.docs) {
+        const match = matchDoc.data();
+        const users = match.users || [];
+        const gone = new Set([...(match.deletedUsers || []), uid]);
+        if (users.every((u) => gone.has(u))) {
+            const messages = await matchDoc.ref.collection("messages").get();
+            await batchDeleteAll([...messages.docs.map((d) => d.ref), matchDoc.ref]);
+            continue;
+        }
+        const theirs = await matchDoc.ref.collection("messages").where("senderId", "==", uid).get();
+        await batchUpdateAll(theirs.docs.map((d) => [d.ref, strippedMessage(d.data())]).filter(([, data]) => data));
+        await matchDoc.ref.update({
+            deletedUsers: FieldValue.arrayUnion(uid),
+            [`typing.${uid}`]: FieldValue.delete(),
+            [`activeIn.${uid}`]: FieldValue.delete(),
+        });
+    }
+}
 
 async function batchDeleteAll(refs) {
     for (let i = 0; i < refs.length; i += BATCH_LIMIT) {
@@ -24,20 +86,14 @@ async function batchDeleteAll(refs) {
     }
 }
 
-// Erases matches/messages/swipes/profile/uploaded files and the Firebase
-// Auth account, then replaces users/{uid} with a bare
+// Leaves their conversations to the other members (leaveConversations
+// above), erases swipes/profile/uploaded files and the Firebase Auth account, then replaces users/{uid} with a bare
 // {deleted, deletedAt, email} tombstone (overwritten, not merged — every
 // other field is dropped) so "Utilisateurs supprimés" has something to
 // list. The Auth account is still fully deleted, so the email is free to
 // sign up again immediately.
 async function eraseAccount(uid) {
-    const matchesSnap = await db.collection("matches").where("users", "array-contains", uid).get();
-    const messagesSnaps = await Promise.all(
-        matchesSnap.docs.map((matchDoc) => matchDoc.ref.collection("messages").get()),
-    );
-    const messageRefs = messagesSnaps.flatMap((snap) => snap.docs.map((doc) => doc.ref));
-    await batchDeleteAll(messageRefs);
-    await batchDeleteAll(matchesSnap.docs.map((doc) => doc.ref));
+    await leaveConversations(uid);
 
     // Their conversation with themselves (notes, photos… kept for later).
     const selfChatRef = db.collection("selfChats").doc(uid);
@@ -91,8 +147,10 @@ async function eraseAccount(uid) {
     });
 
     fs.rmSync(path.join(UPLOAD_ROOT, uid), { recursive: true, force: true });
-    // Voice notes and the profile voice prompt (their chats are deleted above).
+    // Voice notes and the profile voice prompt, and the photos and files they
+    // sent in chats (their messages now say so: leaveConversations above).
     fs.rmSync(path.join(VOICE_ROOT, uid), { recursive: true, force: true });
+    fs.rmSync(path.join(CHAT_FILES_ROOT, uid), { recursive: true, force: true });
     // Identity document and selfie, if a verification was still pending.
     removeVerificationFiles(uid);
     await db.collection("verificationRequests").doc(uid).delete().catch(() => {});
@@ -100,4 +158,4 @@ async function eraseAccount(uid) {
     await admin.auth().deleteUser(uid);
 }
 
-module.exports = { eraseAccount };
+module.exports = { eraseAccount, leaveConversations, strippedMessage };

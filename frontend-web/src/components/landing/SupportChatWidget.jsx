@@ -39,7 +39,7 @@ const KB = [
     id: 'supprimer-compte',
     question: 'Comment supprimer mon compte ?',
     keywords: ['supprimer compte', 'suppression', 'desinscrire', 'effacer mon compte'],
-    answer: 'Directement depuis Paramètres → Supprimer mon compte, une fois connecté·e. Toutes vos données sont effacées définitivement, sans délai.',
+    answer: 'Directement depuis Paramètres → Supprimer mon compte, une fois connecté·e. Vos données sont effacées définitivement, sans délai ; vos messages texte restent visibles chez vos matchs, sous le nom « Compte supprimé ».',
     actions: [SETTINGS_ACTION],
     related: ['donnees'],
   },

@@ -51,7 +51,7 @@ const SECTIONS = [
   {
     title: '7. Suspension et suppression',
     body: [
-      'Vous pouvez supprimer votre compte à tout moment depuis Paramètres → Supprimer mon compte ; toutes vos données sont alors définitivement effacées.',
+      'Vous pouvez supprimer votre compte à tout moment depuis Paramètres → Supprimer mon compte ; vos données sont alors définitivement effacées. Vos messages texte restent visibles chez les membres avec qui vous discutiez, sous le nom « Compte supprimé » ; vos photos, fichiers, notes vocales et positions envoyés sont effacés.',
       'Nous pouvons suspendre ou fermer un compte qui enfreint ces CGU, notamment suite à des signalements d\'autres membres.',
     ],
   },
