@@ -430,3 +430,27 @@ describe('video posts', () => {
     await assertFails(addDoc(collection(as('bob'), 'posts'), video({ duration: 300 })))
   })
 })
+
+describe('BomaVibes Campus (the server only)', () => {
+  const COLLECTIONS = ['campusMembers', 'campusClasses', 'campusStudents', 'campusImports', 'campusSubjects', 'campusTeachers', 'campusSessions', 'campusSessionKeys', 'campusAudit']
+
+  it('no account can read or write it, not even an app admin or a campus member', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'users/boss'), { email: 'boss@x.test', role: 'admin' })
+      await setDoc(doc(db, 'campusMembers/alice'), { org: 'INASS', role: 'admin' })
+      for (const c of COLLECTIONS) await setDoc(doc(db, c, 'x'), { org: 'INASS' })
+    })
+    for (const ctx of [env.unauthenticatedContext(), env.authenticatedContext('alice'), env.authenticatedContext('boss')]) {
+      const db = ctx.firestore()
+      for (const c of COLLECTIONS) {
+        await assertFails(getDoc(doc(db, c, 'x')))
+        await assertFails(setDoc(doc(db, c, 'y'), { org: 'INASS' }))
+        await assertFails(updateDoc(doc(db, c, 'x'), { org: 'X' }))
+        await assertFails(deleteDoc(doc(db, c, 'x')))
+      }
+    }
+    await assertFails(getDoc(doc(env.authenticatedContext('alice').firestore(), 'campusMembers/alice')))
+    await assertFails(setDoc(doc(env.authenticatedContext('carol').firestore(), 'campusMembers/carol'), { org: 'INASS', role: 'admin' }))
+  })
+})

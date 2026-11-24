@@ -1,0 +1,84 @@
+import { auth } from './config.js'
+
+// BomaVibes Campus — attendance (backend/src/campus/). Everything goes through
+// the server: the app never reads or writes these Firestore collections itself.
+
+async function request(path, { method = 'GET', body, form } = {}) {
+  const idToken = await auth.currentUser?.getIdToken()
+  const headers = { Authorization: `Bearer ${idToken}` }
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  let res
+  try {
+    res = await fetch(`/api/campus${path}`, { method, headers, body: form || (body !== undefined ? JSON.stringify(body) : undefined) })
+  } catch {
+    const err = new Error('Connexion impossible. Vérifiez votre réseau.')
+    err.offline = true
+    throw err
+  }
+  return res
+}
+
+async function call(path, options) {
+  const res = await request(path, options)
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    const err = new Error(data?.message || 'Une erreur est survenue. Réessayez.')
+    Object.assign(err, { status: res.status, code: data?.code, data })
+    throw err
+  }
+  return data
+}
+
+const qs = (params = {}) => {
+  const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''))
+  return q.size ? `?${q}` : ''
+}
+const seg = encodeURIComponent
+
+export const fetchCampusMe = () => call('/me')
+export const fetchCampus = () => call('/bootstrap')
+
+// params: { classId, year, from, to, subjectId, teacherId, detail }
+export const fetchStats = (params) => call(`/stats${qs(params)}`)
+
+export const createClass = (body) => call('/classes', { method: 'POST', body })
+export const fetchStudents = (classId) => call(`/classes/${seg(classId)}/students`).then((d) => d.students)
+export const addStudent = (classId, body) => call(`/classes/${seg(classId)}/students`, { method: 'POST', body })
+export const updateStudent = (id, body) => call(`/students/${seg(id)}`, { method: 'PATCH', body })
+export const fetchStudent = (id, params) => call(`/students/${seg(id)}${qs(params)}`)
+export const previewImport = (classId, body) => call(`/classes/${seg(classId)}/import/preview`, { method: 'POST', body })
+export const runImport = (classId, body) => call(`/classes/${seg(classId)}/import`, { method: 'POST', body })
+export const fetchImports = (classId) => call(`/classes/${seg(classId)}/imports`).then((d) => d.imports)
+
+export const fetchSessions = (params) => call(`/sessions${qs(params)}`)
+export const createSession = (body) => call('/sessions', { method: 'POST', body })
+export const fetchSession = (id) => call(`/sessions/${seg(id)}`)
+export const updateSession = (id, body) => call(`/sessions/${seg(id)}`, { method: 'PATCH', body })
+export const saveMarks = (id, changes) => call(`/sessions/${seg(id)}/marks`, { method: 'PATCH', body: { changes } })
+export const validateSession = (id, body) => call(`/sessions/${seg(id)}/validate`, { method: 'POST', body })
+export const correctMark = (id, body) => call(`/sessions/${seg(id)}/corrections`, { method: 'POST', body })
+export const cancelSession = (id, reason) => call(`/sessions/${seg(id)}/cancel`, { method: 'POST', body: { reason } })
+export const syncRoster = (id) => call(`/sessions/${seg(id)}/roster`, { method: 'POST', body: {} })
+export const fetchSessionAudit = (id) => call(`/sessions/${seg(id)}/audit`).then((d) => d.entries)
+
+export function addScan(id, file) {
+  const form = new FormData()
+  form.append('file', file)
+  return call(`/sessions/${seg(id)}/scans`, { method: 'POST', form })
+}
+export const removeScan = (id, scanId) => call(`/sessions/${seg(id)}/scans/${seg(scanId)}`, { method: 'DELETE' })
+// The image itself, as a Blob (private: it needs the account's token).
+export async function fetchScan(id, scanId) {
+  const res = await request(`/sessions/${seg(id)}/scans/${seg(scanId)}`)
+  if (!res.ok) throw new Error('Image introuvable.')
+  return res.blob()
+}
+
+// kind: 'subjects' | 'teachers'
+export const addNamed = (kind, name) => call(`/${kind}`, { method: 'POST', body: { name } })
+export const updateNamed = (kind, id, body) => call(`/${kind}/${seg(id)}`, { method: 'PATCH', body })
+
+export const fetchMembers = () => call('/members').then((d) => d.members)
+export const setMember = (body) => call('/members', { method: 'POST', body })
+export const removeMember = (uid) => call(`/members/${seg(uid)}`, { method: 'DELETE' })
+export const fetchAudit = () => call('/audit').then((d) => d.entries)

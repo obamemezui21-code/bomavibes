@@ -56,6 +56,7 @@ const Venues = lazy(() => import('./pages/Venues.jsx'))
 const StudioIA = lazy(() => import('./pages/StudioIA.jsx'))
 const CvBuilder = lazy(() => import('./pages/CvBuilder.jsx'))
 const EduCheck = lazy(() => import('./pages/EduCheck.jsx'))
+const Campus = lazy(() => import('./pages/Campus.jsx'))
 const Cine = lazy(() => import('./pages/Cine.jsx'))
 const Ngori = lazy(() => import('./pages/Ngori.jsx'))
 const NgoriRun = lazy(() => import('./pages/NgoriRun.jsx'))
@@ -187,6 +188,17 @@ function App() {
             element={
               <RequireAuth>
                 <Onboarding />
+              </RequireAuth>
+            }
+          />
+
+          {/* The staff of an institution: a verified e-mail is enough (access is
+              decided by the server), no dating profile to fill in. */}
+          <Route
+            path="/campus/*"
+            element={
+              <RequireAuth>
+                <Campus />
               </RequireAuth>
             }
           />

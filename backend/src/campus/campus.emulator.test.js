@@ -1,0 +1,348 @@
+// The whole Campus API against the Firestore emulator. Skipped unless it runs:
+//   java -jar ~/.cache/firebase/emulators/cloud-firestore-emulator-*.jar --host 127.0.0.1 --port 8085
+//   FIRESTORE_EMULATOR_HOST=127.0.0.1:8085 node --test src/campus/campus.emulator.test.js
+// The app's own Firebase credentials are never loaded here.
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+
+const on = !!process.env.FIRESTORE_EMULATOR_HOST;
+const it = (name, fn) => test(name, { skip: on ? false : "Firestore emulator not running" }, fn);
+
+let base;
+let server;
+let db;
+let C;
+const scansDir = fs.mkdtempSync(path.join(os.tmpdir(), "campus-scans-"));
+const ACCOUNTS = { "agent2@inass.test": { uid: "agent2", emailVerified: true }, "faux@inass.test": { uid: "faux", emailVerified: false }, "prof@inass.test": { uid: "prof", emailVerified: true } };
+
+if (on) {
+    process.env.CAMPUS_SCANS_DIR = scansDir;
+    const firebase = require("firebase-admin");
+    firebase.initializeApp({ projectId: `demo-campus-${process.pid}` });
+    const stub = {
+        firestore: firebase.firestore,
+        auth: () => ({
+            getUserByEmail: async (email) => {
+                if (ACCOUNTS[email]) return ACCOUNTS[email];
+                throw Object.assign(new Error("no"), { code: "auth/user-not-found" });
+            },
+        }),
+    };
+    const put = (rel, exports) => {
+        const file = require.resolve(rel);
+        require.cache[file] = { id: file, filename: file, loaded: true, exports };
+    };
+    put("../config/firebaseAdmin", stub);
+    put("../middleware/firebaseAuthMiddleware", (req, res, next) => {
+        const uid = req.headers["x-user"];
+        if (!uid) return res.status(401).json({ message: "Authentification requise" });
+        req.firebaseUser = { uid, email: `${uid}@inass.test` };
+        next();
+    });
+    db = firebase.firestore();
+}
+
+test.before(async () => {
+    if (!on) return;
+    const express = require("express");
+    const app = express();
+    app.use(express.json());
+    app.use("/api/campus", require("./routes"));
+    await new Promise((resolve) => (server = app.listen(0, resolve)));
+    base = `http://127.0.0.1:${server.address().port}/api/campus`;
+    await db.collection("users").doc("boss").set({ role: "admin", firstName: "Direction" });
+    await db.collection("users").doc("someone").set({ role: "user" });
+    await db.collection("users").doc("modo").set({ role: "moderator" });
+    await db.collection("campusMembers").doc("agent").set({ org: "INASS", role: "agent", name: "Agent Un", canExport: true });
+    await db.collection("campusMembers").doc("other").set({ org: "AUTRE", role: "admin", name: "Ailleurs" });
+    await db.collection("campusMembers").doc("localadmin").set({ org: "INASS", role: "admin", name: "Admin INASS" });
+});
+test.after(() => {
+    server?.closeAllConnections?.();
+    server?.close();
+    fs.rmSync(scansDir, { recursive: true, force: true });
+});
+
+async function call(user, method, url, body) {
+    const res = await fetch(base + url, { method, headers: { ...(user ? { "x-user": user } : {}), ...(body ? { "Content-Type": "application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    return { status: res.status, body: await res.json().catch(() => null) };
+}
+async function ok(...args) {
+    const r = await call(...args);
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    return r.body;
+}
+
+const AB = "ABCDEFGHIJKLMNOPQRST";
+const fake = (i) => `${AB[i % 20]}${AB[(i * 7 + 3) % 20]}OUMBA ${AB[Math.floor(i / 20)]}${AB[(i * 11) % 20]}${AB[(i * 13 + 5) % 20]}ENGUE ${AB[(i * 3) % 20]}ela${AB[(i * 17) % 20].toLowerCase()}${AB[Math.floor(i / 6) % 20].toLowerCase()}`;
+const names = Array.from({ length: 119 }, (_, i) => fake(i));
+names[85] = "NDOMBO SIMBA Rita Anna";
+names[88] = "NGOMBO SIMBA Rita Anna";
+const list = (arr) => arr.map((n, i) => `${i + 1}. ${n}`).join("\n");
+
+it("only campus accounts get in", async () => {
+    assert.equal((await call(null, "GET", "/me")).status, 401);
+    assert.deepEqual(await ok("someone", "GET", "/me"), { allowed: false });
+    assert.equal((await call("someone", "GET", "/bootstrap")).status, 403);
+    assert.equal((await call("modo", "GET", "/bootstrap")).status, 403);
+    assert.equal((await ok("boss", "GET", "/bootstrap")).me.role, "admin");
+    assert.equal((await ok("agent", "GET", "/bootstrap")).me.role, "agent");
+});
+
+it("creates the class and imports 119 students, after a report, with no status", async () => {
+    assert.equal((await call("agent", "POST", "/classes", { code: "L1", label: "Licence 1", expected: 119 })).status, 403);
+    C = (await ok("boss", "POST", "/classes", { code: "L1", label: "Licence 1", expected: 119 })).id;
+    assert.equal((await call("boss", "POST", "/classes", { code: "l1", label: "x", expected: 1 })).status, 409);
+
+    // First the former list of 118.
+    const old = names.slice(0, 118);
+    old[3] = "ANCIEN ETUDIANT Parti";
+    const p118 = await ok("boss", "POST", `/classes/${C}/import/preview`, { text: list(old), expected: 118 });
+    assert.equal(p118.report.ok, true, JSON.stringify(p118.report.anomalies));
+    assert.equal((await db.collection("campusStudents").get()).size, 0, "the report writes nothing");
+    assert.equal((await call("boss", "POST", `/classes/${C}/import`, { text: list(old), expected: 118, hash: p118.hash })).status, 400, "needs a confirmation");
+    assert.equal((await call("boss", "POST", `/classes/${C}/import`, { text: list(old), expected: 118, hash: "x".repeat(64), confirmed: true })).status, 409);
+    assert.equal((await call("agent", "POST", `/classes/${C}/import`, { text: list(old), expected: 118, hash: p118.hash, confirmed: true })).status, 403);
+    await ok("boss", "POST", `/classes/${C}/import`, { text: list(old), expected: 118, hash: p118.hash, confirmed: true });
+});
+
+let sessionId;
+let subject;
+let teacher;
+let students;
+
+it("a sheet of the former list keeps its history when the 119 replace it", async () => {
+    subject = (await ok("agent", "POST", "/subjects", { name: "Droit social" })).id;
+    assert.equal((await ok("agent", "POST", "/subjects", { name: "DROIT  SOCIAL" })).id, subject, "the same subject once");
+    teacher = (await ok("agent", "POST", "/teachers", { name: "M. Enseignant" })).id;
+    const before = (await ok("agent", "GET", `/classes/${C}/students`)).students;
+    const s = (await ok("agent", "POST", "/sessions", { classId: C, date: "2026-11-02", start: "08:00", end: "10:00", subjectId: subject, teacherId: teacher })).id;
+    const gone = before.find((x) => x.name === "ANCIEN ETUDIANT Parti");
+    await ok("agent", "PATCH", `/sessions/${s}/marks`, { changes: [{ id: gone.id, s: "A", n: "malade" }] });
+    await ok("agent", "POST", `/sessions/${s}/validate`, { confirmed: true, allowUnfilled: true });
+
+    const preview = await ok("boss", "POST", `/classes/${C}/import/preview`, { text: list(names), expected: 119 });
+    assert.equal(preview.report.count, 119);
+    assert.equal(preview.plan.kept.length, 117);
+    assert.equal(preview.plan.added.length, 2);
+    assert.deepEqual(preview.plan.archived.map((x) => x.name), ["ANCIEN ETUDIANT Parti"]);
+    assert.ok(preview.report.anomalies.some((a) => a.code === "similar" && /86/.test(a.message) && /89/.test(a.message)));
+    const done = await ok("boss", "POST", `/classes/${C}/import`, { text: list(names), expected: 119, hash: preview.hash, confirmed: true });
+    assert.deepEqual([done.active, done.uniqueIds, done.numbersOk], [119, 119, true]);
+
+    students = (await ok("agent", "GET", `/classes/${C}/students`)).students.filter((x) => x.active);
+    assert.equal(students.length, 119);
+    assert.deepEqual(students.map((x) => x.name), names, "spelling and order exactly as given");
+    assert.notEqual(students[85].id, students[88].id, "look-alikes stay two students");
+    for (const st of students.slice(0, 3)) assert.equal(st.id, before.find((b) => b.name === st.name).id, "identifiers kept");
+    // The student who left is archived; their page and the sheet are intact.
+    const page = await ok("agent", "GET", `/students/${gone.id}?year=all`);
+    assert.equal(page.student.active, false);
+    assert.deepEqual([page.record.a, page.record.history[0].note], [1, "malade"]);
+    const imports = (await ok("boss", "GET", `/classes/${C}/imports`)).imports;
+    assert.deepEqual(imports.map((x) => x.version), [2, 1]);
+});
+
+it("a new session starts with nothing filled in", async () => {
+    const d = { classId: C, date: "2026-11-23", start: "08:00", end: "10:00", subjectId: subject, teacherId: teacher };
+    sessionId = (await ok("agent", "POST", "/sessions", d)).id;
+    const { session, can } = await ok("agent", "GET", `/sessions/${sessionId}`);
+    assert.equal(session.roster.length, 119);
+    assert.deepEqual(session.marks, {});
+    assert.deepEqual(session.counts, { p: 0, r: 0, a: 0, n: 119 });
+    assert.deepEqual([can.enter, can.correct], [true, false]);
+    assert.equal(session.agentName, "Agent Un");
+
+    assert.equal((await call("agent", "POST", "/sessions", d)).body.code, "DUPLICATE");
+    assert.equal((await call("agent", "POST", "/sessions", { ...d, start: "09:00", end: "11:00" })).body.code, "DUPLICATE", "same subject overlapping");
+    const s2 = (await ok("agent", "POST", "/subjects", { name: "Anatomie" })).id;
+    assert.equal((await call("agent", "POST", "/sessions", { ...d, subjectId: s2 })).body.code, "OVERLAP");
+    assert.equal((await call("agent", "POST", "/sessions", { ...d, end: "07:00" })).status, 400);
+    assert.equal((await call("agent", "POST", "/sessions", { ...d, date: "2026-02-30" })).status, 400);
+    // Sent twice at the same instant: one sheet only.
+    const twice = { ...d, date: "2026-11-20" };
+    const both = await Promise.all([call("agent", "POST", "/sessions", twice), call("agent", "POST", "/sessions", twice)]);
+    assert.deepEqual(both.map((x) => x.status).sort(), [200, 409]);
+});
+
+it("marks are entered, changed and traced before validation", async () => {
+    const url = `/sessions/${sessionId}/marks`;
+    await ok("agent", "PATCH", url, { changes: students.slice(0, 100).map((s) => ({ id: s.id, s: "P" })) });
+    await ok("agent", "PATCH", url, { changes: students.slice(100, 108).map((s) => ({ id: s.id, s: "R" })) });
+    const { counts } = await ok("agent", "PATCH", url, { changes: students.slice(108, 117).map((s, i) => ({ id: s.id, s: "A", n: i ? "" : "Certificat médical" })) });
+    assert.deepEqual(counts, { p: 100, r: 8, a: 9, n: 2 });
+    await ok("agent", "PATCH", url, { changes: [{ id: students[0].id, s: "A" }] });
+    const after = await ok("agent", "GET", `/sessions/${sessionId}`);
+    assert.deepEqual(after.session.counts, { p: 99, r: 8, a: 10, n: 2 });
+    assert.equal(after.session.marks[students[108].id].n, "Certificat médical");
+    assert.equal(after.session.marks[students[117].id], undefined);
+    const log = (await ok("agent", "GET", `/sessions/${sessionId}/audit`)).entries.find((e) => e.action === "marks.update");
+    assert.deepEqual([log.changes[0].from, log.changes[0].to, log.by.name], ["P", "A", "Agent Un"]);
+    assert.equal((await call("agent", "PATCH", url, { changes: [{ id: "ETU-INCONNU0", s: "P" }] })).status, 400);
+    assert.equal((await call("agent", "PATCH", url, { changes: [{ id: students[0].id, s: "X" }] })).status, 400);
+});
+
+it("validation needs a confirmation, and one more for empty marks", async () => {
+    const url = `/sessions/${sessionId}/validate`;
+    assert.equal((await call("agent", "POST", url, {})).status, 400);
+    const refused = await call("agent", "POST", url, { confirmed: true });
+    assert.deepEqual([refused.status, refused.body.code, refused.body.unfilled], [409, "UNFILLED", 2]);
+    await ok("agent", "POST", url, { confirmed: true, allowUnfilled: true });
+    const { session, can } = await ok("agent", "GET", `/sessions/${sessionId}`);
+    assert.deepEqual([session.status, session.validatedBy, session.counts.n], ["validated", "Agent Un", 2]);
+    assert.deepEqual([can.enter, can.correct], [false, true]);
+    assert.equal((await call("agent", "PATCH", `/sessions/${sessionId}/marks`, { changes: [{ id: students[0].id, s: "P" }] })).body.code, "VALIDATED");
+    assert.equal((await call("agent", "POST", `/sessions/${sessionId}/cancel`, { reason: "erreur" })).status, 403, "an agent cannot cancel a validated sheet");
+    const future = (await ok("agent", "POST", "/sessions", { classId: C, date: "2099-11-23", start: "08:00", end: "10:00", subjectId: subject, teacherId: teacher })).id;
+    await ok("agent", "PATCH", `/sessions/${future}/marks`, { changes: [{ id: students[0].id, s: "P" }] });
+    assert.equal((await call("agent", "POST", `/sessions/${future}/validate`, { confirmed: true, allowUnfilled: true })).status, 400);
+});
+
+it("the figures follow, from validated sheets only", async () => {
+    const s = await ok("agent", "GET", `/stats?classId=${C}&from=2026-11-23&to=2026-11-23`);
+    assert.deepEqual([s.class.active, s.sessions, s.totals.p, s.totals.r, s.totals.a, s.totals.n], [119, 1, 99, 8, 10, 2]);
+    assert.equal(s.totals.presenceRate, 107 / 117);
+    assert.equal(s.last.id, sessionId);
+    assert.equal(s.drafts, 1, "this academic year only");
+    assert.equal((await ok("agent", "GET", `/stats?classId=${C}`)).sessions, 2);
+});
+
+it("a correction keeps the old value, the new one, who, when and why", async () => {
+    const url = `/sessions/${sessionId}/corrections`;
+    const id = students[0].id;
+    assert.equal((await call("agent", "POST", url, { studentId: id, from: "A", s: "P" })).status, 400, "a reason is required");
+    assert.equal((await call("agent", "POST", url, { studentId: id, from: "R", s: "P", reason: "Erreur de saisie" })).body.code, "CHANGED");
+    await db.collection("campusMembers").doc("agentB").set({ org: "INASS", role: "agent", name: "Agent Deux" });
+    assert.equal((await call("agentB", "POST", url, { studentId: id, from: "A", s: "P", reason: "Erreur de saisie" })).status, 403, "only the agent who validated it");
+    const { counts } = await ok("agent", "POST", url, { studentId: id, from: "A", s: "P", reason: "Erreur de saisie" });
+    assert.deepEqual(counts, { p: 100, r: 8, a: 9, n: 2 });
+    await ok("localadmin", "POST", url, { studentId: students[117].id, from: null, s: "A", n: "", reason: "Oublié sur la feuille" });
+    const entries = (await ok("boss", "GET", `/sessions/${sessionId}/audit`)).entries.filter((e) => e.action === "marks.correct");
+    assert.equal(entries.length, 2);
+    const first = entries.find((e) => e.studentId === id);
+    assert.deepEqual([first.from.s, first.to.s, first.reason, first.by.name, first.studentName], ["A", "P", "Erreur de saisie", "Agent Un", students[0].name]);
+    assert.ok(first.at);
+    const s = await ok("agent", "GET", `/stats?classId=${C}&from=2026-11-23&to=2026-11-23`);
+    assert.deepEqual([s.totals.p, s.totals.a, s.totals.n], [100, 10, 1]);
+    // After the delay, the agent no longer can; the administrator still can.
+    const { Timestamp } = require("firebase-admin").firestore;
+    await db.collection("campusSessions").doc(sessionId).update({ validatedAt: Timestamp.fromMillis(Date.now() - 8 * 24 * 3600 * 1000) });
+    assert.equal((await call("agent", "POST", url, { studentId: id, from: "P", s: "A", reason: "Trop tard" })).status, 403);
+});
+
+it("a validated sheet is never deleted: cancelled by the administrator, and kept", async () => {
+    assert.equal((await call("boss", "DELETE", `/sessions/${sessionId}`)).status, 404);
+    const extra = (await ok("agent", "POST", "/sessions", { classId: C, date: "2026-11-18", start: "14:00", end: "16:00", subjectId: subject, teacherId: teacher })).id;
+    await ok("agent", "PATCH", `/sessions/${extra}/marks`, { changes: [{ id: students[0].id, s: "A" }] });
+    await ok("agent", "POST", `/sessions/${extra}/validate`, { confirmed: true, allowUnfilled: true });
+    assert.equal((await call("boss", "POST", `/sessions/${extra}/cancel`, {})).status, 400, "a reason is required");
+    await ok("boss", "POST", `/sessions/${extra}/cancel`, { reason: "Cours reporté" });
+    const { session } = await ok("agent", "GET", `/sessions/${extra}`);
+    assert.deepEqual([session.status, session.cancelReason, session.marks[students[0].id].s], ["cancelled", "Cours reporté", "A"]);
+    assert.ok((await ok("agent", "GET", `/sessions?classId=${C}&status=cancelled`)).sessions.some((x) => x.id === extra));
+    await ok("agent", "POST", "/sessions", { classId: C, date: "2026-11-18", start: "14:00", end: "16:00", subjectId: subject, teacherId: teacher });
+});
+
+it("the details of a validated sheet: administrator only, with a reason", async () => {
+    const d = { date: "2026-11-23", start: "08:30", end: "10:30", subjectId: subject, teacherId: teacher };
+    assert.equal((await call("agent", "PATCH", `/sessions/${sessionId}`, { ...d, reason: "horaire" })).status, 403);
+    assert.equal((await call("boss", "PATCH", `/sessions/${sessionId}`, d)).status, 400);
+    await ok("boss", "PATCH", `/sessions/${sessionId}`, { ...d, reason: "Horaire décalé" });
+    const e = (await ok("boss", "GET", `/sessions/${sessionId}/audit`)).entries.find((x) => x.action === "session.update");
+    assert.deepEqual([e.from.start, e.to.start, e.reason], ["08:00", "08:30", "Horaire décalé"]);
+});
+
+it("accounts: verified addresses only, roles limited", async () => {
+    const m = { role: "agent", name: "Agent Quatre", canExport: false };
+    assert.equal((await call("agent", "POST", "/members", { ...m, email: "agent2@inass.test" })).status, 403);
+    assert.equal((await call("boss", "POST", "/members", { ...m, email: "inconnu@inass.test" })).status, 404);
+    assert.equal((await call("boss", "POST", "/members", { ...m, email: "faux@inass.test" })).status, 400);
+    assert.equal((await call("localadmin", "POST", "/members", { ...m, role: "admin", email: "agent2@inass.test" })).status, 403);
+    await ok("localadmin", "POST", "/members", { ...m, email: "agent2@inass.test" });
+    assert.equal((await ok("agent2", "GET", "/bootstrap")).me.canExport, false);
+    assert.equal((await call("boss", "POST", "/members", { email: "prof@inass.test", role: "teacher", name: "Prof" })).status, 400, "a teacher account is tied to a teacher");
+    await ok("boss", "POST", "/members", { email: "prof@inass.test", role: "teacher", name: "Prof", teacherId: teacher });
+    await ok("boss", "DELETE", "/members/agent2");
+    assert.equal((await call("agent2", "GET", "/bootstrap")).status, 403);
+    assert.ok((await ok("boss", "GET", "/audit")).entries.some((e) => e.action === "member.remove"));
+});
+
+it("a teacher reads their own sheets, and only reads", async () => {
+    const t2 = (await ok("agent", "POST", "/teachers", { name: "Mme Autre" })).id;
+    const theirs = (await ok("agent", "POST", "/sessions", { classId: C, date: "2026-11-19", start: "08:00", end: "10:00", subjectId: subject, teacherId: t2 })).id;
+    assert.equal((await call("prof", "GET", `/sessions/${theirs}`)).status, 404);
+    assert.equal((await ok("prof", "GET", `/sessions/${sessionId}`)).session.id, sessionId);
+    assert.ok((await ok("prof", "GET", `/sessions?classId=${C}`)).sessions.every((s) => s.teacherId === teacher));
+    assert.deepEqual((await ok("prof", "GET", "/bootstrap")).teachers.map((t) => t.id), [teacher]);
+    await ok("prof", "GET", `/stats?classId=${C}&teacherId=${t2}`).then((s) => assert.ok(s.sessions > 0 && s.recent.every((x) => x.teacherId === teacher)));
+    for (const [m, u, b] of [
+        ["POST", "/sessions", { classId: C }],
+        ["PATCH", `/sessions/${sessionId}/marks`, { changes: [{ id: students[0].id, s: "P" }] }],
+        ["POST", `/sessions/${sessionId}/corrections`, {}],
+        ["POST", `/sessions/${sessionId}/cancel`, { reason: "non" }],
+        ["GET", "/members", undefined],
+        ["GET", "/audit", undefined],
+        ["POST", "/subjects", { name: "Nouvelle" }],
+        ["PATCH", `/students/${students[0].id}`, { name: "X Y", reason: "non" }],
+    ]) assert.equal((await call("prof", m, u, b)).status, 403, `${m} ${u}`);
+});
+
+it("another institution sees nothing", async () => {
+    assert.deepEqual((await ok("other", "GET", "/bootstrap")).classes, []);
+    for (const u of [`/stats?classId=${C}`, `/sessions/${sessionId}`, `/classes/${C}/students`, `/students/${students[0].id}`, `/sessions?classId=${C}`]) assert.equal((await call("other", "GET", u)).status, 404, u);
+    assert.equal((await call("other", "PATCH", `/students/${students[0].id}`, { name: "X Y", reason: "non" })).status, 404);
+});
+
+it("a corrected name keeps the identifier and the history", async () => {
+    const id = students[5].id;
+    await ok("boss", "PATCH", `/students/${id}`, { name: "NOM Corrigé", reason: "Faute sur la liste" });
+    const page = await ok("boss", "GET", `/students/${id}`);
+    assert.equal(page.student.name, "NOM Corrigé");
+    assert.equal(page.student.nameHistory[0].name, names[5]);
+    assert.equal(page.record.p, 1);
+});
+
+it("a draft follows a change of list without losing or inventing anything", async () => {
+    const draft = (await ok("agent", "POST", "/sessions", { classId: C, date: "2026-11-17", start: "08:00", end: "10:00", subjectId: subject, teacherId: teacher })).id;
+    await ok("agent", "PATCH", `/sessions/${draft}/marks`, { changes: [{ id: students[1].id, s: "P" }] });
+    assert.equal((await call("boss", "POST", `/classes/${C}/students`, { name: names[10] })).body.code, "SAME_NAME");
+    const added = (await ok("boss", "POST", `/classes/${C}/students`, { name: "ARRIVE Tard" })).id;
+    await ok("boss", "PATCH", `/students/${students[1].id}`, { active: false, reason: "Départ" });
+    await ok("boss", "PATCH", `/students/${students[2].id}`, { active: false, reason: "Départ" });
+    assert.equal((await ok("agent", "GET", `/sessions/${draft}`)).rosterOutdated, true);
+    await ok("agent", "POST", `/sessions/${draft}/roster`, {});
+    const { session, rosterOutdated } = await ok("agent", "GET", `/sessions/${draft}`);
+    const ids = session.roster.map((r) => r.id);
+    assert.equal(rosterOutdated, false);
+    assert.ok(ids.includes(added) && ids.includes(students[1].id) && !ids.includes(students[2].id));
+    assert.deepEqual([session.marks[students[1].id].s, session.marks[added]], ["P", undefined]);
+    assert.deepEqual(session.counts, { p: 1, r: 0, a: 0, n: ids.length - 1 });
+});
+
+it("scans of the paper sheet stay private", async () => {
+    const sharp = require("sharp");
+    const draft = (await ok("agent", "GET", `/sessions?classId=${C}&status=draft`)).sessions[0].id;
+    const send = async (user, data, name, type) => {
+        const form = new FormData();
+        form.append("file", new Blob([data], { type }), name);
+        const res = await fetch(`${base}/sessions/${draft}/scans`, { method: "POST", headers: { "x-user": user }, body: form });
+        return { status: res.status, body: await res.json() };
+    };
+    const png = await sharp({ create: { width: 300, height: 400, channels: 3, background: "#fff" } }).png().toBuffer();
+    const up = await send("agent", png, "../../feuille.png", "image/png");
+    assert.equal(up.status, 200, JSON.stringify(up.body));
+    assert.equal(up.body.name, "feuille.png");
+    assert.equal((await send("agent", Buffer.from("<script>"), "x.jpg", "image/jpeg")).status, 400);
+    assert.equal((await send("prof", png, "x.png", "image/png")).status, 403);
+    const get = (user) => fetch(`${base}/sessions/${draft}/scans/${up.body.id}`, { headers: { "x-user": user } });
+    const res = await get("agent");
+    assert.deepEqual([res.status, res.headers.get("content-type"), res.headers.get("cache-control")], [200, "image/jpeg", "private, no-store"]);
+    assert.ok((await res.arrayBuffer()).byteLength > 100);
+    assert.equal((await get("other")).status, 404);
+    assert.equal((await get("someone")).status, 403);
+    await ok("agent", "DELETE", `/sessions/${draft}/scans/${up.body.id}`);
+    assert.equal((await get("agent")).status, 404);
+});
