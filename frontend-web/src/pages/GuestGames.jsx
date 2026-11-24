@@ -16,6 +16,8 @@ import PerlesScreen from '../game/perles/PerlesScreen.jsx'
 import { createPerlesAudio } from '../game/perles/audio.js'
 import FlecheScreen from '../game/fleche/FlecheScreen.jsx'
 import { createFlecheAudio } from '../game/fleche/audio.js'
+import ChantierScreen from '../game/chantier/ChantierScreen.jsx'
+import { createChantierAudio } from '../game/chantier/audio.js'
 import MotoScreen from '../game/motoBoma/MotoScreen.jsx'
 import GameScreen from '../game/ngoriRun/GameScreen.jsx'
 import { createGameAudio, loadMuted, saveMuted } from '../game/ngoriRun/audio.js'
@@ -25,6 +27,7 @@ import { simulateGame as simulatePanther } from '../../../shared/oeil-de-panther
 import { ZONES, simulateGame as simulateEscadrille } from '../../../shared/escadrille-ogooue/engine.mjs'
 import { LEVELS as PERLES_LEVELS, simulateGame as simulatePerles } from '../../../shared/perles-punu/engine.mjs'
 import { simulateGame as simulateFleche } from '../../../shared/fleche-ebene/engine.mjs'
+import { LEVELS as CHANTIER_LEVELS, simulateGame as simulateChantier } from '../../../shared/chantier-boma/engine.mjs'
 import { DEFAULT_COURSE, simulateRace } from '../../../shared/moto-boma/engine.mjs'
 import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 
@@ -32,7 +35,7 @@ import { simulateRun } from '../../../shared/ngori-run/engine.mjs'
 // account (bomavibes.tech/jouer). Guests play in practice mode — the run never
 // reaches the server: no Ngori, no ranking — and are invited to sign up at
 // the end. Commando Okoumé: mission 1 only.
-const GUEST_GAMES = ['ngori-run', 'fleche-ebene', 'perles-punu', 'escadrille-ogooue', 'oeil-de-panthere', 'commando-okoume', 'moto-boma']
+const GUEST_GAMES = ['ngori-run', 'chantier-boma', 'fleche-ebene', 'perles-punu', 'escadrille-ogooue', 'oeil-de-panthere', 'commando-okoume', 'moto-boma']
 const COMMANDO_OPTIONS = { character: 'mboumba', maxHp: 4 }
 const PANTHER_OPTIONS = { rifle: 'carabine' }
 const ESCADRILLE_OPTIONS = { jet: 'aigle' }
@@ -40,6 +43,7 @@ const TOUCH = typeof window !== 'undefined' && window.matchMedia?.('(pointer: co
 
 // What an account adds, per game, for the end-of-game invitation.
 const WITH_ACCOUNT = {
+  'chantier-boma': 'gagner des Ngori à chaque partie et entrer au classement des meilleurs bâtisseurs',
   'fleche-ebene': 'gagner des Ngori à chaque partie et entrer au classement des meilleurs archers',
   'perles-punu': 'gagner des Ngori à chaque partie et entrer au classement des meilleurs joueurs',
   'escadrille-ogooue': 'piloter le Faucon ou le Calao, gagner des Ngori et entrer au classement des meilleurs pilotes',
@@ -50,6 +54,18 @@ const WITH_ACCOUNT = {
 }
 
 function resultLines(gameId, play, payload) {
+  if (gameId === 'chantier-boma') {
+    const r = simulateChantier(play.seed, payload.inputs, payload.endTick)
+    return {
+      title: r.won ? 'Chantier terminé !' : 'Partie terminée',
+      lines: [
+        `Score : ${r.score.toLocaleString('fr-FR')}`,
+        `${r.good} brique${r.good > 1 ? 's' : ''} bien posée${r.good > 1 ? 's' : ''}`,
+        r.won ? 'Les 5 bâtiments construits !' : `Bâtiment atteint : ${CHANTIER_LEVELS[r.level].name}`,
+      ],
+      stars: r.stars,
+    }
+  }
   if (gameId === 'fleche-ebene') {
     const r = simulateFleche(play.seed, payload.inputs, payload.endTick)
     return {
@@ -120,11 +136,13 @@ function GuestGames() {
   const [escadrilleAudio] = useState(() => createEscadrilleAudio(loadMuted()))
   const [perlesAudio] = useState(() => createPerlesAudio(loadMuted()))
   const [flecheAudio] = useState(() => createFlecheAudio(loadMuted()))
+  const [chantierAudio] = useState(() => createChantierAudio(loadMuted()))
   const [muted, setMuted] = useState(loadMuted)
   const playCount = useRef(0) // a fresh game screen for every game
 
   function start(gameId) {
     if (gameId === 'fleche-ebene') flecheAudio.unlock()
+    else if (gameId === 'chantier-boma') chantierAudio.unlock()
     else if (gameId === 'perles-punu') perlesAudio.unlock()
     else if (gameId === 'escadrille-ogooue') escadrilleAudio.unlock()
     else if (gameId === 'oeil-de-panthere') pantherAudio.unlock()
@@ -156,6 +174,7 @@ function GuestGames() {
     escadrilleAudio.setMuted(next)
     perlesAudio.setMuted(next)
     flecheAudio.setMuted(next)
+    chantierAudio.setMuted(next)
   }
 
   return (
@@ -253,6 +272,7 @@ function GuestGames() {
 
       {/* The game itself, full screen */}
       {play?.gameId === 'fleche-ebene' && <FlecheScreen key={play.key} seed={play.seed} audio={flecheAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />}
+      {play?.gameId === 'chantier-boma' && <ChantierScreen key={play.key} seed={play.seed} audio={chantierAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />}
       {play?.gameId === 'perles-punu' && (
         <PerlesScreen key={play.key} seed={play.seed} audio={perlesAudio} muted={muted} onToggleMute={toggleMute} onEnd={end} />
       )}

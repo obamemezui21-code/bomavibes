@@ -111,6 +111,17 @@ const FLECHE = {
     minTimeRatio: 0.9,
 };
 
+// CHANTIER BOMA, the building game: Ngori = the stars of a game (1 to 3, from
+// the score), within its own daily cap; same safeguards. Five buildings and the
+// pauses can take long, hence the hour.
+const CHANTIER = {
+    dailyCap: 5,
+    maxStartsPerDay: 40,
+    minStartIntervalMs: 3000,
+    maxRunMs: 60 * 60 * 1000,
+    minTimeRatio: 0.9,
+};
+
 // Inviting friends (referralService.js): Ngori for the inviter once a friend's
 // identity is approved, for at most monthlyCap friends a month, and how long
 // after signing up a new member can say who invited them.
@@ -188,4 +199,4 @@ function effectivePlanFor(userData, now = Date.now(), profileData = null) {
     return plan;
 }
 
-module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, COMMANDO, PANTHERE, ESCADRILLE, PERLES, FLECHE, REFERRAL, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };
+module.exports = { DAILY_REWARD, VERIFIED_DAILY_BONUS, VERIFICATION_BONUS, STREAK_LENGTH, STREAK_BONUS, REWARDS, NGORI_RUN, MOTO_BOMA, COMMANDO, PANTHERE, ESCADRILLE, PERLES, FLECHE, CHANTIER, REFERRAL, MOT_DU_JOUR, VIBE_CHECK, streakBadgeFor, dailyClaim, perkActive, withPerks, effectivePlanFor, previousDay };

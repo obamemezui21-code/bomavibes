@@ -40,6 +40,7 @@ const pantherRoutes = require("./routes/pantherRoutes");
 const escadrilleRoutes = require("./routes/escadrilleRoutes");
 const perlesRoutes = require("./routes/perlesRoutes");
 const flecheRoutes = require("./routes/flecheRoutes");
+const chantierRoutes = require("./routes/chantierRoutes");
 const referralRoutes = require("./routes/referralRoutes");
 const locationRoutes = require("./routes/locationRoutes");
 const chatRoutes = require("./routes/chatRoutes");
@@ -67,6 +68,8 @@ app.use(cors());
 app.use("/api/escadrille/finish", express.json({ limit: "300kb" }));
 // A long game of Perles Punu (30 min, a throw every 10 ticks) can pass 100 KB.
 app.use("/api/perles/finish", express.json({ limit: "300kb" }));
+// CHANTIER BOMA: every slide and turn of five buildings.
+app.use("/api/chantier/finish", express.json({ limit: "300kb" }));
 // EDU-CHECK: a long homework (20 000 words) is well over 100 KB.
 app.use("/api/edu-check", express.json({ limit: "2mb" }));
 // Monerails signs the exact bytes of its webhooks: kept raw (paymentController.js).
@@ -122,6 +125,7 @@ app.use("/api/panthere", pantherRoutes);
 app.use("/api/escadrille", escadrilleRoutes);
 app.use("/api/perles", perlesRoutes);
 app.use("/api/fleche", flecheRoutes);
+app.use("/api/chantier", chantierRoutes);
 app.use("/api/referrals", referralRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/chat", chatRoutes);

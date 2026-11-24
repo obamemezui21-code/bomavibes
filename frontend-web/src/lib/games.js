@@ -14,6 +14,19 @@ import commandoCover from '../assets/game/commando-cover.webp'
 //   cover: optional artwork filling the card (the pictures are then left out)
 export const GAMES = [
   {
+    id: 'chantier-boma',
+    name: 'Chantier Boma',
+    tagline: 'Le jeu de construction',
+    description: 'Les briques tombent de la grue : déplace-les, tourne-les et pose la bonne matière au bon endroit, de la case du village à Saint-Michel de Nkembo !',
+    path: '/chantier-boma',
+    pictures: [],
+    cover: '/chantier/cover.svg',
+    gradient: 'from-[#12233f] via-[#8a3f1c] to-[#f2a516]',
+    accent: 'text-amber-300',
+    dailyCap: 5,
+    isNew: true,
+  },
+  {
     id: 'fleche-ebene',
     name: 'Flèche d’Ébène',
     tagline: 'Le chasseur à la flèche',

@@ -118,6 +118,7 @@ async function eraseAccount(uid) {
     await db.collection("escadrilleProgress").doc(uid).delete().catch(() => {});
     await db.collection("perlesProgress").doc(uid).delete().catch(() => {});
     await db.collection("flecheProgress").doc(uid).delete().catch(() => {});
+    await db.collection("chantierProgress").doc(uid).delete().catch(() => {});
     // Their CV PNPE (identity, phone, e-mail, career).
     await db.collection("cvs").doc(uid).delete().catch(() => {});
     // Their invitations, both ways, and their code.
