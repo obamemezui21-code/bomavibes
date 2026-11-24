@@ -122,7 +122,7 @@ function publicSession(s, { full = false } = {}) {
     if (!full) return out;
     out.rosterVersion = s.rosterVersion || 0;
     out.roster = s.roster;
-    out.marks = Object.fromEntries(Object.entries(s.marks || {}).map(([id, m]) => [id, { s: m.s ?? null, n: m.n || "" }]));
+    out.marks = Object.fromEntries(Object.entries(s.marks || {}).map(([id, m]) => [id, { s: m.s ?? null, n: m.n || "", ...(m.auto ? { auto: true } : {}) }]));
     return out;
 }
 

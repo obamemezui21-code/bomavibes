@@ -109,7 +109,7 @@ export function describeAudit(e) {
     case 'session.update':
       return { title: 'Séance modifiée', lines: diff(e.from, e.to) }
     case 'session.validate':
-      return { title: 'Feuille validée', lines: [`${d.p} présents, ${d.r} retards, ${d.a} absents, ${d.n} non renseignés`] }
+      return { title: 'Feuille validée', lines: [`${d.p} présents, ${d.r} retards, ${d.a} absents, ${d.n} non renseignés`, ...(d.filled ? [`Dont ${d.filled} présents complétés à la validation`] : [])] }
     case 'session.cancel':
       return { title: 'Feuille annulée (conservée dans les archives)', lines: diff(e.from, e.to) }
     case 'session.roster':

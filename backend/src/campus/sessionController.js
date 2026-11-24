@@ -167,24 +167,39 @@ async function saveMarks(access, id, body) {
     return { counts: result.counts };
 }
 
-// The final save. Empty marks are allowed only when said so explicitly, and
-// stay « non renseigné ».
+// The final save. What becomes of the students with no status is said each
+// time, never assumed: the agent noted the absent and the late, and the others
+// were there (fillPresent, each marked as completed this way), or they stay
+// « non renseigné » (allowUnfilled).
 async function validateSession(access, id, body) {
-    const { allowUnfilled } = z.object({ confirmed: z.literal(true, { message: "Confirmez l’enregistrement." }), allowUnfilled: z.boolean().default(false) }).parse(body);
+    const { allowUnfilled, fillPresent } = z
+        .object({ confirmed: z.literal(true, { message: "Confirmez l’enregistrement." }), allowUnfilled: z.boolean().default(false), fillPresent: z.boolean().default(false) })
+        .parse(body);
     let classId;
+    let filled = 0;
     await db.runTransaction(async (tx) => {
         const { ref, s } = await readSession(tx, access, id);
         if (s.status === SESSION.VALIDATED) throw new HttpError(409, "Cette feuille est déjà validée.", { code: "VALIDATED" });
         if (!canEnter(access, s)) throw new HttpError(403, "Vous ne pouvez pas valider cette feuille.");
         if (s.date > today()) throw new HttpError(400, "Cette séance n’a pas encore eu lieu.");
-        const counts = countMarks(s.roster, s.marks);
+        const marks = { ...(s.marks || {}) };
+        filled = 0;
+        if (fillPresent) {
+            for (const r of s.roster) {
+                if (marks[r.id]?.s) continue;
+                marks[r.id] = { s: "P", n: marks[r.id]?.n || "", u: access.uid, t: Timestamp.now(), auto: true };
+                filled++;
+            }
+        }
+        const counts = countMarks(s.roster, marks);
         if (counts.n === s.roster.length) throw new HttpError(400, "Aucun statut n’est renseigné sur cette feuille.");
         if (counts.n && !allowUnfilled) throw new HttpError(409, `${counts.n} étudiant${counts.n > 1 ? "s ne sont pas renseignés" : " n’est pas renseigné"}.`, { code: "UNFILLED", unfilled: counts.n });
-        tx.update(ref, { status: SESSION.VALIDATED, counts, agent: who(access), validatedBy: who(access), validatedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-        tx.create(newAudit(), auditEntry(access, "session.validate", { sessionId: s.id, classId: s.classId, details: counts }));
+        tx.update(ref, { status: SESSION.VALIDATED, marks, counts, agent: who(access), validatedBy: who(access), validatedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+        tx.create(newAudit(), auditEntry(access, "session.validate", { sessionId: s.id, classId: s.classId, details: { ...counts, filled } }));
         classId = s.classId;
     });
     dropCache(classId);
+    return { filled };
 }
 
 // After validation: one student at a time, with a reason. `from` is what the

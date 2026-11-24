@@ -29,6 +29,7 @@ const Row = memo(function Row({ student, mark, editable, active, correctable, on
         <span className="min-w-40 flex-1 text-sm font-medium text-ink">
           {student.name}
           {!editable && note && <span className="block text-xs font-normal text-ink-soft">{note}</span>}
+          {!editable && mark?.auto && <span className="block text-xs font-normal text-ink-soft">présent par déduction</span>}
         </span>
         {editable ? (
           <span className="flex w-full items-center gap-1.5 sm:w-auto">
@@ -91,9 +92,17 @@ function SaveState({ state, waiting }) {
   )
 }
 
+// The students with no status: present, since the absent and the late were
+// noted — or left as they are. Chosen here, each time.
 function ValidateDialog({ roster, marks, counts, onClose, onConfirm, busy }) {
-  const [ok, setOk] = useState(false)
+  const [choice, setChoice] = useState('present')
+  const [sure, setSure] = useState(false)
   const empty = roster.filter((r) => !marks[r.id]?.s)
+  const noted = empty.filter((r) => marks[r.id]?.n)
+  const untouched = empty.length === roster.length
+  const fill = empty.length > 0 && choice === 'present'
+  const shown = fill ? { ...counts, p: counts.p + empty.length, n: 0 } : counts
+  const people = `${empty.length} étudiant${empty.length > 1 ? 's' : ''}`
   return (
     <Dialog
       title="Valider la feuille de présence ?"
@@ -101,31 +110,58 @@ function ValidateDialog({ roster, marks, counts, onClose, onConfirm, busy }) {
       footer={
         <>
           <Btn onClick={onClose}>Continuer la saisie</Btn>
-          <Btn variant="primary" busy={busy} disabled={empty.length > 0 && !ok} onClick={() => onConfirm(empty.length > 0)}>
+          <Btn variant="primary" busy={busy} disabled={fill ? !sure : empty.length > 0 && untouched} onClick={() => onConfirm(empty.length ? (fill ? { fillPresent: true } : { allowUnfilled: true }) : {})}>
             Valider définitivement
           </Btn>
         </>
       }
     >
-      <CountsLine counts={counts} className="text-sm" />
-      <p className="mt-3 text-sm text-ink-soft">Après validation, la feuille compte dans les statistiques. Elle ne peut plus être supprimée ; chaque correction demandera un motif et restera dans l’historique.</p>
+      <CountsLine counts={shown} className="text-sm" />
+      <p className="mt-3 text-sm text-ink-soft">Après validation, la feuille compte dans les statistiques. Chaque correction demandera un motif et restera dans l’historique.</p>
       {empty.length > 0 && (
-        <div className="mt-4 rounded-xl border border-amber-400/50 bg-amber-400/10 p-3 text-sm text-ink">
-          <p className="font-semibold">
-            {empty.length} étudiant{empty.length > 1 ? 's' : ''} sans statut
-          </p>
-          <ul className="mt-1 max-h-32 overflow-y-auto text-xs text-ink-soft">
-            {empty.map((r) => (
-              <li key={r.id}>
-                {r.no}. {r.name}
-              </li>
-            ))}
-          </ul>
-          <label className="mt-2 flex items-start gap-2">
-            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-violet-600" checked={ok} onChange={(e) => setOk(e.target.checked)} />
-            <span>Les laisser « {UNSET} » : ils ne seront comptés ni présents ni absents.</span>
+        <fieldset className="mt-4 space-y-3 rounded-xl border border-ink/12 p-3 text-sm text-ink">
+          <legend className="px-1 font-semibold">{people} sans statut</legend>
+          {untouched && <p className="rounded-lg bg-amber-400/10 px-2.5 py-2">Aucun absent ni retard n’est saisi : toute la classe sera marquée présente.</p>}
+          <label className="flex items-start gap-2">
+            <input type="radio" name="campus-empty" className="mt-0.5 h-4 w-4 accent-violet-600" checked={choice === 'present'} onChange={() => setChoice('present')} />
+            <span>
+              <b className="font-semibold">Les marquer présents</b>
+              <span className="block text-xs text-ink-soft">Les absents et les retards sont relevés : les autres étaient là.</span>
+            </span>
           </label>
-        </div>
+          {!untouched && (
+            <label className="flex items-start gap-2">
+              <input type="radio" name="campus-empty" className="mt-0.5 h-4 w-4 accent-violet-600" checked={choice === 'leave'} onChange={() => setChoice('leave')} />
+              <span>
+                <b className="font-semibold">Les laisser « {UNSET} »</b>
+                <span className="block text-xs text-ink-soft">Ni présents ni absents dans les statistiques.</span>
+              </span>
+            </label>
+          )}
+          {fill && noted.length > 0 && (
+            <p className="rounded-lg bg-amber-400/10 px-2.5 py-2 text-xs">
+              À vérifier, un commentaire sans statut : {noted.map((r) => `${r.name} (« ${marks[r.id].n} »)`).join(', ')}.
+            </p>
+          )}
+          <details className="text-xs text-ink-soft">
+            <summary className="cursor-pointer font-semibold">Voir les {people}</summary>
+            <ul className="mt-1 max-h-32 overflow-y-auto">
+              {empty.map((r) => (
+                <li key={r.id}>
+                  {r.no}. {r.name}
+                </li>
+              ))}
+            </ul>
+          </details>
+          {fill && (
+            <label className="flex items-start gap-2 border-t border-ink/8 pt-3">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 accent-violet-600" checked={sure} onChange={(e) => setSure(e.target.checked)} />
+              <span>
+                J’ai relevé <b className="font-semibold">tous</b> les absents ({counts.a}) et <b className="font-semibold">tous</b> les retards ({counts.r}) de la feuille.
+              </span>
+            </label>
+          )}
+        </fieldset>
       )}
     </Dialog>
   )
@@ -319,13 +355,13 @@ function Sheet({ data, reload }) {
     if (rows.length && !rows.some((r) => r.id === cursor)) setCursor(rows[0].id)
   }, [rows, cursor])
 
-  async function validate(allowUnfilled) {
+  async function validate(choice) {
     setBusy(true)
     try {
       // Everything entered must have reached the server first.
       if (!(await flush())) throw new Error('Certaines saisies ne sont pas encore enregistrées. Vérifiez la connexion, puis réessayez.')
-      await validateSession(session.id, { confirmed: true, allowUnfilled })
-      showToast('Feuille validée et enregistrée.', 'success')
+      const { filled } = await validateSession(session.id, { confirmed: true, ...choice })
+      showToast(filled ? `Feuille validée : ${filled} présents complétés.` : 'Feuille validée et enregistrée.', 'success')
       setDialog(null)
       await reload()
     } catch (err) {
@@ -473,6 +509,7 @@ function Sheet({ data, reload }) {
       )}
       {data.future && editable && <p className="rounded-2xl border border-ink/10 bg-surface px-4 py-3 text-sm text-ink-soft">Cette séance n’a pas encore eu lieu : elle pourra être validée à partir de sa date.</p>}
 
+      {editable && <p className="text-sm text-ink-soft">Relevez les absents et les retards : à la validation, vous pourrez marquer présents tous les autres d’un coup.</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Btn icon={ImageIcon} aria-expanded={showScan} onClick={() => setShowScan((v) => !v)}>
           {showScan ? 'Masquer la feuille papier' : `Feuille papier${session.scans.length ? ` (${session.scans.length})` : ''}`}
@@ -535,7 +572,7 @@ function Sheet({ data, reload }) {
               </p>
               <SaveState state={state} waiting={waiting} />
             </div>
-            <Btn variant="primary" icon={CheckCircle2} disabled={!rated || data.future} onClick={() => setDialog({ type: 'validate' })}>
+            <Btn variant="primary" icon={CheckCircle2} disabled={data.future} onClick={() => setDialog({ type: 'validate' })}>
               Valider la feuille
             </Btn>
           </div>

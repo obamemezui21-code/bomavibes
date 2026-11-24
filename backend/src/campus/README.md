@@ -60,7 +60,11 @@ par le jour, la matière et les heures : une feuille créée à la main compte a
    suivant ; flèches, `Suppr`, `M` (motif), `/` (rechercher). Au téléphone : les
    trois boutons. L’enregistrement est automatique ; hors connexion, la saisie est
    gardée sur l’appareil et envoyée au retour du réseau.
-4. *Valider la feuille* : récapitulatif, liste des non renseignés, confirmation.
+4. *Valider la feuille* : récapitulatif et confirmation. Les étudiants sans statut y
+   sont marqués **présents** (l’agent atteste avoir relevé tous les absents et les
+   retards ; chacun porte « présent par déduction » et l’historique en garde le
+   nombre), ou laissés « Non renseigné ». C’est demandé à chaque fois, jamais déduit
+   en silence.
 5. Ensuite, *Corriger* demande un motif et garde l’ancienne valeur.
 
 ## Rôles

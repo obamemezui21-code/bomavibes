@@ -530,3 +530,26 @@ it("the administrator does everything, and nothing is lost by accident", async (
     for (const a of ["session.reopen", "session.students", "session.delete", "session.restore", "student.delete", "subject.delete", "timetable.delete", "class.delete", "trash.restore", "trash.purge"]) assert.ok(log.includes(a), a);
     assert.equal((await call("boss", "DELETE", "/audit")).status, 404);
 });
+
+it("the absent and the late noted, the others are present — when it is said, and traced", async () => {
+    const { session: model } = await ok("agent", "GET", "/sessions/" + (await ok("agent", "POST", "/sessions", { classId: C, date: "2026-10-12", start: "08:00", end: "10:00", subjectId: subject, teacherId: teacher })).id);
+    const [a, b, c, d] = model.roster;
+    await ok("agent", "PATCH", `/sessions/${model.id}/marks`, { changes: [{ id: a.id, s: "A", n: "malade" }, { id: b.id, s: "R" }, { id: c.id, n: "à vérifier" }] });
+    assert.equal((await call("agent", "POST", `/sessions/${model.id}/validate`, { confirmed: true })).body.code, "UNFILLED", "never assumed");
+    const n = model.roster.length;
+    assert.deepEqual(await ok("agent", "POST", `/sessions/${model.id}/validate`, { confirmed: true, fillPresent: true }), { filled: n - 2 });
+    const { session } = await ok("agent", "GET", `/sessions/${model.id}`);
+    assert.deepEqual([session.status, session.counts], ["validated", { p: n - 2, r: 1, a: 1, n: 0 }]);
+    assert.deepEqual([session.marks[a.id], session.marks[b.id].s], [{ s: "A", n: "malade" }, "R"], "what was entered is untouched");
+    assert.deepEqual([session.marks[c.id], session.marks[d.id]], [{ s: "P", n: "à vérifier", auto: true }, { s: "P", n: "", auto: true }]);
+    const log = (await ok("agent", "GET", `/sessions/${model.id}/audit`)).entries.find((e) => e.action === "session.validate");
+    assert.equal(log.details.filled, n - 2);
+    await ok("agent", "POST", `/sessions/${model.id}/corrections`, { studentId: d.id, from: "P", s: "A", reason: "Oublié" });
+    assert.deepEqual((await ok("agent", "GET", `/sessions/${model.id}`)).session.marks[d.id], { s: "A", n: "" }, "corrected, no longer completed");
+
+    // Nobody absent: the whole class, if it is said.
+    const all = (await ok("agent", "POST", "/sessions", { classId: C, date: "2026-10-13", start: "08:00", end: "10:00", subjectId: subject, teacherId: teacher })).id;
+    assert.equal((await call("agent", "POST", `/sessions/${all}/validate`, { confirmed: true, allowUnfilled: true })).status, 400);
+    await ok("agent", "POST", `/sessions/${all}/validate`, { confirmed: true, fillPresent: true });
+    assert.equal((await ok("agent", "GET", `/sessions/${all}`)).session.counts.p, n);
+});
