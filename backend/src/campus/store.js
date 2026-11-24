@@ -15,6 +15,7 @@ const { HttpError, SESSION } = require("./config");
 //   campusSessionKeys/{hash}   one per class + date + subject + start time:
 //                              makes a second sheet for a session impossible
 //   campusTimetables/{id}      the timetable of a class for a week
+//   campusTrash/{id}           what the administrator deleted, to be restored
 //   campusAudit/{id}           every change, kept for ever
 //
 // A whole sheet is one document (119 students ≈ 25 KB): it is read in one

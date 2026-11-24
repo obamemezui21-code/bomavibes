@@ -1,25 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Pencil } from 'lucide-react'
-import { fetchStudent, updateStudent } from '../../firebase/campus.js'
+import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
+import { deleteStudent, fetchStudent, updateStudent } from '../../firebase/campus.js'
 import { STATUS, UNSET, hours, mediumDate, percent } from '../../lib/campus.js'
 import { studentReport } from '../../lib/campusReports.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
 import { EvaluationTag } from './slotUi.jsx'
+import { ReasonDialog } from './adminUi.jsx'
 import { Btn, Dialog, Empty, ErrorNote, ExportButtons, Field, Loading, Panel, StatusPill, Tile } from './campusUi.jsx'
 
 function EditDialog({ student, onClose, onSaved }) {
   const { showToast } = useToast()
   const [name, setName] = useState(student.name)
   const [active, setActive] = useState(student.active)
+  const [no, setNo] = useState(String(student.no ?? ''))
+  const number = Number(no) > 0 && Number(no) !== student.no ? { no: Number(no) } : {}
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   async function submit(e) {
     e.preventDefault()
     setBusy(true)
     try {
-      await updateStudent(student.id, { name: name.trim(), active, reason: reason.trim() })
+      await updateStudent(student.id, { name: name.trim(), active, ...number, reason: reason.trim() })
       showToast('Étudiant modifié.', 'success')
       onSaved()
     } catch (err) {
@@ -34,7 +37,7 @@ function EditDialog({ student, onClose, onSaved }) {
       footer={
         <>
           <Btn onClick={onClose}>Annuler</Btn>
-          <Btn variant="primary" type="submit" form="campus-student" busy={busy} disabled={reason.trim().length < 3 || (name.trim() === student.name && active === student.active)}>
+          <Btn variant="primary" type="submit" form="campus-student" busy={busy} disabled={reason.trim().length < 3 || (name.trim() === student.name && active === student.active && !number.no)}>
             Enregistrer
           </Btn>
         </>
@@ -43,6 +46,9 @@ function EditDialog({ student, onClose, onSaved }) {
       <form id="campus-student" onSubmit={submit} className="space-y-3">
         <Field label="NOM et prénom" hint="L’identifiant technique et tout l’historique sont conservés.">
           <input className={fieldClass} value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={120} />
+        </Field>
+        <Field label="Numéro sur la liste">
+          <input type="number" min="1" max="9999" className={fieldClass} value={no} onChange={(e) => setNo(e.target.value)} />
         </Field>
         <label className="flex items-center gap-2 text-sm text-ink">
           <input type="checkbox" className="h-4 w-4 accent-violet-600" checked={active} onChange={(e) => setActive(e.target.checked)} />
@@ -66,6 +72,9 @@ function StudentSheet() {
   const [page, setPage] = useState(null)
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [fromSheets, setFromSheets] = useState(false)
+  const { showToast } = useToast()
 
   const load = useCallback(() => {
     let live = true
@@ -103,9 +112,14 @@ function StudentSheet() {
           <div className="flex flex-wrap gap-2">
             <ExportButtons report={() => studentReport({ page, history, filters: { ...filters, year } })} />
             {boot.me.admin && (
-              <Btn icon={Pencil} onClick={() => setEditing(true)}>
-                Modifier
-              </Btn>
+              <>
+                <Btn icon={Pencil} onClick={() => setEditing(true)}>
+                  Modifier
+                </Btn>
+                <Btn variant="ghost" icon={Trash2} className="!text-coral-600 dark:!text-coral-400" onClick={() => setDeleting(true)}>
+                  Supprimer
+                </Btn>
+              </>
             )}
           </div>
         </div>
@@ -171,6 +185,26 @@ function StudentSheet() {
           <Empty>Aucune séance validée ne correspond.</Empty>
         )}
       </Panel>
+      {deleting && (
+        <ReasonDialog
+          title={`Supprimer ${student.name} ?`}
+          text="L’étudiant va dans la corbeille et quitte la liste officielle. Vous pourrez le restaurer. S’il a seulement quitté la classe, préférez « Modifier », puis archiver."
+          confirm="Supprimer"
+          typed={record.sessions > 0}
+          onClose={() => setDeleting(false)}
+          onConfirm={async (reason) => {
+            await deleteStudent(student.id, { reason, fromSheets })
+            showToast('Étudiant mis à la corbeille.', 'success')
+            reloadCampus().catch(() => {})
+            navigate('/campus/etudiants', { replace: true })
+          }}
+        >
+          <label className="flex items-start gap-2 text-sm text-ink">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-violet-600" checked={fromSheets} onChange={(e) => setFromSheets(e.target.checked)} />
+            <span>Le retirer aussi de toutes les feuilles de présence. Sinon, elles gardent son nom et ses statuts.</span>
+          </label>
+        </ReasonDialog>
+      )}
       {editing && (
         <EditDialog
           student={student}

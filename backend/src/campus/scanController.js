@@ -13,7 +13,8 @@ const { readSession, permissions } = require("./sessionController");
 
 const ROOT = process.env.CAMPUS_SCANS_DIR || path.join(__dirname, "..", "..", "private", "campus-scans");
 
-const fileOf = (sessionId, scan) => path.join(ROOT, sessionId, `${scan.id}.${scan.kind}`);
+const dirOf = (sessionId) => path.join(ROOT, sessionId);
+const fileOf = (sessionId, scan) => path.join(dirOf(sessionId), `${scan.id}.${scan.kind}`);
 
 async function addScan(access, id, file) {
     if (!file) throw new HttpError(400, "Aucun fichier reçu.");
@@ -77,4 +78,4 @@ async function removeScan(access, id, scanId) {
     dropCache(classId);
 }
 
-module.exports = { addScan, scanFile, removeScan };
+module.exports = { addScan, scanFile, removeScan, dirOf };

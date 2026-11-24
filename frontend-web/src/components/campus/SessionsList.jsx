@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { fetchSessions } from '../../firebase/campus.js'
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react'
+import { deleteSession, fetchSessions } from '../../firebase/campus.js'
 import { SESSION_STATUS, hours, mediumDate, searchKey } from '../../lib/campus.js'
 import { fieldClass, useCampus } from './campusContext.js'
 import SessionForm from './SessionForm.jsx'
 import { EvaluationTag } from './slotUi.jsx'
+import { ReasonDialog } from './adminUi.jsx'
+import { useToast } from '../../context/ToastContext.jsx'
 import { Btn, CountsLine, Empty, ErrorNote, Field, Loading, SearchBox, SessionPill } from './campusUi.jsx'
 
 const PAGE = 20
@@ -19,6 +21,8 @@ function SessionsList() {
   const [sessions, setSessions] = useState(null)
   const [error, setError] = useState('')
   const [page, setPage] = useState(0)
+  const [deleting, setDeleting] = useState(null)
+  const { showToast } = useToast()
   const creating = params.get('nouvelle') === '1' && boot.me.staff && cls
 
   const load = useCallback(() => {
@@ -126,8 +130,8 @@ function SessionsList() {
           {found.length ? (
             <ul className="space-y-2">
               {found.slice(at * PAGE, (at + 1) * PAGE).map((s) => (
-                <li key={s.id}>
-                  <Link to={`/campus/seances/${s.id}`} className="flex items-center gap-3 rounded-2xl border border-ink/8 bg-surface p-4 transition hover:border-violet-400">
+                <li key={s.id} className="flex items-center gap-1">
+                  <Link to={`/campus/seances/${s.id}`} className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-ink/8 bg-surface p-4 transition hover:border-violet-400">
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-ink">{s.subjectName}</span>
@@ -143,6 +147,11 @@ function SessionsList() {
                     </span>
                     <ChevronRight size={18} className="shrink-0 text-ink-soft" />
                   </Link>
+                  {boot.me.admin && (
+                    <button type="button" aria-label={`Supprimer ${s.subjectName} du ${mediumDate(s.date)}`} onClick={() => setDeleting(s)} className="shrink-0 rounded-xl p-3 text-ink-soft hover:bg-coral-500/10 hover:text-coral-500">
+                      <Trash2 size={17} />
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -157,6 +166,21 @@ function SessionsList() {
             </div>
           )}
         </>
+      )}
+      {deleting && (
+        <ReasonDialog
+          title="Supprimer cette feuille ?"
+          text={`${deleting.subjectName}, ${mediumDate(deleting.date)}, ${hours(deleting)}. Elle va dans la corbeille, d’où vous pourrez la restaurer.`}
+          confirm="Supprimer"
+          typed={deleting.status === 'validated'}
+          onClose={() => setDeleting(null)}
+          onConfirm={async (reason) => {
+            await deleteSession(deleting.id, reason)
+            setDeleting(null)
+            showToast('Feuille mise à la corbeille.', 'success')
+            load()
+          }}
+        />
       )}
       {creating && <SessionForm onClose={() => setParams({})} />}
     </div>

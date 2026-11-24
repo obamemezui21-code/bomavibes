@@ -75,6 +75,8 @@ dans `campusMembers`, comme EDU-CHECK (`eduCheckMembers`).
 | Créer, saisir, valider | oui | oui | non |
 | Corriger après validation | toujours | les feuilles qu’il a validées, 7 jours | non |
 | Modifier date/matière d’une feuille validée, l’annuler | oui, avec motif | non | non |
+| Rouvrir, rétablir, changer les étudiants d’une feuille | oui, avec motif | non | non |
+| Supprimer (feuille, étudiant, classe, matière, enseignant, planning) | oui, par la corbeille | non | non |
 | Consulter | tout l’établissement | tout l’établissement | ses séances |
 | Exporter, imprimer | oui | si autorisé | si autorisé |
 
@@ -102,8 +104,12 @@ majuscules et ponctuation mis à part) ; il garde son identifiant et son histori
 Les autres sont ajoutés. Ceux qui ne sont plus sur la liste sont archivés, jamais
 supprimés. Rien n’est fusionné : les noms proches sont signalés.
 
-Une feuille n’est jamais supprimée : elle est *annulée*, avec un motif, et reste dans
-les archives.
+Annuler une feuille la garde dans les archives. L’administrateur peut aussi la
+**supprimer** : comme tout ce qu’il supprime, elle passe par la corbeille
+(`campusTrash`, avec l’élément entier, qui, quand et pourquoi), d’où elle se restaure
+à l’identique ou s’efface pour de bon. Une matière ou un enseignant utilisé se
+remplace partout avant de partir ; une classe se supprime une fois sans feuilles ni
+plannings. Le journal (`campusAudit`) ne s’efface jamais.
 
 ## Lecture automatique (OCR)
 

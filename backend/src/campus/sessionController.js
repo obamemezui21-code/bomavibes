@@ -96,7 +96,7 @@ async function readSession(tx, access, id) {
     return { ref, s };
 }
 
-const permissions = (access, s) => ({ enter: canEnter(access, s), correct: canCorrect(access, s), cancel: canCancel(access, s), details: canEnter(access, s) || (isAdmin(access) && s.status === SESSION.VALIDATED), scans: canEnter(access, s) || (isAdmin(access) && isOpen(s)) });
+const permissions = (access, s) => ({ enter: canEnter(access, s), correct: canCorrect(access, s), cancel: canCancel(access, s), details: canEnter(access, s) || (isAdmin(access) && s.status === SESSION.VALIDATED), scans: canEnter(access, s) || (isAdmin(access) && isOpen(s)), admin: isAdmin(access) });
 
 async function getSession(access, id) {
     const { s } = await readSession(null, access, id);
@@ -147,8 +147,10 @@ async function saveMarks(access, id, body) {
         const names = new Map(s.roster.map((r) => [r.id, r.name]));
         const marks = { ...(s.marks || {}) };
         const log = [];
+        if (!changes.some((c) => names.has(c.id))) throw new HttpError(400, "Un étudiant ne figure pas sur cette feuille.");
         for (const c of changes) {
-            if (!names.has(c.id)) throw new HttpError(400, "Un étudiant ne figure pas sur cette feuille.");
+            // Taken off this sheet meanwhile: the others are still saved.
+            if (!names.has(c.id)) continue;
             const before = marks[c.id] || {};
             const after = { s: c.s === undefined ? (before.s ?? null) : c.s, n: c.n === undefined ? before.n || "" : c.n };
             if ((before.s ?? null) === after.s && (before.n || "") === after.n) continue;

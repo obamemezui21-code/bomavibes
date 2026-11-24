@@ -89,7 +89,9 @@ export function countMarks(roster, marks) {
   return c
 }
 
-const FIELD = { date: 'Date', start: 'Début', end: 'Fin', subject: 'Matière', teacher: 'Enseignant', name: 'Nom', active: 'Actif', role: 'Rôle', status: 'Statut', canExport: 'Export', label: 'Intitulé', expected: 'Effectif', kind: 'Type' }
+export const TRASH_LABELS = { session: 'Feuille de présence', student: 'Étudiant', class: 'Classe', timetable: 'Planning', subject: 'Matière', teacher: 'Enseignant' }
+
+const FIELD = { code: 'Code', no: 'Numéro', date: 'Date', start: 'Début', end: 'Fin', subject: 'Matière', teacher: 'Enseignant', name: 'Nom', active: 'Actif', role: 'Rôle', status: 'Statut', canExport: 'Export', label: 'Intitulé', expected: 'Effectif', kind: 'Type' }
 const show = (k, v) => (v === null || v === undefined || v === '' ? '—' : v === true ? 'oui' : v === false ? 'non' : k === 'date' ? shortDate(v) : k === 'role' ? ROLE_LABELS[v] || v : k === 'kind' ? (v === 'evaluation' ? 'Évaluation' : 'Cours') : k === 'status' ? SESSION_STATUS[v] || v : String(v))
 
 function diff(from, to) {
@@ -131,6 +133,23 @@ export function describeAudit(e) {
       return { title: 'Cours marqué annulé', lines: [`${d.course}, ${shortDate(d.date)} ${d.start}`] }
     case 'slot.restore':
       return { title: 'Cours rétabli', lines: [`${d.course}, ${shortDate(d.date)} ${d.start}`] }
+    case 'session.delete':
+    case 'student.delete':
+    case 'class.delete':
+    case 'timetable.delete':
+    case 'subject.delete':
+    case 'teacher.delete':
+      return { title: `${TRASH_LABELS[e.action.split('.')[0]]} : mis à la corbeille`, lines: [d.label] }
+    case 'trash.restore':
+      return { title: 'Restauré depuis la corbeille', lines: [`${TRASH_LABELS[d.type] || ''} : ${d.label}`] }
+    case 'trash.purge':
+      return { title: 'Supprimé définitivement', lines: [`${TRASH_LABELS[d.type] || ''} : ${d.label}`] }
+    case 'session.reopen':
+      return { title: 'Feuille rouverte à la saisie', lines: [`${d.p} présents, ${d.r} retards, ${d.a} absents, ${d.n} non renseignés`] }
+    case 'session.restore':
+      return { title: 'Feuille annulée rétablie', lines: diff(e.from, e.to) }
+    case 'session.students':
+      return { title: 'Étudiants de la feuille modifiés', lines: [...(d.added || []).map((n) => `Ajouté : ${n}`), ...(d.removed || []).map((r) => `Retiré : ${r.name} (${statusLabel(r.s)}${r.n ? `, « ${r.n} »` : ''})`)] }
     case 'scan.add':
       return { title: 'Feuille papier ajoutée', lines: [d.name] }
     case 'scan.remove':

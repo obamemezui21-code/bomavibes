@@ -9,6 +9,7 @@ const roster = require("./rosterController");
 const sessions = require("./sessionController");
 const people = require("./adminController");
 const timetable = require("./timetableController");
+const actions = require("./adminActions");
 const scans = require("./scanController");
 
 // /api/campus — BomaVibes Campus, attendance. Mounted in app.js.
@@ -105,6 +106,22 @@ for (const kind of ["subjects", "teachers"]) {
     router.post(`/${kind}`, requireStaff, run((req) => people.addNamed(req.campus, kind, req.body)));
     router.patch(`/${kind}/:id`, requireCampusAdmin, run((req) => people.updateNamed(req.campus, kind, req.params.id, req.body)));
 }
+
+// The administrator's: reopen, restore, replace, delete (through the bin).
+router.post("/sessions/:id/delete", requireCampusAdmin, run((req) => actions.deleteSession(req.campus, req.params.id, req.body)));
+router.post("/sessions/:id/reopen", requireCampusAdmin, run((req) => actions.reopenSession(req.campus, req.params.id, req.body)));
+router.post("/sessions/:id/restore", requireCampusAdmin, run((req) => actions.restoreSession(req.campus, req.params.id, req.body)));
+router.post("/sessions/:id/students", requireCampusAdmin, run((req) => actions.updateSheetStudents(req.campus, req.params.id, req.body)));
+router.post("/students/:id/delete", requireCampusAdmin, run((req) => actions.deleteStudent(req.campus, req.params.id, req.body)));
+router.post("/classes/:id/delete", requireCampusAdmin, run((req) => actions.deleteClass(req.campus, req.params.id, req.body)));
+router.post("/timetable/delete", requireCampusAdmin, run((req) => actions.deleteTimetable(req.campus, req.body)));
+for (const kind of ["subjects", "teachers"]) {
+    router.post(`/${kind}/:id/rename`, requireCampusAdmin, run((req) => actions.renameEverywhere(req.campus, kind, req.params.id, req.body)));
+    router.post(`/${kind}/:id/delete`, requireCampusAdmin, run((req) => actions.deleteNamed(req.campus, kind, req.params.id, req.body)));
+}
+router.get("/trash", requireCampusAdmin, run(async (req) => ({ items: await actions.listTrash(req.campus) })));
+router.post("/trash/:id/restore", requireCampusAdmin, run((req) => actions.restoreTrash(req.campus, req.params.id)));
+router.post("/trash/:id/purge", requireCampusAdmin, run((req) => actions.purgeTrash(req.campus, req.params.id, req.body)));
 
 // Staff accounts and the log
 router.get("/members", requireCampusAdmin, run(async (req) => ({ members: await people.listMembers(req.campus) })));

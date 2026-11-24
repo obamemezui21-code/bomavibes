@@ -412,3 +412,121 @@ it("the timetable: drafted, published, then each course opens its own sheet", as
     const log = (await ok("boss", "GET", "/audit")).entries.map((e) => e.action);
     for (const a of ["timetable.save", "timetable.publish", "timetable.copy", "slot.cancel", "slot.restore"]) assert.ok(log.includes(a), a);
 });
+
+it("the administrator does everything, and nothing is lost by accident", async () => {
+    const all = async (u) => ok("boss", "GET", u);
+    const sheets = async () => (await all(`/sessions?classId=${C}&year=all`)).sessions;
+    const before = (await all(`/sessions/${sessionId}`)).session;
+    const reason = "Décision de la direction";
+    const validated = async () => (await all(`/stats?classId=${C}&year=all`)).sessions;
+
+    // Agents and teachers may not.
+    for (const [u, b] of [[`/sessions/${sessionId}/delete`, { reason }], [`/sessions/${sessionId}/reopen`, { reason }], [`/sessions/${sessionId}/students`, { remove: [students[0].id], reason }], [`/students/${students[0].id}/delete`, { reason }], [`/classes/${C}/delete`, { reason }], [`/subjects/${subject}/delete`, { reason }], ["/timetable/delete", { classId: C, week: "2026-11-23", reason }]]) {
+        for (const who of ["agent", "prof"]) assert.equal((await call(who, "POST", u, b)).status, 403, u);
+        assert.ok([403, 404].includes((await call("other", "POST", u, b)).status), u);
+    }
+    assert.equal((await call("agent", "GET", "/trash")).status, 403);
+
+    // Reopen, change, validate again.
+    const n = await validated();
+    assert.equal((await call("boss", "POST", `/sessions/${sessionId}/reopen`, {})).status, 400, "a reason is required");
+    await ok("boss", "POST", `/sessions/${sessionId}/reopen`, { reason });
+    assert.equal(await validated(), n - 1);
+    await ok("boss", "PATCH", `/sessions/${sessionId}/marks`, { changes: [{ id: students[3].id, s: "R" }] });
+    await ok("boss", "POST", `/sessions/${sessionId}/validate`, { confirmed: true, allowUnfilled: true });
+    assert.equal(await validated(), n);
+
+    // Who is on the sheet.
+    await ok("boss", "POST", `/sessions/${sessionId}/students`, { remove: [students[3].id], reason });
+    let sheet = (await all(`/sessions/${sessionId}`)).session;
+    assert.equal(sheet.roster.length, before.roster.length - 1);
+    assert.equal(sheet.marks[students[3].id], undefined);
+    await ok("boss", "POST", `/sessions/${sessionId}/students`, { add: [students[3].id], reason });
+    sheet = (await all(`/sessions/${sessionId}`)).session;
+    assert.equal(sheet.roster.length, before.roster.length);
+    assert.equal(sheet.marks[students[3].id], undefined, "added back with no status");
+
+    // Delete a validated sheet, restore it whole, then erase another for good.
+    const count = (await sheets()).length;
+    await ok("boss", "POST", `/sessions/${sessionId}/delete`, { reason });
+    assert.equal((await call("boss", "GET", `/sessions/${sessionId}`)).status, 404);
+    assert.equal(await validated(), n - 1);
+    let bin = (await all("/trash")).items;
+    assert.deepEqual([bin[0].type, bin[0].reason, bin[0].by], ["session", reason, "Direction"]);
+    const twin = await ok("boss", "POST", "/sessions", { classId: C, date: sheet.date, start: sheet.start, end: sheet.end, subjectId: subject, teacherId: teacher });
+    assert.equal((await call("boss", "POST", `/trash/${bin[0].id}/restore`, {})).status, 409, "its place is taken");
+    await ok("boss", "POST", `/sessions/${twin.id}/delete`, { reason });
+    await ok("boss", "POST", `/trash/${bin[0].id}/restore`, {});
+    const back = (await all(`/sessions/${sessionId}`)).session;
+    assert.deepEqual([back.marks, back.counts, back.status, back.validatedBy], [sheet.marks, sheet.counts, "validated", sheet.validatedBy]);
+    assert.equal((await sheets()).length, count);
+    assert.equal((await call("boss", "POST", "/sessions", { classId: C, date: sheet.date, start: sheet.start, end: sheet.end, subjectId: subject, teacherId: teacher })).body.code, "DUPLICATE", "its key is back too");
+    bin = (await all("/trash")).items;
+    assert.equal((await call("boss", "POST", `/trash/${bin[0].id}/purge`, {})).status, 400);
+    await ok("boss", "POST", `/trash/${bin[0].id}/purge`, { confirmed: true });
+    assert.equal((await all("/trash")).items.length, bin.length - 1);
+
+    // A cancelled sheet comes back.
+    const cancelled = (await sheets()).find((s) => s.status === "cancelled");
+    const inTheWay = (await sheets()).find((s) => s.status !== "cancelled" && s.date === cancelled.date && s.start === cancelled.start);
+    if (inTheWay) {
+        assert.equal((await call("boss", "POST", `/sessions/${cancelled.id}/restore`, { reason })).status, 409);
+        await ok("boss", "POST", `/sessions/${inTheWay.id}/delete`, { reason });
+    }
+    await ok("boss", "POST", `/sessions/${cancelled.id}/restore`, { reason });
+    assert.equal((await all(`/sessions/${cancelled.id}`)).session.status, "validated");
+
+    // A student: number, deletion with or without the sheets, return.
+    const st = students[40];
+    assert.equal((await call("boss", "PATCH", `/students/${st.id}`, { no: students[41].no, reason })).status, 409);
+    await ok("boss", "PATCH", `/students/${st.id}`, { no: 900, reason });
+    const record = (await all(`/students/${st.id}?year=all`)).record;
+    const r = await ok("boss", "POST", `/students/${st.id}/delete`, { reason, fromSheets: true });
+    assert.ok(r.sheets > 0);
+    assert.ok(!(await all(`/sessions/${sessionId}`)).session.roster.some((x) => x.id === st.id));
+    assert.equal((await call("boss", "GET", `/students/${st.id}`)).status, 404);
+    bin = (await all("/trash")).items;
+    await ok("boss", "POST", `/trash/${bin.find((b) => b.type === "student").id}/restore`, {});
+    assert.deepEqual((await all(`/students/${st.id}?year=all`)).record, record, "with every status");
+    await ok("boss", "POST", `/students/${students[41].id}/delete`, { reason });
+    assert.ok((await all(`/sessions/${sessionId}`)).session.roster.some((x) => x.id === students[41].id), "the sheets keep them");
+
+    // Subjects: rename everywhere, replace, delete.
+    const old = (await ok("boss", "POST", "/subjects", { name: "Biologie" })).id;
+    const s1 = (await ok("boss", "POST", "/sessions", { classId: C, date: "2026-10-01", start: "08:00", end: "10:00", subjectId: old, teacherId: teacher })).id;
+    await ok("boss", "POST", `/subjects/${old}/rename`, { name: "Biologie médicale" });
+    assert.equal((await all(`/sessions/${s1}`)).session.subjectName, "Biologie médicale");
+    assert.equal((await call("boss", "POST", `/subjects/${old}/rename`, { name: "ANATOMIE" })).body.code, "SAME_NAME");
+    const again = (await ok("boss", "POST", "/subjects", { name: "Biologie" })).id;
+    assert.notEqual(again, old, "the former name is free again");
+    const refused = await call("boss", "POST", `/subjects/${old}/delete`, { reason });
+    assert.deepEqual([refused.body.code, refused.body.usage.sheets], ["IN_USE", 1]);
+    await ok("boss", "POST", `/subjects/${old}/delete`, { reason, replaceBy: again });
+    const moved = (await all(`/sessions/${s1}`)).session;
+    assert.deepEqual([moved.subjectId, moved.subjectName], [again, "Biologie"]);
+    assert.equal((await call("boss", "POST", "/sessions", { classId: C, date: "2026-10-01", start: "08:00", end: "10:00", subjectId: again, teacherId: teacher })).body.code, "DUPLICATE");
+    await ok("boss", "POST", "/sessions/" + s1 + "/delete", { reason });
+    await ok("boss", "POST", `/subjects/${again}/delete`, { reason });
+    assert.ok(!(await all("/bootstrap")).subjects.some((x) => x.id === again || x.id === old));
+
+    // Timetables and classes.
+    const weeks = (await all(`/timetable?classId=${C}`)).weeks;
+    await ok("boss", "POST", "/timetable/delete", { classId: C, week: weeks[0].week, reason });
+    assert.equal((await all(`/timetable?classId=${C}`)).weeks.length, weeks.length - 1);
+    await ok("boss", "POST", `/trash/${(await all("/trash")).items.find((b) => b.type === "timetable").id}/restore`, {});
+    assert.equal((await call("boss", "POST", `/classes/${C}/delete`, { reason })).status, 409, "a class with sheets");
+    const c2 = (await ok("boss", "POST", "/classes", { code: "PB1", label: "Pré-BAC 1", expected: 2 })).id;
+    const p = await ok("boss", "POST", `/classes/${c2}/import/preview`, { text: "1. ONDO Zoé\n2. MBA Paul", expected: 2 });
+    await ok("boss", "POST", `/classes/${c2}/import`, { text: "1. ONDO Zoé\n2. MBA Paul", expected: 2, hash: p.hash, confirmed: true });
+    await ok("boss", "PATCH", `/classes/${c2}`, { code: "PRE1", label: "Pré-BAC" });
+    assert.equal((await call("boss", "PATCH", `/classes/${c2}`, { code: "l1" })).status, 409);
+    await ok("boss", "POST", `/classes/${c2}/delete`, { reason });
+    assert.equal((await call("boss", "GET", `/classes/${c2}/students`)).status, 404);
+    await ok("boss", "POST", `/trash/${(await all("/trash")).items.find((b) => b.type === "class").id}/restore`, {});
+    assert.equal((await all(`/classes/${c2}/students`)).students.length, 2);
+
+    // Everything is in the log, and nothing erases the log.
+    const log = (await all("/audit")).entries.map((e) => e.action);
+    for (const a of ["session.reopen", "session.students", "session.delete", "session.restore", "student.delete", "subject.delete", "timetable.delete", "class.delete", "trash.restore", "trash.purge"]) assert.ok(log.includes(a), a);
+    assert.equal((await call("boss", "DELETE", "/audit")).status, 404);
+});

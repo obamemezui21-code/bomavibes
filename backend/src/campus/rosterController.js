@@ -28,11 +28,15 @@ async function createClass(access, body) {
 }
 
 async function updateClass(access, classId, body) {
-    const data = z.object({ label: ClassSchema.shape.label, expected: ClassSchema.shape.expected }).partial().parse(body);
+    const data = ClassSchema.partial().parse(body);
     const cls = await getClass(access, classId);
+    if (data.code && slug(data.code) !== slug(cls.code)) {
+        const all = await col.classes().where("org", "==", access.org).get();
+        if (all.docs.some((d) => d.id !== cls.id && slug(d.data().code) === slug(data.code))) throw new HttpError(409, `La classe ${data.code} existe déjà.`);
+    }
     const batch = db.batch();
     batch.update(col.classes().doc(cls.id), data);
-    batch.create(newAudit(), auditEntry(access, "class.update", { classId: cls.id, from: { label: cls.label, expected: cls.expected }, to: data }));
+    batch.create(newAudit(), auditEntry(access, "class.update", { classId: cls.id, from: { code: cls.code, label: cls.label, expected: cls.expected }, to: data }));
     await batch.commit();
 }
 
@@ -161,7 +165,7 @@ async function addStudent(access, classId, body) {
 // Correcting the spelling of a name, or taking a student off (or back on)
 // the list. The identifier, and so the history, never changes.
 async function updateStudent(access, studentId, body) {
-    const data = z.object({ name: NAME.optional(), active: z.boolean().optional(), reason: REASON }).parse(body);
+    const data = z.object({ name: NAME.optional(), no: z.number().int().min(1).max(9999).optional(), active: z.boolean().optional(), reason: REASON }).parse(body);
     const ref = col.students().doc(studentId);
     await db.runTransaction(async (tx) => {
         const snap = await tx.get(ref);
@@ -175,6 +179,13 @@ async function updateStudent(access, studentId, body) {
             patch.nameHistory = FieldValue.arrayUnion({ name: s.name, until: new Date().toISOString(), by: access.name });
             from.name = s.name;
             to.name = patch.name;
+        }
+        if (data.no !== undefined && data.no !== s.importNo) {
+            const same = (await tx.get(col.students().where("classId", "==", s.classId))).docs.find((x) => x.id !== studentId && x.data().active && x.data().importNo === data.no);
+            if (same) throw new HttpError(409, `Le numéro ${data.no} est déjà celui de ${same.data().name}.`);
+            patch.importNo = data.no;
+            from.no = s.importNo ?? null;
+            to.no = data.no;
         }
         if (data.active !== undefined && data.active !== s.active) {
             patch.active = data.active;

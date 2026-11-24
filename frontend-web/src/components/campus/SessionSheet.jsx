@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Ban, CheckCircle2, CloudOff, History, Image as ImageIcon, Keyboard, Loader2, MessageSquarePlus, Pencil, RefreshCw } from 'lucide-react'
-import { cancelSession, correctMark, fetchSession, fetchSessionAudit, syncRoster, validateSession } from '../../firebase/campus.js'
+import { ArrowLeft, Ban, CheckCircle2, CloudOff, History, Image as ImageIcon, Keyboard, Loader2, LockOpen, MessageSquarePlus, Pencil, RefreshCw, RotateCcw, Trash2, UsersRound } from 'lucide-react'
+import { cancelSession, correctMark, deleteSession, fetchSession, fetchSessionAudit, reopenSession, restoreSession, syncRoster, updateSheetStudents, validateSession } from '../../firebase/campus.js'
 import { STATUS, UNSET, countMarks, dateTime, hours, longDate, matchesSearch, percent, statusLabel } from '../../lib/campus.js'
 import { blankSheetReport, filledSheetReport } from '../../lib/campusReports.js'
 import { useToast } from '../../context/ToastContext.jsx'
@@ -11,6 +11,7 @@ import AuditList from './AuditList.jsx'
 import ScanPanel from './ScanPanel.jsx'
 import SessionForm from './SessionForm.jsx'
 import { EvaluationTag } from './slotUi.jsx'
+import { ReasonDialog as AdminDialog, SheetStudentsDialog } from './adminUi.jsx'
 import { Btn, CountsLine, Dialog, Empty, ErrorNote, ExportButtons, Field, Loading, Panel, SearchBox, SessionPill, StatusButtons, StatusPill } from './campusUi.jsx'
 
 // One line of the sheet. Memoised: pressing a button redraws one line, not 119.
@@ -362,6 +363,15 @@ function Sheet({ data, reload }) {
     }
   }
 
+  // An administrator's action: done, said, and the sheet read again.
+  const admin = (action, message) => async (reason) => {
+    if (editable) await flush()
+    await action(session.id, reason)
+    showToast(message, 'success')
+    setDialog(null)
+    await reload()
+  }
+
   async function openAudit() {
     setDialog({ type: 'audit' })
     setAudit(null)
@@ -428,6 +438,30 @@ function Sheet({ data, reload }) {
           </div>
         </div>
       </Panel>
+
+      {can.admin && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-ink/8 bg-surface px-4 py-3">
+          <span className="mr-1 text-xs font-semibold text-ink-soft">Administrateur</span>
+          {session.status === 'validated' && (
+            <Btn icon={LockOpen} onClick={() => setDialog({ type: 'reopen' })}>
+              Rouvrir la saisie
+            </Btn>
+          )}
+          {session.status === 'cancelled' && (
+            <Btn icon={RotateCcw} onClick={() => setDialog({ type: 'restore' })}>
+              Rétablir la feuille
+            </Btn>
+          )}
+          {session.status !== 'cancelled' && (
+            <Btn icon={UsersRound} onClick={() => setDialog({ type: 'students' })}>
+              Ajouter ou retirer des étudiants
+            </Btn>
+          )}
+          <Btn variant="ghost" icon={Trash2} className="!text-coral-600 dark:!text-coral-400" onClick={() => setDialog({ type: 'delete' })}>
+            Supprimer
+          </Btn>
+        </div>
+      )}
 
       {data.rosterOutdated && editable && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-400/50 bg-amber-400/10 px-4 py-3 text-sm text-ink">
@@ -533,6 +567,25 @@ function Sheet({ data, reload }) {
       )}
       {dialog?.type === 'cancel' && (
         <ReasonDialog title="Annuler cette feuille ?" text="Elle n’est pas supprimée : elle reste dans les archives avec le motif, et ne compte plus dans les statistiques." label="Motif de l’annulation" confirm="Annuler la feuille" onClose={() => setDialog(null)} onConfirm={cancel} />
+      )}
+      {dialog?.type === 'reopen' && (
+        <AdminDialog title="Rouvrir cette feuille ?" text="Les statuts restent. La feuille ne compte plus dans les statistiques tant qu’elle n’est pas validée de nouveau." confirm="Rouvrir" danger={false} onClose={() => setDialog(null)} onConfirm={admin(reopenSession, 'Feuille rouverte.')} />
+      )}
+      {dialog?.type === 'restore' && <AdminDialog title="Rétablir cette feuille ?" text="Elle revient telle qu’elle était avant son annulation." confirm="Rétablir" danger={false} onClose={() => setDialog(null)} onConfirm={admin(restoreSession, 'Feuille rétablie.')} />}
+      {dialog?.type === 'students' && <SheetStudentsDialog session={session} marks={marks} onClose={() => setDialog(null)} onConfirm={(body) => admin((id) => updateSheetStudents(id, body), 'Étudiants de la feuille mis à jour.')(body.reason)} />}
+      {dialog?.type === 'delete' && (
+        <AdminDialog
+          title="Supprimer cette feuille ?"
+          text="Elle va dans la corbeille, avec ses statuts et ses images. Vous pourrez la restaurer ou l’effacer définitivement dans Administration → Corbeille."
+          confirm="Supprimer"
+          typed={session.status === 'validated'}
+          onClose={() => setDialog(null)}
+          onConfirm={async (reason) => {
+            await deleteSession(session.id, reason)
+            showToast('Feuille mise à la corbeille.', 'success')
+            navigate('/campus/seances', { replace: true })
+          }}
+        />
       )}
       {dialog?.type === 'audit' && (
         <Dialog title="Historique de la séance" onClose={() => setDialog(null)} wide>

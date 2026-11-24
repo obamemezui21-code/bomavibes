@@ -89,6 +89,21 @@ export const fetchBlankSheets = (params) => call(`/timetable/blank${qs(params)}`
 export const addNamed = (kind, name) => call(`/${kind}`, { method: 'POST', body: { name } })
 export const updateNamed = (kind, id, body) => call(`/${kind}/${seg(id)}`, { method: 'PATCH', body })
 
+// The administrator's. Deleting goes to the bin: fetchTrash, restoreTrash, purgeTrash.
+export const deleteSession = (id, reason) => call(`/sessions/${seg(id)}/delete`, { method: 'POST', body: { reason } })
+export const reopenSession = (id, reason) => call(`/sessions/${seg(id)}/reopen`, { method: 'POST', body: { reason } })
+export const restoreSession = (id, reason) => call(`/sessions/${seg(id)}/restore`, { method: 'POST', body: { reason } })
+export const updateSheetStudents = (id, body) => call(`/sessions/${seg(id)}/students`, { method: 'POST', body })
+export const deleteStudent = (id, body) => call(`/students/${seg(id)}/delete`, { method: 'POST', body })
+export const updateClass = (id, body) => call(`/classes/${seg(id)}`, { method: 'PATCH', body })
+export const deleteClass = (id, reason) => call(`/classes/${seg(id)}/delete`, { method: 'POST', body: { reason } })
+export const deleteTimetable = (body) => call('/timetable/delete', { method: 'POST', body })
+export const renameNamed = (kind, id, name) => call(`/${kind}/${seg(id)}/rename`, { method: 'POST', body: { name } })
+export const deleteNamed = (kind, id, body) => call(`/${kind}/${seg(id)}/delete`, { method: 'POST', body })
+export const fetchTrash = () => call('/trash').then((d) => d.items)
+export const restoreTrash = (id) => call(`/trash/${seg(id)}/restore`, { method: 'POST', body: {} })
+export const purgeTrash = (id) => call(`/trash/${seg(id)}/purge`, { method: 'POST', body: { confirmed: true } })
+
 export const fetchMembers = () => call('/members').then((d) => d.members)
 export const setMember = (body) => call('/members', { method: 'POST', body })
 export const removeMember = (uid) => call(`/members/${seg(uid)}`, { method: 'DELETE' })

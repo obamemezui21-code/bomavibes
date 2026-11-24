@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, CheckCircle2, FileUp, Info, Trash2, UserPlus, XCircle } from 'lucide-react'
-import { addNamed, fetchAudit, fetchImports, fetchMembers, previewImport, removeMember, runImport, setMember, updateNamed } from '../../firebase/campus.js'
-import { ROLE_LABELS, dateTime } from '../../lib/campus.js'
+import { AlertTriangle, CheckCircle2, FileUp, Info, Pencil, Plus, RotateCcw, Trash2, UserPlus, XCircle } from 'lucide-react'
+import { addNamed, createClass, deleteClass, deleteNamed, fetchAudit, fetchImports, fetchMembers, fetchTrash, previewImport, purgeTrash, removeMember, renameNamed, restoreTrash, runImport, setMember, updateClass, updateNamed } from '../../firebase/campus.js'
+import { ROLE_LABELS, TRASH_LABELS, dateTime } from '../../lib/campus.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import ConfirmModal from '../ui/ConfirmModal.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
 import AuditList from './AuditList.jsx'
+import { DeleteNamedDialog, ReasonDialog } from './adminUi.jsx'
 import { Btn, Dialog, Empty, ErrorNote, Field, Loading, Panel } from './campusUi.jsx'
 
 const LEVELS = {
@@ -265,6 +266,7 @@ function Catalog({ kind, title, list, addLabel }) {
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [deleting, setDeleting] = useState(null)
 
   async function act(action, message) {
     setBusy(true)
@@ -303,7 +305,7 @@ function Catalog({ kind, title, list, addLabel }) {
                   className="flex flex-1 gap-2"
                   onSubmit={async (e) => {
                     e.preventDefault()
-                    if (await act(() => updateNamed(kind, x.id, { name: editing.name.trim() }), 'Modifié.')) setEditing(null)
+                    if (await act(() => renameNamed(kind, x.id, editing.name.trim()), 'Renommé partout : catalogue, feuilles et plannings.')) setEditing(null)
                   }}
                 >
                   <input className={fieldClass} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} aria-label="Nom" required minLength={2} maxLength={100} />
@@ -318,8 +320,9 @@ function Catalog({ kind, title, list, addLabel }) {
                     Renommer
                   </Btn>
                   <Btn variant="ghost" disabled={busy} onClick={() => act(() => updateNamed(kind, x.id, { active: !x.active }), x.active ? 'Retiré des choix.' : 'De nouveau proposé.')}>
-                    {x.active ? 'Retirer' : 'Remettre'}
+                    {x.active ? 'Masquer' : 'Remettre'}
                   </Btn>
+                  <Btn variant="ghost" icon={Trash2} aria-label={`Supprimer ${x.name}`} className="!text-coral-600 dark:!text-coral-400" onClick={() => setDeleting(x)} />
                 </>
               )}
             </li>
@@ -328,14 +331,28 @@ function Catalog({ kind, title, list, addLabel }) {
       ) : (
         <Empty>Rien pour l’instant.</Empty>
       )}
+      {deleting && (
+        <DeleteNamedDialog
+          what={kind}
+          item={deleting}
+          others={list.filter((x) => x.id !== deleting.id)}
+          onClose={() => setDeleting(null)}
+          onDelete={async (body) => {
+            const r = await deleteNamed(kind, deleting.id, body)
+            await reload()
+            showToast(r.replacedBy ? `Supprimé, remplacé par ${r.replacedBy}.` : 'Supprimé.', 'success')
+            setDeleting(null)
+          }}
+        />
+      )}
     </Panel>
   )
 }
 
-function MemberDialog({ onClose, onSaved }) {
+function MemberDialog({ member, onClose, onSaved }) {
   const { boot } = useCampus()
   const { showToast } = useToast()
-  const [form, setForm] = useState({ email: '', name: '', role: 'agent', teacherId: '', canExport: true })
+  const [form, setForm] = useState(member ? { email: member.email, name: member.name, role: member.role, teacherId: member.teacherId || '', canExport: member.canExport } : { email: '', name: '', role: 'agent', teacherId: '', canExport: true })
   const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
   const roles = boot.me.appAdmin ? ['agent', 'teacher', 'admin'] : ['agent', 'teacher']
@@ -345,7 +362,7 @@ function MemberDialog({ onClose, onSaved }) {
     setBusy(true)
     try {
       await setMember({ ...form, teacherId: form.teacherId || null })
-      showToast('Accès accordé.', 'success')
+      showToast(member ? 'Accès modifié.' : 'Accès accordé.', 'success')
       onSaved()
     } catch (err) {
       showToast(err.message, 'error')
@@ -354,7 +371,7 @@ function MemberDialog({ onClose, onSaved }) {
   }
   return (
     <Dialog
-      title="Donner un accès"
+      title={member ? 'Modifier un accès' : 'Donner un accès'}
       onClose={onClose}
       footer={
         <>
@@ -367,7 +384,7 @@ function MemberDialog({ onClose, onSaved }) {
     >
       <form id="campus-member" onSubmit={submit} className="space-y-3">
         <Field label="Adresse e-mail du compte BomaVibes" hint="La personne doit déjà avoir un compte et avoir vérifié son adresse.">
-          <input type="email" className={fieldClass} value={form.email} onChange={set('email')} required />
+          <input type="email" className={fieldClass} value={form.email} onChange={set('email')} readOnly={!!member} required />
         </Field>
         <Field label="Nom affiché sur les feuilles">
           <input className={fieldClass} value={form.name} onChange={set('name')} required minLength={2} maxLength={100} />
@@ -457,9 +474,16 @@ function Members() {
                     {m.role !== 'admin' && (m.canExport ? ' · export autorisé' : ' · sans export')}
                   </span>
                 </span>
-                <Btn variant="ghost" icon={Trash2} onClick={() => setRemoving(m)}>
-                  Retirer l’accès
-                </Btn>
+                <span className="flex gap-1">
+                  {(boot.me.appAdmin || m.role !== 'admin') && (
+                    <Btn variant="ghost" icon={Pencil} onClick={() => setAdding(m)}>
+                      Modifier
+                    </Btn>
+                  )}
+                  <Btn variant="ghost" icon={Trash2} className="!text-coral-600 dark:!text-coral-400" onClick={() => setRemoving(m)}>
+                    Retirer l’accès
+                  </Btn>
+                </span>
               </li>
             ))}
           </ul>
@@ -468,6 +492,7 @@ function Members() {
         ))}
       {adding && (
         <MemberDialog
+          member={adding === true ? null : adding}
           onClose={() => setAdding(false)}
           onSaved={() => {
             setAdding(false)
@@ -499,10 +524,193 @@ function Log() {
   )
 }
 
+function ClassDialog({ cls, onClose, onSaved }) {
+  const { showToast } = useToast()
+  const [form, setForm] = useState(cls ? { code: cls.code, label: cls.label, expected: String(cls.expected) } : { code: '', label: '', expected: '' })
+  const [busy, setBusy] = useState(false)
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+  async function submit(e) {
+    e.preventDefault()
+    setBusy(true)
+    const body = { code: form.code.trim(), label: form.label.trim(), expected: Number(form.expected) }
+    try {
+      await (cls ? updateClass(cls.id, body) : createClass(body))
+      showToast(cls ? 'Classe modifiée.' : 'Classe créée : importez sa liste.', 'success')
+      onSaved()
+    } catch (err) {
+      showToast(err.message, 'error')
+      setBusy(false)
+    }
+  }
+  return (
+    <Dialog
+      title={cls ? 'Modifier la classe' : 'Nouvelle classe'}
+      onClose={onClose}
+      footer={
+        <>
+          <Btn onClick={onClose}>Annuler</Btn>
+          <Btn variant="primary" type="submit" form="campus-class" busy={busy}>
+            Enregistrer
+          </Btn>
+        </>
+      }
+    >
+      <form id="campus-class" onSubmit={submit} className="space-y-3">
+        <Field label="Code (affiché partout)">
+          <input className={fieldClass} value={form.code} onChange={set('code')} required maxLength={20} placeholder="L2" />
+        </Field>
+        <Field label="Intitulé">
+          <input className={fieldClass} value={form.label} onChange={set('label')} required maxLength={60} placeholder="Licence 2" />
+        </Field>
+        <Field label="Effectif officiel">
+          <input type="number" min="1" max="400" className={fieldClass} value={form.expected} onChange={set('expected')} required />
+        </Field>
+      </form>
+    </Dialog>
+  )
+}
+
+function Classes() {
+  const { boot, cls, setClassId, reload } = useCampus()
+  const { showToast } = useToast()
+  const [editing, setEditing] = useState(null)
+  const [deleting, setDeleting] = useState(null)
+  return (
+    <Panel
+      title="Classes"
+      action={
+        <Btn variant="primary" icon={Plus} onClick={() => setEditing('new')}>
+          Nouvelle classe
+        </Btn>
+      }
+    >
+      <ul className="divide-y divide-ink/8">
+        {boot.classes.map((c) => (
+          <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+            <span>
+              <span className="block text-sm font-semibold text-ink">
+                {c.code} · {c.label}
+              </span>
+              <span className="block text-xs text-ink-soft">
+                Effectif officiel : {c.expected}
+                {c.rosterVersion ? '' : ' · liste à importer'}
+              </span>
+            </span>
+            <span className="flex flex-wrap gap-1">
+              {cls?.id !== c.id && (
+                <Btn variant="ghost" onClick={() => setClassId(c.id)}>
+                  Ouvrir
+                </Btn>
+              )}
+              <Btn variant="ghost" icon={Pencil} onClick={() => setEditing(c)}>
+                Modifier
+              </Btn>
+              <Btn variant="ghost" icon={Trash2} className="!text-coral-600 dark:!text-coral-400" onClick={() => setDeleting(c)}>
+                Supprimer
+              </Btn>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {editing && (
+        <ClassDialog
+          cls={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null)
+            reload().catch(() => {})
+          }}
+        />
+      )}
+      {deleting && (
+        <ReasonDialog
+          title={`Supprimer la classe ${deleting.code} ?`}
+          text="La classe et ses étudiants vont dans la corbeille. Ses feuilles et ses plannings doivent être supprimés avant."
+          confirm="Supprimer la classe"
+          typed
+          onClose={() => setDeleting(null)}
+          onConfirm={async (reason) => {
+            await deleteClass(deleting.id, reason)
+            setDeleting(null)
+            showToast('Classe mise à la corbeille.', 'success')
+            await reload()
+          }}
+        />
+      )}
+    </Panel>
+  )
+}
+
+function Trash() {
+  const { reload } = useCampus()
+  const { showToast } = useToast()
+  const [items, setItems] = useState(null)
+  const [error, setError] = useState('')
+  const [purging, setPurging] = useState(null)
+  const [busy, setBusy] = useState('')
+  const load = useCallback(() => {
+    setError('')
+    fetchTrash()
+      .then(setItems)
+      .catch((err) => setError(err.message))
+  }, [])
+  useEffect(() => load(), [load])
+
+  async function act(id, action, message) {
+    setBusy(id)
+    try {
+      await action()
+      showToast(message, 'success')
+      load()
+      reload().catch(() => {})
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setBusy('')
+      setPurging(null)
+    }
+  }
+  return (
+    <Panel title="Corbeille">
+      <p className="mb-3 text-sm text-ink-soft">Ce que l’administrateur a supprimé. Restaurer remet l’élément exactement comme il était. Le journal, lui, ne s’efface jamais.</p>
+      {error && <ErrorNote onRetry={load}>{error}</ErrorNote>}
+      {!items && !error && <Loading />}
+      {items &&
+        (items.length ? (
+          <ul className="divide-y divide-ink/8">
+            {items.map((t) => (
+              <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-ink">{t.label}</span>
+                  <span className="block text-xs text-ink-soft">
+                    {TRASH_LABELS[t.type]} · {t.by}, {dateTime(t.at)} · Motif : {t.reason}
+                  </span>
+                </span>
+                <span className="flex flex-wrap gap-1">
+                  <Btn icon={RotateCcw} busy={busy === t.id && !purging} onClick={() => act(t.id, () => restoreTrash(t.id), 'Restauré.')}>
+                    Restaurer
+                  </Btn>
+                  <Btn variant="ghost" icon={Trash2} className="!text-coral-600 dark:!text-coral-400" onClick={() => setPurging(t)}>
+                    Effacer
+                  </Btn>
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Empty>La corbeille est vide.</Empty>
+        ))}
+      {purging && <ConfirmModal title="Effacer définitivement ?" description={`« ${purging.label} » ne pourra plus être restauré.`} confirmLabel="Effacer" confirmingLabel="Effacement…" isConfirming={busy === purging.id} onCancel={() => setPurging(null)} onConfirm={() => act(purging.id, () => purgeTrash(purging.id), 'Effacé définitivement.')} />}
+    </Panel>
+  )
+}
+
 const TABS = [
   ['liste', 'Liste officielle'],
+  ['classes', 'Classes'],
   ['catalogue', 'Matières et enseignants'],
   ['utilisateurs', 'Utilisateurs'],
+  ['corbeille', 'Corbeille'],
   ['journal', 'Journal'],
 ]
 
@@ -529,6 +737,8 @@ function AdminPanel() {
           <Catalog kind="teachers" title="Enseignants" list={boot.teachers} addLabel="Nouvel enseignant" />
         </div>
       )}
+      {tab === 'classes' && <Classes />}
+      {tab === 'corbeille' && <Trash />}
       {tab === 'utilisateurs' && <Members />}
       {tab === 'journal' && <Log />}
     </div>

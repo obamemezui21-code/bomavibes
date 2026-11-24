@@ -105,11 +105,11 @@ function Campus() {
           </button>
         </div>
         {boot && (
-          <nav aria-label="Campus" className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-2 sm:px-4">
+          <nav aria-label="Campus" className="mx-auto flex max-w-6xl overflow-x-auto px-1 sm:gap-1 sm:px-4">
             {TABS.filter((t) => !t.admin || boot.me.admin).map((t) => {
               const Icon = t.icon
               return (
-                <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => `flex h-11 shrink-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-2 text-[13px] font-semibold transition sm:flex-none sm:px-3 ${isActive ? 'border-violet-600 text-ink' : 'border-transparent text-ink-soft hover:text-ink'}`}>
+                <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => `flex h-11 shrink-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-1.5 text-xs font-semibold transition sm:flex-none sm:px-3 sm:text-[13px] ${isActive ? 'border-violet-600 text-ink' : 'border-transparent text-ink-soft hover:text-ink'}`}>
                   <Icon size={16} aria-hidden="true" className="hidden sm:block" />
                   <span className="sm:hidden">{t.short}</span>
                   <span className="hidden sm:inline">{t.label}</span>

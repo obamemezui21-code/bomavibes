@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Ban, ChevronLeft, ChevronRight, Copy, Pencil, Plus, RotateCcw, Send, Trash2 } from 'lucide-react'
-import { addNamed, cancelSlot, copyTimetable, fetchBlankSheets, fetchTimetable, publishTimetable, saveTimetable } from '../../firebase/campus.js'
+import { addNamed, cancelSlot, copyTimetable, deleteTimetable, fetchBlankSheets, fetchTimetable, publishTimetable, saveTimetable } from '../../firebase/campus.js'
 import { DAYS, addDays, dayMonth, hours, mondayOf, searchKey, shortDate } from '../../lib/campus.js'
 import { blankBundle, timetableReport } from '../../lib/campusReports.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
 import { EvaluationTag, OpenSlotButton, SlotState } from './slotUi.jsx'
+import { ReasonDialog } from './adminUi.jsx'
 import { Btn, Dialog, Empty, ErrorNote, ExportButtons, Field, Loading, Panel } from './campusUi.jsx'
 
 const cellOf = (slots, day, periodId) => slots.find((s) => s.day === day && s.periodId === periodId)
@@ -317,6 +318,7 @@ function Timetable() {
   const [editing, setEditing] = useState(false)
   const [cancelling, setCancelling] = useState(null)
   const [busy, setBusy] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const load = useCallback(() => {
     if (!classId) return undefined
@@ -497,12 +499,33 @@ function Timetable() {
             })}
           </div>
           {t.note && <p className="whitespace-pre-line rounded-2xl border border-ink/8 bg-surface px-4 py-3 text-sm text-ink">{t.note}</p>}
+          <div className="flex flex-wrap gap-2">
           {published && staff && (
             <Btn variant="ghost" busy={busy === 'unpublish'} onClick={() => act('unpublish', () => publishTimetable({ classId, week, published: false }), 'Planning remis en brouillon.')}>
               Remettre en brouillon
             </Btn>
           )}
+          {boot.me.admin && (
+            <Btn variant="ghost" icon={Trash2} className="!text-coral-600 dark:!text-coral-400" onClick={() => setDeleting(true)}>
+              Supprimer ce planning
+            </Btn>
+          )}
+          </div>
         </>
+      )}
+      {deleting && (
+        <ReasonDialog
+          title={`Supprimer le planning du ${shortDate(week)} ?`}
+          text="Il va dans la corbeille. Les feuilles de présence déjà ouvertes restent."
+          confirm="Supprimer"
+          onClose={() => setDeleting(false)}
+          onConfirm={async (reason) => {
+            await deleteTimetable({ classId, week, reason })
+            setDeleting(false)
+            showToast('Planning mis à la corbeille.', 'success')
+            load()
+          }}
+        />
       )}
       {cancelling && (
         <CancelDialog

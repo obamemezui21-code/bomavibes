@@ -30,18 +30,22 @@ async function bootstrap(access) {
 // identifier comes from the name, so it can't be added twice.
 async function addNamed(access, kind, body) {
     const { name } = z.object({ name: NAME }).parse(body);
-    const id = crypto.createHash("sha1").update(`${access.org}|${kind}|${nameKey(name)}`).digest("hex").slice(0, 20);
-    const ref = col[kind]().doc(id);
+    const base = crypto.createHash("sha1").update(`${access.org}|${kind}|${nameKey(name)}`).digest("hex").slice(0, 20);
+    let ref;
     await db.runTransaction(async (tx) => {
-        const snap = await tx.get(ref);
-        if (snap.exists) {
-            if (snap.data().active === false) tx.update(ref, { active: true });
+        const all = await tx.get(col[kind]().where("org", "==", access.org));
+        const same = all.docs.find((d) => nameKey(d.data().name) === nameKey(name));
+        if (same) {
+            ref = same.ref;
+            if (same.data().active === false) tx.update(ref, { active: true });
             return;
         }
+        // Taken by one that was renamed since: a new identifier.
+        ref = all.docs.some((d) => d.id === base) ? col[kind]().doc() : col[kind]().doc(base);
         tx.create(ref, { org: access.org, name: name.normalize("NFC"), active: true, createdBy: who(access), createdAt: FieldValue.serverTimestamp() });
-        tx.create(newAudit(), auditEntry(access, `${KINDS[kind]}.add`, { targetId: id, details: { name } }));
+        tx.create(newAudit(), auditEntry(access, `${KINDS[kind]}.add`, { targetId: ref.id, details: { name } }));
     });
-    return { id, name: (await ref.get()).data().name };
+    return { id: ref.id, name: (await ref.get()).data().name };
 }
 
 // Renaming changes the catalogue and the sheets to come; the sheets already
