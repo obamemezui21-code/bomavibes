@@ -74,6 +74,17 @@ export async function fetchScan(id, scanId) {
   return res.blob()
 }
 
+// The weekly timetable. week: its Monday, YYYY-MM-DD.
+export const fetchAgenda = (params) => call(`/agenda${qs(params)}`)
+export const fetchTimetable = (params) => call(`/timetable${qs(params)}`)
+export const saveTimetable = (body) => call('/timetable', { method: 'PUT', body })
+export const publishTimetable = (body) => call('/timetable/status', { method: 'POST', body })
+export const copyTimetable = (body) => call('/timetable/copy', { method: 'POST', body })
+export const cancelSlot = (body) => call('/timetable/cancel', { method: 'POST', body })
+export const openSlot = (body) => call('/timetable/open', { method: 'POST', body })
+export const openDay = (body) => call('/timetable/open-day', { method: 'POST', body })
+export const fetchBlankSheets = (params) => call(`/timetable/blank${qs(params)}`)
+
 // kind: 'subjects' | 'teachers'
 export const addNamed = (kind, name) => call(`/${kind}`, { method: 'POST', body: { name } })
 export const updateNamed = (kind, id, body) => call(`/${kind}/${seg(id)}`, { method: 'PATCH', body })

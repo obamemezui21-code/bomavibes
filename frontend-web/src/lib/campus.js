@@ -30,6 +30,20 @@ export const monthShort = (month) => fmt(`${month}-01`, { month: 'short', year: 
 export const dateTime = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { timeZone: 'Africa/Libreville', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')
 export const hours = (s) => `${s.start} – ${s.end}`
 
+export const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+
+export function addDays(date, n) {
+  const d = utc(date)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+
+// The Monday of a date's week; null if it isn't a date.
+export function mondayOf(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '') || Number.isNaN(utc(date).getTime())) return null
+  return addDays(date, -((utc(date).getUTCDay() + 6) % 7))
+}
+
 // The first and last day of a « 2026-11 ».
 export function monthBounds(month) {
   const [y, m] = month.split('-').map(Number)
@@ -75,8 +89,8 @@ export function countMarks(roster, marks) {
   return c
 }
 
-const FIELD = { date: 'Date', start: 'Début', end: 'Fin', subject: 'Matière', teacher: 'Enseignant', name: 'Nom', active: 'Actif', role: 'Rôle', status: 'Statut', canExport: 'Export', label: 'Intitulé', expected: 'Effectif' }
-const show = (k, v) => (v === null || v === undefined || v === '' ? '—' : v === true ? 'oui' : v === false ? 'non' : k === 'date' ? shortDate(v) : k === 'role' ? ROLE_LABELS[v] || v : k === 'status' ? SESSION_STATUS[v] || v : String(v))
+const FIELD = { date: 'Date', start: 'Début', end: 'Fin', subject: 'Matière', teacher: 'Enseignant', name: 'Nom', active: 'Actif', role: 'Rôle', status: 'Statut', canExport: 'Export', label: 'Intitulé', expected: 'Effectif', kind: 'Type' }
+const show = (k, v) => (v === null || v === undefined || v === '' ? '—' : v === true ? 'oui' : v === false ? 'non' : k === 'date' ? shortDate(v) : k === 'role' ? ROLE_LABELS[v] || v : k === 'kind' ? (v === 'evaluation' ? 'Évaluation' : 'Cours') : k === 'status' ? SESSION_STATUS[v] || v : String(v))
 
 function diff(from, to) {
   return Object.keys(to || {})
@@ -105,6 +119,18 @@ export function describeAudit(e) {
       if ((e.from?.n || '') !== (e.to?.n || '')) lines.push(`Motif d’absence : « ${e.from?.n || '—'} » → « ${e.to?.n || '—'} »`)
       return { title: 'Correction après validation', lines }
     }
+    case 'timetable.save':
+      return { title: `Planning modifié, semaine du ${shortDate(e.week)}`, lines: d.changes || [] }
+    case 'timetable.publish':
+      return { title: `Planning publié, semaine du ${shortDate(e.week)}`, lines: [] }
+    case 'timetable.unpublish':
+      return { title: `Planning remis en brouillon, semaine du ${shortDate(e.week)}`, lines: [] }
+    case 'timetable.copy':
+      return { title: `Planning repris, semaine du ${shortDate(e.week)}`, lines: [`Depuis la semaine du ${shortDate(d.from)}`] }
+    case 'slot.cancel':
+      return { title: 'Cours marqué annulé', lines: [`${d.course}, ${shortDate(d.date)} ${d.start}`] }
+    case 'slot.restore':
+      return { title: 'Cours rétabli', lines: [`${d.course}, ${shortDate(d.date)} ${d.start}`] }
     case 'scan.add':
       return { title: 'Feuille papier ajoutée', lines: [d.name] }
     case 'scan.remove':

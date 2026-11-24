@@ -432,7 +432,7 @@ describe('video posts', () => {
 })
 
 describe('BomaVibes Campus (the server only)', () => {
-  const COLLECTIONS = ['campusMembers', 'campusClasses', 'campusStudents', 'campusImports', 'campusSubjects', 'campusTeachers', 'campusSessions', 'campusSessionKeys', 'campusAudit']
+  const COLLECTIONS = ['campusMembers', 'campusClasses', 'campusStudents', 'campusImports', 'campusSubjects', 'campusTeachers', 'campusSessions', 'campusSessionKeys', 'campusTimetables', 'campusAudit']
 
   it('no account can read or write it, not even an app admin or a campus member', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {

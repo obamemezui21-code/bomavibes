@@ -8,6 +8,7 @@ const { CONFIG, HttpError } = require("./config");
 const roster = require("./rosterController");
 const sessions = require("./sessionController");
 const people = require("./adminController");
+const timetable = require("./timetableController");
 const scans = require("./scanController");
 
 // /api/campus — BomaVibes Campus, attendance. Mounted in app.js.
@@ -86,6 +87,17 @@ router.get(
         return new Promise((resolve) => res.once("close", resolve));
     }),
 );
+
+// The weekly timetable, and the sheets it prepares
+router.get("/agenda", run((req) => timetable.getAgenda(req.campus, req.query)));
+router.get("/timetable", run((req) => timetable.getTimetable(req.campus, req.query)));
+router.put("/timetable", requireStaff, run((req) => timetable.saveTimetable(req.campus, req.body)));
+router.post("/timetable/status", requireStaff, run((req) => timetable.setStatus(req.campus, req.body)));
+router.post("/timetable/copy", requireStaff, run((req) => timetable.copyTimetable(req.campus, req.body)));
+router.post("/timetable/cancel", requireStaff, run((req) => timetable.cancelSlot(req.campus, req.body)));
+router.post("/timetable/open", requireStaff, run((req) => timetable.openSlot(req.campus, req.body)));
+router.post("/timetable/open-day", requireStaff, run((req) => timetable.openDay(req.campus, req.body)));
+router.get("/timetable/blank", requireStaff, run((req) => timetable.blankSheets(req.campus, req.query)));
 
 // Subjects and teachers: agents may add one while creating a session; only
 // the administrator renames or retires them.

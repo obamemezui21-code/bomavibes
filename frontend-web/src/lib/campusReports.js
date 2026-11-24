@@ -6,7 +6,10 @@
 // A table:  { title, columns: [{ label, width, type, align }], rows: [[…]], empty }
 //   type: 'text' | 'int' | 'pct' (a rate, 0 to 1, or null) | 'mark' (true: a
 //   cross in a box, false: an empty box)
-import { STATUS, UNSET, dateTime, hours, longDate, monthLabel, shortDate, statusLabel } from './campus.js'
+import { DAYS, STATUS, UNSET, addDays, dateTime, dayMonth, hours, longDate, monthLabel, shortDate, statusLabel } from './campus.js'
+
+// The institution's name in full, at the top of what is printed.
+const ORG_NAMES = { INASS: 'Institut Universitaire des Sciences de la Santé du Gabon (INASS)' }
 
 export const RATE_NOTE = 'Taux de présence = (présents + retards) / statuts renseignés. Taux d’absence = absents / statuts renseignés. Seules les séances validées sont comptées ; un statut non renseigné n’est ni une présence ni une absence.'
 
@@ -19,7 +22,7 @@ const slug = (s) =>
     .replace(/^-|-$/g, '')
 const fileName = (...parts) => parts.map(slug).filter(Boolean).join('_')
 
-const base = (cls, extra) => ({ org: cls.org, className: `${cls.code}${cls.label && cls.label !== cls.code ? ` – ${cls.label}` : ''}`, notes: [], signatures: [], meta: [], ...extra })
+const base = (cls, extra) => ({ org: cls.org, orgName: ORG_NAMES[cls.org] || cls.org, className: `${cls.code}${cls.label && cls.label !== cls.code ? ` – ${cls.label}` : ''}`, notes: [], signatures: [], meta: [], ...extra })
 
 // The official list.
 export function officialListReport({ cls, students, today }) {
@@ -39,13 +42,14 @@ const sessionMeta = (s) => [
   ['Date', longDate(s.date)],
   ['Horaires', hours(s)],
   ['Matière', s.subjectName],
-  ['Enseignant', s.teacherName],
+  ['Enseignant', s.teacherName || '…………………………'],
 ]
+const sheetTitle = (s) => (s.kind === 'evaluation' ? 'Feuille de présence – Évaluation' : 'Feuille de présence')
 
 // The paper sheet, to be filled in by hand during the course.
 export function blankSheetReport({ session, classLabel }) {
   return base({ org: session.org, code: session.classCode, label: classLabel }, {
-    title: 'Feuille de présence',
+    title: sheetTitle(session),
     footer: sessionFooter(session),
     meta: [...sessionMeta(session), ['Effectif attendu', String(session.roster.length)]],
     tables: [
@@ -65,7 +69,7 @@ export function filledSheetReport({ session, classLabel, marks = session.marks }
   const c = session.counts
   const rated = c.p + c.r + c.a
   return base({ org: session.org, code: session.classCode, label: classLabel }, {
-    title: 'Feuille de présence',
+    title: sheetTitle(session),
     footer: sessionFooter(session),
     subtitle: session.status === 'validated' ? null : session.status === 'cancelled' ? 'FEUILLE ANNULÉE' : 'EN COURS DE SAISIE – NON VALIDÉE',
     meta: [
@@ -122,7 +126,7 @@ export function monthlyReport({ stats, month }) {
       {
         title: 'Détail par séance',
         columns: [col('Date', 20), col('Matière', 44), col('Nom et prénom', 62), col('Statut', 18), col('Motif', 36)],
-        rows: (stats.events || []).map((e) => [shortDate(e.date), e.subjectName, e.name, STATUS[e.status].label, e.note]),
+        rows: (stats.events || []).map((e) => [shortDate(e.date), e.subjectName, e.name, `${STATUS[e.status].label}${e.kind === 'evaluation' ? ' (évaluation)' : ''}`, e.note]),
         empty: 'Rien à signaler.',
       },
     ],
@@ -147,7 +151,7 @@ export function studentReport({ page, history = page.record.history, filters = {
       {
         title: 'Historique des séances',
         columns: [col('Date', 22), col('Horaires', 26), col('Matière', 50), col('Enseignant', 42), col('Statut', 24), col('Motif', 36)],
-        rows: history.map((h) => [shortDate(h.date), hours(h), h.subjectName, h.teacherName, statusLabel(h.status), h.note]),
+        rows: history.map((h) => [shortDate(h.date), hours(h), `${h.subjectName}${h.kind === 'evaluation' ? ' (évaluation)' : ''}`, h.teacherName, statusLabel(h.status), h.note]),
         empty: 'Aucune séance validée.',
       },
     ],
@@ -187,4 +191,42 @@ export function classReport({ stats, filters = {} }) {
     notes: [RATE_NOTE],
     fileName: fileName(cls.org, cls.code, 'rapport general', filters.from, filters.to),
   })
+}
+
+// The week, as on the institution's own timetable: periods down, days across,
+// the pauses between them.
+export function timetableReport({ org, cls, timetable: t }) {
+  const days = t.slots.some((s) => s.day === 6) ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5]
+  const rows = []
+  t.periods.forEach((p, i) => {
+    const before = t.periods[i - 1]
+    if (before && before.end < p.start) rows.push([`${before.end} – ${p.start}`, ...days.map(() => 'Pause')])
+    rows.push([
+      `${p.label}\n${hours(p)}`,
+      ...days.map((d) => {
+        const s = t.slots.find((x) => x.day === d && x.periodId === p.id)
+        if (!s) return ''
+        return [s.kind === 'evaluation' ? 'ÉVALUATION' : '', s.subjectName, s.teacherName || '', s.cancelled && s.state === 'cancelled' ? `Annulé : ${s.cancelled.reason}` : ''].filter(Boolean).join('\n')
+      }),
+    ])
+  })
+  return base({ ...cls, org }, {
+    title: 'Planning des cours',
+    subtitle: `Semaine du ${dayMonth(t.week)} au ${shortDate(addDays(t.week, days.length - 1))}${t.status === 'published' ? '' : ' (brouillon)'}`,
+    meta: t.title ? [['Promotion', t.title]] : [],
+    landscape: true,
+    tables: [{ columns: [col('Période', 34), ...days.map((d) => ({ ...col(`${DAYS[d - 1]} ${dayMonth(addDays(t.week, d - 1))}`, 44), align: 'center' }))], rows, airy: true }],
+    notes: t.note ? t.note.split('\n').filter(Boolean) : [],
+    signatures: ['La direction des études'],
+    fileName: fileName(org, cls.code, 'planning', t.week),
+  })
+}
+
+// Several blank sheets in one document: a day's, or a week's.
+export function blankBundle({ data, name }) {
+  if (!data.sessions.length) throw new Error('Aucun cours à imprimer.')
+  return {
+    reports: data.sessions.map((s) => blankSheetReport({ session: { ...s, roster: data.roster }, classLabel: data.classLabel })),
+    fileName: fileName('feuilles vierges', name),
+  }
 }

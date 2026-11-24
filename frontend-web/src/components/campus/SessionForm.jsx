@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { addNamed, createSession, updateSession } from '../../firebase/campus.js'
-import { searchKey } from '../../lib/campus.js'
+import { addNamed, createSession, fetchTimetable, updateSession } from '../../firebase/campus.js'
+import { hours, mondayOf, searchKey } from '../../lib/campus.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
 import { Btn, Dialog, Field } from './campusUi.jsx'
@@ -32,13 +32,32 @@ function SessionForm({ session, onClose, onSaved }) {
     end: session?.end || '10:00',
     subject: session?.subjectName || '',
     teacher: session?.teacherName || '',
+    kind: session?.kind || 'course',
     reason: '',
   }))
+  const [planned, setPlanned] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const set = (k) => (v) => {
     setError(null)
     setForm((f) => ({ ...f, [k]: v?.target ? v.target.value : v }))
+  }
+  const week = mondayOf(form.date)
+  useEffect(() => {
+    if (session || !week) return undefined
+    let live = true
+    fetchTimetable({ classId: cls.id, week })
+      .then((d) => live && setPlanned(d.timetable))
+      .catch(() => live && setPlanned(null))
+    return () => {
+      live = false
+    }
+  }, [session, week, cls.id])
+  const courses = planned?.week === week ? planned.slots.filter((s) => s.date === form.date && s.state !== 'cancelled') : []
+  function pick(s) {
+    if (s.sessionId) return navigate(`/campus/seances/${s.sessionId}`)
+    setError(null)
+    return setForm((f) => ({ ...f, start: s.start, end: s.end, subject: s.subjectName, teacher: s.teacherName || f.teacher, kind: s.kind }))
   }
   const subjects = boot.subjects.filter((s) => s.active)
   const teachers = boot.teachers.filter((t) => t.active)
@@ -58,7 +77,7 @@ function SessionForm({ session, onClose, onSaved }) {
     try {
       const subjectId = await idOf('subjects', boot.subjects, form.subject)
       const teacherId = await idOf('teachers', boot.teachers, form.teacher)
-      const body = { date: form.date, start: form.start, end: form.end, subjectId, teacherId, force, ...(validated ? { reason: form.reason } : {}) }
+      const body = { date: form.date, start: form.start, end: form.end, subjectId, teacherId, kind: form.kind, force, ...(validated ? { reason: form.reason } : {}) }
       if (session) await updateSession(session.id, body)
       else {
         const { id } = await createSession({ ...body, classId: cls.id })
@@ -94,11 +113,26 @@ function SessionForm({ session, onClose, onSaved }) {
         <p className="text-sm text-ink-soft">
           {boot.org} · Classe <b className="text-ink">{cls.code}</b> ({cls.label})
         </p>
-        <NamePicker kind="subjects" label="Matière" list={subjects} value={form.subject} onChange={set('subject')} placeholder="Choisir ou saisir une matière" />
-        <NamePicker kind="teachers" label="Enseignant" list={teachers} value={form.teacher} onChange={set('teacher')} placeholder="Choisir ou saisir un nom" />
         <Field label="Date du cours">
           <input type="date" className={fieldClass} value={form.date} onChange={set('date')} required />
         </Field>
+        {courses.length > 0 && (
+          <div>
+            <p className="mb-1 text-xs font-semibold text-ink-soft">Au planning ce jour-là</p>
+            <div className="flex flex-wrap gap-1.5">
+              {courses.map((s) => (
+                <button key={s.id} type="button" onClick={() => pick(s)} className={`rounded-xl border px-3 py-2 text-left text-xs font-semibold transition hover:border-violet-400 ${form.start === s.start && searchKey(form.subject) === searchKey(s.subjectName) ? 'border-violet-600 bg-violet-500/10 text-ink' : 'border-ink/12 text-ink-soft'}`}>
+                  <span className="block tabular-nums">{hours(s)}</span>
+                  {s.subjectName}
+                  {s.kind === 'evaluation' ? ' (évaluation)' : ''}
+                  {s.sessionId ? ' · feuille existante' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <NamePicker kind="subjects" label="Matière" list={subjects} value={form.subject} onChange={set('subject')} placeholder="Choisir ou saisir une matière" />
+        <NamePicker kind="teachers" label="Enseignant" list={teachers} value={form.teacher} onChange={set('teacher')} placeholder="Choisir ou saisir un nom" />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Heure de début">
             <input type="time" className={fieldClass} value={form.start} onChange={set('start')} required />
@@ -107,6 +141,10 @@ function SessionForm({ session, onClose, onSaved }) {
             <input type="time" className={fieldClass} value={form.end} onChange={set('end')} required />
           </Field>
         </div>
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input type="checkbox" className="h-4 w-4 accent-violet-600" checked={form.kind === 'evaluation'} onChange={(e) => set('kind')(e.target.checked ? 'evaluation' : 'course')} />
+          C’est une évaluation
+        </label>
         {validated && (
           <Field label="Motif de la modification" hint="Cette feuille est validée : l’ancienne valeur et le motif sont conservés.">
             <input className={fieldClass} value={form.reason} onChange={set('reason')} required minLength={3} maxLength={300} />

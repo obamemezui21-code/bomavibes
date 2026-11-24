@@ -11,9 +11,21 @@ const HEAD = [244, 236, 244]
 const ALERT = [192, 36, 31]
 const M = 12
 
-export async function buildPdf(report) {
+// A report, or several one after the other ({ reports }).
+export async function buildPdf(what) {
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: report.landscape ? 'landscape' : 'portrait' })
+  const reports = what.reports || [what]
+  const orientation = (r) => (r.landscape ? 'landscape' : 'portrait')
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: orientation(reports[0]) })
+  reports.forEach((report, i) => {
+    if (i) doc.addPage('a4', orientation(report))
+    drawReport(doc, report)
+  })
+  return doc
+}
+
+function drawReport(doc, report) {
+  const firstPage = doc.getNumberOfPages()
   const PW = doc.internal.pageSize.getWidth()
   const PH = doc.internal.pageSize.getHeight()
   const W = PW - 2 * M
@@ -28,7 +40,7 @@ export async function buildPdf(report) {
 
   // Header of the first page: institution, class, title.
   font('bold', 10, PLUM)
-  doc.text(pdfText(report.org), M, y, { baseline: 'top' })
+  doc.text(pdfText(report.orgName || report.org), M, y, { baseline: 'top' })
   font('normal', 9, SOFT)
   doc.text(pdfText(`Classe : ${report.className}`), PW - M, y, { baseline: 'top', align: 'right' })
   y += 7
@@ -95,6 +107,8 @@ export async function buildPdf(report) {
     const size = 8.5
     const line = 3.7
     const minRow = table.roomy ? 6.6 : 5.2
+    // Lines of their own inside a cell (the timetable): more room around them.
+    const pad = table.airy ? 6 : 1.4
 
     const head = () => {
       doc.setFillColor(...HEAD)
@@ -119,7 +133,7 @@ export async function buildPdf(report) {
         const text = c.type === 'pct' ? (v === null || v === undefined ? '–' : `${(v * 100).toFixed(1).replace('.', ',')} %`) : pdfText(v)
         return doc.splitTextToSize(text, widths[i] - 2.2)
       })
-      const h = Math.max(minRow, ...cells.map((c) => (c ? c.length * line + 1.4 : 0)))
+      const h = Math.max(minRow, ...cells.map((c) => (c ? c.length * line + (c.length > 1 ? pad : 1.4) : 0)))
       if (y + h > BOTTOM) {
         doc.addPage()
         y = M
@@ -156,7 +170,7 @@ export async function buildPdf(report) {
       doc.addPage()
       y = M
     }
-    const w = W / report.signatures.length
+    const w = Math.min(W / report.signatures.length, W / 2)
     report.signatures.forEach((s, i) => {
       font('bold', 9)
       doc.text(pdfText(`${s} :`), M + i * w, y + 2, { baseline: 'top' })
@@ -166,19 +180,18 @@ export async function buildPdf(report) {
   }
 
   const pages = doc.getNumberOfPages()
-  for (let p = 1; p <= pages; p++) {
+  for (let p = firstPage; p <= pages; p++) {
     doc.setPage(p)
     font('normal', 8, SOFT)
     doc.text(pdfText(`BomaVibes Campus – ${report.org} – ${report.className} – ${report.title}${report.footer ? ` – ${report.footer}` : ''}`), M, PH - 8, { baseline: 'middle' })
-    doc.text(`${p} / ${pages}`, PW - M, PH - 8, { baseline: 'middle', align: 'right' })
+    doc.text(`${p - firstPage + 1} / ${pages - firstPage + 1}`, PW - M, PH - 8, { baseline: 'middle', align: 'right' })
   }
-  return doc
 }
 
 // Every table on one sheet per table, under the same heading as the PDF.
 export function reportSheets(report) {
   return report.tables.map((table, i) => {
-    const rows = [[{ v: report.org, style: 'label' }], [{ v: report.title, style: 'title' }]]
+    const rows = [[{ v: report.orgName || report.org, style: 'label' }], [{ v: report.title, style: 'title' }]]
     if (report.subtitle) rows.push([{ v: report.subtitle, style: 'label' }])
     rows.push([{ v: 'Classe', style: 'label' }, null, report.className])
     for (const [label, value] of report.meta) rows.push([{ v: label, style: 'label' }, null, value])
@@ -192,7 +205,7 @@ export function reportSheets(report) {
           const type = table.columns[k].type
           if (type === 'mark') return v ? { v: 'X', style: 'center' } : ''
           if (type === 'pct') return typeof v === 'number' ? { v, style: 'pct' } : ''
-          return v
+          return typeof v === 'string' && v.includes('\n') ? { v, style: 'wrap' } : v
         }),
       )
     }

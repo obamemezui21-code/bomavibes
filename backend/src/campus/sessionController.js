@@ -15,6 +15,8 @@ const DetailsSchema = z
         end: z.string().refine(isTime, "Heure de fin invalide."),
         subjectId: z.string().min(1, "Choisissez la matière."),
         teacherId: z.string().min(1, "Choisissez l’enseignant."),
+        // Attendance at an evaluation is told apart in the reports.
+        kind: z.enum(["course", "evaluation"]).default("course"),
     })
     .refine((d) => d.end > d.start, { message: "L’heure de fin doit venir après l’heure de début.", path: ["end"] });
 
@@ -246,7 +248,7 @@ async function updateDetails(access, id, body) {
             tx.delete(col.keys().doc(oldKey));
             tx.set(col.keys().doc(newKey), { sessionId: s.id, classId: s.classId });
         }
-        const pick = (x, subject, teacher) => ({ date: x.date, start: x.start, end: x.end, subject, teacher });
+        const pick = (x, subject, teacher) => ({ date: x.date, start: x.start, end: x.end, subject, teacher, kind: x.kind || "course" });
         tx.create(newAudit(), auditEntry(access, "session.update", { sessionId: s.id, classId: s.classId, from: pick(s, s.subjectName, s.teacherName), to: pick(d, subjectName, teacherName), reason }));
         classId = s.classId;
     });

@@ -28,9 +28,31 @@ Module indépendant de BomaVibes (`backend/src/campus/`, page `/campus`, rubriqu
 Les photos des feuilles papier sont dans `backend/private/campus-scans/` (à inclure
 dans les sauvegardes). `CAMPUS_SCANS_DIR` change cet emplacement.
 
+## Planning des cours
+
+Chaque semaine a son planning (page *Planning*) : périodes, cours, enseignants,
+évaluations, note de la direction. Il se modifie en touchant une case, et se reprend
+d’une semaine à l’autre en une touche (une évaluation ou une annulation ne se
+répète pas). Il reste en brouillon, visible du personnel seulement, jusqu’à ce que
+quelqu’un le vérifie et le **publie**. Ensuite :
+
+- le tableau de bord montre les cours du jour ; *Ouvrir la feuille* la crée avec la
+  matière, l’enseignant et les horaires, sans aucun statut ; *Préparer les feuilles*
+  ouvre toutes celles du jour ;
+- les cours passés sans feuille validée sont listés (quatre dernières semaines) ;
+  un cours qui n’a pas eu lieu se marque *annulé*, avec un motif ;
+- les feuilles vierges du jour ou de la semaine s’impriment en un seul PDF ;
+- une évaluation se distingue sur les feuilles, les fiches et les rapports.
+
+Un planning saisi dans un fichier (`backend/private/campus/`, car il nomme des
+enseignants) s’enregistre en brouillon avec `scripts/importCampusTimetable.js`.
+Collection : `campusTimetables/{classe}_{lundi}`. La feuille d’un cours est retrouvée
+par le jour, la matière et les heures : une feuille créée à la main compte aussi.
+
 ## Utilisation quotidienne (agent)
 
-1. *Nouvelle séance* : matière, enseignant, date, horaires. La feuille des 119
+1. Depuis le tableau de bord, *Ouvrir la feuille* du cours. Hors planning :
+   *Nouvelle séance* (matière, enseignant, date, horaires). La feuille des 119
    étudiants s’ouvre, sans aucun statut.
 2. Facultatif : *Feuille vierge PDF* pour le cours ; après le cours, photographier
    ou importer la feuille papier, affichée à côté de la saisie.

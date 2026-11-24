@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { academicYears, countMarks, describeAudit, matchesSearch, monthBounds, percent, statusLabel } from './campus.js'
-import { blankSheetReport, classReport, filledSheetReport, monthlyReport, officialListReport, studentReport, subjectReport } from './campusReports.js'
+import { academicYears, countMarks, describeAudit, matchesSearch, mondayOf, monthBounds, percent, statusLabel } from './campus.js'
+import { blankBundle, blankSheetReport, classReport, filledSheetReport, monthlyReport, officialListReport, studentReport, subjectReport, timetableReport } from './campusReports.js'
 import { buildExcel, buildPdf, reportSheets } from './campusExport.js'
 import { buildXlsx, columnName, crc32, sheetName } from './xlsx.js'
 
@@ -97,6 +97,39 @@ describe('reports', () => {
     expect(sheet.rows.slice(sheet.freeze)).toHaveLength(119)
     expect(sheet.rows[sheet.freeze][2]).toEqual({ v: 'X', style: 'center' })
   })
+})
+
+const timetable = {
+  week: '2026-11-23', title: 'Licence 1', note: 'Tenue obligatoire', status: 'published',
+  periods: [{ id: 'p1', label: '1ère période', start: '08:00', end: '11:00' }, { id: 'p2', label: '2ème période', start: '11:30', end: '13:30' }],
+  slots: [{ day: 1, periodId: 'p1', subjectName: 'Éthique', teacherName: null, kind: 'evaluation' }, { day: 5, periodId: 'p2', subjectName: 'Anglais', teacherName: 'M. X', kind: 'course' }],
+}
+
+describe('timetable', () => {
+  it('a Monday, whatever the day', () => {
+    expect(['2026-11-23', '2026-11-29', '2026-11-25'].map(mondayOf)).toEqual(['2026-11-23', '2026-11-23', '2026-11-23'])
+    expect(mondayOf('demain')).toBe(null)
+  })
+  it('prints periods, pauses, days and evaluations', async () => {
+    const r = timetableReport({ org: 'INASS', cls: stats.class, timetable })
+    expect(r.orgName).toContain('Sciences de la Santé')
+    expect(r.subtitle).toBe('Semaine du 23 nov. au 27/11/2026')
+    expect(r.tables[0].columns).toHaveLength(6)
+    const [p1, pause, p2] = r.tables[0].rows
+    expect(p1[1]).toBe('ÉVALUATION\nÉthique')
+    expect(pause).toEqual(['11:00 – 11:30', ...Array(5).fill('Pause')])
+    expect(p2[5]).toBe('Anglais\nM. X')
+    expect((await buildPdf(r)).getNumberOfPages()).toBe(1)
+    expect(buildExcel(r).length).toBeGreaterThan(1000)
+  })
+  it('a day of blank sheets in one document, each with its own page numbers', async () => {
+    const data = { classLabel: 'Licence 1', roster, sessions: [{ ...session, teacherName: '', kind: 'evaluation' }, { ...session, start: '11:30', end: '13:30' }] }
+    const bundle = blankBundle({ data, name: 'L1 2026-11-23' })
+    expect(bundle.reports.map((r) => r.title)).toEqual(['Feuille de présence – Évaluation', 'Feuille de présence'])
+    const one = (await buildPdf(bundle.reports[1])).getNumberOfPages()
+    expect((await buildPdf(bundle)).getNumberOfPages()).toBe(one * 2)
+    expect(() => blankBundle({ data: { ...data, sessions: [] }, name: 'x' })).toThrow()
+  }, 30000)
 })
 
 describe('xlsx', () => {

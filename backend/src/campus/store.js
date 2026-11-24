@@ -14,6 +14,7 @@ const { HttpError, SESSION } = require("./config");
 //                              roster (as it was), marks {studentId: {s,n,u,t}}
 //   campusSessionKeys/{hash}   one per class + date + subject + start time:
 //                              makes a second sheet for a session impossible
+//   campusTimetables/{id}      the timetable of a class for a week
 //   campusAudit/{id}           every change, kept for ever
 //
 // A whole sheet is one document (119 students ≈ 25 KB): it is read in one
@@ -101,6 +102,7 @@ function publicSession(s, { full = false } = {}) {
         subjectName: s.subjectName,
         teacherId: s.teacherId,
         teacherName: s.teacherName,
+        kind: s.kind || "course",
         status: s.status,
         counts: s.counts,
         expected: s.roster.length,

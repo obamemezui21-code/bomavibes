@@ -5,6 +5,7 @@ import { fetchSessions } from '../../firebase/campus.js'
 import { SESSION_STATUS, hours, mediumDate, searchKey } from '../../lib/campus.js'
 import { fieldClass, useCampus } from './campusContext.js'
 import SessionForm from './SessionForm.jsx'
+import { EvaluationTag } from './slotUi.jsx'
 import { Btn, CountsLine, Empty, ErrorNote, Field, Loading, SearchBox, SessionPill } from './campusUi.jsx'
 
 const PAGE = 20
@@ -130,6 +131,7 @@ function SessionsList() {
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold text-ink">{s.subjectName}</span>
+                        {s.kind === 'evaluation' && <EvaluationTag />}
                         <SessionPill status={s.status} />
                         {s.corrections > 0 && <span className="text-xs text-ink-soft">{s.corrections} correction{s.corrections > 1 ? 's' : ''}</span>}
                       </span>

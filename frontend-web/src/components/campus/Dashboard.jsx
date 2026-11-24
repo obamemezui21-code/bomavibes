@@ -6,6 +6,7 @@ import { dayMonth, hours, matchesSearch, mediumDate, monthLabel, monthShort, per
 import { useToast } from '../../context/ToastContext.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
 import { Columns, RateBars } from './Charts.jsx'
+import Today from './Today.jsx'
 import { Btn, CountsLine, Empty, ErrorNote, Field, Loading, Panel, SearchBox, SessionPill, Tile } from './campusUi.jsx'
 
 // First use: the class doesn't exist yet.
@@ -108,6 +109,7 @@ function Dashboard() {
 
   return (
     <div className="space-y-4">
+      <Today key={classId} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex rounded-xl border border-ink/12 bg-surface p-1 text-sm font-semibold" role="group" aria-label="Chiffres affichés">
           {[

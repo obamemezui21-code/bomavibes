@@ -104,7 +104,7 @@ function listEvents(allSessions, students, filters = {}) {
         if (s.status !== SESSION.VALIDATED) continue;
         for (const r of s.roster) {
             const m = s.marks?.[r.id];
-            if (m?.s === "A" || m?.s === "R") out.push({ date: s.date, start: s.start, subjectName: s.subjectName, id: r.id, name: names.get(r.id) || r.name, status: m.s, note: m.n || "" });
+            if (m?.s === "A" || m?.s === "R") out.push({ date: s.date, start: s.start, subjectName: s.subjectName, id: r.id, name: names.get(r.id) || r.name, status: m.s, note: m.n || "", kind: s.kind || "course" });
         }
     }
     return out;
@@ -126,6 +126,7 @@ function studentRecord(allSessions, studentId, filters = {}) {
             subjectId: s.subjectId,
             subjectName: s.subjectName,
             teacherName: s.teacherName,
+            kind: s.kind || "course",
             status: mark?.s ?? null,
             note: mark?.n ?? "",
         });

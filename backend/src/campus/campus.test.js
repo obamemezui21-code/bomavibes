@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { parseRoster, checkRoster, planImport, rosterHash, newStudentId, similarity } = require("./roster");
 const { computeStats, listEvents, studentRecord, countMarks, weekStart } = require("./stats");
 const { isDate, isTime, academicYear, today } = require("./config");
+const { DEFAULT_PERIODS, TimetableSchema, slotsOf, sessionOf, agenda, localNow, describeChanges } = require("./timetable");
 
 // Made-up names only: this repository is public.
 const letters = "ABCDEFGHIJKLMNOPQRST";
@@ -142,4 +143,56 @@ test("dates", () => {
     assert.equal(academicYear("2026-11-24"), "2026-2027");
     assert.equal(academicYear("2027-07-01"), "2026-2027");
     assert.equal(today(new Date("2026-11-24T23:30:00Z")), "2026-11-25");
+});
+
+const slot = (day, periodId, subjectId, extra = {}) => ({ day, periodId, subjectId, subjectName: subjectId, teacherId: "t1", teacherName: "T", kind: "course", ...extra });
+const tt = (slots, extra = {}) => ({ week: "2026-11-23", periods: DEFAULT_PERIODS, slots, ...extra });
+const sheet = (date, subjectId, start, end, status, extra = {}) => ({ id: `${date}-${start}`, date, subjectId, start, end, status, counts: {}, ...extra });
+
+test("a timetable gives each course its date and hours", () => {
+    const s = slotsOf(tt([slot(5, "p3", "c"), slot(1, "p1", "a"), slot(2, "p2", "b")]));
+    assert.deepEqual(s.map((x) => [x.id, x.date, x.start, x.end]), [["1-p1", "2026-11-23", "08:00", "11:00"], ["2-p2", "2026-11-24", "11:30", "13:30"], ["5-p3", "2026-11-27", "14:00", "16:00"]]);
+});
+
+test("a timetable is refused when it cannot be true", () => {
+    const ok = { classId: "c", week: "2026-11-23", version: 0, periods: DEFAULT_PERIODS, slots: [{ day: 1, periodId: "p1", subjectId: "a" }] };
+    assert.equal(TimetableSchema.safeParse(ok).success, true);
+    for (const bad of [
+        { week: "2026-11-24" },
+        { slots: [...ok.slots, { day: 1, periodId: "p1", subjectId: "b" }] },
+        { slots: [{ day: 1, periodId: "p9", subjectId: "a" }] },
+        { slots: [{ day: 7, periodId: "p1", subjectId: "a" }] },
+        { periods: [...DEFAULT_PERIODS, { id: "p4", label: "x", start: "10:00", end: "12:00" }] },
+        { periods: [{ id: "p1", label: "x", start: "10:00", end: "09:00" }] },
+    ]) assert.equal(TimetableSchema.safeParse({ ...ok, ...bad }).success, false, JSON.stringify(bad));
+});
+
+test("a course finds its sheet, even opened by hand at another hour", () => {
+    const [s] = slotsOf(tt([slot(1, "p1", "a")]));
+    assert.equal(sessionOf(s, [sheet("2026-11-23", "a", "08:30", "10:30", "draft")]).start, "08:30");
+    assert.equal(sessionOf(s, [sheet("2026-11-23", "a", "14:00", "16:00", "draft")]), null);
+    assert.equal(sessionOf(s, [sheet("2026-11-23", "b", "08:00", "11:00", "draft")]), null);
+    assert.equal(sessionOf(s, [sheet("2026-11-23", "a", "08:00", "11:00", "cancelled")]), null);
+});
+
+test("the agenda: today, what is missing, how the week goes", () => {
+    const t = tt([slot(1, "p1", "a"), slot(1, "p2", "b"), slot(1, "p3", "c", { cancelled: { reason: "férié" } }), slot(2, "p1", "a"), slot(2, "p2", "b"), slot(2, "p3", "c"), slot(3, "p1", "a")]);
+    const sessions = [sheet("2026-11-23", "a", "08:00", "11:00", "validated"), sheet("2026-11-24", "a", "08:00", "11:00", "draft")];
+    const g = agenda([t], sessions, { date: "2026-11-24", time: "12:00" });
+    assert.deepEqual(g.today.map((s) => s.state), ["draft", "now", "upcoming"]);
+    assert.deepEqual(g.missing.map((s) => s.id), ["1-p2"], "a cancelled course is not missing");
+    assert.deepEqual(g.week, { week: "2026-11-23", total: 6, validated: 1 });
+    assert.equal(g.next.date, "2026-11-25");
+    assert.equal(agenda([t], sessions, { date: "2026-11-24", time: "20:00" }).today[2].state, "missing");
+});
+
+test("changes of a timetable, in words", () => {
+    const a = tt([slot(2, "p1", "Éthique"), slot(3, "p1", "Anglais")]);
+    const b = tt([slot(2, "p1", "Éthique", { teacherName: "U" }), slot(4, "p2", "Anglais", { kind: "evaluation" })]);
+    assert.deepEqual(describeChanges(a, b), ["Mardi, 1ère période : Éthique (T) → Éthique (U)", "Mercredi, 1ère période : Anglais (T) → —", "Jeudi, 2ème période : — → Évaluation Anglais (T)"]);
+    assert.deepEqual(describeChanges(a, a), []);
+});
+
+test("the hour of Libreville", () => {
+    assert.deepEqual(localNow(new Date("2026-11-24T23:30:00Z")), { date: "2026-11-25", time: "00:30" });
 });

@@ -6,6 +6,7 @@ import { STATUS, UNSET, hours, mediumDate, percent } from '../../lib/campus.js'
 import { studentReport } from '../../lib/campusReports.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
+import { EvaluationTag } from './slotUi.jsx'
 import { Btn, Dialog, Empty, ErrorNote, ExportButtons, Field, Loading, Panel, StatusPill, Tile } from './campusUi.jsx'
 
 function EditDialog({ student, onClose, onSaved }) {
@@ -153,7 +154,9 @@ function StudentSheet() {
               <li key={h.sessionId}>
                 <Link to={`/campus/seances/${h.sessionId}`} className="flex flex-wrap items-center justify-between gap-2 py-3 transition hover:bg-ink/[0.02]">
                   <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-ink">{h.subjectName}</span>
+                    <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
+                      {h.subjectName} {h.kind === 'evaluation' && <EvaluationTag />}
+                    </span>
                     <span className="block text-xs text-ink-soft">
                       {mediumDate(h.date)}, {hours(h)} · {h.teacherName}
                     </span>

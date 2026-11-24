@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { ArrowLeft, BarChart3, ClipboardList, FileText, GraduationCap, Lock, Moon, Settings2, Sun, Users } from 'lucide-react'
+import { ArrowLeft, BarChart3, CalendarDays, ClipboardList, FileText, GraduationCap, Lock, Moon, Settings2, Sun, Users } from 'lucide-react'
 import { fetchCampus, fetchCampusMe } from '../firebase/campus.js'
 import { ROLE_LABELS, academicYears } from '../lib/campus.js'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { CampusContext } from '../components/campus/campusContext.js'
 import { ErrorNote, Loading } from '../components/campus/campusUi.jsx'
 import Dashboard from '../components/campus/Dashboard.jsx'
+import Timetable from '../components/campus/Timetable.jsx'
 import SessionsList from '../components/campus/SessionsList.jsx'
 import SessionSheet from '../components/campus/SessionSheet.jsx'
 import Students from '../components/campus/Students.jsx'
@@ -19,6 +20,7 @@ import AdminPanel from '../components/campus/AdminPanel.jsx'
 
 const TABS = [
   { to: '/campus', end: true, label: 'Tableau de bord', short: 'Accueil', icon: BarChart3 },
+  { to: '/campus/planning', label: 'Planning', short: 'Planning', icon: CalendarDays },
   { to: '/campus/seances', label: 'Séances', short: 'Séances', icon: ClipboardList },
   { to: '/campus/etudiants', label: 'Étudiants', short: 'Étudiants', icon: Users },
   { to: '/campus/rapports', label: 'Rapports', short: 'Rapports', icon: FileText },
@@ -132,6 +134,7 @@ function Campus() {
           <CampusContext.Provider value={ctx}>
             <Routes>
               <Route index element={<Dashboard />} />
+              <Route path="planning" element={<Timetable />} />
               <Route path="seances" element={<SessionsList />} />
               <Route path="seances/:id" element={<SessionSheet />} />
               <Route path="etudiants" element={<Students />} />

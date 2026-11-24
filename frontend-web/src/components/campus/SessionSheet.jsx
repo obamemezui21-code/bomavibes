@@ -10,6 +10,7 @@ import { useMarks } from './useMarks.js'
 import AuditList from './AuditList.jsx'
 import ScanPanel from './ScanPanel.jsx'
 import SessionForm from './SessionForm.jsx'
+import { EvaluationTag } from './slotUi.jsx'
 import { Btn, CountsLine, Dialog, Empty, ErrorNote, ExportButtons, Field, Loading, Panel, SearchBox, SessionPill, StatusButtons, StatusPill } from './campusUi.jsx'
 
 // One line of the sheet. Memoised: pressing a button redraws one line, not 119.
@@ -383,7 +384,7 @@ function Sheet({ data, reload }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="flex flex-wrap items-center gap-2 font-display text-xl font-semibold text-ink">
-              {session.subjectName} <SessionPill status={session.status} />
+              {session.subjectName} {session.kind === 'evaluation' && <EvaluationTag />} <SessionPill status={session.status} />
             </h1>
             <p className="mt-1 text-sm text-ink-soft">
               <span className="inline-block first-letter:uppercase">{longDate(session.date)}</span>, {hours(session)} · {session.teacherName}

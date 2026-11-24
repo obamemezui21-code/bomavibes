@@ -346,3 +346,69 @@ it("scans of the paper sheet stay private", async () => {
     await ok("agent", "DELETE", `/sessions/${draft}/scans/${up.body.id}`);
     assert.equal((await get("agent")).status, 404);
 });
+
+it("the timetable: drafted, published, then each course opens its own sheet", async () => {
+    const { weekStart } = require("./stats");
+    const { addDays } = require("./timetable");
+    const { today } = require("./config");
+    const past = addDays(weekStart(today()), -14);
+    const t3 = (await ok("agent", "POST", "/subjects", { name: "Anglais médical" })).id;
+    const periods = [{ id: "p1", label: "1ère période", start: "08:00", end: "11:00" }, { id: "p2", label: "2ème période", start: "11:30", end: "13:30" }];
+    const body = { classId: C, week: past, version: 0, title: "L1", note: "Tenue obligatoire", periods, slots: [{ day: 1, periodId: "p1", subjectId: t3, teacherId: null, kind: "evaluation" }, { day: 1, periodId: "p2", subjectId: t3, teacherId: teacher }, { day: 2, periodId: "p1", subjectId: t3, teacherId: teacher }] };
+
+    assert.equal((await call("prof", "PUT", "/timetable", body)).status, 403);
+    assert.equal((await call("agent", "PUT", "/timetable", { ...body, slots: [{ day: 1, periodId: "p1", subjectId: "inconnu" }] })).status, 400);
+    assert.equal((await ok("agent", "PUT", "/timetable", body)).version, 1);
+    assert.equal((await call("agent", "PUT", "/timetable", body)).body.code, "CHANGED", "an older version is refused");
+    assert.equal((await ok("prof", "GET", `/timetable?classId=${C}&week=${past}`)).timetable, null, "a draft is for the staff");
+    assert.equal((await call("agent", "POST", "/timetable/open", { classId: C, week: past, slotId: "1-p2" })).status, 409, "not published yet");
+    assert.deepEqual((await ok("agent", "GET", `/agenda?classId=${C}`)).missing, []);
+
+    await ok("agent", "POST", "/timetable/status", { classId: C, week: past, published: true });
+    const view = (await ok("agent", "GET", `/timetable?classId=${C}&week=${past}`)).timetable;
+    assert.deepEqual(view.slots.map((s) => [s.id, s.state]), [["1-p1", "missing"], ["1-p2", "missing"], ["2-p1", "missing"]]);
+    assert.equal((await ok("prof", "GET", `/timetable?classId=${C}&week=${past}`)).timetable.slots.length, 2, "their own courses");
+    assert.equal((await ok("agent", "GET", `/agenda?classId=${C}`)).missing.length, 3);
+
+    assert.equal((await call("agent", "POST", "/timetable/open", { classId: C, week: past, slotId: "1-p1" })).body.code, "TEACHER");
+    const first = await ok("agent", "POST", "/timetable/open", { classId: C, week: past, slotId: "1-p1", teacherId: teacher });
+    assert.equal(first.created, true);
+    assert.deepEqual(await ok("agent", "POST", "/timetable/open", { classId: C, week: past, slotId: "1-p1" }), { id: first.id, created: false }, "the same sheet");
+    const { session } = await ok("agent", "GET", `/sessions/${first.id}`);
+    assert.deepEqual([session.kind, session.date, session.start, session.end, session.subjectName, Object.keys(session.marks).length], ["evaluation", past, "08:00", "11:00", "Anglais médical", 0]);
+
+    const day = await ok("agent", "POST", "/timetable/open-day", { classId: C, date: past });
+    assert.deepEqual([day.created, day.existing, day.skipped.length], [1, 1, 0]);
+    const twice = await Promise.all([call("agent", "POST", "/timetable/open", { classId: C, week: past, slotId: "2-p1" }), call("agent", "POST", "/timetable/open", { classId: C, week: past, slotId: "2-p1" })]);
+    assert.deepEqual(twice.map((x) => x.status), [200, 200]);
+    assert.equal(twice[0].body.id, twice[1].body.id, "opened twice at once: one sheet");
+
+    await ok("agent", "PATCH", `/sessions/${first.id}/marks`, { changes: [{ id: students[0].id, s: "A" }] });
+    await ok("agent", "POST", `/sessions/${first.id}/validate`, { confirmed: true, allowUnfilled: true });
+    const g = await ok("agent", "GET", `/agenda?classId=${C}`);
+    assert.deepEqual(g.missing.map((s) => s.state), ["draft", "draft"], "unfinished sheets are still to do");
+    const stats = await ok("agent", "GET", `/stats?classId=${C}&year=all&from=${past}&to=${past}&detail=1`);
+    assert.equal(stats.events[0].kind, "evaluation");
+
+    assert.equal((await call("agent", "POST", "/timetable/cancel", { classId: C, week: past, slotId: "2-p1", reason: "Absent" })).status, 409, "its sheet first");
+    // The next week from this one: evaluations don't repeat.
+    const next = addDays(past, 7);
+    await ok("agent", "POST", "/timetable/copy", { classId: C, from: past, to: next });
+    assert.equal((await call("agent", "POST", "/timetable/copy", { classId: C, from: past, to: next })).status, 409);
+    const copy = (await ok("agent", "GET", `/timetable?classId=${C}&week=${next}`)).timetable;
+    assert.deepEqual([copy.status, copy.note, copy.slots.map((s) => s.kind)], ["draft", "Tenue obligatoire", ["course", "course", "course"]]);
+    await ok("agent", "POST", "/timetable/status", { classId: C, week: next, published: true });
+    await ok("agent", "POST", "/timetable/cancel", { classId: C, week: next, slotId: "2-p1", reason: "Jour férié" });
+    assert.equal((await call("agent", "POST", "/timetable/open", { classId: C, week: next, slotId: "2-p1" })).status, 409);
+    assert.equal((await ok("agent", "GET", `/agenda?classId=${C}`)).missing.filter((s) => s.week === next).length, 2);
+    await ok("agent", "POST", "/timetable/cancel", { classId: C, week: next, slotId: "2-p1", reason: null });
+    assert.equal((await ok("agent", "GET", `/agenda?classId=${C}`)).missing.filter((s) => s.week === next).length, 3);
+
+    const blank = await ok("agent", "GET", `/timetable/blank?classId=${C}&week=${next}&date=${next}`);
+    assert.equal(blank.sessions.length, 2);
+    assert.ok(blank.roster.length > 100);
+    const other = await call("other", "GET", `/timetable?classId=${C}&week=${past}`);
+    assert.equal(other.status, 404);
+    const log = (await ok("boss", "GET", "/audit")).entries.map((e) => e.action);
+    for (const a of ["timetable.save", "timetable.publish", "timetable.copy", "slot.cancel", "slot.restore"]) assert.ok(log.includes(a), a);
+});
