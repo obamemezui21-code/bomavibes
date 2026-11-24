@@ -6,12 +6,12 @@
 // A table:  { title, columns: [{ label, width, type, align }], rows: [[…]], empty }
 //   type: 'text' | 'int' | 'pct' (a rate, 0 to 1, or null) | 'mark' (true: a
 //   cross in a box, false: an empty box)
-import { DAYS, STATUS, UNSET, addDays, dateTime, dayMonth, hours, longDate, monthLabel, shortDate, statusLabel } from './campus.js'
+import { CATEGORIES, DAYS, PERMISSION_TYPES, STATUS, UNSET, addDays, dateTime, dayMonth, hours, longDate, monthLabel, permissionPeriod, shortDate, statusLabel } from './campus.js'
 
 // The institution's name in full, at the top of what is printed.
 const ORG_NAMES = { INASS: 'Institut Universitaire des Sciences de la Santé du Gabon (INASS)' }
 
-export const RATE_NOTE = 'Taux de présence = (présents + retards) / statuts renseignés. Taux d’absence = absents / statuts renseignés. Seules les séances validées sont comptées ; un statut non renseigné n’est ni une présence ni une absence.'
+export const RATE_NOTE = 'Taux de présence = (présents + retards) / statuts renseignés. Taux d’absence = absents / statuts renseignés. Seules les séances validées sont comptées ; un statut non renseigné n’est ni une présence ni une absence. Une absence est justifiée quand une permission couvre tout le cours.'
 
 const col = (label, width, type = 'text', align) => ({ label, width, type, align: align || (type === 'text' ? 'left' : 'center') })
 const slug = (s) =>
@@ -76,7 +76,7 @@ export function filledSheetReport({ session, classLabel, marks = session.marks }
       ...sessionMeta(session),
       ['Saisie par', session.agentName],
       ['Validée', session.validatedAt ? `${dateTime(session.validatedAt)}, ${session.validatedBy}` : 'Non'],
-      ['Effectif', `${session.roster.length} – ${c.p} présents, ${c.r} retards, ${c.a} absents, ${c.n} non renseignés`],
+      ['Effectif', `${session.roster.length} – ${c.p} présents, ${c.r} retards, ${c.a} absents${session.justified ? ` (dont ${session.justified} justifiés)` : ''}, ${c.n} non renseignés`],
       ['Taux de présence', rated ? `${(((c.p + c.r) / rated) * 100).toFixed(1).replace('.', ',')} %` : '—'],
     ],
     tables: [
@@ -84,7 +84,7 @@ export function filledSheetReport({ session, classLabel, marks = session.marks }
         columns: [col('N°', 9, 'int'), col('Nom et prénom', 74), col('Présent', 15, 'mark'), col('Retard', 15, 'mark'), col('Absent', 15, 'mark'), col('Motif / observation', 50)],
         rows: session.roster.map((r) => {
           const m = marks[r.id] || {}
-          return [r.no, r.name, m.s === 'P', m.s === 'R', m.s === 'A', [m.s ? '' : UNSET, m.n].filter(Boolean).join(' – ')]
+          return [r.no, r.name, m.s === 'P', m.s === 'R', m.s === 'A', [m.s ? '' : UNSET, m.s === 'A' && session.permissions?.[r.id]?.full ? 'Justifiée' : '', m.n].filter(Boolean).join(' – ')]
         }),
       },
     ],
@@ -93,16 +93,16 @@ export function filledSheetReport({ session, classLabel, marks = session.marks }
   })
 }
 
-const RATE_COLS = [col('Séances', 16, 'int'), col('Présents', 16, 'int'), col('Retards', 16, 'int'), col('Absents', 16, 'int'), col('Non rens.', 17, 'int'), col('Présence', 18, 'pct'), col('Absence', 18, 'pct')]
-const rateCells = (x) => [x.sessions, x.p, x.r, x.a, x.n, x.presenceRate, x.absenceRate]
+const RATE_COLS = [col('Séances', 16, 'int'), col('Présents', 16, 'int'), col('Retards', 16, 'int'), col('Abs. justif.', 18, 'int'), col('Abs. non justif.', 20, 'int'), col('Non rens.', 17, 'int'), col('Présence', 18, 'pct'), col('Absence', 18, 'pct')]
+const rateCells = (x) => [x.sessions, x.p, x.r, x.j || 0, x.a - (x.j || 0), x.n, x.presenceRate, x.absenceRate]
 
 function totalsMeta(stats) {
   const t = stats.totals
   return [
     ['Effectif', String(stats.class.active)],
     ['Séances validées', String(stats.sessions)],
-    ['Présences', `${t.p} présents, ${t.r} retards, ${t.a} absents, ${t.n} non renseignés`],
-    ['Taux', `présence ${pct(t.presenceRate)}, absence ${pct(t.absenceRate)}`],
+    ['Présences', `${t.p} présents, ${t.r} retards, ${t.a} absents (${t.j || 0} justifiés), ${t.n} non renseignés`],
+    ['Taux', `présence ${pct(t.presenceRate)}, absence ${pct(t.absenceRate)}, non justifiée ${pct(t.unjustifiedRate ?? null)}`],
   ]
 }
 const pct = (r) => (r === null ? '—' : `${(r * 100).toFixed(1).replace('.', ',')} %`)
@@ -119,14 +119,14 @@ export function monthlyReport({ stats, month }) {
     tables: [
       {
         title: 'Étudiants absents ou en retard',
-        columns: [col('N°', 10, 'int'), col('Nom et prénom', 74), col('Séances', 18, 'int'), col('Absences', 18, 'int'), col('Retards', 18, 'int'), col('Taux d’absence', 24, 'pct')],
-        rows: [...some].sort((x, y) => y.a - x.a || y.r - x.r || x.name.localeCompare(y.name, 'fr')).map((s) => [s.no, s.name, s.sessions, s.a, s.r, s.absenceRate]),
+        columns: [col('N°', 10, 'int'), col('Nom et prénom', 74), col('Séances', 18, 'int'), col('Abs. justif.', 18, 'int'), col('Abs. non justif.', 20, 'int'), col('Retards', 18, 'int'), col('Taux d’absence', 24, 'pct')],
+        rows: [...some].sort((x, y) => y.a - (y.j || 0) - (x.a - (x.j || 0)) || y.a - x.a || y.r - x.r || x.name.localeCompare(y.name, 'fr')).map((s) => [s.no, s.name, s.sessions, s.j || 0, s.a - (s.j || 0), s.r, s.absenceRate]),
         empty: 'Aucune absence et aucun retard ce mois-ci.',
       },
       {
         title: 'Détail par séance',
-        columns: [col('Date', 20), col('Matière', 44), col('Nom et prénom', 62), col('Statut', 18), col('Motif', 36)],
-        rows: (stats.events || []).map((e) => [shortDate(e.date), e.subjectName, e.name, `${STATUS[e.status].label}${e.kind === 'evaluation' ? ' (évaluation)' : ''}`, e.note]),
+        columns: [col('Date', 20), col('Matière', 44), col('Nom et prénom', 62), col('Statut', 26), col('Motif', 36)],
+        rows: (stats.events || []).map((e) => [shortDate(e.date), e.subjectName, e.name, `${STATUS[e.status].label}${e.status === 'A' ? (e.justified ? ' justifié' : ' non justifié') : ''}${e.kind === 'evaluation' ? ' (évaluation)' : ''}`, e.note]),
         empty: 'Rien à signaler.',
       },
     ],
@@ -144,14 +144,14 @@ export function studentReport({ page, history = page.record.history, filters = {
       ['Identifiant technique', student.id],
       ['Période', period(filters.from, filters.to) || (filters.year && filters.year !== 'all' ? `Année ${filters.year}` : 'Toutes les années')],
       ['Séances enregistrées', String(record.sessions)],
-      ['Bilan', `${record.p} présences, ${record.r} retards, ${record.a} absences, ${record.n} non renseignés`],
+      ['Bilan', `${record.p} présences, ${record.r} retards, ${record.a} absences (${record.j || 0} justifiées), ${record.n} non renseignés`],
       ['Taux de présence', pct(record.presenceRate)],
     ],
     tables: [
       {
         title: 'Historique des séances',
         columns: [col('Date', 22), col('Horaires', 26), col('Matière', 50), col('Enseignant', 42), col('Statut', 24), col('Motif', 36)],
-        rows: history.map((h) => [shortDate(h.date), hours(h), `${h.subjectName}${h.kind === 'evaluation' ? ' (évaluation)' : ''}`, h.teacherName, statusLabel(h.status), h.note]),
+        rows: history.map((h) => [shortDate(h.date), hours(h), `${h.subjectName}${h.kind === 'evaluation' ? ' (évaluation)' : ''}`, h.teacherName, h.status === 'A' ? (h.justified ? 'Absent justifié' : 'Absent non justifié') : statusLabel(h.status), h.note]),
         empty: 'Aucune séance validée.',
       },
     ],
@@ -229,4 +229,39 @@ export function blankBundle({ data, name }) {
     reports: data.sessions.map((s) => blankSheetReport({ session: { ...s, roster: data.roster }, classLabel: data.classLabel })),
     fileName: fileName('feuilles vierges', name),
   }
+}
+
+// The slip given to a student who may leave or be away. The reason is not on
+// it: it is shown to teachers and at the door.
+export function permissionSlip({ org, cls, permission: p }) {
+  return base({ ...cls, org }, {
+    title: PERMISSION_TYPES[p.type],
+    meta: [
+      ['Étudiant', p.studentName],
+      ['Période', permissionPeriod(p)],
+      ['Accordée par', p.authority],
+      ['Enregistrée le', dateTime(p.at)],
+    ],
+    tables: [],
+    notes: ['À présenter à l’enseignant et à la sortie. La présence reste relevée à chaque cours.'],
+    signatures: ['La chargée pédagogique', 'L’étudiant'],
+    fileName: fileName(org, cls.code, 'permission', p.studentName, p.start.slice(0, 10)),
+  })
+}
+
+export function permissionsReport({ org, cls, permissions, title, today }) {
+  return base({ ...cls, org }, {
+    title: 'Permissions et absences autorisées',
+    subtitle: title,
+    meta: [['Nombre', String(permissions.length)], ['Édité le', shortDate(today)]],
+    landscape: true,
+    tables: [
+      {
+        columns: [col('Nom et prénom', 62), col('Type', 36), col('Période', 52), col('Motif', 38), col('Justificatif', 24), col('Accordée par', 40), col('État', 22)],
+        rows: permissions.map((p) => [p.studentName, PERMISSION_TYPES[p.type], permissionPeriod(p), CATEGORIES[p.category], p.proof ? 'Remis' : '', p.authority, p.status === 'active' ? 'En vigueur' : 'Annulée']),
+        empty: 'Aucune permission.',
+      },
+    ],
+    fileName: fileName(org, cls.code, 'permissions', title, today),
+  })
 }

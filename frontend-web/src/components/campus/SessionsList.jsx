@@ -142,7 +142,7 @@ function SessionsList() {
                       <span className="mt-0.5 block text-sm text-ink-soft">
                         {mediumDate(s.date)}, {hours(s)} · {s.teacherName} · {s.classCode}
                       </span>
-                      <CountsLine counts={s.counts} className="mt-1.5" />
+                      <CountsLine counts={s.counts} justified={s.justified} className="mt-1.5" />
                       <span className="mt-1 block text-xs text-ink-soft">Saisie : {s.agentName}</span>
                     </span>
                     <ChevronRight size={18} className="shrink-0 text-ink-soft" />

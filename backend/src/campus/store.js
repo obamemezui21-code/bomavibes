@@ -1,10 +1,12 @@
 const admin = require("../config/firebaseAdmin");
 const { HttpError, SESSION } = require("./config");
+const { countJustified, permissionAt } = require("./permissions");
 
 // Firestore access shared by the Campus controllers.
 //
 // Collections (Admin SDK only: no client rule opens any of them):
-//   campusMembers/{uid}        role, org, name, teacherId, canExport
+//   campusMembers/{uid}        role, org, name, teacherId, canExport, canPermit
+//   campusPermissions/{id}     permissions to leave, justified absences
 //   campusClasses/{org-code}   org, code, label, expected, rosterVersion
 //   campusStudents/{ETU-…}     org, classId, name, importNo, active, nameHistory
 //   campusImports/{id}         one import of a list: who, when, report, changes
@@ -33,6 +35,7 @@ const col = {
     teachers: () => db.collection("campusTeachers"),
     sessions: () => db.collection("campusSessions"),
     keys: () => db.collection("campusSessionKeys"),
+    permissions: () => db.collection("campusPermissions"),
     audit: () => db.collection("campusAudit"),
 };
 
@@ -83,13 +86,27 @@ async function classSessions(classId, year = null) {
     return rows;
 }
 
+// The permissions of a class, kept the same way.
+async function classPermissions(classId) {
+    const key = `${classId}|permissions`;
+    const hit = cache.get(key);
+    if (hit && Date.now() - hit.at < CACHE_MS) return hit.rows;
+    const before = generation;
+    const snap = await col.permissions().where("classId", "==", classId).get();
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    if (before === generation) cache.set(key, { at: Date.now(), rows });
+    return rows;
+}
+
 function dropCache(classId) {
     generation++;
     for (const key of cache.keys()) if (!classId || key.startsWith(`${classId}|`)) cache.delete(key);
 }
 
-// What the app is sent of a session; the marks only when asked for.
-function publicSession(s, { full = false } = {}) {
+// What the app is sent of a session; the marks only when asked for. index: the
+// permissions by student (permissions.js), which say what is justified; why
+// is left out unless `why`.
+function publicSession(s, { full = false, index = null, why = false } = {}) {
     const out = {
         id: s.id,
         classId: s.classId,
@@ -106,6 +123,7 @@ function publicSession(s, { full = false } = {}) {
         kind: s.kind || "course",
         status: s.status,
         counts: s.counts,
+        justified: index ? countJustified(s, index) : 0,
         expected: s.roster.length,
         agentName: s.agent?.name || s.createdBy?.name || "",
         createdBy: s.createdBy?.name || "",
@@ -123,9 +141,14 @@ function publicSession(s, { full = false } = {}) {
     out.rosterVersion = s.rosterVersion || 0;
     out.roster = s.roster;
     out.marks = Object.fromEntries(Object.entries(s.marks || {}).map(([id, m]) => [id, { s: m.s ?? null, n: m.n || "", ...(m.auto ? { auto: true } : {}) }]));
+    out.permissions = {};
+    for (const r of index ? s.roster : []) {
+        const at = permissionAt(index, r.id, s);
+        if (at) out.permissions[r.id] = { type: at.permission.type, start: at.permission.start, end: at.permission.end, full: at.full, ...(why ? { category: at.permission.category, authority: at.permission.authority } : {}) };
+    }
     return out;
 }
 
 const isOpen = (s) => s.status !== SESSION.CANCELLED;
 
-module.exports = { db, col, FieldValue, Timestamp, who, iso, auditEntry, newAudit, publicAudit, getClass, listStudents, classSessions, dropCache, publicSession, isOpen };
+module.exports = { db, col, FieldValue, Timestamp, who, iso, auditEntry, newAudit, publicAudit, getClass, listStudents, classSessions, classPermissions, dropCache, publicSession, isOpen };

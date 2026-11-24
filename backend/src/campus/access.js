@@ -6,7 +6,7 @@ const { CONFIG, SESSION } = require("./config");
 //
 // Same principle as EDU-CHECK (eduCheck/access.js): the app's own roles
 // (users/{uid}.role) are untouched. Campus roles live in campusMembers/{uid}
-// { role, org, name, teacherId, canExport }, written by the server only — no
+// { role, org, name, teacherId, canExport, canPermit }, written by the server only — no
 // Firestore rule opens that collection.
 //
 //   admin    the institution's administrator (a full admin of BomaVibes is
@@ -26,15 +26,18 @@ async function campusAccess(firebaseUser) {
     const email = firebaseUser.email || null;
     const name = m?.name || account.firstName || firebaseUser.name || email || uid;
     if (hasFullAdminAccess(account.role)) {
-        return { allowed: true, uid, role: ROLES.ADMIN, org: CONFIG.defaultOrg, name, email, teacherId: null, canExport: true, appAdmin: true };
+        return { allowed: true, uid, role: ROLES.ADMIN, org: CONFIG.defaultOrg, name, email, teacherId: null, canExport: true, canPermit: true, appAdmin: true };
     }
     if (m?.org && Object.values(ROLES).includes(m.role) && (m.role !== ROLES.TEACHER || m.teacherId)) {
-        return { allowed: true, uid, role: m.role, org: m.org, name, email, teacherId: m.teacherId || null, canExport: m.role === ROLES.ADMIN || m.canExport === true, appAdmin: false };
+        return { allowed: true, uid, role: m.role, org: m.org, name, email, teacherId: m.teacherId || null, canExport: m.role === ROLES.ADMIN || m.canExport === true, canPermit: m.role === ROLES.ADMIN || (m.role === ROLES.AGENT && m.canPermit === true), appAdmin: false };
     }
     return { allowed: false, uid, role: null, org: null };
 }
 
 const isAdmin = (a) => a.role === ROLES.ADMIN;
+// Grants permissions and justifies absences: the administrator, and the agent
+// given that right (chargée pédagogique).
+const canPermit = (a) => a.canPermit === true;
 const isStaff = (a) => a.role === ROLES.ADMIN || a.role === ROLES.AGENT;
 
 function canReadSession(access, session) {
@@ -77,4 +80,6 @@ const gate = (check, message) => (req, res, next) => (check(req.campus) ? next()
 const requireStaff = gate(isStaff, "Réservé à l’administration et aux agents pédagogiques.");
 const requireCampusAdmin = gate(isAdmin, "Réservé à l’administrateur de l’établissement.");
 
-module.exports = { ROLES, campusAccess, isAdmin, isStaff, canReadSession, canEnter, canCorrect, canCancel, requireCampus, requireStaff, requireCampusAdmin };
+const requirePermit = gate(canPermit, "Réservé à la personne chargée d’accorder les permissions.");
+
+module.exports = { ROLES, campusAccess, isAdmin, isStaff, canPermit, requirePermit, canReadSession, canEnter, canCorrect, canCancel, requireCampus, requireStaff, requireCampusAdmin };

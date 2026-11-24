@@ -2,8 +2,9 @@ const crypto = require("crypto");
 const { z } = require("zod");
 const { CONFIG, HttpError, SESSION, STATUS, isDate, isTime, today, academicYear } = require("./config");
 const { countMarks, computeStats, listEvents, byDateDesc } = require("./stats");
-const { ROLES, isAdmin, isStaff, canReadSession, canEnter, canCorrect, canCancel } = require("./access");
-const { db, col, FieldValue, Timestamp, who, auditEntry, newAudit, publicAudit, getClass, listStudents, classSessions, dropCache, publicSession, isOpen } = require("./store");
+const { byStudent, permissionAt } = require("./permissions");
+const { ROLES, isAdmin, isStaff, canPermit, canReadSession, canEnter, canCorrect, canCancel } = require("./access");
+const { db, col, FieldValue, Timestamp, who, auditEntry, newAudit, publicAudit, getClass, listStudents, classSessions, classPermissions, dropCache, publicSession, isOpen } = require("./store");
 
 // Course sessions and their attendance sheets.
 
@@ -96,13 +97,13 @@ async function readSession(tx, access, id) {
     return { ref, s };
 }
 
-const permissions = (access, s) => ({ enter: canEnter(access, s), correct: canCorrect(access, s), cancel: canCancel(access, s), details: canEnter(access, s) || (isAdmin(access) && s.status === SESSION.VALIDATED), scans: canEnter(access, s) || (isAdmin(access) && isOpen(s)), admin: isAdmin(access) });
+const permissions = (access, s) => ({ enter: canEnter(access, s), correct: canCorrect(access, s), cancel: canCancel(access, s), details: canEnter(access, s) || (isAdmin(access) && s.status === SESSION.VALIDATED), scans: canEnter(access, s) || (isAdmin(access) && isOpen(s)), admin: isAdmin(access), permit: canPermit(access) && isOpen(s) });
 
 async function getSession(access, id) {
     const { s } = await readSession(null, access, id);
-    const cls = await col.classes().doc(s.classId).get();
+    const [cls, granted] = await Promise.all([col.classes().doc(s.classId).get(), classPermissions(s.classId)]);
     return {
-        session: publicSession(s, { full: true }),
+        session: publicSession(s, { full: true, index: byStudent(granted), why: isStaff(access) }),
         can: permissions(access, s),
         classLabel: cls.data()?.label || "",
         rosterOutdated: s.status === SESSION.DRAFT && (cls.data()?.rosterVersion || 0) !== (s.rosterVersion || 0),
@@ -125,7 +126,8 @@ async function listSessions(access, query) {
                 (!query.status || s.status === query.status),
         )
         .sort(byDateDesc);
-    return { sessions: out.map((s) => publicSession(s)), year: year || "all" };
+    const index = byStudent(await classPermissions(cls.id));
+    return { sessions: out.map((s) => publicSession(s, { index })), year: year || "all" };
 }
 
 const MarksSchema = z.object({
@@ -177,6 +179,9 @@ async function validateSession(access, id, body) {
         .parse(body);
     let classId;
     let filled = 0;
+    let excused = 0;
+    const { s: seen } = await readSession(null, access, id);
+    const index = byStudent(await classPermissions(seen.classId));
     await db.runTransaction(async (tx) => {
         const { ref, s } = await readSession(tx, access, id);
         if (s.status === SESSION.VALIDATED) throw new HttpError(409, "Cette feuille est déjà validée.", { code: "VALIDATED" });
@@ -184,22 +189,26 @@ async function validateSession(access, id, body) {
         if (s.date > today()) throw new HttpError(400, "Cette séance n’a pas encore eu lieu.");
         const marks = { ...(s.marks || {}) };
         filled = 0;
+        excused = 0;
         if (fillPresent) {
             for (const r of s.roster) {
                 if (marks[r.id]?.s) continue;
-                marks[r.id] = { s: "P", n: marks[r.id]?.n || "", u: access.uid, t: Timestamp.now(), auto: true };
-                filled++;
+                // Allowed to be away for the whole course: absent (justified).
+                const away = !!permissionAt(index, r.id, s)?.full;
+                marks[r.id] = { s: away ? "A" : "P", n: marks[r.id]?.n || "", u: access.uid, t: Timestamp.now(), auto: true };
+                if (away) excused++;
+                else filled++;
             }
         }
         const counts = countMarks(s.roster, marks);
         if (counts.n === s.roster.length) throw new HttpError(400, "Aucun statut n’est renseigné sur cette feuille.");
         if (counts.n && !allowUnfilled) throw new HttpError(409, `${counts.n} étudiant${counts.n > 1 ? "s ne sont pas renseignés" : " n’est pas renseigné"}.`, { code: "UNFILLED", unfilled: counts.n });
         tx.update(ref, { status: SESSION.VALIDATED, marks, counts, agent: who(access), validatedBy: who(access), validatedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-        tx.create(newAudit(), auditEntry(access, "session.validate", { sessionId: s.id, classId: s.classId, details: { ...counts, filled } }));
+        tx.create(newAudit(), auditEntry(access, "session.validate", { sessionId: s.id, classId: s.classId, details: { ...counts, filled, excused } }));
         classId = s.classId;
     });
     dropCache(classId);
-    return { filled };
+    return { filled, excused };
 }
 
 // After validation: one student at a time, with a reason. `from` is what the
@@ -319,7 +328,8 @@ async function sessionAudit(access, id) {
 async function stats(access, query) {
     const cls = await getClass(access, query.classId);
     const year = query.year === "all" ? null : query.year || academicYear(today());
-    const [students, all] = await Promise.all([listStudents(cls.id), classSessions(cls.id, year)]);
+    const [students, all, granted] = await Promise.all([listStudents(cls.id), classSessions(cls.id, year), classPermissions(cls.id)]);
+    const index = byStudent(granted);
     const sessions = all.filter((s) => canReadSession(access, s));
     const filters = { from: query.from, to: query.to, subjectId: query.subjectId, teacherId: access.role === ROLES.TEACHER ? access.teacherId : query.teacherId };
     const validated = sessions.filter((s) => s.status === SESSION.VALIDATED).sort(byDateDesc);
@@ -328,10 +338,10 @@ async function stats(access, query) {
     return {
         class: { id: cls.id, org: cls.org, code: cls.code, label: cls.label, expected: cls.expected, active: active.length },
         year: year || "all",
-        ...computeStats(sessions, active, filters),
-        ...(query.detail === "1" ? { events: listEvents(sessions, students, filters) } : {}),
-        last: validated[0] ? publicSession(validated[0]) : null,
-        recent: latest.slice(0, 6).map((s) => publicSession(s)),
+        ...computeStats(sessions, active, filters, granted),
+        ...(query.detail === "1" ? { events: listEvents(sessions, students, filters, granted) } : {}),
+        last: validated[0] ? publicSession(validated[0], { index }) : null,
+        recent: latest.slice(0, 6).map((s) => publicSession(s, { index })),
         drafts: isStaff(access) ? sessions.filter((s) => s.status === SESSION.DRAFT).length : 0,
     };
 }

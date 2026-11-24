@@ -85,6 +85,13 @@ export const openSlot = (body) => call('/timetable/open', { method: 'POST', body
 export const openDay = (body) => call('/timetable/open-day', { method: 'POST', body })
 export const fetchBlankSheets = (params) => call(`/timetable/blank${qs(params)}`)
 
+// Permissions to leave and justified absences. create with dryRun: what it
+// would change, nothing written.
+export const fetchPermissions = (params) => call(`/permissions${qs(params)}`).then((d) => d.permissions)
+export const createPermission = (body) => call('/permissions', { method: 'POST', body })
+export const updatePermission = (id, body) => call(`/permissions/${seg(id)}`, { method: 'PATCH', body })
+export const cancelPermission = (id, reason) => call(`/permissions/${seg(id)}/cancel`, { method: 'POST', body: { reason } })
+
 // kind: 'subjects' | 'teachers'
 export const addNamed = (kind, name) => call(`/${kind}`, { method: 'POST', body: { name } })
 export const updateNamed = (kind, id, body) => call(`/${kind}/${seg(id)}`, { method: 'PATCH', body })

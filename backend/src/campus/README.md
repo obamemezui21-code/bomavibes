@@ -49,6 +49,28 @@ enseignants) s’enregistre en brouillon avec `scripts/importCampusTimetable.js`
 Collection : `campusTimetables/{classe}_{lundi}`. La feuille d’un cours est retrouvée
 par le jour, la matière et les heures : une feuille créée à la main compte aussi.
 
+## Permissions et absences justifiées
+
+La chargée pédagogique (un agent à qui l’administrateur donne ce droit, ou
+l’administrateur) accorde des **permissions de sortie** (quelques heures) ou des
+**absences autorisées** (un ou plusieurs jours) : page *Permissions*, fiche de
+l’étudiant, ou *Justifier* sur une feuille. Un bulletin s’imprime.
+
+- Une absence est **justifiée** quand une permission en vigueur couvre **tout** le
+  cours ; sinon elle est **non justifiée**. Une permission qui n’en couvre qu’une
+  partie est montrée sur la feuille, sans justifier d’office.
+- C’est calculé à chaque lecture, rien n’est écrit sur les feuilles : un certificat
+  apporté plus tard justifie les absences passées (la liste est montrée avant
+  d’enregistrer), une permission annulée ne justifie plus.
+- À la validation, un étudiant sans statut avec une permission pour tout le cours
+  est marqué absent (justifié), pas présent.
+- Le taux d’absence compte les deux ; le taux non justifié est donné à part.
+- Les agents voient le motif (Maladie…), pas les précisions ; les enseignants
+  voient seulement qu’il y a une permission. Le journal ne garde pas les précisions.
+- Une permission ne se supprime pas : elle s’annule, avec un motif.
+
+Collection : `campusPermissions`.
+
 ## Utilisation quotidienne (agent)
 
 1. Depuis le tableau de bord, *Ouvrir la feuille* du cours. Hors planning :

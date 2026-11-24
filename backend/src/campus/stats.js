@@ -3,10 +3,14 @@
 //
 //   taux de présence = (présents + retards) / statuts renseignés
 //   taux d'absence   = absents / statuts renseignés
+//
+// j: the absences justified by a permission (permissions.js), among a.
 
 const { SESSION } = require("./config");
+const { byStudent, isJustified } = require("./permissions");
 
 const empty = () => ({ p: 0, r: 0, a: 0, n: 0 });
+const emptyWithJustified = () => ({ ...empty(), j: 0 });
 
 function rates(c) {
     const rated = c.p + c.r + c.a;
@@ -16,6 +20,7 @@ function rates(c) {
         presenceRate: rated ? (c.p + c.r) / rated : null,
         absenceRate: rated ? c.a / rated : null,
         lateRate: rated ? c.r / rated : null,
+        unjustifiedRate: rated ? (c.a - (c.j || 0)) / rated : null,
     };
 }
 
@@ -52,18 +57,19 @@ function filterSessions(sessions, { from, to, subjectId, teacherId } = {}) {
     );
 }
 
-function computeStats(allSessions, students, filters = {}) {
+function computeStats(allSessions, students, filters = {}, permissions = []) {
+    const index = byStudent(permissions);
     const sessions = filterSessions(allSessions, filters)
         .filter((s) => s.status === SESSION.VALIDATED)
         .sort(byDateDesc);
-    const totals = empty();
+    const totals = emptyWithJustified();
     const weeks = new Map();
     const months = new Map();
     const subjects = new Map();
-    const perStudent = new Map(students.map((s) => [s.id, { id: s.id, name: s.name, no: s.importNo ?? null, active: s.active !== false, sessions: 0, ...empty() }]));
+    const perStudent = new Map(students.map((s) => [s.id, { id: s.id, name: s.name, no: s.importNo ?? null, active: s.active !== false, sessions: 0, ...emptyWithJustified() }]));
 
     const bucket = (map, key, extra) => {
-        if (!map.has(key)) map.set(key, { ...extra, sessions: 0, ...empty() });
+        if (!map.has(key)) map.set(key, { ...extra, sessions: 0, ...emptyWithJustified() });
         return map.get(key);
     };
 
@@ -75,10 +81,14 @@ function computeStats(allSessions, students, filters = {}) {
         for (const b of [week, month, subject]) b.sessions++;
         for (const s of session.roster) {
             const status = session.marks?.[s.id]?.s;
-            if (!perStudent.has(s.id)) perStudent.set(s.id, { id: s.id, name: s.name, no: s.no ?? null, active: false, sessions: 0, ...empty() });
+            if (!perStudent.has(s.id)) perStudent.set(s.id, { id: s.id, name: s.name, no: s.no ?? null, active: false, sessions: 0, ...emptyWithJustified() });
             const student = perStudent.get(s.id);
             student.sessions++;
-            for (const c of [totals, week, month, subject, student]) add(c, status);
+            const justified = status === "A" && isJustified(index, s.id, session);
+            for (const c of [totals, week, month, subject, student]) {
+                add(c, status);
+                if (justified) c.j++;
+            }
         }
     }
 
@@ -97,27 +107,31 @@ function computeStats(allSessions, students, filters = {}) {
 }
 
 // Every absence and late arrival, oldest first (monthly report).
-function listEvents(allSessions, students, filters = {}) {
+function listEvents(allSessions, students, filters = {}, permissions = []) {
+    const index = byStudent(permissions);
     const names = new Map(students.map((s) => [s.id, s.name]));
     const out = [];
     for (const s of filterSessions(allSessions, filters).sort((a, b) => byDateDesc(b, a))) {
         if (s.status !== SESSION.VALIDATED) continue;
         for (const r of s.roster) {
             const m = s.marks?.[r.id];
-            if (m?.s === "A" || m?.s === "R") out.push({ date: s.date, start: s.start, subjectName: s.subjectName, id: r.id, name: names.get(r.id) || r.name, status: m.s, note: m.n || "", kind: s.kind || "course" });
+            if (m?.s === "A" || m?.s === "R") out.push({ date: s.date, start: s.start, subjectName: s.subjectName, id: r.id, name: names.get(r.id) || r.name, status: m.s, note: m.n || "", kind: s.kind || "course", justified: m.s === "A" && isJustified(index, r.id, s) });
         }
     }
     return out;
 }
 
 // One student's own record.
-function studentRecord(allSessions, studentId, filters = {}) {
-    const c = empty();
+function studentRecord(allSessions, studentId, filters = {}, permissions = []) {
+    const index = byStudent(permissions);
+    const c = emptyWithJustified();
     const history = [];
     for (const s of filterSessions(allSessions, filters).sort(byDateDesc)) {
         if (s.status !== SESSION.VALIDATED || !s.roster.some((r) => r.id === studentId)) continue;
         const mark = s.marks?.[studentId];
         add(c, mark?.s);
+        const justified = mark?.s === "A" && isJustified(index, studentId, s);
+        if (justified) c.j++;
         history.push({
             sessionId: s.id,
             date: s.date,
@@ -128,6 +142,7 @@ function studentRecord(allSessions, studentId, filters = {}) {
             teacherName: s.teacherName,
             kind: s.kind || "course",
             status: mark?.s ?? null,
+            justified,
             note: mark?.n ?? "",
         });
     }

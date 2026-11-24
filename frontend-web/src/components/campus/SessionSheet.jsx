@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Ban, CheckCircle2, CloudOff, History, Image as ImageIcon, Keyboard, Loader2, LockOpen, MessageSquarePlus, Pencil, RefreshCw, RotateCcw, Trash2, UsersRound } from 'lucide-react'
+import { ArrowLeft, Ban, CheckCircle2, CloudOff, History, Image as ImageIcon, Keyboard, Loader2, LockOpen, MessageSquarePlus, Pencil, RefreshCw, RotateCcw, ShieldCheck, Trash2, UsersRound } from 'lucide-react'
 import { cancelSession, correctMark, deleteSession, fetchSession, fetchSessionAudit, reopenSession, restoreSession, syncRoster, updateSheetStudents, validateSession } from '../../firebase/campus.js'
-import { STATUS, UNSET, countMarks, dateTime, hours, longDate, matchesSearch, percent, statusLabel } from '../../lib/campus.js'
+import { STATUS, UNSET, countJustified, countMarks, dateTime, hours, longDate, matchesSearch, percent, statusLabel } from '../../lib/campus.js'
 import { blankSheetReport, filledSheetReport } from '../../lib/campusReports.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
@@ -12,12 +12,14 @@ import ScanPanel from './ScanPanel.jsx'
 import SessionForm from './SessionForm.jsx'
 import { EvaluationTag } from './slotUi.jsx'
 import { ReasonDialog as AdminDialog, SheetStudentsDialog } from './adminUi.jsx'
+import { PermissionDialog, PermissionTag } from './permissionUi.jsx'
 import { Btn, CountsLine, Dialog, Empty, ErrorNote, ExportButtons, Field, Loading, Panel, SearchBox, SessionPill, StatusButtons, StatusPill } from './campusUi.jsx'
 
 // One line of the sheet. Memoised: pressing a button redraws one line, not 119.
-const Row = memo(function Row({ student, mark, editable, active, correctable, onMark, onNote, onCorrect, onFocus, noteOpen, onToggleNote }) {
+const Row = memo(function Row({ student, mark, permission, editable, active, correctable, justifiable, onJustify, onMark, onNote, onCorrect, onFocus, noteOpen, onToggleNote }) {
   const status = mark?.s ?? null
   const note = mark?.n || ''
+  const excused = !!permission?.full
   return (
     <li
       id={`row-${student.id}`}
@@ -29,7 +31,12 @@ const Row = memo(function Row({ student, mark, editable, active, correctable, on
         <span className="min-w-40 flex-1 text-sm font-medium text-ink">
           {student.name}
           {!editable && note && <span className="block text-xs font-normal text-ink-soft">{note}</span>}
-          {!editable && mark?.auto && <span className="block text-xs font-normal text-ink-soft">présent par déduction</span>}
+          {!editable && mark?.auto && <span className="block text-xs font-normal text-ink-soft">{status === 'A' ? 'absent d’après sa permission' : 'présent par déduction'}</span>}
+          {permission && (
+            <span className="mt-0.5 block">
+              <PermissionTag permission={permission} />
+            </span>
+          )}
         </span>
         {editable ? (
           <span className="flex w-full items-center gap-1.5 sm:w-auto">
@@ -46,7 +53,12 @@ const Row = memo(function Row({ student, mark, editable, active, correctable, on
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <StatusPill status={status} />
+            <StatusPill status={status} justified={excused} />
+            {justifiable && status === 'A' && !excused && (
+              <Btn variant="ghost" icon={ShieldCheck} onClick={() => onJustify(student)} aria-label={`Justifier l’absence de ${student.name}`}>
+                Justifier
+              </Btn>
+            )}
             {correctable && (
               <Btn variant="ghost" icon={Pencil} onClick={() => onCorrect(student)} aria-label={`Corriger ${student.name}`}>
                 Corriger
@@ -94,14 +106,17 @@ function SaveState({ state, waiting }) {
 
 // The students with no status: present, since the absent and the late were
 // noted — or left as they are. Chosen here, each time.
-function ValidateDialog({ roster, marks, counts, onClose, onConfirm, busy }) {
+function ValidateDialog({ roster, marks, permissions, counts, onClose, onConfirm, busy }) {
   const [choice, setChoice] = useState('present')
   const [sure, setSure] = useState(false)
   const empty = roster.filter((r) => !marks[r.id]?.s)
+  // Allowed to be away for the whole course: absent (justified), not present.
+  const away = empty.filter((r) => permissions[r.id]?.full)
   const noted = empty.filter((r) => marks[r.id]?.n)
   const untouched = empty.length === roster.length
   const fill = empty.length > 0 && choice === 'present'
-  const shown = fill ? { ...counts, p: counts.p + empty.length, n: 0 } : counts
+  const shown = fill ? { ...counts, p: counts.p + empty.length - away.length, a: counts.a + away.length, n: 0 } : counts
+  const justified = countJustified(roster, marks, permissions) + (fill ? away.length : 0)
   const people = `${empty.length} étudiant${empty.length > 1 ? 's' : ''}`
   return (
     <Dialog
@@ -116,7 +131,7 @@ function ValidateDialog({ roster, marks, counts, onClose, onConfirm, busy }) {
         </>
       }
     >
-      <CountsLine counts={shown} className="text-sm" />
+      <CountsLine counts={shown} justified={justified} className="text-sm" />
       <p className="mt-3 text-sm text-ink-soft">Après validation, la feuille compte dans les statistiques. Chaque correction demandera un motif et restera dans l’historique.</p>
       {empty.length > 0 && (
         <fieldset className="mt-4 space-y-3 rounded-xl border border-ink/12 p-3 text-sm text-ink">
@@ -137,6 +152,11 @@ function ValidateDialog({ roster, marks, counts, onClose, onConfirm, busy }) {
                 <span className="block text-xs text-ink-soft">Ni présents ni absents dans les statistiques.</span>
               </span>
             </label>
+          )}
+          {fill && away.length > 0 && (
+            <p className="rounded-lg bg-sky-500/10 px-2.5 py-2 text-xs">
+              Permission pour tout le cours, {away.length > 1 ? 'marqués absents justifiés' : 'marqué absent justifié'} : {away.map((r) => r.name).join(', ')}.
+            </p>
           )}
           {fill && noted.length > 0 && (
             <p className="rounded-lg bg-amber-400/10 px-2.5 py-2 text-xs">
@@ -256,6 +276,8 @@ const FILTERS = [
   ['P', STATUS.P.plural],
   ['R', STATUS.R.plural],
   ['A', STATUS.A.plural],
+  ['J', 'Absents justifiés'],
+  ['U', 'Non justifiés'],
 ]
 
 function Sheet({ data, reload }) {
@@ -276,6 +298,8 @@ function Sheet({ data, reload }) {
   const { marks, setMark, flush, state, waiting } = useMarks({ sessionId: session.id, uid: boot.me.uid, initial: session.marks, enabled: editable, rosterIds, onRefused, onLost })
   const counts = useMemo(() => countMarks(session.roster, marks), [session.roster, marks])
   const rated = counts.p + counts.r + counts.a
+  const justified = useMemo(() => countJustified(session.roster, marks, session.permissions), [session.roster, marks, session.permissions])
+  const chipCount = { '': session.roster.length, N: counts.n, P: counts.p, R: counts.r, A: counts.a, J: justified, U: counts.a - justified }
 
   const [search, setSearch] = useState('')
   // A status filter keeps the students it had when it was chosen: marking one
@@ -292,13 +316,19 @@ function Sheet({ data, reload }) {
   const rows = useMemo(() => session.roster.filter((r) => (!filter.ids || filter.ids.has(r.id)) && matchesSearch(search, r)), [session.roster, filter.ids, search])
 
   function chooseFilter(key) {
-    setFilter({ key, ids: key ? new Set(session.roster.filter((r) => (marks[r.id]?.s ?? 'N') === key).map((r) => r.id)) : null })
+    const fits = (r) => {
+      const s = marks[r.id]?.s ?? 'N'
+      if (key === 'J' || key === 'U') return s === 'A' && !!session.permissions[r.id]?.full === (key === 'J')
+      return s === key
+    }
+    setFilter({ key, ids: key ? new Set(session.roster.filter(fits).map((r) => r.id)) : null })
   }
 
   const onMark = useCallback((id, s) => setMark(id, { s }), [setMark])
   const onNote = useCallback((id, n) => setMark(id, { n }), [setMark])
   const onFocus = useCallback((id) => setCursor(id), [])
   const onToggleNote = useCallback((id) => setOpenNote((o) => (o === id ? null : id)), [])
+  const onJustify = useCallback((student) => setDialog({ type: 'justify', student }), [])
   const onCorrect = useCallback((student) => setDialog({ type: 'correct', student }), [])
 
   // Keyboard entry: P, R, A (or 1, 2, 3) sets the status and goes to the next
@@ -360,8 +390,8 @@ function Sheet({ data, reload }) {
     try {
       // Everything entered must have reached the server first.
       if (!(await flush())) throw new Error('Certaines saisies ne sont pas encore enregistrées. Vérifiez la connexion, puis réessayez.')
-      const { filled } = await validateSession(session.id, { confirmed: true, ...choice })
-      showToast(filled ? `Feuille validée : ${filled} présents complétés.` : 'Feuille validée et enregistrée.', 'success')
+      const { filled, excused } = await validateSession(session.id, { confirmed: true, ...choice })
+      showToast(filled || excused ? `Feuille validée : ${filled} présents complétés${excused ? `, ${excused} absent${excused > 1 ? 's' : ''} avec permission` : ''}.` : 'Feuille validée et enregistrée.', 'success')
       setDialog(null)
       await reload()
     } catch (err) {
@@ -419,7 +449,7 @@ function Sheet({ data, reload }) {
     }
   }
 
-  const current = { ...session, marks, counts }
+  const current = { ...session, marks, counts, justified }
   return (
     <div className="space-y-4 pb-28">
       <button type="button" onClick={() => navigate('/campus/seances')} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
@@ -463,7 +493,7 @@ function Sheet({ data, reload }) {
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-ink/8 pt-3">
           <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <CountsLine counts={counts} />
+            <CountsLine counts={counts} justified={justified} />
             <span className="text-xs text-ink-soft">
               Présence <b className="text-ink">{percent(rated ? (counts.p + counts.r) / rated : null)}</b>
             </span>
@@ -533,7 +563,7 @@ function Sheet({ data, reload }) {
             <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label="Filtrer par statut">
               {FILTERS.map(([key, label]) => (
                 <button key={key} type="button" aria-pressed={filter.key === key} onClick={() => chooseFilter(key)} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold ${filter.key === key ? 'border-violet-950 bg-violet-950 text-white dark:border-violet-600 dark:bg-violet-600' : 'border-ink/12 bg-surface text-ink-soft'}`}>
-                  {label} {key ? counts[key.toLowerCase()] : session.roster.length}
+                  {label} {chipCount[key]}
                 </button>
               ))}
             </div>
@@ -545,9 +575,12 @@ function Sheet({ data, reload }) {
                   key={r.id}
                   student={r}
                   mark={marks[r.id]}
+                  permission={session.permissions[r.id]}
                   editable={editable}
                   active={editable && cursor === r.id}
                   correctable={can.correct}
+                  justifiable={can.permit}
+                  onJustify={onJustify}
                   onMark={onMark}
                   onNote={onNote}
                   onCorrect={onCorrect}
@@ -579,7 +612,7 @@ function Sheet({ data, reload }) {
         </div>
       )}
 
-      {dialog?.type === 'validate' && <ValidateDialog roster={session.roster} marks={marks} counts={counts} busy={busy} onClose={() => setDialog(null)} onConfirm={validate} />}
+      {dialog?.type === 'validate' && <ValidateDialog roster={session.roster} marks={marks} permissions={session.permissions} counts={counts} busy={busy} onClose={() => setDialog(null)} onConfirm={validate} />}
       {dialog?.type === 'correct' && (
         <CorrectDialog
           session={session}
@@ -604,6 +637,17 @@ function Sheet({ data, reload }) {
       )}
       {dialog?.type === 'cancel' && (
         <ReasonDialog title="Annuler cette feuille ?" text="Elle n’est pas supprimée : elle reste dans les archives avec le motif, et ne compte plus dans les statistiques." label="Motif de l’annulation" confirm="Annuler la feuille" onClose={() => setDialog(null)} onConfirm={cancel} />
+      )}
+      {dialog?.type === 'justify' && (
+        <PermissionDialog
+          student={dialog.student}
+          start={{ type: 'absence', startDate: session.date, endDate: session.date, startTime: '00:00', endTime: '23:59' }}
+          onClose={() => setDialog(null)}
+          onSaved={async () => {
+            setDialog(null)
+            await reload()
+          }}
+        />
       )}
       {dialog?.type === 'reopen' && (
         <AdminDialog title="Rouvrir cette feuille ?" text="Les statuts restent. La feuille ne compte plus dans les statistiques tant qu’elle n’est pas validée de nouveau." confirm="Rouvrir" danger={false} onClose={() => setDialog(null)} onConfirm={admin(reopenSession, 'Feuille rouverte.')} />

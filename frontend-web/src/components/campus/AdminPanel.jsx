@@ -352,7 +352,7 @@ function Catalog({ kind, title, list, addLabel }) {
 function MemberDialog({ member, onClose, onSaved }) {
   const { boot } = useCampus()
   const { showToast } = useToast()
-  const [form, setForm] = useState(member ? { email: member.email, name: member.name, role: member.role, teacherId: member.teacherId || '', canExport: member.canExport } : { email: '', name: '', role: 'agent', teacherId: '', canExport: true })
+  const [form, setForm] = useState(member ? { email: member.email, name: member.name, role: member.role, teacherId: member.teacherId || '', canExport: member.canExport, canPermit: member.canPermit } : { email: '', name: '', role: 'agent', teacherId: '', canExport: true, canPermit: false })
   const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
   const roles = boot.me.appAdmin ? ['agent', 'teacher', 'admin'] : ['agent', 'teacher']
@@ -409,6 +409,12 @@ function MemberDialog({ member, onClose, onSaved }) {
               ))}
             </select>
           </Field>
+        )}
+        {form.role === 'agent' && (
+          <label className="flex items-start gap-2 text-sm text-ink">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-violet-600" checked={form.canPermit} onChange={set('canPermit')} />
+            <span>Accorde les permissions et justifie les absences (chargé·e pédagogique)</span>
+          </label>
         )}
         {form.role !== 'admin' && (
           <label className="flex items-center gap-2 text-sm text-ink">
@@ -469,7 +475,7 @@ function Members() {
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-ink">{m.name}</span>
                   <span className="block text-xs text-ink-soft">
-                    {ROLE_LABELS[m.role]}
+                    {m.role === 'agent' && m.canPermit ? 'Chargé·e pédagogique' : ROLE_LABELS[m.role]}
                     {m.role === 'teacher' && ` (${boot.teachers.find((t) => t.id === m.teacherId)?.name || 'enseignant inconnu'})`} · {m.email}
                     {m.role !== 'admin' && (m.canExport ? ' · export autorisé' : ' · sans export')}
                   </span>

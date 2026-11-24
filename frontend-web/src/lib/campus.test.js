@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { academicYears, countMarks, describeAudit, matchesSearch, mondayOf, monthBounds, percent, statusLabel } from './campus.js'
-import { blankBundle, blankSheetReport, classReport, filledSheetReport, monthlyReport, officialListReport, studentReport, subjectReport, timetableReport } from './campusReports.js'
+import { academicYears, countJustified, countMarks, describeAudit, matchesSearch, mondayOf, monthBounds, percent, permissionPeriod, statusLabel } from './campus.js'
+import { blankBundle, blankSheetReport, classReport, filledSheetReport, monthlyReport, officialListReport, permissionSlip, permissionsReport, studentReport, subjectReport, timetableReport } from './campusReports.js'
 import { buildExcel, buildPdf, reportSheets } from './campusExport.js'
 import { buildXlsx, columnName, crc32, sheetName } from './xlsx.js'
 
@@ -130,6 +130,29 @@ describe('timetable', () => {
     expect((await buildPdf(bundle)).getNumberOfPages()).toBe(one * 2)
     expect(() => blankBundle({ data: { ...data, sessions: [] }, name: 'x' })).toThrow()
   }, 30000)
+})
+
+describe('permissions', () => {
+  const p = { id: 'x', studentId: roster[2].id, studentName: roster[2].name, type: 'exit', start: '2026-11-24T10:00', end: '2026-11-24T12:00', category: 'maladie', details: 'confidentiel', proof: true, authority: 'Mme Test', status: 'active', at: '2026-11-24T08:00:00Z' }
+  it('periods, in words', () => {
+    expect(permissionPeriod(p)).toBe('le 24/11/2026, 10:00 – 12:00')
+    expect(permissionPeriod({ type: 'absence', start: '2026-11-24T00:00', end: '2026-11-26T23:59' })).toBe('du 24/11/2026 au 26/11/2026')
+    expect(permissionPeriod({ type: 'absence', start: '2026-11-24T00:00', end: '2026-11-24T23:59' })).toBe('le 24/11/2026')
+  })
+  it('only an absence wholly covered is justified', () => {
+    expect(countJustified(roster, marks, { [roster[2].id]: { full: true }, [roster[0].id]: { full: true } })).toBe(1)
+    expect(countJustified(roster, marks, { [roster[2].id]: { full: false } })).toBe(0)
+  })
+  it('the sheet says which absences are justified; the slip does not say why', async () => {
+    const rows = filledSheetReport({ session: { ...session, justified: 1, permissions: { [roster[2].id]: { full: true } } }, classLabel: 'L1' }).tables[0].rows
+    expect(rows[2][5]).toBe('Justifiée')
+    const slip = permissionSlip({ org: 'INASS', cls: stats.class, permission: p })
+    expect(JSON.stringify(slip)).not.toMatch(/Maladie|confidentiel/)
+    expect((await buildPdf(slip)).getNumberOfPages()).toBe(1)
+    const list = permissionsReport({ org: 'INASS', cls: stats.class, permissions: [p], title: 'Toutes', today: '2026-11-24' })
+    expect(JSON.stringify(list)).not.toContain('confidentiel')
+    expect(buildExcel(list).length).toBeGreaterThan(1000)
+  })
 })
 
 describe('xlsx', () => {

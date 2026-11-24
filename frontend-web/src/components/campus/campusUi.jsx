@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Clock, FileSpreadsheet, FileText, Loader2, Minus, Printer, Search, X } from 'lucide-react'
+import { Check, Clock, FileSpreadsheet, FileText, Loader2, Minus, Printer, Search, ShieldCheck, X } from 'lucide-react'
 import { SESSION_STATUS, STATUS, UNSET } from '../../lib/campus.js'
 import { downloadExcel, downloadPdf, printReport } from '../../lib/campusExport.js'
 import { useToast } from '../../context/ToastContext.jsx'
@@ -16,13 +16,15 @@ const STATUS_UI = {
 }
 const NONE_UI = { icon: Minus, soft: 'bg-ink/8 text-ink-soft', dot: 'bg-ink/25' }
 
-export function StatusPill({ status }) {
-  const ui = STATUS_UI[status] || NONE_UI
+// justified: for an absence, true or false (undefined: not told apart).
+export function StatusPill({ status, justified }) {
+  const excused = status === 'A' && justified
+  const ui = excused ? { icon: ShieldCheck, soft: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' } : STATUS_UI[status] || NONE_UI
   const Icon = ui.icon
   return (
     <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold ${ui.soft}`}>
       <Icon size={12} strokeWidth={3} aria-hidden="true" />
-      {STATUS[status]?.label || UNSET}
+      {status === 'A' && justified !== undefined ? (excused ? 'Absent justifié' : 'Absent non justifié') : STATUS[status]?.label || UNSET}
     </span>
   )
 }
@@ -65,13 +67,13 @@ export function StatusButtons({ value, onChange, name, disabled }) {
   )
 }
 
-export function CountsLine({ counts, className = '' }) {
+export function CountsLine({ counts, justified, className = '' }) {
   return (
     <span className={`flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-soft ${className}`}>
       {[
         ['P', counts.p, 'présents'],
         ['R', counts.r, 'retards'],
-        ['A', counts.a, 'absents'],
+        ['A', counts.a, justified ? `absents (${justified} justifié${justified > 1 ? 's' : ''})` : 'absents'],
         ['N', counts.n, 'non renseignés'],
       ].map(([key, n, label]) => (
         <span key={key} className="inline-flex items-center gap-1.5">

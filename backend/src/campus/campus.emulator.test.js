@@ -537,7 +537,7 @@ it("the absent and the late noted, the others are present — when it is said, a
     await ok("agent", "PATCH", `/sessions/${model.id}/marks`, { changes: [{ id: a.id, s: "A", n: "malade" }, { id: b.id, s: "R" }, { id: c.id, n: "à vérifier" }] });
     assert.equal((await call("agent", "POST", `/sessions/${model.id}/validate`, { confirmed: true })).body.code, "UNFILLED", "never assumed");
     const n = model.roster.length;
-    assert.deepEqual(await ok("agent", "POST", `/sessions/${model.id}/validate`, { confirmed: true, fillPresent: true }), { filled: n - 2 });
+    assert.deepEqual(await ok("agent", "POST", `/sessions/${model.id}/validate`, { confirmed: true, fillPresent: true }), { filled: n - 2, excused: 0 });
     const { session } = await ok("agent", "GET", `/sessions/${model.id}`);
     assert.deepEqual([session.status, session.counts], ["validated", { p: n - 2, r: 1, a: 1, n: 0 }]);
     assert.deepEqual([session.marks[a.id], session.marks[b.id].s], [{ s: "A", n: "malade" }, "R"], "what was entered is untouched");
@@ -552,4 +552,67 @@ it("the absent and the late noted, the others are present — when it is said, a
     assert.equal((await call("agent", "POST", `/sessions/${all}/validate`, { confirmed: true, allowUnfilled: true })).status, 400);
     await ok("agent", "POST", `/sessions/${all}/validate`, { confirmed: true, fillPresent: true });
     assert.equal((await ok("agent", "GET", `/sessions/${all}`)).session.counts.p, n);
+});
+
+it("permissions: the person in charge grants, the absences follow, the sheets don't change", async () => {
+    await db.collection("campusMembers").doc("chargee").set({ org: "INASS", role: "agent", name: "Mme la chargée", canPermit: true });
+    const date = "2026-10-19";
+    const id = (await ok("agent", "POST", "/sessions", { classId: C, date, start: "08:00", end: "10:00", subjectId: subject, teacherId: teacher })).id;
+    const roster = (await ok("agent", "GET", "/sessions/" + id)).session.roster;
+    const [a, b, c, d] = roster;
+    await ok("agent", "PATCH", `/sessions/${id}/marks`, { changes: [{ id: a.id, s: "A" }, { id: b.id, s: "A" }] });
+    const body = { studentId: a.id, type: "absence", startDate: date, endDate: date, category: "maladie", details: "Certificat du médecin", proof: true, authority: "Mme la chargée" };
+
+    for (const who of ["agent", "prof"]) assert.equal((await call(who, "POST", "/permissions", body)).status, 403, who);
+    assert.equal((await call("other", "POST", "/permissions", body)).status, 404);
+    const dry = await ok("chargee", "POST", "/permissions", { ...body, dryRun: true });
+    assert.deepEqual(dry.affected.map((x) => x.sessionId), [id]);
+    assert.equal((await ok("chargee", "GET", `/permissions?classId=${C}`)).permissions.length, 0, "nothing written yet");
+    const made = await ok("chargee", "POST", "/permissions", body);
+    // c may leave for the whole course, d only for a part of it.
+    await ok("boss", "POST", "/permissions", { ...body, studentId: c.id, type: "exit", startTime: "07:30", endTime: "12:00", category: "rdv", details: "" });
+    await ok("boss", "POST", "/permissions", { ...body, studentId: d.id, type: "exit", startTime: "09:30", endTime: "12:00", category: "rdv", details: "" });
+
+    let view = (await ok("agent", "GET", "/sessions/" + id)).session;
+    assert.equal(view.justified, 1);
+    assert.deepEqual([view.permissions[a.id].full, view.permissions[c.id].full, view.permissions[d.id].full, view.permissions[b.id]], [true, true, false, undefined]);
+    assert.equal(view.permissions[a.id].category, "maladie");
+    assert.equal((await ok("prof", "GET", "/sessions/" + id)).session.permissions[a.id].category, undefined, "a teacher is not told why");
+    assert.equal((await ok("agent", "GET", `/permissions?classId=${C}&studentId=${a.id}`)).permissions[0].details, "", "nor an agent the details");
+    assert.equal((await ok("chargee", "GET", `/permissions?classId=${C}&studentId=${a.id}`)).permissions[0].details, "Certificat du médecin");
+    assert.equal((await call("prof", "GET", `/permissions?classId=${C}`)).status, 403);
+    assert.deepEqual((await ok("prof", "GET", `/students/${a.id}?year=all`)).permissions, []);
+
+    // Validation: away with leave for the whole course → absent; for a part → present.
+    const done = await ok("agent", "POST", `/sessions/${id}/validate`, { confirmed: true, fillPresent: true });
+    assert.equal(done.excused, 1);
+    view = (await ok("agent", "GET", "/sessions/" + id)).session;
+    assert.deepEqual([view.marks[c.id].s, view.marks[d.id].s, view.counts.a, view.justified], ["A", "P", 3, 2]);
+    const stored = (await db.collection("campusSessions").doc(id).get()).data();
+    const stats = async () => (await ok("agent", "GET", `/stats?classId=${C}&year=all&from=${date}&to=${date}&detail=1`));
+    let s = await stats();
+    assert.deepEqual([s.totals.a, s.totals.j, s.last === null ? null : true], [3, 2, true]);
+    assert.deepEqual(s.events.filter((e) => e.status === "A").map((e) => e.justified).sort(), [false, true, true]);
+
+    // A certificate brought later justifies a past absence; the sheet itself is untouched.
+    const late = await ok("chargee", "POST", "/permissions", { ...body, studentId: b.id });
+    assert.equal(late.affected.length, 1);
+    assert.equal((await stats()).totals.j, 3);
+    assert.deepEqual((await db.collection("campusSessions").doc(id).get()).data(), stored, "not a letter of the sheet");
+    // Changed, then cancelled: with a reason, and it no longer justifies.
+    assert.equal((await call("chargee", "PATCH", `/permissions/${late.id}`, { ...body, studentId: undefined })).status, 400);
+    await ok("chargee", "PATCH", `/permissions/${late.id}`, { ...body, startDate: "2026-10-20", endDate: "2026-10-21", reason: "Erreur de date" });
+    assert.equal((await stats()).totals.j, 2);
+    assert.equal((await call("agent", "POST", `/permissions/${made.id}/cancel`, { reason: "non" })).status, 403);
+    await ok("chargee", "POST", `/permissions/${made.id}/cancel`, { reason: "Certificat non valable" });
+    assert.equal((await stats()).totals.j, 1);
+    assert.equal((await call("chargee", "POST", `/permissions/${made.id}/cancel`, { reason: "encore" })).status, 409);
+    const page = await ok("boss", "GET", `/students/${a.id}?year=all`);
+    assert.deepEqual([page.permissions[0].status, page.permissions[0].cancelReason], ["cancelled", "Certificat non valable"]);
+    const log = (await ok("boss", "GET", "/audit")).entries;
+    const entry = log.find((e) => e.action === "permission.create" && e.studentId === a.id);
+    assert.deepEqual([entry.by.name, entry.details.category, JSON.stringify(entry).includes("médecin")], ["Mme la chargée", "Maladie", false]);
+    for (const x of ["permission.update", "permission.cancel"]) assert.ok(log.some((e) => e.action === x), x);
+    assert.equal((await ok("boss", "GET", "/bootstrap")).me.canPermit, true);
+    assert.equal((await ok("agent", "GET", "/bootstrap")).me.canPermit, false);
 });

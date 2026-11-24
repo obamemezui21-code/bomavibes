@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react'
 import { deleteStudent, fetchStudent, updateStudent } from '../../firebase/campus.js'
 import { STATUS, UNSET, hours, mediumDate, percent } from '../../lib/campus.js'
 import { studentReport } from '../../lib/campusReports.js'
@@ -8,6 +8,7 @@ import { useToast } from '../../context/ToastContext.jsx'
 import { fieldClass, useCampus } from './campusContext.js'
 import { EvaluationTag } from './slotUi.jsx'
 import { ReasonDialog } from './adminUi.jsx'
+import { PermissionDialog, PermissionItem } from './permissionUi.jsx'
 import { Btn, Dialog, Empty, ErrorNote, ExportButtons, Field, Loading, Panel, StatusPill, Tile } from './campusUi.jsx'
 
 function EditDialog({ student, onClose, onSaved }) {
@@ -73,6 +74,7 @@ function StudentSheet() {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [permitting, setPermitting] = useState(false)
   const [fromSheets, setFromSheets] = useState(false)
   const { showToast } = useToast()
 
@@ -88,7 +90,7 @@ function StudentSheet() {
   }, [id, year, filters])
   useEffect(() => load(), [load])
 
-  const history = useMemo(() => (page?.record.history || []).filter((h) => !status || (h.status ?? 'N') === status), [page, status])
+  const history = useMemo(() => (page?.record.history || []).filter((h) => !status || (status === 'J' ? h.justified : status === 'U' ? h.status === 'A' && !h.justified : (h.status ?? 'N') === status)), [page, status])
   if (error) return <ErrorNote onRetry={load}>{error}</ErrorNote>
   if (!page || page.student.id !== id) return <Loading />
   const { student, record } = page
@@ -128,10 +130,32 @@ function StudentSheet() {
         <Tile label="Séances enregistrées" value={record.sessions} />
         <Tile label="Présences" status="P" value={record.p} />
         <Tile label="Retards" status="R" value={record.r} />
-        <Tile label="Absences" status="A" value={record.a} />
+        <Tile label="Absences" status="A" value={record.a} hint={record.a ? `${record.j} justifiée${record.j > 1 ? 's' : ''}, ${record.a - record.j} non` : ''} />
         <Tile label="Non renseignés" status="N" value={record.n} />
         <Tile label="Taux de présence" value={percent(record.presenceRate)} />
       </div>
+      {boot.me.staff && (
+        <Panel
+          title="Permissions et absences autorisées"
+          action={
+            boot.me.canPermit && (
+              <Btn icon={Plus} onClick={() => setPermitting(true)}>
+                Nouvelle permission
+              </Btn>
+            )
+          }
+        >
+          {page.permissions.length ? (
+            <ul className="divide-y divide-ink/8">
+              {page.permissions.map((p) => (
+                <PermissionItem key={p.id} permission={p} onChanged={load} />
+              ))}
+            </ul>
+          ) : (
+            <Empty>Aucune permission.</Empty>
+          )}
+        </Panel>
+      )}
       <Panel title="Historique des séances">
         <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Du">
@@ -158,6 +182,8 @@ function StudentSheet() {
                   {s.label}
                 </option>
               ))}
+              <option value="J">Absent justifié</option>
+              <option value="U">Absent non justifié</option>
               <option value="N">{UNSET}</option>
             </select>
           </Field>
@@ -176,7 +202,7 @@ function StudentSheet() {
                     </span>
                     {h.note && <span className="block text-xs text-ink">Motif : {h.note}</span>}
                   </span>
-                  <StatusPill status={h.status} />
+                  <StatusPill status={h.status} justified={h.justified} />
                 </Link>
               </li>
             ))}
@@ -185,6 +211,16 @@ function StudentSheet() {
           <Empty>Aucune séance validée ne correspond.</Empty>
         )}
       </Panel>
+      {permitting && (
+        <PermissionDialog
+          student={student}
+          onClose={() => setPermitting(false)}
+          onSaved={() => {
+            setPermitting(false)
+            load()
+          }}
+        />
+      )}
       {deleting && (
         <ReasonDialog
           title={`Supprimer ${student.name} ?`}

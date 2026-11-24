@@ -17,7 +17,7 @@ async function bootstrap(access) {
     const tidy = (list) => list.map((x) => ({ id: x.id, name: x.name, active: x.active !== false })).sort((a, b) => a.name.localeCompare(b.name, "fr"));
     return {
         org: access.org,
-        me: { uid: access.uid, name: access.name, role: access.role, teacherId: access.teacherId, canExport: access.canExport, admin: isAdmin(access), staff: isStaff(access), appAdmin: access.appAdmin },
+        me: { uid: access.uid, name: access.name, role: access.role, teacherId: access.teacherId, canExport: access.canExport, canPermit: access.canPermit, admin: isAdmin(access), staff: isStaff(access), appAdmin: access.appAdmin },
         year: academicYear(today()),
         today: today(),
         classes: classes.map((c) => ({ id: c.id, code: c.code, label: c.label, expected: c.expected, rosterVersion: c.rosterVersion || 0 })).sort((a, b) => a.code.localeCompare(b.code, "fr")),
@@ -67,7 +67,7 @@ async function listMembers(access) {
     return snap.docs
         .map((d) => {
             const m = d.data();
-            return { uid: d.id, email: m.email, name: m.name, role: m.role, teacherId: m.teacherId || null, canExport: m.canExport === true, grantedBy: m.grantedBy?.name || "", grantedAt: iso(m.grantedAt) };
+            return { uid: d.id, email: m.email, name: m.name, role: m.role, teacherId: m.teacherId || null, canExport: m.canExport === true, canPermit: m.canPermit === true, grantedBy: m.grantedBy?.name || "", grantedAt: iso(m.grantedAt) };
         })
         .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 }
@@ -78,6 +78,7 @@ const MemberSchema = z.object({
     name: NAME,
     teacherId: z.string().nullable().optional(),
     canExport: z.boolean().default(false),
+    canPermit: z.boolean().default(false),
 });
 
 async function setMember(access, body) {
@@ -110,10 +111,11 @@ async function setMember(access, body) {
             role: d.role,
             teacherId: d.role === ROLES.TEACHER ? d.teacherId : null,
             canExport: d.role === ROLES.ADMIN || d.canExport,
+            canPermit: d.role === ROLES.ADMIN || (d.role === ROLES.AGENT && d.canPermit),
             grantedBy: who(access),
             grantedAt: FieldValue.serverTimestamp(),
         });
-        tx.create(newAudit(), auditEntry(access, "member.set", { targetId: user.uid, from: old ? { role: old.role, name: old.name, canExport: !!old.canExport } : null, to: { role: d.role, name: d.name, canExport: d.canExport } }));
+        tx.create(newAudit(), auditEntry(access, "member.set", { targetId: user.uid, from: old ? { role: old.role, name: old.name, canExport: !!old.canExport, canPermit: !!old.canPermit } : null, to: { role: d.role, name: d.name, canExport: d.canExport, canPermit: d.canPermit } }));
     });
     return { uid: user.uid };
 }

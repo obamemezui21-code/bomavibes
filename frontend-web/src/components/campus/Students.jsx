@@ -136,7 +136,7 @@ function Students() {
                     <span className="w-8 text-right text-xs tabular-nums text-ink-soft">{s.no}</span>
                     <span className="min-w-40 flex-1 text-sm font-medium text-ink">{s.name}</span>
                     <span className="hidden font-mono text-xs text-ink-soft md:block">{s.id}</span>
-                    <span className="hidden w-36 text-xs text-ink-soft lg:block">{r ? `${r.a} abs. · ${r.r} ret.` : ''}</span>
+                    <span className="hidden w-36 text-xs text-ink-soft lg:block">{r ? `${r.a} abs. (${r.j} just.) · ${r.r} ret.` : ''}</span>
                     <span className="w-full pl-12 sm:w-40 sm:pl-0">{r?.rated ? <RateBar rate={r.presenceRate} /> : <span className="text-xs text-ink-soft">Aucune séance validée</span>}</span>
                   </Link>
                 </li>

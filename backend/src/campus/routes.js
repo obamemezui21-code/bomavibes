@@ -3,13 +3,14 @@ const multer = require("multer");
 const { ZodError } = require("zod");
 const requireFirebaseAuth = require("../middleware/firebaseAuthMiddleware");
 const { limiter } = require("../middleware/rateLimits");
-const { campusAccess, requireCampus, requireStaff, requireCampusAdmin } = require("./access");
+const { campusAccess, requireCampus, requireStaff, requireCampusAdmin, requirePermit } = require("./access");
 const { CONFIG, HttpError } = require("./config");
 const roster = require("./rosterController");
 const sessions = require("./sessionController");
 const people = require("./adminController");
 const timetable = require("./timetableController");
 const actions = require("./adminActions");
+const permits = require("./permissionController");
 const scans = require("./scanController");
 
 // /api/campus — BomaVibes Campus, attendance. Mounted in app.js.
@@ -88,6 +89,12 @@ router.get(
         return new Promise((resolve) => res.once("close", resolve));
     }),
 );
+
+// Permissions to leave and justified absences
+router.get("/permissions", requireStaff, run(async (req) => ({ permissions: await permits.listPermissions(req.campus, req.query) })));
+router.post("/permissions", requirePermit, run((req) => permits.createPermission(req.campus, req.body || {})));
+router.patch("/permissions/:id", requirePermit, run((req) => permits.updatePermission(req.campus, req.params.id, req.body || {})));
+router.post("/permissions/:id/cancel", requirePermit, run((req) => permits.cancelPermission(req.campus, req.params.id, req.body || {})));
 
 // The weekly timetable, and the sheets it prepares
 router.get("/agenda", run((req) => timetable.getAgenda(req.campus, req.query)));

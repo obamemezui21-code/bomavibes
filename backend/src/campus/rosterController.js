@@ -3,7 +3,8 @@ const { CONFIG, HttpError, nameKey, slug, academicYear, today } = require("./con
 const { parseRoster, checkRoster, planImport, rosterHash, newStudentId } = require("./roster");
 const { studentRecord } = require("./stats");
 const { isStaff, isAdmin, ROLES } = require("./access");
-const { db, col, FieldValue, who, iso, auditEntry, newAudit, getClass, listStudents, classSessions, dropCache } = require("./store");
+const { publicPermission } = require("./permissionController");
+const { db, col, FieldValue, who, iso, auditEntry, newAudit, getClass, listStudents, classSessions, classPermissions, dropCache } = require("./store");
 
 // Classes, the official list and its import, and the students' own pages.
 
@@ -208,12 +209,14 @@ async function studentPage(access, studentId, query = {}) {
     const cls = await getClass(access, s.classId);
     let sessions = await classSessions(s.classId, query.year === "all" ? null : query.year || academicYear(today()));
     if (access.role === ROLES.TEACHER) sessions = sessions.filter((x) => x.teacherId === access.teacherId);
+    const granted = (await classPermissions(s.classId)).filter((p) => p.studentId === studentId);
     return {
         student: { ...publicStudent({ id: studentId, ...s }), nameHistory: isAdmin(access) ? s.nameHistory || [] : [] },
         className: cls.code,
         classLabel: cls.label,
         org: cls.org,
-        record: studentRecord(sessions, studentId, { from: query.from, to: query.to, subjectId: query.subjectId }),
+        record: studentRecord(sessions, studentId, { from: query.from, to: query.to, subjectId: query.subjectId }, granted),
+        permissions: isStaff(access) ? granted.sort((a, b) => (a.start < b.start ? 1 : -1)).map((p) => publicPermission(p, access)) : [],
     };
 }
 

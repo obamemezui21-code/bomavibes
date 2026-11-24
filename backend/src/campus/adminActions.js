@@ -342,6 +342,9 @@ async function purgeTrash(access, id, body) {
     let dir = null;
     await db.runTransaction(async (tx) => {
         const { ref, t } = await readTrash(tx, access, id);
+        // What was confided about a student goes with them.
+        const granted = t.type === "student" ? await tx.get(col.permissions().where("studentId", "==", t.docs[0].path.split("/").pop())) : null;
+        for (const d of granted?.docs || []) tx.delete(d.ref);
         if (t.type === "session") dir = dirOf(t.docs[0].path.split("/").pop());
         tx.delete(ref);
         tx.create(newAudit(), auditEntry(access, "trash.purge", { classId: t.classId, details: { type: t.type, label: t.label } }));

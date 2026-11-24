@@ -89,9 +89,25 @@ export function countMarks(roster, marks) {
   return c
 }
 
+// Permissions (backend/src/campus/permissions.js).
+export const PERMISSION_TYPES = { exit: 'Permission de sortie', absence: 'Absence autorisée' }
+export const CATEGORIES = { maladie: 'Maladie', rdv: 'Rendez-vous médical', famille: 'Raison familiale', deuil: 'Deuil', administratif: 'Démarche administrative', stage: 'Stage ou mission', autre: 'Autre' }
+
+// « le 24/11/2026, 10:00 – 12:00 », « du 24/11/2026 au 26/11/2026 »
+export function permissionPeriod({ type, start, end }) {
+  const [d1, d2] = [start.slice(0, 10), end.slice(0, 10)]
+  if (type === 'exit') return `le ${shortDate(d1)}, ${start.slice(11, 16)} – ${end.slice(11, 16)}`
+  const hoursToo = start.slice(11, 16) !== '00:00' || end.slice(11, 16) !== '23:59'
+  if (d1 === d2) return `le ${shortDate(d1)}${hoursToo ? `, ${start.slice(11, 16)} – ${end.slice(11, 16)}` : ''}`
+  return `du ${shortDate(d1)} au ${shortDate(d2)}`
+}
+
+// The absences of a sheet that a permission justifies. permissions: by student.
+export const countJustified = (roster, marks, permissions = {}) => roster.filter((r) => marks[r.id]?.s === 'A' && permissions[r.id]?.full).length
+
 export const TRASH_LABELS = { session: 'Feuille de présence', student: 'Étudiant', class: 'Classe', timetable: 'Planning', subject: 'Matière', teacher: 'Enseignant' }
 
-const FIELD = { code: 'Code', no: 'Numéro', date: 'Date', start: 'Début', end: 'Fin', subject: 'Matière', teacher: 'Enseignant', name: 'Nom', active: 'Actif', role: 'Rôle', status: 'Statut', canExport: 'Export', label: 'Intitulé', expected: 'Effectif', kind: 'Type' }
+const FIELD = { code: 'Code', no: 'Numéro', date: 'Date', start: 'Début', end: 'Fin', subject: 'Matière', teacher: 'Enseignant', name: 'Nom', active: 'Actif', role: 'Rôle', status: 'Statut', canExport: 'Export', canPermit: 'Permissions', proof: 'Justificatif', category: 'Motif', type: 'Type', label: 'Intitulé', expected: 'Effectif', kind: 'Type' }
 const show = (k, v) => (v === null || v === undefined || v === '' ? '—' : v === true ? 'oui' : v === false ? 'non' : k === 'date' ? shortDate(v) : k === 'role' ? ROLE_LABELS[v] || v : k === 'kind' ? (v === 'evaluation' ? 'Évaluation' : 'Cours') : k === 'status' ? SESSION_STATUS[v] || v : String(v))
 
 function diff(from, to) {
@@ -109,7 +125,7 @@ export function describeAudit(e) {
     case 'session.update':
       return { title: 'Séance modifiée', lines: diff(e.from, e.to) }
     case 'session.validate':
-      return { title: 'Feuille validée', lines: [`${d.p} présents, ${d.r} retards, ${d.a} absents, ${d.n} non renseignés`, ...(d.filled ? [`Dont ${d.filled} présents complétés à la validation`] : [])] }
+      return { title: 'Feuille validée', lines: [`${d.p} présents, ${d.r} retards, ${d.a} absents, ${d.n} non renseignés`, ...(d.filled ? [`Dont ${d.filled} présents complétés à la validation`] : []), ...(d.excused ? [`Dont ${d.excused} absents avec permission`] : [])] }
     case 'session.cancel':
       return { title: 'Feuille annulée (conservée dans les archives)', lines: diff(e.from, e.to) }
     case 'session.roster':
@@ -150,6 +166,12 @@ export function describeAudit(e) {
       return { title: 'Feuille annulée rétablie', lines: diff(e.from, e.to) }
     case 'session.students':
       return { title: 'Étudiants de la feuille modifiés', lines: [...(d.added || []).map((n) => `Ajouté : ${n}`), ...(d.removed || []).map((r) => `Retiré : ${r.name} (${statusLabel(r.s)}${r.n ? `, « ${r.n} »` : ''})`)] }
+    case 'permission.create':
+      return { title: `Permission accordée : ${e.studentName}`, lines: [`${d.type}, ${permissionPeriod({ type: d.type === PERMISSION_TYPES.exit ? 'exit' : 'absence', start: d.start, end: d.end })} · ${d.category} · par ${d.authority}`, ...(d.justified ? [`${d.justified} absence${d.justified > 1 ? 's' : ''} justifiée${d.justified > 1 ? 's' : ''}`] : [])] }
+    case 'permission.update':
+      return { title: `Permission modifiée : ${e.studentName}`, lines: diff(e.from, e.to) }
+    case 'permission.cancel':
+      return { title: `Permission annulée : ${e.studentName}`, lines: [permissionPeriod({ type: d.type === PERMISSION_TYPES.exit ? 'exit' : 'absence', start: d.start, end: d.end })] }
     case 'scan.add':
       return { title: 'Feuille papier ajoutée', lines: [d.name] }
     case 'scan.remove':

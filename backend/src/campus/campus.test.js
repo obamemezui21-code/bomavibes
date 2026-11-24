@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { parseRoster, checkRoster, planImport, rosterHash, newStudentId, similarity } = require("./roster");
+const { PermissionSchema, bounds, byStudent, permissionAt, countJustified } = require("./permissions");
 const { computeStats, listEvents, studentRecord, countMarks, weekStart } = require("./stats");
 const { isDate, isTime, academicYear, today } = require("./config");
 const { DEFAULT_PERIODS, TimetableSchema, slotsOf, sessionOf, agenda, localNow, describeChanges } = require("./timetable");
@@ -195,4 +196,37 @@ test("changes of a timetable, in words", () => {
 
 test("the hour of Libreville", () => {
     assert.deepEqual(localNow(new Date("2026-11-24T23:30:00Z")), { date: "2026-11-25", time: "00:30" });
+});
+
+const permit = (studentId, start, end, extra = {}) => ({ studentId, start, end, status: "active", type: "exit", ...extra });
+
+test("an absence is justified when a permission covers the whole course", () => {
+    const s = session("1", "2026-11-23", { a: "A", b: "A", c: "A", d: "P" }); // 08:00–10:00
+    const index = byStudent([permit("a", "2026-11-23T00:00", "2026-11-25T23:59"), permit("b", "2026-11-23T09:00", "2026-11-23T12:00"), permit("c", "2026-11-23T08:00", "2026-11-23T10:00", { status: "cancelled" }), permit("d", "2026-11-23T08:00", "2026-11-23T10:00")]);
+    assert.deepEqual(["a", "b", "c", "d"].map((id) => permissionAt(index, id, s)?.full ?? null), [true, false, null, true]);
+    assert.equal(countJustified(s, index), 1, "only an absence can be justified");
+    assert.equal(permissionAt(index, "a", session("2", "2026-11-26", {})), null, "another day");
+    assert.equal(permissionAt(byStudent([permit("a", "2026-11-23T10:00", "2026-11-23T12:00")]), "a", s), null, "begins as the course ends");
+});
+
+test("the figures tell the two kinds of absence apart", () => {
+    const all = [session("1", "2026-11-23", { a: "A", b: "A", c: "P" }), session("2", "2026-11-24", { a: "A", b: "P", c: "P" })];
+    const granted = [permit("a", "2026-11-23T08:00", "2026-11-23T16:00")];
+    const s = computeStats(all, roster, {}, granted);
+    assert.deepEqual([s.totals.a, s.totals.j], [3, 1]);
+    assert.equal(s.totals.absenceRate, 0.5);
+    assert.equal(s.totals.unjustifiedRate, 2 / 6);
+    assert.deepEqual(s.students.filter((x) => x.a).map((x) => [x.id, x.a, x.j]), [["a", 2, 1], ["b", 1, 0]]);
+    const r = studentRecord(all, "a", {}, granted);
+    assert.deepEqual([r.a, r.j, r.history.map((h) => h.justified)], [2, 1, [false, true]]);
+    assert.deepEqual(listEvents(all, roster, {}, granted).map((e) => e.justified), [true, false, false]);
+    assert.equal(computeStats(all, roster).totals.j, 0);
+});
+
+test("a permission that cannot be true is refused", () => {
+    const ok = { type: "exit", startDate: "2026-11-24", endDate: "2026-11-24", startTime: "10:00", endTime: "12:00", category: "rdv", authority: "Mme Test" };
+    assert.equal(PermissionSchema.safeParse(ok).success, true);
+    for (const bad of [{ endTime: "09:00" }, { endDate: "2026-11-25" }, { category: "vacances" }, { authority: "" }, { startDate: "2026-02-30" }, { type: "absence", endDate: "2028-01-01" }, { type: "x" }]) assert.equal(PermissionSchema.safeParse({ ...ok, ...bad }).success, false, JSON.stringify(bad));
+    const day = PermissionSchema.parse({ type: "absence", startDate: "2026-11-24", endDate: "2026-11-26", category: "maladie", authority: "Mme Test" });
+    assert.deepEqual(bounds(day), { start: "2026-11-24T00:00", end: "2026-11-26T23:59" });
 });

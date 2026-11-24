@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
-import { ArrowLeft, BarChart3, CalendarDays, ClipboardList, FileText, GraduationCap, Lock, Moon, Settings2, Sun, Users } from 'lucide-react'
+import { ArrowLeft, BarChart3, CalendarDays, ClipboardList, FileText, GraduationCap, Lock, Moon, Settings2, ShieldCheck, Sun, Users } from 'lucide-react'
 import { fetchCampus, fetchCampusMe } from '../firebase/campus.js'
 import { ROLE_LABELS, academicYears } from '../lib/campus.js'
 import { useTheme } from '../context/ThemeContext.jsx'
@@ -12,6 +12,7 @@ import SessionsList from '../components/campus/SessionsList.jsx'
 import SessionSheet from '../components/campus/SessionSheet.jsx'
 import Students from '../components/campus/Students.jsx'
 import StudentSheet from '../components/campus/StudentSheet.jsx'
+import Permissions from '../components/campus/Permissions.jsx'
 import Reports from '../components/campus/Reports.jsx'
 import AdminPanel from '../components/campus/AdminPanel.jsx'
 
@@ -23,6 +24,7 @@ const TABS = [
   { to: '/campus/planning', label: 'Planning', short: 'Planning', icon: CalendarDays },
   { to: '/campus/seances', label: 'Séances', short: 'Séances', icon: ClipboardList },
   { to: '/campus/etudiants', label: 'Étudiants', short: 'Étudiants', icon: Users },
+  { to: '/campus/permissions', label: 'Permissions', short: 'Permis.', icon: ShieldCheck, staff: true },
   { to: '/campus/rapports', label: 'Rapports', short: 'Rapports', icon: FileText },
   { to: '/campus/administration', label: 'Administration', short: 'Admin', icon: Settings2, admin: true },
 ]
@@ -73,7 +75,7 @@ function Campus() {
             </p>
             {boot && (
               <p className="truncate text-xs text-ink-soft">
-                {boot.me.name}, {ROLE_LABELS[boot.me.role]}
+                {boot.me.name}, {boot.me.role === 'agent' && boot.me.canPermit ? 'Chargé·e pédagogique' : ROLE_LABELS[boot.me.role]}
               </p>
             )}
           </div>
@@ -106,10 +108,10 @@ function Campus() {
         </div>
         {boot && (
           <nav aria-label="Campus" className="mx-auto flex max-w-6xl overflow-x-auto px-1 sm:gap-1 sm:px-4">
-            {TABS.filter((t) => !t.admin || boot.me.admin).map((t) => {
+            {TABS.filter((t) => (!t.admin || boot.me.admin) && (!t.staff || boot.me.staff)).map((t) => {
               const Icon = t.icon
               return (
-                <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => `flex h-11 shrink-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-1.5 text-xs font-semibold transition sm:flex-none sm:px-3 sm:text-[13px] ${isActive ? 'border-violet-600 text-ink' : 'border-transparent text-ink-soft hover:text-ink'}`}>
+                <NavLink key={t.to} to={t.to} end={t.end} className={({ isActive }) => `flex h-11 shrink-0 flex-1 items-center justify-center gap-1.5 border-b-2 px-1 text-[11px] font-semibold transition sm:flex-none sm:px-3 sm:text-[13px] ${isActive ? 'border-violet-600 text-ink' : 'border-transparent text-ink-soft hover:text-ink'}`}>
                   <Icon size={16} aria-hidden="true" className="hidden sm:block" />
                   <span className="sm:hidden">{t.short}</span>
                   <span className="hidden sm:inline">{t.label}</span>
@@ -139,6 +141,7 @@ function Campus() {
               <Route path="seances/:id" element={<SessionSheet />} />
               <Route path="etudiants" element={<Students />} />
               <Route path="etudiants/:id" element={<StudentSheet />} />
+              <Route path="permissions" element={<Permissions />} />
               <Route path="rapports" element={<Reports />} />
               <Route path="administration" element={<AdminPanel />} />
               <Route path="*" element={<Navigate to="/campus" replace />} />

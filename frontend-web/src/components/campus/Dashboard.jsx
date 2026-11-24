@@ -99,6 +99,7 @@ function Dashboard() {
   const last = stats.last
   const onLast = scope === 'last' && last
   const c = onLast ? last.counts : stats.totals
+  const justified = onLast ? last.justified : c.j
   const rated = c.p + c.r + c.a
   // A chosen period or subject is about the whole, not the last session.
   const set = (k) => (e) => {
@@ -177,10 +178,10 @@ function Dashboard() {
         <Tile label="Effectif total" value={stats.class.active} hint={stats.class.active === cls.expected ? 'conforme à la liste officielle' : `liste officielle : ${cls.expected}`} />
         <Tile label="Présents" status="P" value={c.p} />
         <Tile label="Retardataires" status="R" value={c.r} />
-        <Tile label="Absents" status="A" value={c.a} />
+        <Tile label="Absents" status="A" value={c.a} hint={c.a ? `${justified} justifié${justified > 1 ? 's' : ''}, ${c.a - justified} non justifié${c.a - justified > 1 ? 's' : ''}` : ''} />
         <Tile label="Non renseignés" status="N" value={c.n} />
         <Tile label="Taux de présence" value={percent(rated ? (c.p + c.r) / rated : null)} hint="présents et retards" />
-        <Tile label="Taux d’absence" value={percent(rated ? c.a / rated : null)} hint="statuts renseignés seulement" />
+        <Tile label="Taux d’absence" value={percent(rated ? c.a / rated : null)} hint={rated ? `non justifiées : ${percent((c.a - justified) / rated)}` : ''} />
         <Tile label="Séances validées" value={stats.sessions} />
       </div>
 
@@ -188,8 +189,8 @@ function Dashboard() {
         <Panel title="Absences par semaine">
           <Columns
             unit="absences"
-            head={['Semaine', 'Absences', 'Séances']}
-            data={stats.weeks.map((w) => ({ key: w.week, label: dayMonth(w.week), long: `Semaine du ${shortDate(w.week)}`, value: w.a, extra: `${w.sessions} séance${w.sessions > 1 ? 's' : ''}` }))}
+            head={['Semaine', 'Absences', 'Détail']}
+            data={stats.weeks.map((w) => ({ key: w.week, label: dayMonth(w.week), long: `Semaine du ${shortDate(w.week)}`, value: w.a, extra: `${w.j} justifiées, ${w.a - w.j} non justifiées · ${w.sessions} séance${w.sessions > 1 ? 's' : ''}` }))}
           />
         </Panel>
         <Panel title="Retards par mois">
@@ -207,7 +208,7 @@ function Dashboard() {
           <RateBars
             head={['Étudiant', 'Présence', 'Détail']}
             empty={search ? 'Aucun étudiant trouvé.' : undefined}
-            data={shown.map((s) => ({ key: s.id, label: s.name, rate: s.presenceRate, extra: `${s.sessions} séances, ${s.a} absences, ${s.r} retards`, onClick: () => navigate(`/campus/etudiants/${s.id}`) }))}
+            data={shown.map((s) => ({ key: s.id, label: s.name, rate: s.presenceRate, extra: `${s.sessions} séances, ${s.a} absences (${s.j} justifiées), ${s.r} retards`, onClick: () => navigate(`/campus/etudiants/${s.id}`) }))}
           />
           {!search && students.length > 8 && (
             <Btn variant="ghost" className="mt-2 w-full" onClick={() => setShowAll((v) => !v)}>
@@ -237,7 +238,7 @@ function Dashboard() {
                     <span className="mt-0.5 block text-xs text-ink-soft">
                       {mediumDate(s.date)}, {hours(s)} · {s.teacherName}
                     </span>
-                    <CountsLine counts={s.counts} className="mt-1" />
+                    <CountsLine counts={s.counts} justified={s.justified} className="mt-1" />
                   </span>
                   <ChevronRight size={18} className="shrink-0 text-ink-soft" />
                 </Link>
