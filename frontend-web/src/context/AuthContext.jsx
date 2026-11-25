@@ -14,6 +14,7 @@ import {
 import { collection, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase/config.js'
 import { useToast } from './ToastContext.jsx'
+import { forgetDevice } from '../firebase/push.js'
 import { isInAppBrowser } from '../lib/inAppBrowser.js'
 
 const AuthContext = createContext(null)
@@ -270,8 +271,9 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function logout() {
-    signOut(auth)
+  async function logout() {
+    await forgetDevice(auth.currentUser?.uid)
+    await signOut(auth)
   }
 
   async function deleteAccount() {

@@ -23,7 +23,7 @@ import { ExpirationPlugin } from 'workbox-expiration'
 import { initializeApp } from 'firebase/app'
 import { getMessaging, onBackgroundMessage } from 'firebase/messaging/sw'
 import { firebaseConfig } from './firebase/options.js'
-import { addUnread, badgeKeyOf } from './lib/appBadge.js'
+import { addUnread, badgeItemOf, badgeKeyOf, closeConversationNotifications, conversationOf } from './lib/appBadge.js'
 
 const ICON = '/icons/icon-192.png'
 const SHELL = '/index.html'
@@ -63,6 +63,8 @@ self.addEventListener('notificationclick', (event) => {
   event.stopImmediatePropagation()
   event.notification.close()
   const path = destinationOf(event.notification)
+  const conversationId = conversationOf(event.notification)
+  if (conversationId) event.waitUntil(closeConversationNotifications(self.registration, conversationId))
 
   event.waitUntil(
     (async () => {
@@ -93,11 +95,11 @@ const messaging = getMessaging(initializeApp(firebaseConfig))
 // Each notification shown also adds to the red counter on the installed app's
 // icon (lib/appBadge.js); the app sets the exact count again once opened.
 onBackgroundMessage(messaging, (payload) => {
-  if (payload.notification) return addUnread(badgeKeyOf(payload))
+  if (payload.notification) return addUnread(badgeKeyOf(payload), badgeItemOf(payload))
   const data = payload.data || {}
   if (!data.title && !data.body) return undefined
   return Promise.all([
-    addUnread(badgeKeyOf(payload)),
+    addUnread(badgeKeyOf(payload), badgeItemOf(payload)),
     self.registration.showNotification(data.title || 'BomaVibes', {
       body: data.body || '',
       icon: data.icon || ICON,

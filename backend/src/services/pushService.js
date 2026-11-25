@@ -1,5 +1,5 @@
 const admin = require("../config/firebaseAdmin");
-const { webpush } = require("./webPush");
+const { webpush, deadTokens } = require("./webPush");
 
 const db = admin.firestore();
 
@@ -20,7 +20,7 @@ async function sendPushToUser(uid, { title, body, path = "/", prefField = null }
             notification: { title, body },
             webpush: webpush({ path }),
         });
-        const dead = response.responses.map((r, i) => (!r.success ? tokens[i] : null)).filter(Boolean);
+        const dead = deadTokens(response, tokens);
         if (dead.length) {
             await userRef.update({ fcmTokens: admin.firestore.FieldValue.arrayRemove(...dead) });
         }

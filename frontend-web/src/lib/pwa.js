@@ -50,6 +50,8 @@ export function isStandalone() {
 // iPadOS presents itself as a Mac: told apart by its touch screen.
 export const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1)
 
+export const isAndroid = () => /Android/.test(ua)
+
 // Facebook, Instagram, TikTok… open links in their own window, which has no
 // "Add to Home Screen": the page has to be opened in Safari first.
 export const isInAppBrowser = /FBAN|FBAV|FB_IAB|Instagram|Line\/|musical_ly|Snapchat|LinkedInApp/i.test(ua)

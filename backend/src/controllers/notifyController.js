@@ -1,5 +1,5 @@
 const admin = require("../config/firebaseAdmin");
-const { webpush } = require("../services/webPush");
+const { webpush, deadTokens } = require("../services/webPush");
 
 const db = admin.firestore();
 
@@ -198,7 +198,11 @@ async function notify(req, res) {
         senderId: String(senderId),
         messageId: String(payload.messageId || ""),
       };
-      message.webpush = webpush({ path: `/chat/${payload.matchId}`, tag: `chat-${payload.matchId}` });
+      // One per message, not one per conversation: the number on an Android
+      // icon is the number of notifications waiting. They all leave the tray
+      // when the conversation is opened (frontend-web/src/lib/appBadge.js).
+      const tag = `chat-${payload.matchId}-${message.data.messageId.slice(0, 64)}`;
+      message.webpush = webpush({ path: `/chat/${payload.matchId}`, tag, prompt: true });
     }
 
     // Incoming call: opening the notification lands on the conversation,
@@ -215,12 +219,10 @@ async function notify(req, res) {
 
     const response = await admin.messaging().sendEachForMulticast(message);
 
-    const deadTokens = response.responses
-      .map((r, i) => (!r.success ? tokens[i] : null))
-      .filter(Boolean);
-    if (deadTokens.length > 0) {
+    const dead = deadTokens(response, tokens);
+    if (dead.length > 0) {
       await db.collection("users").doc(targetUid).update({
-        fcmTokens: admin.firestore.FieldValue.arrayRemove(...deadTokens),
+        fcmTokens: admin.firestore.FieldValue.arrayRemove(...dead),
       });
     }
 

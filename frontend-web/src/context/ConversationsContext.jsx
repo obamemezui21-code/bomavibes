@@ -21,12 +21,15 @@ import { sendPushNotification } from '../firebase/notify.js'
 import { enablePushForUser, syncPushToken } from '../firebase/push.js'
 import { fetchBlockedIds } from '../firebase/safety.js'
 import { playNotificationSound } from '../lib/notificationSound.js'
-import { setUnreadConversations } from '../lib/appBadge.js'
+import { closeReadNotifications, setUnreadConversations } from '../lib/appBadge.js'
 import { setTabBadge } from '../lib/tabBadge.js'
 import { photoVariant } from '../lib/photoVariants.js'
 import { messagePreviewText } from '../lib/messagePreview.js'
 import { EPHEMERAL_PREVIEW, expiryFor, isExpired, remainingLabel } from '../lib/ephemeral.js'
 import { usePageVisible } from '../lib/usePageVisible.js'
+import { useUnreadMessages } from '../lib/useUnreadMessages.js'
+import { rememberSeen } from '../lib/unreadMessages.js'
+import { isStandalone } from '../lib/pwa.js'
 import { useAuth } from './AuthContext.jsx'
 import { fallbackAvatar } from '../lib/fallbackAvatar.js'
 
@@ -39,6 +42,8 @@ const HEARTBEAT_INTERVAL_MS = 90 * 1000
 // being wrongly suppressed.
 const ACTIVE_IN_HEARTBEAT_MS = 20 * 1000
 const MESSAGES_PAGE_SIZE = 50
+// Back in the app, the list is a moment old until Firestore has caught up.
+const CATCH_UP_MS = 2500
 
 // The member's conversation with themselves, as on WhatsApp: notes, photos,
 // links, voice notes kept for later (/chat/moi). Its messages live in
@@ -80,6 +85,8 @@ export function ConversationsProvider({ children }) {
   const { user, profile, publicProfile, isLoading: authLoading } = useAuth()
   const uid = user?.id
   const [matches, setMatches] = useState([])
+  // The uid whose matches have been received (not just an empty list offline).
+  const [matchesOf, setMatchesOf] = useState(null)
   // Kept with the uid it was read for, so a previous account's never shows.
   const [selfChatDoc, setSelfChatDoc] = useState({ uid: null, data: null })
   const selfChat = selfChatDoc.uid === uid ? selfChatDoc.data : null
@@ -122,14 +129,18 @@ export function ConversationsProvider({ children }) {
   // re-check the FCM token on every load so a rotated token gets re-synced
   // to Firestore instead of going stale.
   useEffect(() => {
-    if (!uid || syncedTokenForUidRef.current === uid) return
+    if (!uid) syncedTokenForUidRef.current = null
+    if (!uid || !profile || syncedTokenForUidRef.current === uid) return
     syncedTokenForUidRef.current = uid
-    syncPushToken(uid)
-  }, [uid])
+    syncPushToken(uid, profile.fcmTokens || [])
+  }, [uid, profile])
 
   useEffect(() => {
     if (!uid || !profile || hasTriedPushRef.current) return
-    if (profile.fcmTokens?.length) return
+    // Allowed on another device isn't allowed on this one: the installed app
+    // asks for itself (its icon's counter needs it). A browser tab doesn't
+    // insist once the account gets its notifications somewhere.
+    if (profile.fcmTokens?.length && !(isStandalone() && globalThis.Notification?.permission === 'default')) return
     // No Notification at all: e.g. Safari on iPhone before BomaVibes is added to
     // the home screen, where "Activer" could only fail. The install banner
     // (InstallPWA) comes first there; the question returns in the installed app.
@@ -182,6 +193,7 @@ export function ConversationsProvider({ children }) {
   useEffect(() => {
     if (!uid) {
       setMatches([])
+      setMatchesOf(null)
       return
     }
     isFirstMatchesSnapshot.current = true
@@ -205,9 +217,12 @@ export function ConversationsProvider({ children }) {
       prevSeenRef.current = Object.fromEntries(next.map((m) => [m.id, m.seen?.[uid]]))
 
       setMatches(next)
+      if (!(snap.empty && snap.metadata.fromCache)) setMatchesOf(uid)
     })
     return unsubscribe
   }, [uid])
+
+  const unreadIdsById = useUnreadMessages(uid, matches)
 
   // The conversation with yourself: its last message, for the list.
   useEffect(() => {
@@ -365,7 +380,9 @@ export function ConversationsProvider({ children }) {
           matchedAt,
           lastActivityAt,
           isNewMatch: match.seen?.[uid] === false,
-          unreadCount: match.seen?.[uid] === false ? 1 : 0,
+          // Until counted (or for a match with no message yet): one.
+          unreadCount: match.seen?.[uid] === false ? Math.max(1, unreadIdsById[match.id]?.length || 0) : 0,
+          unreadIds: match.lastMessage ? unreadIdsById[match.id] || null : [],
           lastMessage: cleared ? null : match.lastMessage || null,
           cleared,
           closed,
@@ -380,7 +397,7 @@ export function ConversationsProvider({ children }) {
       })
       .filter(Boolean)
       .sort((a, b) => new Date(b.lastActivityAt) - new Date(a.lastActivityAt))
-  }, [matches, profilesById, activeMessages, hasOlderMessages, uid, now, blockedIds])
+  }, [matches, profilesById, activeMessages, hasOlderMessages, uid, now, blockedIds, unreadIdsById])
 
   // "My matches", as every page but Messages reads them: people still here.
   const conversations = useMemo(() => allConversations.filter((c) => !c.closed), [allConversations])
@@ -388,7 +405,8 @@ export function ConversationsProvider({ children }) {
   const closedConversations = useMemo(() => allConversations.filter((c) => c.closed), [allConversations])
 
   const typingId = conversations.find((c) => c.isTyping)?.id ?? null
-  const newMatchesCount = useMemo(() => conversations.filter((c) => c.isNewMatch).length, [conversations])
+  // Once someone has written, it's an unread message rather than a new match.
+  const newMatchesCount = useMemo(() => conversations.filter((c) => c.isNewMatch && !c.lastMessage).length, [conversations])
   const unreadMessagesCount = useMemo(
     () => conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0),
     [conversations],
@@ -409,20 +427,64 @@ export function ConversationsProvider({ children }) {
   )
   const notificationsCount = unreadIdsKey ? unreadIdsKey.split(',').length : 0
 
-  // The same count, in red on the installed app's icon (lib/appBadge.js).
-  // Set again when the member comes back to the app, which also drops what
-  // the service worker added for notifications outside the conversations
-  // (a like, a comment), as the bell doesn't count them either.
-  // Cleared on signing out; left alone while signing in is still loading.
+  // The unread messages, in red on the installed app's icon (lib/appBadge.js).
+  // Left alone until everything unread is known: a list still loading would
+  // wipe what the service worker counted while the app was closed.
+  const unreadLoaded = useMemo(
+    () =>
+      matchesOf === uid &&
+      matches.every((m) => m.seen?.[uid] !== false || profilesById[m.users.find((u) => u !== uid)] !== undefined),
+    [matchesOf, uid, matches, profilesById],
+  )
+  const unreadListKey = useMemo(
+    () =>
+      JSON.stringify(
+        conversations
+          .filter((c) => c.unreadCount > 0)
+          .map((c) => [c.id, c.unreadIds])
+          .sort((a, b) => (a[0] < b[0] ? -1 : 1)),
+      ),
+    [conversations],
+  )
+
   useEffect(() => {
     if (authLoading) return
-    setUnreadConversations(uid && unreadIdsKey ? unreadIdsKey.split(',') : [])
-  }, [authLoading, uid, unreadIdsKey, isPageVisible])
+    // Cleared on signing out; left alone while signing in is still loading.
+    if (!uid) setUnreadConversations([])
+    else if (unreadLoaded) setUnreadConversations(JSON.parse(unreadListKey))
+  }, [authLoading, uid, unreadLoaded, unreadListKey])
+
+  // Set again when the member comes back to the app, which also drops what
+  // the service worker added for notifications outside the conversations
+  // (a like, a comment), as the bell doesn't count them either; and the
+  // notifications of what has been read leave the tray.
+  useEffect(() => {
+    if (!uid || !isPageVisible || !unreadLoaded) return undefined
+    const timer = setTimeout(() => {
+      if (navigator.onLine === false) return
+      const unread = JSON.parse(unreadListKey)
+      setUnreadConversations(unread)
+      closeReadNotifications(unread.map(([id]) => id))
+    }, CATCH_UP_MS)
+    return () => clearTimeout(timer)
+  }, [uid, isPageVisible, unreadLoaded, unreadListKey])
 
   // And in green on the icon of the browser's tab (lib/tabBadge.js).
   useEffect(() => {
-    setTabBadge(uid ? notificationsCount : 0)
-  }, [uid, notificationsCount])
+    setTabBadge(uid ? unreadMessagesCount : 0)
+  }, [uid, unreadMessagesCount])
+
+  // The conversation on screen is read as its messages arrive, and as soon as
+  // the matches are known (the app opened straight on it, from a
+  // notification): openConversation alone left it unread in both cases.
+  const openIsUnread = !!openMatchId && matches.find((m) => m.id === openMatchId)?.seen?.[uid] === false
+  useEffect(() => {
+    if (!uid || !openIsUnread || !isPageVisible) return
+    updateDoc(doc(db, 'matches', openMatchId), {
+      [`lastReadAt.${uid}`]: serverTimestamp(),
+      [`seen.${uid}`]: true,
+    }).catch(() => {})
+  }, [uid, openMatchId, openIsUnread, isPageVisible])
 
   // Shaped like the others, for the Chat page, under the member's own name
   // and photo. Never unread, never online, never typing. Kept out of
@@ -477,12 +539,20 @@ export function ConversationsProvider({ children }) {
     setOpenMatchId(null)
   }
 
-  async function markMatchesSeen() {
-    await Promise.all(
-      matches
-        .filter((m) => m.seen?.[uid] === false)
-        .map((m) => updateDoc(doc(db, 'matches', m.id), { [`seen.${uid}`]: true })),
-    )
+  async function markSeen(list) {
+    rememberSeen(uid, list.filter((m) => m.lastMessage).map((m) => m.id))
+    await Promise.all(list.map((m) => updateDoc(doc(db, 'matches', m.id), { [`seen.${uid}`]: true })))
+  }
+
+  // "Tout marquer lu".
+  function markMatchesSeen() {
+    return markSeen(matches.filter((m) => m.seen?.[uid] === false))
+  }
+
+  // The Matches page was looked at: the new matches are seen, but a message
+  // stays unread until its conversation is opened.
+  function markNewMatchesSeen() {
+    return markSeen(matches.filter((m) => m.seen?.[uid] === false && !m.lastMessage))
   }
 
   // While a conversation's messages are ephemeral (POST /api/chat/:id/ephemeral),
@@ -674,6 +744,7 @@ export function ConversationsProvider({ children }) {
         openConversation,
         closeConversation,
         markMatchesSeen,
+        markNewMatchesSeen,
         sendMessage,
         sendVoiceMessage,
         sendAttachmentMessage,

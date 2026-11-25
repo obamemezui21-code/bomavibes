@@ -571,6 +571,8 @@ function Chat() {
 
   useEffect(() => {
     if (conversationId) openConversation(conversationId)
+    // Back to the list (phone): what comes there next isn't read yet.
+    else closeConversation()
     // openConversation is a fresh reference on every ConversationsProvider
     // re-render (heartbeat tick, any match update...) — depending on it here
     // would re-fire the Firestore write on every one of those, not just on
@@ -1224,7 +1226,7 @@ function Chat() {
                     )}
                     {!!c.unreadCount && typingId !== c.id && (
                       <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-brand-1 via-brand-2 to-brand-3 px-1 text-[10px] font-bold text-ink-on-brand">
-                        {c.unreadCount}
+                        {c.unreadCount > 99 ? '99+' : c.unreadCount}
                       </span>
                     )}
                   </div>

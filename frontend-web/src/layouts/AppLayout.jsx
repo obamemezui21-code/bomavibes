@@ -87,8 +87,8 @@ function AppLayout() {
   const { showPushPrompt } = useConversations()
   const { decided: cookiesDecided } = useCookieConsent()
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout()
     navigate('/')
   }
 

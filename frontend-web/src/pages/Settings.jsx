@@ -7,7 +7,7 @@ import { useConversations } from '../context/ConversationsContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { db } from '../firebase/config.js'
-import { enablePushForUser } from '../firebase/push.js'
+import { enablePushForUser, pushPermission } from '../firebase/push.js'
 import { fetchMyBlockedIds, unblockUser } from '../firebase/safety.js'
 import { setInvisibleMode } from '../firebase/subscriptions.js'
 import { fontById } from '../lib/fonts.js'
@@ -24,6 +24,7 @@ import InviteFriendsModal from '../components/InviteFriendsModal.jsx'
 import { inputClass, labelClass } from '../lib/formStyles.js'
 import { openCookieSettings } from '../lib/cookieConsent.js'
 import InstallPWA from '../components/InstallPWA.jsx'
+import { isAndroid } from '../lib/pwa.js'
 import { LOCATION_ERRORS, forgetLocation, shareLocation } from '../lib/geolocation.js'
 
 function Toggle({ checked, onChange, disabled }) {
@@ -54,6 +55,52 @@ function Row({ title, subtitle, children }) {
       </div>
       {children}
     </div>
+  )
+}
+
+// Notifications are allowed device by device, whatever the account's own
+// choices below: without it, nothing arrives here and the installed app's icon
+// has no counter.
+const DEVICE_STATES = {
+  granted: isAndroid()
+    ? "Activées. Votre téléphone signale les messages non lus sur l'icône (pastille ou nombre, selon ses réglages)."
+    : "Activées. Les messages non lus sont comptés sur l'icône de l'application installée.",
+  default: "Pas encore activées ici : rien n'arrive et l'icône ne compte pas les messages.",
+  denied: "Bloquées ici. Autorisez les notifications de BomaVibes dans les réglages de l'appareil, puis rouvrez l'application.",
+  unsupported: "Non disponibles ici. Sur iPhone, ajoutez d'abord BomaVibes à l'écran d'accueil (iOS 16.4 ou plus).",
+}
+
+function DeviceNotificationsRow({ uid }) {
+  const { showToast } = useToast()
+  const [state, setState] = useState(pushPermission)
+  const [busy, setBusy] = useState(false)
+
+  async function enable() {
+    setBusy(true)
+    try {
+      await enablePushForUser(uid)
+      showToast('Notifications activées sur cet appareil.')
+    } catch (err) {
+      showToast(err.message, 'error')
+    } finally {
+      setState(pushPermission())
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Row title="Sur cet appareil" subtitle={DEVICE_STATES[state]}>
+      {state === 'default' && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={enable}
+          className="shrink-0 rounded-lg bg-violet-500 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+        >
+          {busy ? 'Activation…' : 'Activer'}
+        </button>
+      )}
+    </Row>
   )
 }
 
@@ -476,6 +523,7 @@ function Settings() {
           </Section>
 
           <Section title="Notifications">
+            <DeviceNotificationsRow uid={user?.id} />
             <Row title="Nouveaux matchs" subtitle="Reçois une alerte à chaque match">
               <Toggle
                 checked={newMatches}

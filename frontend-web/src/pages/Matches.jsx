@@ -12,14 +12,14 @@ import { ageSuffix } from '../lib/profileDisplay.js'
 function Matches() {
   const navigate = useNavigate()
   const { user, publicProfile } = useAuth()
-  const { conversations, markMatchesSeen } = useConversations()
+  const { conversations, markNewMatchesSeen } = useConversations()
   const [likesCount, setLikesCount] = useState(null)
   const [connectFilter, setConnectFilter] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(markMatchesSeen, 1200)
+    const timer = setTimeout(markNewMatchesSeen, 1200)
     return () => clearTimeout(timer)
-    // markMatchesSeen is a fresh reference on every ConversationsProvider
+    // markNewMatchesSeen is a fresh reference on every ConversationsProvider
     // re-render — depending on it here would keep resetting this timer
     // during active real-time updates instead of firing once per page visit.
     // eslint-disable-next-line react-hooks/exhaustive-deps

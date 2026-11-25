@@ -58,9 +58,12 @@ async function requestDeviceToken() {
 // ourselves registered on this exact browser — drops the stale one so a
 // rotated token doesn't leave dead entries for the reactive cleanup in
 // notifyController.js to eventually prune on a failed send.
-async function persistTokenIfChanged(uid, token) {
+// `known`: the account's tokens, when loaded. What this browser remembers isn't
+// enough: the server may have dropped the token since, or another account
+// may have registered it, and this device would never be notified again.
+async function persistTokenIfChanged(uid, token, known) {
   const previous = readCachedToken()
-  if (previous === token) return token
+  if (previous === token && known?.includes(token)) return token
 
   const ref = doc(db, 'users', uid)
   if (previous && previous !== token) {
@@ -82,20 +85,32 @@ export async function enablePushForUser(uid) {
 // Call on every authenticated app load. Never prompts — if permission was
 // never granted (or was denied) this silently does nothing, so it's always
 // safe to call alongside the explicit opt-in prompt without duplicating it.
-export async function syncPushToken(uid) {
+export async function syncPushToken(uid, known) {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return null
   try {
     const token = await requestDeviceToken()
-    return await persistTokenIfChanged(uid, token)
+    return await persistTokenIfChanged(uid, token, known)
   } catch {
     return null
   }
 }
 
-export async function disablePushForUser(uid, token) {
-  if (!token) return
-  await updateDoc(doc(db, 'users', uid), { fcmTokens: arrayRemove(token) })
-  if (readCachedToken() === token) writeCachedToken(null)
+// Signing out: this device no longer shows (nor counts on its icon) the
+// account's messages. Best effort, never holds the signing out for long.
+const SIGN_OUT_WAIT_MS = 2000
+
+export async function forgetDevice(uid) {
+  const token = readCachedToken()
+  if (!uid || !token) return
+  writeCachedToken(null)
+  const removed = updateDoc(doc(db, 'users', uid), { fcmTokens: arrayRemove(token) }).catch(() => {})
+  await Promise.race([removed, new Promise((resolve) => setTimeout(resolve, SIGN_OUT_WAIT_MS))])
+}
+
+// This device's answer: 'granted', 'denied', 'default' (not asked yet) or
+// 'unsupported' (e.g. iPhone before the app is on the home screen).
+export function pushPermission() {
+  return typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
 }
 
 export async function listenForegroundMessages(callback) {
