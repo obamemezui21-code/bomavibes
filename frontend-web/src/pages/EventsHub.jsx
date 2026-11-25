@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, ChevronRight, Clapperboard, ClipboardCheck, FileSearch, FileText, Gamepad2, Globe, GraduationCap, Heart, MapPin, Search, Sparkles, Ticket } from 'lucide-react'
+import { Briefcase, ChevronRight, Clapperboard, FileSearch, FileText, Gamepad2, Globe, GraduationCap, Heart, MapPin, Search, Sparkles, Ticket } from 'lucide-react'
 import { GAMES } from '../lib/games.js'
 import { cancelEventTicket, fetchMyTickets, fetchPublishedEvents, reserveEventTicket } from '../firebase/events.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -66,13 +66,6 @@ const CATEGORY_CARDS = [
         description: 'Vérification des devoirs : IA, sources, qualité',
         icon: FileSearch,
         tint: 'bg-sky-500/15 text-sky-500',
-      },
-      {
-        to: '/campus',
-        label: 'BomaVibes Campus',
-        description: 'Présences, retards et absences des étudiants',
-        icon: ClipboardCheck,
-        tint: 'bg-violet-500/15 text-violet-600',
       },
     ],
   },

@@ -135,8 +135,6 @@ app.use("/api/admin/payments", paymentRoutes.adminRouter);
 app.use("/api/cv", cvRoutes);
 // EDU-CHECK, the homework-analysis assistant: an independent module (src/eduCheck/).
 app.use("/api/edu-check", require("./eduCheck/routes"));
-// BomaVibes Campus, the attendance of an institution: an independent module (src/campus/).
-app.use("/api/campus", require("./campus/routes"));
 
 startCallCleanupScheduler();
 startStoryCleanupScheduler();

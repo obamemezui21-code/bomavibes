@@ -121,8 +121,6 @@ async function eraseAccount(uid) {
     await db.collection("chantierProgress").doc(uid).delete().catch(() => {});
     // Their CV PNPE (identity, phone, e-mail, career).
     await db.collection("cvs").doc(uid).delete().catch(() => {});
-    // Their access to BomaVibes Campus (the sheets they entered belong to the school and stay).
-    await db.collection("campusMembers").doc(uid).delete().catch(() => {});
     // Their invitations, both ways, and their code.
     const referralCode = (await db.collection("referralProgress").doc(uid).get()).data()?.code;
     if (referralCode) await db.collection("referralCodes").doc(referralCode).delete().catch(() => {});
